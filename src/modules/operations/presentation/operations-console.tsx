@@ -3,10 +3,12 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import type { ChangeRequest, Enquiry, OperationsDashboard } from "../domain/contracts";
+import { syncFailureMessage } from "../domain/sync-result";
 import "./operations-console.css";
 
 type Session = {
   authenticated: boolean;
+  storage?: "sqlite" | "supabase";
   mode: "local" | "google" | null;
   ownerEmail: string;
   localLoginAvailable: boolean;
@@ -117,20 +119,28 @@ export function OperationsConsole() {
     setBusy("sync");
     if (!automatic) { setError(""); setNotice(""); }
     try {
-      await post("/api/operations/sync");
+      const result = await post("/api/operations/sync");
       const data = await loadDashboard();
+      const failure = syncFailureMessage(result) || [data.calendar.error, data.gmail.error].filter(Boolean).join(" ");
+      if (failure) {
+        setNotice("");
+        setSyncResult(`Last sync failed: ${failure}`);
+        setError(failure);
+        return;
+      }
+      setError("");
       setSyncResult(`Last sync completed ${timeLabel(new Date().toISOString())}. Calendar and Gmail status is shown below.`);
       if (!automatic) setNotice("Sync completed. Review any pending changes before applying them.");
-      if (data.calendar.error || data.gmail.error) setError([data.calendar.error, data.gmail.error].filter(Boolean).join(" "));
     } catch (cause) {
       const message = cause instanceof Error ? cause.message : "Sync failed.";
+      setNotice("");
       setSyncResult(`Last sync failed: ${message}`);
       setError(message);
     } finally { setBusy(""); syncInFlight.current = false; }
   }, [loadDashboard]);
 
   useEffect(() => {
-    if (!session?.authenticated || !dashboard?.calendar.connected || !dashboard.calendar.selectedCalendarId || !dashboard.gmail.selectedLabelId) return;
+    if (!session?.authenticated || !dashboard?.calendar.connected || (!dashboard.calendar.selectedCalendarId && !dashboard.gmail.selectedLabelId)) return;
     const timer = window.setInterval(() => { void doSync(true); }, 60_000);
     return () => window.clearInterval(timer);
   }, [session?.authenticated, dashboard?.calendar.connected, dashboard?.calendar.selectedCalendarId, dashboard?.gmail.selectedLabelId, doSync]);
@@ -145,7 +155,7 @@ export function OperationsConsole() {
       setSession(state);
       const data = await loadDashboard();
       await loadOptions(data);
-      setNotice("Signed in to local operations.");
+      setNotice("Signed in to company operations.");
     } catch (cause) { setError(cause instanceof Error ? cause.message : "Sign in failed."); }
     finally { setBusy(""); }
   }
@@ -161,9 +171,9 @@ export function OperationsConsole() {
     finally { setBusy(""); }
   }
   async function saveCalendar() {
-    if (!calendarId) { setError("Select a writable calendar first."); return; }
+    if (!calendarId) { setError("Select a company-owned calendar first."); return; }
     const selected = calendars.find((item) => item.id === calendarId);
-    if (!selected || !["owner", "writer"].includes(selected.accessRole)) { setError("Select a calendar with write access."); return; }
+    if (!selected || selected.accessRole !== "owner") { setError("Select a calendar owned by the connected company account."); return; }
     setBusy("calendar"); setError("");
     try { await post("/api/operations/calendar", { calendarId }); await loadDashboard(); setNotice(`Calendar selected: ${selected.summary}.`); }
     catch (cause) { setError(cause instanceof Error ? cause.message : "Could not save calendar."); }
@@ -207,10 +217,10 @@ export function OperationsConsole() {
   const selected = dashboard?.enquiries.find((item) => item.id === selectedId) ?? null;
   return <div className="operations-page">
     <a className="skip-link" href="#operations-content">Skip to operations</a>
-    <header className="operations-header"><Link href="/" aria-label="L&K Group home">L&K Group</Link><span>Private operations · local preview</span>{session?.authenticated && <button type="button" onClick={logout} disabled={Boolean(busy)}>Sign out</button>}</header>
+    <header className="operations-header"><Link href="/" aria-label="L&K Group home">L&K Group</Link><span>Private operations · preview</span>{session?.authenticated && <button type="button" onClick={logout} disabled={Boolean(busy)}>Sign out</button>}</header>
     <div className="operations-shell" id="operations-content" tabIndex={-1}>
       <h1>Enquiries and company calendar</h1>
-      <p className="operations-intro">Company account: <strong>{session?.ownerEmail ?? "Lnkgroupsydney@gmail.com"}</strong>. This local preview holds requests on this device. It does not send customer email, issue a quote or confirm a booking.</p>
+      <p className="operations-intro">Company account: <strong>{session?.ownerEmail ?? "Lnkgroupsydney@gmail.com"}</strong>. {session?.storage === "supabase" ? "Requests are stored privately in the company Supabase database." : session ? "Requests are stored locally on this device." : "Checking data storage…"} It does not send customer email, issue a quote or confirm a booking.</p>
       {error && <div className="operations-error" role="alert">{error}</div>}
       {notice && <div className="operations-notice" role="status">{notice}</div>}
       {loading && <p role="status">Loading operations status…</p>}
@@ -237,7 +247,7 @@ export function OperationsConsole() {
             <p>Status: <strong>{dashboard.calendar.connected ? "Connected" : "Waiting for Google connection"}</strong>. Selected: {formatUnknown(calendars.find((item) => item.id === dashboard.calendar.selectedCalendarId)?.summary ?? dashboard.calendar.selectedCalendarId)}.</p>
             <p>Last synced: {timeLabel(dashboard.calendar.lastSyncedAt)}.</p>
             {dashboard.calendar.error && <p className="operations-error" role="alert">{dashboard.calendar.error}</p>}
-            <label>Writable calendar<select value={calendarId} onChange={(event) => setCalendarId(event.target.value)} disabled={!dashboard.calendar.connected}><option value="">Choose a calendar</option>{calendars.map((item) => <option key={item.id} value={item.id} disabled={!(["owner", "writer"].includes(item.accessRole))}>{item.summary} ({item.accessRole})</option>)}</select></label>
+            <label>Company-owned calendar<select value={calendarId} onChange={(event) => setCalendarId(event.target.value)} disabled={!dashboard.calendar.connected}><option value="">Choose a calendar</option>{calendars.map((item) => <option key={item.id} value={item.id} disabled={item.accessRole !== "owner"}>{item.summary} ({item.accessRole})</option>)}</select></label>
             <button type="button" onClick={saveCalendar} disabled={!dashboard.calendar.connected || Boolean(busy)}>{busy === "calendar" ? "Saving…" : "Save calendar"}</button>
           </section>
           <section className="operations-panel"><h2>Gmail enquiry intake</h2>
@@ -259,7 +269,7 @@ export function OperationsConsole() {
           </section>
         </div>
         <section className="operations-panel operations-sync"><h2>Sync and review</h2>
-          <p>Use Sync now to read labelled Gmail enquiries and Google Calendar changes. While this dashboard is open and both selections are saved, it tries again every 60 seconds. Close the page and this polling stops.</p>
+          <p>Use Sync now to read labelled Gmail enquiries and Google Calendar changes. While this dashboard is open and a Gmail label or calendar is selected, it tries again every 60 seconds. Close the page and this polling stops.</p>
           <p>Last attempt: {timeLabel(lastAttempt)}. {syncResult}</p>
           <button type="button" onClick={() => void doSync(false)} disabled={Boolean(busy) || !dashboard.calendar.connected}>{busy === "sync" ? "Syncing…" : "Sync now"}</button>
           <button type="button" className="operations-button-secondary" onClick={() => void loadDashboard().then(loadOptions).catch((cause) => setError(cause instanceof Error ? cause.message : "Refresh failed."))} disabled={Boolean(busy)}>Refresh records</button>
@@ -335,7 +345,7 @@ function SetupPanel({ session, callbackUrl }: { session: Session; callbackUrl: s
       <li>In <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener noreferrer">Google Cloud Credentials</a>, configure OAuth consent and create a web client for the company integration.</li>
       <li>Set <code>GOOGLE_CLIENT_ID</code>, <code>GOOGLE_CLIENT_SECRET</code>, <code>GOOGLE_TOKEN_ENCRYPTION_KEY</code> (64 hexadecimal characters), and <code>APP_BASE_URL</code> to this app&apos;s exact local origin.</li>
       <li>Add this authorised redirect URI to the Google OAuth client: <code className="operations-uri">{callbackUrl}</code>.</li>
-      <li>Sign in above, connect <strong>{session.ownerEmail}</strong>, then select a writable calendar and the Gmail enquiry label.</li>
+      <li>Sign in above, connect <strong>{session.ownerEmail}</strong>, then select a company-owned calendar and the Gmail enquiry label.</li>
     </ol>
     <p className="operations-small">Use company controlled credentials. The app stores connection tokens on the server, not in this page.</p>
   </section>;

@@ -1,5 +1,7 @@
 # KCP 사진형 Hero·7단계 공정 로컬 검증
 
+2026-10-01 사용자 요청으로 확인용 스크린샷을 삭제했다. 아래 텍스트 검증 기록은 보존한다.
+
 2026-09-28 · 브랜치: codex/scroll-storytelling-design · 최종 코드 기준, 문서 작성·실제 앱 검증을 구분한다.
 
 ## 결과와 범위
@@ -55,15 +57,7 @@ Codex in-app browser에서 로컬 dev 검수 후 production 3002로 최종 확�
 
 ## 파일·스크린샷
 
-- [원본/최종 비교](2026-09-28-story-design/approved-vs-final.png)
-- [KCP 최종 데스크톱](2026-09-28-story-design/kcp-hero-final-desktop.png)
-- [KCP 최종 모바일](2026-09-28-story-design/kcp-hero-final-mobile.png)
-- [분해](2026-09-28-story-design/kcp-remove-final-desktop.png) · [재조립](2026-09-28-story-design/kcp-reassemble-final-desktop.png)
-- [모바일 정적 공정](2026-09-28-story-design/kcp-static-final-mobile.png)
-- [홈 프로토타입](2026-09-28-story-design/home-prototype-final-desktop.png)
-- [JS 차단](2026-09-28-story-design/kcp-nojs-final.png) · [이미지/폰트 실패](2026-09-28-story-design/kcp-assets-blocked-final.png)
-
-같은 디렉터리의 first-pass 및 final 표시가 없는 기존 파일은 중간 디자인 검수 자료이며 최종 배치의 증거로 사용하지 않는다.
+중간 검수와 최종 검수의 결과는 위 실행 기록으로 구분한다.
 
 ## 미완료·미수행 항목
 

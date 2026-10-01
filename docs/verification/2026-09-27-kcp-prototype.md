@@ -1,5 +1,7 @@
 # KCP 상세 프로토타입 검증 기록
 
+2026-10-01 사용자 요청으로 확인용 스크린샷을 삭제했다. 아래 텍스트 검증 기록은 보존한다.
+
 2026-09-27 · 브랜치 `codex/kcp-page-prototype` · 로컬 production `http://127.0.0.1:3001/services/cabinet-painting`.
 
 **요청한 프로토타입 범위 구현·검증 완료.** 최종 디자인 승인·운영 공개·견적 업무 기능 완료를 뜻하지 않는다. 작업 전부터 있던 문서·산출물·`product.png` 변경을 보존했으며 커밋·push는 하지 않았다. 기존 3000 포트 서버도 유지했다.
@@ -51,7 +53,7 @@ Codex in-app browser에서 로컬 production 빌드를 검사했다.
 
 폭은 viewport 설정값이며 DOM clientWidth는 세로 스크롤바 15px를 제외한 값이다. 실물 iPhone·Android 검사가 아닌 브라우저 반응형 검사다. 검증 후 임시 viewport override를 해제하고 KCP 탭을 결과물로 열어 두었다.
 
-증거: [데스크톱](images/kcp-prototype-desktop.png), [전체 페이지](images/kcp-prototype-full.png), [모바일](images/kcp-prototype-mobile.png).
+증거: 데스크톱, 전체 페이지, 모바일.
 
 ## 이번에 검증하지 않은 범위
 

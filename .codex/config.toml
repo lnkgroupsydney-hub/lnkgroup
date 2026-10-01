@@ -1,5 +1,2 @@
-# Project default for planning, debugging analysis, tests and QA.
-# Existing tasks and explicit client selections can override this default.
-# Implementation tasks: codex -m gpt-6-sol -c 'model_reasoning_effort="xhigh"'
-model = "gpt-6-astra"
-model_reasoning_effort = "xhigh"
+# Model and reasoning effort are chosen by the user in each chat.
+# This project does not override the user's model or reasoning effort.

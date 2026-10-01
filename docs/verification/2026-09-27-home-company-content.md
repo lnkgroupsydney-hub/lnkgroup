@@ -1,5 +1,7 @@
 # 회사 자료·메인 SEO 반영 검증
 
+2026-10-01 사용자 요청으로 확인용 스크린샷을 삭제했다. 아래 텍스트 검증 기록은 보존한다.
+
 2026-09-27 · [회사 자료](../reference-assets/company-brief.md) · 로컬 production preview `http://127.0.0.1:3002/`
 
 ## 반영 내용
@@ -43,11 +45,3 @@ Sol xhigh 구현 담당이 회사 자료 반영 후 `npm run check`를 통과했
 - Lighthouse·실사용자 Core Web Vitals 정량 측정, 검색 순위 효과 검증.
 - 사진별 현장 설명·전후 짝·후기, 현행 공개 가격표·보증 상세.
 - 온라인 견적·업로드·AI·예약·인보이스·결제.
-
-## 화면 기록
-
-- [데스크톱 메인](images/home-company-desktop.png)
-- [회사 소개](images/home-company-about.png)
-- [작업 사진 갤러리](images/home-company-gallery.png)
-- [320px 메인](images/home-company-mobile.png)
-- [모바일 연락 영역](images/home-company-mobile-contact.png)

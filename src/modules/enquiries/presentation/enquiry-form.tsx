@@ -182,10 +182,10 @@ export function EnquiryForm() {
         <a href="/services/cabinet-painting" className="enquiry-back-link">← Kitchen Cabinet Painting</a>
         {receipt ? (
           <section aria-labelledby="enquiry-title" className="enquiry-card" role="status">
-            <p className="enquiry-kicker">Request recorded locally</p>
+            <p className="enquiry-kicker">Request recorded</p>
             <h1 id="enquiry-title" ref={headingRef} tabIndex={-1}>Thank you. Your request is recorded.</h1>
             <p>Your reference is <strong>{receipt.reference}</strong>. The team still needs to review the scope and contact you. No price or work date has been confirmed, and no email has been sent by this preview.</p>
-            <p>The request is stored in this local development environment. Keep your reference for follow-up.</p>
+            <p>Your request is saved privately for company review. Keep your reference for follow-up.</p>
             <a className="enquiry-button" href="/services/cabinet-painting">Back to Kitchen Cabinet Painting</a>
           </section>
         ) : (
@@ -193,7 +193,7 @@ export function EnquiryForm() {
             <p className="enquiry-kicker">Kitchen Cabinet Painting · request for review</p>
             <h1 id="enquiry-title">Tell us about your existing cabinets</h1>
             <p className="enquiry-lead">Share the scope you have in mind. L&K Group will need to assess the surfaces before providing a price or confirming dates.</p>
-            <p className="enquiry-notice">This preview saves requests to the local app only. It does not send an email, upload photos, calculate a price or make a booking. Photos can be discussed with the team later.</p>
+            <p className="enquiry-notice">Your request is saved privately for company review. It does not send an email, upload photos, calculate a price or make a booking. Photos can be discussed with the team later.</p>
             <ol className="enquiry-progress" aria-label="Request progress">
               {["Project", "Contact & date", "Review"].map((label, index) => (
                 <li key={label} aria-current={step === index ? "step" : undefined} className={step === index ? "active" : ""}>{index + 1}. {label}</li>

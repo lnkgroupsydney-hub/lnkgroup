@@ -50,4 +50,4 @@ Codex 내장 Chromium에서 로컬 production URL을 확인했다. viewport는 1
 
 실제 모바일 기기·OS 모션 감소 설정·Lighthouse/LCP/CLS/INP·60fps/메모리 정량 측정은 하지 않았다. 태블릿/모바일에는 사진 중심 경량 구성을 사용하며, 색상/광택은 시각 예시로 실제 견본을 대신하지 않는다. 공개 배포·운영 도메인·구조화 데이터/색인 활성화는 별도 대기다.
 
-[검증 화면 폴더](2026-09-29-cinematic-v3/) · [생성 자산/프롬프트 기록](../design-assets/cabinet-cinematic-v3/manifest.json).
+검증 스크린샷은 2026-10-01 사용자 요청으로 삭제했고 텍스트·빌드 로그를 보존한다. [생성 자산/프롬프트 기록](../design-assets/cabinet-cinematic-v3/manifest.json).

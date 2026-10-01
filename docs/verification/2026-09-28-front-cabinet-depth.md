@@ -1,5 +1,7 @@
 # Concept 2 정면 캐비넷 · 입체 스크롤 검증
 
+2026-10-01 사용자 요청으로 확인용 스크린샷을 삭제했다. 아래 텍스트 검증 기록은 보존한다.
+
 2026-09-28 · `codex/scroll-storytelling-design` · 설계/판정/QA Astra xhigh, 앱 코드 Sol xhigh.
 
 **최종 결과: 기록한 로컬 검증 범위 통과.**
@@ -54,12 +56,7 @@ Astra의 읽기 전용 감사에서 6개 마스크의 실제 전면 대응, 조�
 
 ## 시각 비교·증거
 
-[같은 비교 이미지](2026-09-28-front-cabinet-depth/reference-vs-rendered.jpg)에 **concept2 원본 / 글자 없는 master / 실제 완성 장면**을 함께 놓고 확인했다. 캐비넷 방향·형상·세이지색, 황동 펜던트2개, 아일랜드·라탄 의자·왼쪽 창·오른쪽 아치가 일치한다. 원본의 웹사이트 제목/메뉴 디자인을 복사하는 범위가 아니다. 실제 스크롤 화면에는 기존 전역 타이포와 읽기용 veil을 적용했다. 수행한 시각 검수에서 미해결 P0/P1/P2는 없다.
-
-- [분리 데스크톱](2026-09-28-front-cabinet-depth/remove-desktop.png)
-- [재조립](2026-09-28-front-cabinet-depth/reassemble-desktop.png) · [2차 마감](2026-09-28-front-cabinet-depth/finish-desktop.png)
-- [완성](2026-09-28-front-cabinet-depth/complete-desktop.png) · [모바일](2026-09-28-front-cabinet-depth/remove-mobile.png)
-- [JavaScript 차단](2026-09-28-front-cabinet-depth/nojs.png) · [사진 실패](2026-09-28-front-cabinet-depth/assets-blocked.png)
+같은 비교 이미지에 **concept2 원본 / 글자 없는 master / 실제 완성 장면**을 함께 놓고 확인했다. 캐비넷 방향·형상·세이지색, 황동 펜던트2개, 아일랜드·라탄 의자·왼쪽 창·오른쪽 아치가 일치한다. 원본의 웹사이트 제목/메뉴 디자인을 복사하는 범위가 아니다. 실제 스크롤 화면에는 기존 전역 타이포와 읽기용 veil을 적용했다. 수행한 시각 검수에서 미해결 P0/P1/P2는 없다.
 
 ## 남은 검증 범위
 
