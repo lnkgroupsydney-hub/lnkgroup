@@ -88,6 +88,6 @@ npm run dev -- --port 3002
 
 ## 다른 기기에서 작업 이어가기
 
-저장소는 [jimeekang/L-K-Group](https://github.com/jimeekang/L-K-Group)이다. 새 기기에서 `git clone https://github.com/jimeekang/L-K-Group.git`으로 내려받고 해당 폴더를 Codex 프로젝트로 연다. 작업 시작 전 `git pull --ff-only`, 종료 후 커밋과 `git push`로 변경 사항을 주고받는다.
+저장소는 [lnkgroupsydney-hub/lnkgroup](https://github.com/lnkgroupsydney-hub/lnkgroup)이다. 새 기기에서 `git clone https://github.com/lnkgroupsydney-hub/lnkgroup.git`으로 내려받고 해당 폴더를 Codex 프로젝트로 연다. 작업 시작 전 `git pull --ff-only`, 종료 후 커밋과 `git push`로 변경 사항을 주고받는다.
 
 맥북 최초 설정, GitHub 인증, 기기를 바꿀 때의 순서와 문서 도구의 실행 조건은 [다른 기기에서 작업 이어가기](docs/device-setup.md)를 참조한다.

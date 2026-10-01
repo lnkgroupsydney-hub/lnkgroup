@@ -1,6 +1,6 @@
 # 다른 기기에서 작업 이어가기
 
-이 프로젝트의 GitHub 저장소는 [jimeekang/L-K-Group](https://github.com/jimeekang/L-K-Group)이다. 각 기기에 별도로 복제하고 GitHub를 통해 변경 사항을 주고받는다. Mac에서는 OneDrive나 iCloud 동기화 폴더 밖의 `~/Developer/L-K-Group` 같은 경로를 사용한다.
+이 프로젝트의 GitHub 저장소는 [lnkgroupsydney-hub/lnkgroup](https://github.com/lnkgroupsydney-hub/lnkgroup)이다. 각 기기에 별도로 복제하고 GitHub를 통해 변경 사항을 주고받는다. Mac에서는 OneDrive나 iCloud 동기화 폴더 밖의 `~/Developer/lnkgroup` 같은 경로를 사용한다.
 
 ## 현재 프로젝트 상태
 
@@ -15,18 +15,18 @@ Git이 설치되어 있는지 터미널에서 `git --version`으로 확인한다
 ```sh
 mkdir -p ~/Developer
 cd ~/Developer
-git clone https://github.com/jimeekang/L-K-Group.git
-cd L-K-Group
+git clone https://github.com/lnkgroupsydney-hub/lnkgroup.git
+cd lnkgroup
 git status
 ```
 
 SSH 키를 GitHub 계정에 등록한 기기는 다음 주소로 복제할 수도 있다.
 
 ```sh
-git clone git@github.com:jimeekang/L-K-Group.git
+git clone git@github.com:lnkgroupsydney-hub/lnkgroup.git
 ```
 
-터미널 대신 GitHub Desktop에서 `File → Clone Repository`를 선택하고 같은 저장소를 복제해도 된다. 이후 Codex에서 복제된 `L-K-Group` 폴더를 프로젝트로 연다. ZIP 다운로드는 Git 이력이 포함되지 않으므로 계속 개발할 때는 Clone을 사용한다.
+터미널 대신 GitHub Desktop에서 `File → Clone Repository`를 선택하고 같은 저장소를 복제해도 된다. 이후 Codex에서 복제된 `lnkgroup` 폴더를 프로젝트로 연다. ZIP 다운로드는 Git 이력이 포함되지 않으므로 계속 개발할 때는 Clone을 사용한다.
 
 새 Codex 작업의 첫 메시지 예시:
 
