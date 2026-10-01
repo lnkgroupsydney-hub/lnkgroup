@@ -1,5 +1,7 @@
 # Prepare 단계 퍼티 보수 장면 수정 검증
 
+2026-10-01 사용자 요청으로 확인용 스크린샷을 삭제했다. 아래 텍스트 검증 기록은 보존한다.
+
 2026-09-28 · 사용자 피드백: Prepare는 파란 도장으로 바뀌는 모습이 아니라 손상된 부분을 패치하는 장면이어야 한다.
 
 **결과: 해당 수정 범위의 코드 검사·실제 브라우저 검증 통과.**
@@ -24,8 +26,6 @@
 - 키보드 Space로 정적 보기: 새 patched figure/alt가 표시되고 7단계 본문 유지. 가로 overflow없음, H1하나, noindex/nofollow.
 - 수행한 production 흐름의 console error/warn 기록 없음. 기존 회사 내용·견적 기능 범위 변경 없음.
 - `git diff --check`와 수정 문서의 로컬 링크 확인 통과. 앱 코드 수정·Git commit/push·배포는 각각 구분하며 이번 커밋/배포는 수행하지 않았다.
-
-[준비 단계 실제 화면](2026-09-28-cabinet-patching/prepare-desktop.png) · [정적 보기](2026-09-28-cabinet-patching/prepare-static.png).
 
 ## 검증 한계
 

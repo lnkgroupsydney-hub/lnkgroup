@@ -4,9 +4,9 @@ import { getDb, localEnabled } from './local-db.ts'
 
 export const OWNER_EMAIL = 'Lnkgroupsydney@gmail.com'
 const SESSION_COOKIE = 'lk_ops_session'
-const OAUTH_COOKIE = 'lk_google_oauth'
-const SESSION_MS = 12 * 3600000
-const GOOGLE_SCOPES = [
+export const OAUTH_COOKIE = 'lk_google_oauth'
+export const SESSION_MS = 12 * 3600000
+export const GOOGLE_SCOPES = [
   'openid', 'email',
   'https://www.googleapis.com/auth/calendar.calendarlist.readonly',
   'https://www.googleapis.com/auth/calendar.events.owned',
@@ -15,14 +15,14 @@ const GOOGLE_SCOPES = [
 
 export interface OwnerSession { mode: 'local'|'google'; accountSub: string | null; tokenHash: string }
 
-function sha(value: string): string { return createHash('sha256').update(value).digest('hex') }
+export function sha(value: string): string { return createHash('sha256').update(value).digest('hex') }
 function random(): string { return randomBytes(32).toString('base64url') }
-function cookieValue(req: Request, key: string): string | null {
+export function cookieValue(req: Request, key: string): string | null {
   const cookie = req.headers.get('cookie') || ''
   const found = cookie.split(';').map((v) => v.trim()).find((v) => v.startsWith(`${key}=`))
   return found ? found.slice(key.length + 1) : null
 }
-function cookie(key: string, value: string, maxAge: number, sameSite: 'Strict'|'Lax'): string {
+export function cookie(key: string, value: string, maxAge: number, sameSite: 'Strict'|'Lax'): string {
   return `${key}=${value}; Path=/; HttpOnly; SameSite=${sameSite}; Max-Age=${maxAge}${process.env.APP_BASE_URL?.startsWith('https:') ? '; Secure' : ''}`
 }
 export function clearSessionCookie(): string { return cookie(SESSION_COOKIE, '', 0, 'Lax') }
@@ -74,21 +74,21 @@ function encryptionKey(): Buffer {
   return Buffer.from(raw, 'hex')
 }
 
-function encrypt(value: string): string {
+export function encrypt(value: string): string {
   const iv = randomBytes(12)
   const cipher = createCipheriv('aes-256-gcm', encryptionKey(), iv)
   const encrypted = Buffer.concat([cipher.update(value, 'utf8'), cipher.final()])
   return Buffer.concat([iv, cipher.getAuthTag(), encrypted]).toString('base64')
 }
 
-function decrypt(value: string): string {
+export function decrypt(value: string): string {
   const data = Buffer.from(value, 'base64')
   const decipher = createDecipheriv('aes-256-gcm', encryptionKey(), data.subarray(0, 12))
   decipher.setAuthTag(data.subarray(12, 28))
   return Buffer.concat([decipher.update(data.subarray(28)), decipher.final()]).toString('utf8')
 }
 
-function redirectUri(): string { return `${process.env.APP_BASE_URL}/api/google/callback` }
+export function redirectUri(): string { return `${process.env.APP_BASE_URL}/api/google/callback` }
 
 export function startGoogleOAuth(req: Request, db = getDb()): { url: string; cookie: string } {
   if (!googleConfigured()) throw new AppError(503, 'Google connection is not configured')

@@ -1,5 +1,7 @@
 # KCP SEO 콘텐츠 개정 검증
 
+2026-10-01 사용자 요청으로 확인용 스크린샷을 삭제했다. 아래 텍스트 검증 기록은 보존한다.
+
 2026-09-27 · 브랜치 `codex/kcp-page-prototype` · [명세](../plans/19-kcp-seo-content-and-service-area.md)
 
 ## 구현·문서 범위
@@ -55,18 +57,8 @@ Google Maps 실제 검색 결과와 사용자 `working area.png`를 함께 검�
 
 회사 확정 자료 교체, 실제 작업 사진, 최종 디자인, 공개 도메인·회사 계정 연결 및 문의/예약 기능은 미완료 의존성으로 유지한다. Search Console, 실제 색인·검색 노출, 지도 API 또는 주소 제한 동작을 시험했다고 주장하지 않는다.
 
-## 화면 증거
-
-- [데스크톱 상단](images/kcp-seo-desktop.png)
-- [서비스 지역](images/kcp-seo-area.png)
-- [390px 상단](images/kcp-seo-mobile.png)
-- [320px 서비스 지역](images/kcp-seo-mobile-area.png)
-
 ## 후속 피드백: 섹션 이동 글자 확대
 
 같은 날짜 사용자 화면 피드백으로 `On this page` 항목을 18px/20px semibold, 최소 48px 높이와 넓은 간격으로 변경했다. 구현 담당이 변경 후 `npm run check`와 `git diff --check`를 통과하고 로컬 3001 production preview를 갱신했다.
 
 메인 담당 실제 브라우저 확인: 기본 1696px에서 20px 글자·8개 항목 한 줄, 320px에서 18px 글자·두 항목씩 줄바꿈, 모두 가로 넘침 없음. Included scope 포인터 클릭과 FAQs Enter 실행 시 해당 hash·섹션 포커스 이동 확인. 콘솔 error/warn 없음. 임시 뷰포트는 해제했다.
-
-- [확대된 이동 메뉴 — 데스크톱](images/kcp-section-navigation-desktop.png)
-- [확대된 이동 메뉴 — 모바일](images/kcp-section-navigation-mobile.png)

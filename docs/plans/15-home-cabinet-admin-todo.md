@@ -1,8 +1,12 @@
 # 메인 → Cabinet → 회사 관리 웹 제작 TODO
 
-작성일: 2026-09-27 · 진행 갱신: 2026-09-30. 기존 홈페이지 계획서와 Coatly 문서를 검토한 실행 순서다. 체크한 항목만 기록된 범위에서 완료했으며, 미체크 항목은 대기 또는 미구현이다. [실제 검증 기록](../verification/2026-09-27-home-prototype.md)을 기준으로 확인한다.
+작성일: 2026-09-27 · 진행 갱신: 2026-10-01. 기존 홈페이지 계획서와 Coatly 문서를 검토한 실행 순서다. 체크한 항목만 기록된 범위에서 완료했으며, 미체크 항목은 대기 또는 미구현이다. [실제 검증 기록](../verification/2026-09-27-home-prototype.md)을 기준으로 확인한다.
 
-**2026-09-30 현재 착수:** 사용자가 [18번의 후속 제품 흐름](18-kcp-page-prototype.md)을 선택했다. **Get a Quote → 사진 → AI 손상 분석 → 범위·정찰제 가격 → 날짜 요청 → 회사 duration·일정 확정 → 인보이스·결제** 전체를 구현 목표로 한다. [25번 P0~P8](25-kcp-quote-to-booking-implementation.md), [26번 P0 명세](26-kcp-p0-contracts-and-reuse.md), [27번 Calendar 계약](27-kcp-google-calendar-sync.md)을 따른다. P0 이후 추가 요청으로 [28번 Gmail 문의 → Calendar 기능](28-gmail-enquiry-calendar-implementation.md)을 먼저 구현한다. AI·Resend는 다음 단계이며 실제 Google 연결·공개 배포는 아직 대기다.
+**2026-10-01 추가 요청:** [30번 Supabase 저장소 연결](30-supabase-storage-integration.md)을 먼저 진행한다. 사용자가 지정한 회사 프로젝트에 스키마 적용·클라우드 저장/권한·브라우저·재시작 보존 검증을 완료했다. [실제 검증 기록](../verification/2026-10-01-supabase.md)과 자동 테스트 39개·lint/타입/build 통과를 확인했다. Google 실연동 결과는 아래 별도 체크리스트로 구분한다.
+
+**2026-10-01 오늘의 계획:** [29번 OAuth 설정·실연동 검증 계획](29-google-oauth-live-verification-plan.md)에 따라 회사 Google 설정부터 Gmail 수집·Calendar 양방향 검토·자동 수집·재연결까지 진행한다. 회사 OAuth·실제 Gmail 수신/답장·Calendar 왕복·재시작 보존을 확인했다. [실제 결과](../verification/2026-10-01-google-oauth-live.md)에 자연 토큰 갱신·재연결·운영 전환 대기를 구분했다.
+
+**2026-09-30 현재 착수:** 사용자가 [18번의 후속 제품 흐름](18-kcp-page-prototype.md)을 선택했다. **Get a Quote → 사진 → AI 손상 분석 → 범위·정찰제 가격 → 날짜 요청 → 회사 duration·일정 확정 → 인보이스·결제** 전체를 구현 목표로 한다. [25번 P0~P8](25-kcp-quote-to-booking-implementation.md), [26번 P0 명세](26-kcp-p0-contracts-and-reuse.md), [27번 Calendar 계약](27-kcp-google-calendar-sync.md)을 따른다. P0 이후 추가 요청으로 [28번 Gmail 문의 → Calendar 기능](28-gmail-enquiry-calendar-implementation.md)을 먼저 구현한다. AI·Resend는 다음 단계이며 현재는 Google 시험 연동까지 확인했다. 운영 전환·공개 배포는 대기다.
 
 **2026-09-28 최종 디자인 범위:** [v5 시안](../design-concepts/concept-1-slate-greige-v5.png)을 **KCP 상세에만** 적용했다. 메인은 기존 프로토타입 구성을 유지한다. 상세는 사진형 Hero → 목차 → 전체 화면 7단계 공정 → 기존 SEO 본문 순서다. [최종 명세](22-cinematic-cabinet-story.md)·[전역 디자인](21-global-design-system.md)·[실제 검증](../verification/2026-09-28-scroll-storytelling.md)을 기준으로 아래 완료 수준을 구분한다.
 
@@ -17,13 +21,13 @@
 - [x] 사진 Hero·재도장 비교·품질 디테일·기존 SEO 본문 재구성, 모바일/정적 대체·실제 브라우저·최종 check 확인하기. JavaScript 및 WebGL 미지원 대체도 로컬 fixture에서 확인.
 
 - Day 2 메인 화면부터 착수하며, 필요한 Day 1 **로컬 Next.js 설정**만 선행한다.
-- Vercel·Supabase 연결은 회사 측 이메일과 승인 후 해당 회사 계정으로 진행한다. 관련 항목은 완료 표시하지 않고 대기한다.
+- Supabase는 2026-10-01 사용자가 지정한 회사 프로젝트 연결을 승인해 진행한다. Vercel 배포·운영 도메인·상시 worker는 별도 대기이며 각 서비스의 실제 검증 근거로 완료를 표시한다.
 - 순서: **지침 업데이트 → 프로젝트 생성 → 메인 프로토타입 → 디자인 계획·검토 → 디자인 적용**. DDD·SEO·검증 기준은 [메인 프로토타입 실행 명세](17-home-prototype-design-plan.md)를 따른다.
 - 서비스명은 **Kitchen Cabinet Painting**이다. 시안의 신규 제작 설명을 기존 캐비넷 도장 설명으로 바꾼다.
 - 임시 로고·사진은 생성하고 실제 자료 도착 시 교체한다. 생성 사진을 실제 시공 사례로 표시하지 않는다.
 - 연락처·도메인·회사 정보 미확정 시 연결·공개 준비는 미완료로 남긴다.
 
-**회사 자료 접수:** [회사 제공 자료](../reference-assets/company-brief.md)에 브랜드·영문 소개·서비스·연락처·지역·사업자 정보·Cabinet 공정 답변을 정리했다. 로고 PDF·메인 홍보 이미지·작업 사진 4장·가격 안내물 3장도 수령했다. 회사 이메일은 수령됐으며 클라우드 계정 접근·연결/배포 승인은 별도 대기다.
+**회사 자료 접수:** [회사 제공 자료](../reference-assets/company-brief.md)에 브랜드·영문 소개·서비스·연락처·지역·사업자 정보·Cabinet 공정 답변을 정리했다. 로고 PDF·메인 홍보 이미지·작업 사진 4장·가격 안내물 3장도 수령했다. 회사 이메일은 수령했고 2026-10-01 지정 Supabase 프로젝트 연결·검증을 완료했다. Google 시험 실연결은 확인했고 운영 전환·Vercel 배포 승인은 별도 대기다.
 
 ### 현재 진행
 
@@ -56,6 +60,43 @@ Cabinet은 **기존 캐비넷 페인팅** 기준이다. 과거 ‘약 1주’는
 
 ## 0. 착수 전에 준비할 것
 
+### 2026-10-01 — 저장소 정리
+
+- [x] 사용자 요청으로 확인용 스크린샷 70개와 관련 문서의 이미지 링크 삭제. 텍스트 검증 기록·빌드 로그·서비스 자산은 보존.
+
+### 2026-10-01 — 회사 Supabase 저장소 연결
+
+- [x] 사용자가 지정한 `xlqyafthsxallostcqfe`를 저장 대상과 후속 업무 데이터 기준으로 기록하기. 새 프로젝트를 임의 생성하지 않음.
+- [x] Supabase JS·SSR 패키지 버전 고정, 공개 client/server helper·Next.js Proxy와 서버 전용 업무 클라이언트 구성하기.
+- [x] `OPERATIONS_STORE=supabase`와 비밀값 없는 환경변수 예시·신규 로컬 설정 경로 준비하기. SQLite는 명시적 격리 테스트용으로 보존.
+- [x] 비공개 업무 테이블 12개·RLS·service-role 전용 RPC 마이그레이션, 문의/Gmail/일정/토큰/세션 저장 어댑터 작성하기. 작성 완료와 실적용은 구분.
+- [x] 지정 프로젝트 SQL Editor에 마이그레이션 적용, 실제 server key health(schema 1)·12개 테이블 조회와 유효 공개키의 접근 거부 확인하기. authenticated 역할은 PGlite 검증.
+- [x] 실제 Supabase에 합성 문의 저장·재조회·중복/경합·API 로그인/로그아웃·재시작 후 세션/일정 보존·공개키 접근 차단 확인하기.
+- [x] 자동 테스트 39/39, lint/type/build와 실제 문의 접수·390px 관리자 일정 입력/오류·콘솔 확인하기. 클라우드·PGlite·브라우저 근거 구분.
+- [x] 기존 SQLite 문의 0개·Google 연결 0개 확인 후 파일 보존하기. 실제 이전 대상 없음. 활성 앱 설정은 Supabase이며 합성 클라우드 문의/outbox는 정확히 식별해 정리함.
+- [x] [실검증 결과](../verification/2026-10-01-supabase.md)와 남은 Google OAuth 의존성을 기록하고 [30번](30-supabase-storage-integration.md)의 진행 상태 갱신하기.
+- [ ] Supabase security/performance advisors를 프로젝트 접근 권한 확보 후 실행하기. 현재 MCP permission denied로 미확인.
+- [ ] 다음 CLI `db push` 전 실제 스키마 비교와 migration repair로 수동 적용 이력을 맞추기. Dashboard SQL 실행은 CLI 이력 등록을 하지 않음.
+
+### 2026-10-01 — 회사 OAuth 설정부터 실제 검증까지
+
+- [x] 기존 코드·검증 기록·Google 공식 설정 문서를 확인하고 [순서·완료 기준](29-google-oauth-live-verification-plan.md) 작성하기.
+- [x] 회사 Supabase 전송 대기 0개 확인, 회사 소유 시험 Calendar `L&K Integration`·Gmail 라벨 `L&K Integration Test`와 시험 제목 필터 준비하기.
+- [x] 회사 프로젝트의 Gmail/Calendar API 실제 HTTP 200, External/Testing·회사 테스트 사용자·scope·Web callback 확인하기.
+- [x] Google 환경변수·암호화 키 존재 확인, 앱 재시작, 최초 OAuth 403의 테스트 사용자 누락 수정하기.
+- [x] 사용자 최종 동의 후 callback·암호화 토큰 저장·실제 Gmail 라벨/소유 Calendar 목록 확인하기.
+- [x] 실제 Gmail 수신·반복 중복 방지·같은 대화 답장 병합·일정 보존·화면 자동 수집(G01/G02/G03/G07) 확인하기. 회사 발신 답장 2통 제외, 수신 이력 2통 저장.
+- [ ] G04/G05 나머지 조건과 실제 HTML/첨부 메일(G06) 추가 확인하기. 날짜 없는 수신·보낸 편지 제외는 실확인, 다른 조건의 격리 테스트와 구분.
+- [x] 앱→Google 생성/수정, 외부 변경 승인/거절, 삭제 승인·재등록/복원, 종일 희망일, 반복 일정 차단, 무관한 이벤트 보존(C01~C06/C08~C10) 확인하기.
+- [ ] C07 전체 실제 동시 경합 확인하기. 오래된 앱 revision HTTP 409는 실확인했고 정교한 경합은 격리 테스트 통과.
+- [x] 실제 연결 상태에서 worker 1회 성공, 앱 재시작 후 관리자 세션·연결·선택 대상·문의·일정 보존 확인하기.
+- [ ] 화면 없는 반복 worker의 신규 메일 수집·앱/worker 중단 중 수신 건 복구 확인하기. 1회 worker와 기존 데이터 보존을 전체 통과로 확대하지 않음.
+- [ ] access token 자연 갱신과 권한 회수→재연결→같은 데이터 복구 확인하기. 최초 관찰 만료 10월 1일 21:49:45 Sydney.
+- [x] 부분 실패의 성공 표시 수정, worker 실패 종료 테스트 추가, 자동 테스트 44개·lint/typecheck/build 통과, Google 실제 일정 화면 확인하기.
+- [x] 시험 이벤트를 Google 삭제→앱 삭제 승인→동기화로 정리하기. 문의 2개·수신 이력 보존, 활성 연결/outbox/대기 검토 각 0개.
+- [ ] 실제 운영용 라벨·Calendar·필터를 정하고 소량 왕복 확인하기. 현재 시험 대상 유지.
+- [x] [검증 결과·실행 상태·남은 의존성](../verification/2026-10-01-google-oauth-live.md) 기록, TODO/28번 갱신하기.
+
 ### 2026-09-30 후속 요청 — Gmail 문의 → Calendar 기능 우선
 
 [28번 실행 명세](28-gmail-enquiry-calendar-implementation.md) · [실제 검증 기록](../verification/2026-09-30-gmail-calendar.md). 디자인 상세·AI·Resend API는 이후다. 아래 완료는 로컬 코드·대체 Google 전송 테스트·브라우저 검증이며 전체 P2/P3/P6나 회사 실연결 완료와 구분한다.
@@ -67,8 +108,8 @@ Cabinet은 **기존 캐비넷 페인팅** 기준이다. 과거 ‘약 1주’는
 - [x] 담당자 Sydney 시작/종료 입력→미확정 Calendar 이벤트·실패 재시도·외부 변경 검토 구현하기. 생성 응답 유실·etag/버전 경합·410 복구·삭제 후 재등록을 대체 전송 테스트로 확인.
 - [x] 관리자 화면 자동 수집과 별도 로컬 worker 실행 경로를 구현하고 실행 조건을 안내하기. `--once` 실행·설정 파일 생성/보존 확인.
 - [x] 타입·lint·build·자동 테스트 23개 및 실제 데스크톱/모바일 브라우저 흐름을 구분해 검증하고 오류 수정하기.
-- [ ] [OAuth 준비 대기] 회사 계정의 클라이언트·동의·라벨/Calendar를 설정하고 실제 Gmail→앱→Calendar 왕복 검증하기.
-- [ ] [후속] 회사 DB·상시 실행/HTTPS·자원/가격/고객 수락 후 예약 확정, 사진·AI·Resend·Complete 청구 단계 진행하기.
+- [x] 회사 계정의 클라이언트·동의·시험 라벨/Calendar를 설정하고 실제 Gmail→앱→Calendar 핵심 왕복 검증하기. 위 체크리스트의 복구·운영 전환 미완료는 별도 유지.
+- [ ] [후속] 회사 DB 실검증을 마친 뒤 상시 실행/HTTPS·자원/가격/고객 수락 후 예약 확정, 사진·AI·Resend·Complete 청구 단계 진행하기.
 
 ### 기존 착수 의존성
 
@@ -92,9 +133,9 @@ Cabinet은 **기존 캐비넷 페인팅** 기준이다. 과거 ‘약 1주’는
 - [x] Git 실행 환경 확인, Node.js 지원 중인 LTS와 npm 설치·버전 정리하기. Node v24.14.1·npm 11.11.0·사용 가능한 Git 경로를 [실행 명세](17-home-prototype-design-plan.md)에 기록함.
 - [x] 현재 저장소에 Next.js + TypeScript 앱 만들고 Tailwind CSS·필요한 UI 도구 설치하기. 기존 문서와 시안 유지하기.
 - [x] ESLint·타입 검사·빌드 명령과 GitHub 자동 검사 설정하기. 설치 버전과 lockfile 저장하기. 로컬 검사 통과, GitHub CI 실행은 아직 미수행.
-- [ ] [연결 단계 대기] Supabase CLI 설치하고 DB 변경 파일을 Git으로 관리할 준비하기.
-- [ ] [회사 승인 대기] L&K용 Supabase Cloud 테스트·운영 프로젝트 만들고 사용 지역·요금제 확인하기. 승인 전 로컬 메인은 DB 없이 실행하고, 연결 단계에서는 Docker 없이 클라우드 테스트 DB를 사용하기.
-- [ ] [연결 단계 대기] `@supabase/supabase-js`·`@supabase/ssr` 설치, `.env.local`·비밀값 없는 `.env.example` 준비하기. 공개키와 서버 비밀키 분리하기. [연결 안내](https://supabase.com/docs/guides/auth/server-side/creating-a-client?queryGroups=framework&framework=nextjs)
+- [x] Supabase DB 변경 파일을 `supabase/migrations`에 준비하기. 실제 적용·검증은 위 연결 체크리스트를 따르며 CLI 설치 자체를 운영 완료 조건으로 삼지 않음.
+- [x] 사용자가 제공한 기존 회사 Supabase 프로젝트를 연결 대상으로 확정하기. 지역·요금제 변경이나 별도 테스트/운영 프로젝트 생성은 이번 요청에서 수행하지 않음.
+- [x] `@supabase/supabase-js`·`@supabase/ssr` 설치, `.env.local`·비밀값 없는 `.env.example` 준비하기. 공개키와 서버 비밀키 분리하기. Secret key 입력 사용자 확인, 실제 연결은 별도 검증. [연결 안내](https://supabase.com/docs/guides/auth/server-side/creating-a-client?queryGroups=framework&framework=nextjs)
 - [ ] [회사 승인 대기] Vercel에 GitHub 저장소 연결하고 첫 Preview 배포하기. 필요하면 Vercel CLI 설치하기.
 - [ ] [회사 승인 대기] Vercel 테스트·운영 환경변수를 나누고, Preview에는 테스트 DB만 연결하기. [환경 설정 안내](https://vercel.com/docs/deployments/environments)
 

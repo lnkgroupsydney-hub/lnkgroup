@@ -7,7 +7,7 @@ import { decideChange, listOwnedCalendars, pullChanges, pushPending, selectCalen
 import { listGmailLabels, readEnquiryMessagePage } from '../gmail-intake/index.ts'
 
 type JsonValue = Record<string, unknown>
-function json(value: unknown, status = 200): Response { return Response.json(value, { status, headers:{ 'cache-control':'no-store' } }) }
+export function json(value: unknown, status = 200): Response { return Response.json(value, { status, headers:{ 'cache-control':'no-store' } }) }
 
 export function safe(handler: (req: Request) => Promise<Response> | Response): (req: Request) => Promise<Response> {
   return async (req) => {
@@ -19,14 +19,14 @@ export function safe(handler: (req: Request) => Promise<Response> | Response): (
   }
 }
 
-function requireOrigin(req: Request): void {
+export function requireOrigin(req: Request): void {
   const base = process.env.APP_BASE_URL
   if (!base) throw new AppError(503, 'Local operations are not configured')
   const origin = req.headers.get('origin')
   if (origin !== new URL(base).origin || req.headers.get('sec-fetch-site') === 'cross-site') throw new AppError(403, 'Same-origin request required')
 }
 
-async function body(req: Request, max = 12000): Promise<JsonValue> {
+export async function body(req: Request, max = 12000): Promise<JsonValue> {
   requireOrigin(req)
   if (!req.headers.get('content-type')?.toLowerCase().startsWith('application/json')) throw new AppError(415, 'JSON required')
   const length = Number(req.headers.get('content-length') || 0)
@@ -49,7 +49,7 @@ async function body(req: Request, max = 12000): Promise<JsonValue> {
   return parsed as JsonValue
 }
 
-function idFrom(req: Request, segment: string): string {
+export function idFrom(req: Request, segment: string): string {
   const path = new URL(req.url).pathname.split('/')
   const i = path.indexOf(segment)
   const id = path[i + 1]

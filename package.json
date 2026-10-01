@@ -16,9 +16,12 @@
     "check": "npm run lint && npm run typecheck && npm run build",
     "setup:local": "node scripts/setup-local.mjs",
     "integrations:worker": "node --experimental-strip-types scripts/integrations-worker.mjs",
-    "test:operations": "node --experimental-strip-types --test src/modules/operations/operations.test.mts src/modules/gmail-intake/infrastructure/gmail-reader.test.ts"
+    "test:operations": "node --experimental-strip-types --test src/modules/operations/operations.test.mts src/modules/gmail-intake/infrastructure/gmail-reader.test.ts src/modules/operations/supabase.test.mts src/modules/operations/sync-result.test.mts",
+    "test:supabase:connection": "node scripts/verify-supabase.mjs"
   },
   "dependencies": {
+    "@supabase/ssr": "0.12.7",
+    "@supabase/supabase-js": "2.117.2",
     "lucide-react": "1.48.0",
     "next": "16.3.6",
     "react": "19.3.0",
@@ -26,6 +29,7 @@
     "three": "0.186.1"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "0.5.8",
     "@tailwindcss/postcss": "4.3.3",
     "@types/node": "24.19.0",
     "@types/react": "19.3.0",

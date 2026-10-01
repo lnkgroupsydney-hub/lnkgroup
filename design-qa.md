@@ -1,11 +1,13 @@
 # Design QA
 
+Verification screenshots were deleted at the user’s request on 2026-10-01. The written test results remain.
+
 Final result: **passed** — scoped local cinematic WebGL revision.
 Date: 2026-09-29. Latest review is at the end of this document; earlier entries retain their historical scope.
 
 ## Source and rendered comparison
 
-[One comparison input](docs/verification/2026-09-28-front-cabinet-depth/reference-vs-rendered.jpg) includes the user's concept2 reference, the new generated master, and the rendered Complete stage. The requested match is the kitchen subject: frontal sage cabinetry, brass pendants, island/stools, garden opening and arch. Its unrelated website header/headline is not the requested layout. Home prototype and approved KCP Hero remain unchanged.
+The comparison reviewed at the time included the user's concept2 reference, the new generated master, and the rendered Complete stage. The requested match is the kitchen subject: frontal sage cabinetry, brass pendants, island/stools, garden opening and arch. Its unrelated website header/headline is not the requested layout. Home prototype and approved KCP Hero remain unchanged.
 
 ## Rubric
 
@@ -42,4 +44,4 @@ The same parametric geometry is cleaned, patched, primed, coated and reassembled
 
 Final lint/type/build passed. Actual browser checks cover nine chapter links, reverse scroll, initial hash, static/3D position recovery, colour/sheen input, comparison drag and keyboard endpoints, mobile menu/FAQ, 1280/768/390/320px layouts, disabled quote/upload controls and contact navigation. JavaScript and WebGL failure fixtures passed and were stopped afterward. Tested production console errors/warnings were empty. Corrected Hero CTA positioning, scene exposure/geometry, native-image drag, colour events and layout-transition position bugs before final checks.
 
-Actual phones, OS reduced-motion switching and quantitative performance/60fps are not claimed. [Detailed evidence and screenshots](docs/verification/2026-09-29-cinematic-v3.md) · [Final build log](docs/verification/2026-09-29-cinematic-v3/check.log).
+Actual phones, OS reduced-motion switching and quantitative performance/60fps are not claimed. [Detailed verification record](docs/verification/2026-09-29-cinematic-v3.md) · [Final build log](docs/verification/2026-09-29-cinematic-v3/check.log).
