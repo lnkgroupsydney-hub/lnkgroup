@@ -4,6 +4,8 @@
 
 [전체 TODO](15-home-cabinet-admin-todo.md) · [현재 기능·설정 안내](28-gmail-enquiry-calendar-implementation.md) · [Calendar 계약](27-kcp-google-calendar-sync.md) · [9월 30일 로컬 검증](../verification/2026-09-30-gmail-calendar.md)
 
+**후속 계획(2026-10-02):** 남은 자연 토큰 갱신·재연결·화면 없는 자동 수집·운영 전환 준비는 [31번 실행 계획](31-google-integration-recovery-and-operation-plan.md)으로 이어간다. 10월 2일은 현재 계획 작성만 완료했으며 실제 결과는 실행 후 별도로 기록한다.
+
 **저장소 선행 변경(2026-10-01):** 사용자가 회사 Supabase 저장을 요청해 [30번 연결·검증](30-supabase-storage-integration.md)을 먼저 완료했다. [실제 결과](../verification/2026-10-01-supabase.md)는 회사 DB 문의 저장·권한 차단·브라우저·재시작 보존 범위이며, 이후 실행한 [Google 실제 결과](../verification/2026-10-01-google-oauth-live.md)는 이 문서의 시험 ID별 근거와 미완료 항목을 기록한다. SQLite 격리 테스트와 회사 DB·실제 Google 왕복은 각각의 근거로 구분한다.
 
 ## 오늘의 목표와 완료 범위

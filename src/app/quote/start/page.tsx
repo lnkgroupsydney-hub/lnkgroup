@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { CompanyFooter, CompanyHeader } from "@/modules/company-profile";
-import { EnquiryForm } from "@/modules/enquiries";
+import { QuoteDraftForm } from "@/modules/enquiries";
 
 export const metadata: Metadata = {
   title: "Request a Kitchen Cabinet Painting quote | L&K Group — Preview",
@@ -13,7 +13,7 @@ export default function QuoteStartPage() {
     <>
       <CompanyHeader isHomePage={false} />
       <main id="main-content" tabIndex={-1}>
-        <EnquiryForm />
+        <QuoteDraftForm />
       </main>
       <CompanyFooter isHomePage={false} />
     </>

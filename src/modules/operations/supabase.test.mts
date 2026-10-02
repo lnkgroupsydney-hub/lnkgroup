@@ -1,7 +1,7 @@
 import test, { after, beforeEach } from 'node:test'
 import assert from 'node:assert/strict'
 import { randomUUID } from 'node:crypto'
-import { readFileSync } from 'node:fs'
+import { readFileSync, readdirSync } from 'node:fs'
 import { PGlite } from '@electric-sql/pglite'
 
 // This suite uses the production SQL in an in-memory Postgres engine. Every
@@ -18,8 +18,8 @@ process.env.GOOGLE_TOKEN_ENCRYPTION_KEY = '22'.repeat(32)
 
 const db = new PGlite()
 await db.exec('create role anon; create role authenticated; create role service_role bypassrls;')
-await db.exec(readFileSync(new URL('../../../supabase/migrations/20261001100420_operations_supabase.sql', import.meta.url), 'utf8'))
-const tables = ['enquiries', 'sessions', 'oauth_states', 'google_connection', 'calendar_links', 'outbox', 'change_requests', 'gmail_seen', 'gmail_threads', 'gmail_quarantine', 'sync_lease', 'rate_buckets'].map(name => `lk_${name}`)
+for (const name of readdirSync(new URL('../../../supabase/migrations/', import.meta.url)).filter(name => name.endsWith('.sql')).sort()) await db.exec(readFileSync(new URL(`../../../supabase/migrations/${name}`, import.meta.url), 'utf8'))
+const tables = (await db.query<{tablename:string}>("select tablename from pg_tables where schemaname='public' and tablename like 'lk_%' order by tablename")).rows.map(row => row.tablename)
 await db.exec('set role service_role')
 
 type Row = {
@@ -41,13 +41,14 @@ const originalFetch = globalThis.fetch
 let providerFetch:((request:Request) => Promise<Response>)|null = null
 globalThis.fetch = async (resource, init) => {
   const request = new Request(resource, init)
-  if (request.url !== 'https://local-pglite.invalid/rest/v1/rpc/lk_operations_command') {
+  if (!request.url.startsWith('https://local-pglite.invalid/rest/v1/rpc/')) {
     assert.ok(providerFetch, 'Unexpected network request; live access is forbidden in this suite')
     return providerFetch(request)
   }
   assert.equal(request.headers.get('apikey'), 'synthetic-server-key')
-  const payload = await request.json() as {command:string; args:Record<string, unknown>}
+  const payload = await request.json() as {command:string; action:string; args:Record<string, unknown>}
   try {
+    if(request.url.endsWith('/lk_google_health')) return Response.json((await db.query<{result:unknown}>('select public.lk_google_health($1,$2::jsonb) as result',[payload.action,JSON.stringify(payload.args)])).rows[0].result)
     return Response.json(await command(payload.command, payload.args))
   } catch (error) {
     const failure = error as {code:string; message:string}
@@ -412,8 +413,9 @@ test('token refresh accepts omitted scope, rejects reduced grants, and cannot ov
   assert.equal(decrypt((await auth.getConnection())!.access_cipher), 'refreshed-access')
   await seed()
   providerFetch = async () => Response.json({access_token:'reduced-scope-access', expires_in:3600, scope:'openid email'})
-  await assert.rejects(auth.accessToken(), /Required Google permissions/)
+  await assert.rejects(auth.accessToken(), /Google permissions need renewal/)
   assert.equal(decrypt((await auth.getConnection())!.access_cipher), 'expired-access')
+  await db.query("update public.lk_google_connection set auth_health_code='unverified',auth_health_checked_at=null")
   providerFetch = async () => {
     await command('connection_save', {account_sub:'account-1', email:'Lnkgroupsydney@gmail.com', access_cipher:encrypt('newest-access'), refresh_cipher:encrypt('newest-refresh'), expires_at:Date.now()+3600000})
     return Response.json({access_token:'stale-refresh-response', expires_in:3600})
