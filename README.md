@@ -8,13 +8,19 @@ L&K Group의 서비스 홈페이지, 온라인 쇼핑몰, ERP·CRM 운영관리 
 
 ## 읽는 순서
 
+**회사 전용 데모 실제 검증 완료(2026-10-02):** 서비스 저장 → 데모 금액·약관 승인 → 날짜 선택 → 서명·제출 → Resend → 회사 Calendar를 연결했다. [검증 결과](docs/verification/2026-10-02-demo-quote-email-calendar.md): 자동 검사 117개, 회사 Gmail 스팸함 1통/HTML 첨부 2개, Calendar 확정 대기 이벤트 1개, 실제 예약일 차단·중복 없음·새로고침 복원 확인. 시험 수신자는 회사 주소로 제한한다. PDF·실제 가격/약관/계약·사진/AI·운영 배포는 별도다.
+
+**기반 검증(2026-10-02): 고객 선저장과 Google 연동 복구.** [32번 전체 고객 진행 계약](docs/plans/32-client-quote-signature-submission.md)에 따라 고객 정보 저장 → 서비스·사진 → AI·가격 → 고객 approve → 시작일 선택 → 최종 확인·서명·제출 → 견적·서명 계약 이메일 → 회사 Calendar 순서로 정렬했다. 회사가 기간·충돌을 검토한 뒤 예약을 확정하며 이미 예약된 날짜는 선택할 수 없다. 고객·서비스 초안 비공개 저장/복원과 [31번 OAuth·worker 복구](docs/plans/31-google-integration-recovery-and-operation-plan.md) 코드와 데모 연결 전 80개 격리 테스트·lint·타입·빌드가 통과했다. 회사 DB에 신규 migration 2개를 적용했고 실제 브라우저 저장·새로고침 복원·두 탭 충돌 보존·타 세션 분리·320px 화면과 자연 만료 Google 토큰 갱신(R01)을 확인했다. 회사 Dashboard advisors는 오류·경고 0이며 정보 항목은 의도한 서버 전용 RLS/유일성 인덱스로 기록했다. [10월 2일 결과](docs/verification/2026-10-02-google-recovery.md)에 증거를 구분한다. Next 앱·브라우저 없이 반복 worker가 새 시험 메일을 수집한 W01도 확인했다. 중단 중 같은 대화 답장 복구(W02)와 실제 동시 실행 잠금(R02)도 통과했다. 실제 권한 회수/재연결, CLI migration 이력 정리는 대기다. 사진·AI·실제 가격/계약·운영 고객 인증은 후속이며 실제 완료 범위는 [TODO](docs/plans/15-home-cabinet-admin-todo.md)에 구분한다.
+
+**추가 승인 범위: 회사 전용 데모의 서명·실제 이메일 → Calendar.** [32번 1.1절](docs/plans/32-client-quote-signature-submission.md)에 따라 localhost에서 샘플 AUD 1,250·비구속 데모 약관, 실제 Google busy 날짜 선택, 이름/그린 서명·불변 제출, 서명된 **HTML 첨부 2개**와 Resend provider 수락 후 Pending confirmation Calendar 업로드를 구현했다. 확인된 발신 도메인이 없어 `onboarding@resend.dev`에서 `Lnkgroupsydney@gmail.com`으로만 시험한다. 비공개 작성 쿠키는 고객 신원 인증이 아니며 PDF·실제 계약·예약 확정이 아니다. 새 migration 원격 적용·14테이블/4 RPC anon 차단과 **전체 테스트 117/117·lint·타입·빌드 통과**를 확인했다. 실제 브라우저 제출→회사 Gmail 스팸함 1통/HTML 첨부 2개→Calendar 이벤트 1개, 예약일 차단·새로고침 복원·worker 재실행 중복 없음까지 [실제 검증](docs/verification/2026-10-02-demo-quote-email-calendar.md)을 마쳤다. 장애·동시 변경·서명 변조 등은 격리 시험 결과이며 실제 장애 시험으로 확대하지 않는다.
+
 **현재 작업(2026-10-01): [회사 Supabase 저장소 연결](docs/plans/30-supabase-storage-integration.md).** 사용자가 지정한 `xlqyafthsxallostcqfe` 프로젝트에 문의·Gmail 이력·일정·관리자 세션·암호화된 Google 토큰을 저장하도록 어댑터와 마이그레이션을 구성했다. 12개 업무 테이블은 RLS와 역할 권한으로 브라우저 직접 접근을 차단하고 서버 전용 RPC로 사용한다. 실제 스키마 적용·클라우드 문의 저장/재조회·권한 차단·모바일 관리자 일정 변경·재시작 보존을 확인했다. 후속 Google 오류 처리 보강을 포함해 자동 테스트 44개와 lint·타입·빌드도 통과했으며 [검증 기록](docs/verification/2026-10-01-supabase.md)을 따른다. 현재 관리자 로그인과 Google 연결은 loopback 로컬 앱에서 실행한다. 회사 OAuth·Gmail 수신/답장 병합·Calendar 양방향 검토를 실제 연결로 확인했다. [Google 검증 기록](docs/verification/2026-10-01-google-oauth-live.md)에 통과 범위와 자연 토큰 갱신·재연결·운영 전환 대기를 구분한다.
 
-**오늘의 계획(2026-10-01): [회사 OAuth 설정·실연동 검증](docs/plans/29-google-oauth-live-verification-plan.md).** 회사 Google 설정 → Gmail 수집 → Calendar 양방향 검토 → 자동 수집·재시작·재연결 → 실제 사용 대상 확인 순서와 완료 기준을 작성했다. [TODO](docs/plans/15-home-cabinet-admin-todo.md)에 실행 항목을 나눴으며, 회사 계정 연결, 시험 문의/답장 수집, 일정 생성·변경 승인/거절·삭제 왕복을 확인했다. 현재 대상은 시험 라벨·Calendar이며 운영 대상 전환과 일부 복구 검증은 남아 있다.
+**이전 계획(2026-10-01): [회사 OAuth 설정·실연동 검증](docs/plans/29-google-oauth-live-verification-plan.md).** 회사 Google 설정 → Gmail 수집 → Calendar 양방향 검토 → 자동 수집·재시작·재연결 → 실제 사용 대상 확인 순서와 완료 기준을 작성했다. [TODO](docs/plans/15-home-cabinet-admin-todo.md)에 실행 항목을 나눴으며, 회사 계정 연결, 시험 문의/답장 수집, 일정 생성·변경 승인/거절·삭제 왕복을 확인했다. 현재 대상은 시험 라벨·Calendar이며 운영 대상 전환과 일부 복구 검증은 남아 있다.
 
 **현재 작업(2026-09-30): [Gmail 문의 → 회사 검토 → Google Calendar](docs/plans/28-gmail-enquiry-calendar-implementation.md) 로컬 구현·검증 완료.** [18번 후속 제품 흐름](docs/plans/18-kcp-page-prototype.md)·[25번 전체 계획](docs/plans/25-kcp-quote-to-booking-implementation.md)·[15번 TODO](docs/plans/15-home-cabinet-admin-todo.md)를 따른다. P0 명세 이후 KCP 견적 폼, 로컬 SQLite 저장, `/admin` 비공개 문의함, 회사 OAuth, Gmail 라벨 수집과 제안 일정의 Calendar 양방향 검토를 구현했다. 코드 검사·대체 전송 테스트 23개·실제 브라우저·재시작 보존 확인은 [검증 기록](docs/verification/2026-09-30-gmail-calendar.md)을 따른다. 9월 30일 당시 실제 Google 연결은 회사 OAuth 클라이언트 설정 대기였으며, 최신 상태는 위 10월 1일 항목을 따른다. 설정 방법·이번 구현 범위는 28번에 정리한다.
 
-연동 계정은 `Lnkgroupsydney@gmail.com`이며 공개 문의 이메일과 구분한다. Google에서의 수정은 검증 후 앱에 반영한다. **마지막 작업 후 프로젝트 Complete → 인보이스 발행 → 실제 발행일 +3 달력일 납기(Sydney)** 정책은 [27번](docs/plans/27-kcp-google-calendar-sync.md)에 보존한다. 청구 실행·사진·AI·Resend는 후속 단계다. 근무시간·기간 산식은 보류하고 정찰제는 가격 수령 후 진행한다. 지금 저장하는 일정은 고객이 수락한 확정 예약이 아니다. 과거 Cabinet ‘약 1주’는 소개·문의 접수 목표이며 전체 기능의 납기가 아니다.
+연동 계정은 `Lnkgroupsydney@gmail.com`이며 공개 문의 이메일과 구분한다. Google에서의 수정은 검증 후 앱에 반영한다. **마지막 작업 후 프로젝트 Complete → 인보이스 발행 → 실제 발행일 +3 달력일 납기(Sydney)** 정책은 [27번](docs/plans/27-kcp-google-calendar-sync.md)에 보존한다. 청구 실행·사진·AI·운영 고객 이메일은 후속 단계다. Resend는 위 사용자 승인 회사 전용 데모 범위에서 먼저 연결한다. 근무시간·기간 산식은 보류하고 정찰제는 가격 수령 후 진행한다. 지금 저장하는 일정은 고객이 수락한 확정 예약이 아니다. 과거 Cabinet ‘약 1주’는 소개·문의 접수 목표이며 전체 기능의 납기가 아니다.
 
 **현재 작업(2026-09-29): KCP 시네마틱 디자인 구현·로컬 검증 완료.** 메인은 기존 서비스 소개 프로토타입으로 유지하고, **Kitchen Cabinet Painting 상세에만** 사진형 Hero, 실제 WebGL 9단계 공정과 완료 장면, 전후 비교 슬라이더, 색상·광택 미리보기를 적용했다. [최신 구현 범위](docs/plans/24-cinematic-kitchen-webgl.md), [글로벌 디자인 시스템](docs/plans/21-global-design-system.md), [실제 검증 기록](docs/verification/2026-09-29-cinematic-v3.md)을 따른다. 같은 모델의 문짝·손잡이·힌지를 분리하고 세척·국소 퍼티 보수·프라이머·두 마감 코트·재조립을 가역 스크롤로 연결했다. 모델은 사진을 참고한 건축 컨셉이며 실측 CAD나 실사 재구성은 아니다. 모바일·JavaScript/WebGL 미지원 환경에는 읽을 수 있는 사진과 본문을 제공한다. 전역 토큰과 공용 KitchenScene 렌더러를 콘텐츠에서 분리했다. 현재 프로덕션 미리보기는 [KCP](http://127.0.0.1:3002/services/cabinet-painting) / [메인](http://127.0.0.1:3002)이다.
 
@@ -23,6 +29,8 @@ L&K Group의 서비스 홈페이지, 온라인 쇼핑몰, ERP·CRM 운영관리 
 Cabinet 상세 `/services/cabinet-painting`의 6개 서비스·적합성·포함/제외·공정·컨셉 사례·FAQ 최초 구성은 [SEO·지역 개정](docs/plans/19-kcp-seo-content-and-service-area.md)과 [이전 검증](docs/verification/2026-09-27-kcp-seo-content.md)을 참조한다. 회사가 제공한 최신 서비스 지역은 기존 지도 조사의 제한적인 후보 목록보다 우선한다.
 
 회사 자료·실제 이미지 반영 후 lint·타입·production build와 1440·768·390·320px 메인 브라우저 확인을 마쳤다. 회사 자료 반영 당시 기록은 [이전 검증](docs/verification/2026-09-27-home-company-content.md), 이번 디자인 검증은 [2026-09-28 기록](docs/verification/2026-09-28-scroll-storytelling.md)을 따른다.
+
+2026-10-02 Google 복구 시험에서는 앱 없는 worker 신규 수신·중단 중 답장 복구·중복 방지·동시 실행 잠금을 확인한 뒤 해당 worker를 종료했다. 이후 [데모 검증](docs/verification/2026-10-02-demo-quote-email-calendar.md)에서 반복 worker를 다시 실행했으며 최종 기록은 로컬 앱 3002·반복 worker 실행, 임시 3003 서버 종료다. 클라우드 상시 운영은 별도다.
 
 ## 로컬 앱 실행
 
@@ -75,6 +83,8 @@ npm run dev -- --port 3002
 | [28 Gmail 문의·Calendar 구현](docs/plans/28-gmail-enquiry-calendar-implementation.md) | 로컬 요청 저장·관리, Gmail 라벨 수집, Calendar 변경 검토, 회사 OAuth 최초 설정 |
 | [29 회사 OAuth 실연동 검증 계획](docs/plans/29-google-oauth-live-verification-plan.md) | Google 설정·Gmail 수집·Calendar 왕복·자동 수집·재연결·사용 전환 순서와 완료 기준 |
 | [30 회사 Supabase 저장소 연결](docs/plans/30-supabase-storage-integration.md) | 지정 프로젝트·환경변수·비공개 테이블/RPC·저장소 선택·실연결 검증 |
+| [31 Google 연동 복구·자동 수집](docs/plans/31-google-integration-recovery-and-operation-plan.md) | 10월 2일 OAuth 상태·재연결·worker 중단 복구·남은 예외·DB 점검·운영 전환 계획 |
+| [32 고객 견적·서명·제출](docs/plans/32-client-quote-signature-submission.md) | 고객 선저장·approve·예약일 차단·서명 제출·메일→Calendar·회사 최종 확정 계약 |
 
 클라이언트 전달본은 [Word 구현계획서](deliverables/LK_Group_Client_Implementation_Plan_KO.docx)이며, 편집 가능한 원문은 [클라이언트 제안서 Markdown](docs/client-proposal.md)이다. 기술 기준은 위 개발 문서가 원본이며, 클라이언트 문서를 변경할 때 관련 개발 문서도 함께 갱신한다. 문서 자체의 확인 결과는 [검증 기록](docs/document-validation.md)에 정리했다.
 

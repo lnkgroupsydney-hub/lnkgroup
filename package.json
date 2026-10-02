@@ -16,7 +16,7 @@
     "check": "npm run lint && npm run typecheck && npm run build",
     "setup:local": "node scripts/setup-local.mjs",
     "integrations:worker": "node --experimental-strip-types scripts/integrations-worker.mjs",
-    "test:operations": "node --experimental-strip-types --test src/modules/operations/operations.test.mts src/modules/gmail-intake/infrastructure/gmail-reader.test.ts src/modules/operations/supabase.test.mts src/modules/operations/sync-result.test.mts",
+    "test:operations": "node --experimental-strip-types --test src/modules/operations/operations.test.mts src/modules/gmail-intake/infrastructure/gmail-reader.test.ts src/modules/operations/supabase.test.mts src/modules/operations/sync-result.test.mts src/modules/operations/oauth-recovery.test.mts src/modules/enquiries/quote-draft.test.mts src/modules/enquiries/domain/availability.test.mts src/modules/enquiries/demo-submission-db.test.mts src/modules/enquiries/infrastructure/demo-email.test.mts src/modules/enquiries/demo-api.test.mts",
     "test:supabase:connection": "node scripts/verify-supabase.mjs"
   },
   "dependencies": {

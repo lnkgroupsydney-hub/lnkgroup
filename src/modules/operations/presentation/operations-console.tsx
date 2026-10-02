@@ -2,8 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
-import type { ChangeRequest, Enquiry, OperationsDashboard } from "../domain/contracts";
-import { syncFailureMessage } from "../domain/sync-result";
+import type { ChangeRequest, Enquiry, GoogleConnectionState, OperationsDashboard } from "../domain/contracts";
+import { summarizeSyncError, summarizeSyncResult } from "../domain/sync-result";
 import "./operations-console.css";
 
 type Session = {
@@ -17,6 +17,20 @@ type Session = {
 };
 type CalendarOption = { id: string; summary: string; accessRole: string };
 type GmailLabel = { id: string; name: string; type: string };
+class RequestFailure extends Error {
+  status: number;
+  constructor(message: string, status: number) { super(message); this.status = status; }
+}
+const connectionLabels: Record<GoogleConnectionState, string> = {
+  not_connected: "Not connected", unverified: "Connection saved · verification pending",
+  ready: "Last check succeeded", target_required: "Choose a sync target",
+  reconnect_required: "Reconnect company Google account", retrying: "Temporary failure · retry pending",
+  configuration_error: "Configuration needs attention", permission_denied: "Permissions need attention",
+  partial: "More pages waiting to sync",
+};
+function connectionLabel(status: GoogleConnectionState | undefined, connected: boolean) {
+  return status ? connectionLabels[status] : connected ? "Connection saved" : "Not connected";
+}
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(path, { cache: "no-store", credentials: "same-origin", ...init });
@@ -25,7 +39,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   if (!response.ok) {
     const message = result && typeof result === "object" && "error" in result && typeof result.error === "string"
       ? result.error : `Request failed (HTTP ${response.status}).`;
-    throw new Error(message);
+    throw new RequestFailure(message, response.status);
   }
   return result as T;
 }
@@ -69,6 +83,7 @@ export function OperationsConsole() {
   const [syncResult, setSyncResult] = useState("");
   const callbackUrl = useSyncExternalStore(noOriginSubscription, () => `${window.location.origin}/api/google/callback`, () => "<APP_BASE_URL>/api/google/callback");
   const syncInFlight = useRef(false);
+  const nextAutomaticAttempt = useRef(0);
   const selectionsInitialized = useRef(false);
 
   const loadDashboard = useCallback(async () => {
@@ -83,7 +98,7 @@ export function OperationsConsole() {
   }, []);
 
   const loadOptions = useCallback(async (data: OperationsDashboard) => {
-    if (!data.calendar.connected) { setCalendars([]); setLabels([]); return; }
+    if (!data.calendar.connected && !data.gmail.connected) { setCalendars([]); setLabels([]); return; }
     const results = await Promise.allSettled([
       request<{ calendars: CalendarOption[] }>("/api/operations/calendars"),
       request<{ labels: GmailLabel[] }>("/api/operations/gmail/labels"),
@@ -113,37 +128,38 @@ export function OperationsConsole() {
   }, [loadDashboard, loadOptions]);
 
   const doSync = useCallback(async (automatic: boolean) => {
-    if (syncInFlight.current) return;
+    if (syncInFlight.current || (automatic && Date.now() < nextAutomaticAttempt.current)) return;
     syncInFlight.current = true;
     setLastAttempt(new Date().toISOString());
     setBusy("sync");
     if (!automatic) { setError(""); setNotice(""); }
     try {
       const result = await post("/api/operations/sync");
-      const data = await loadDashboard();
-      const failure = syncFailureMessage(result) || [data.calendar.error, data.gmail.error].filter(Boolean).join(" ");
-      if (failure) {
+      await loadDashboard();
+      const outcome = summarizeSyncResult(result);
+      nextAutomaticAttempt.current = Date.now() + outcome.retryAfterMs;
+      setSyncResult(`${timeLabel(new Date().toISOString())} · ${outcome.message}`);
+      if (outcome.state === "failed") {
         setNotice("");
-        setSyncResult(`Last sync failed: ${failure}`);
-        setError(failure);
+        setError(outcome.message);
         return;
       }
       setError("");
-      setSyncResult(`Last sync completed ${timeLabel(new Date().toISOString())}. Calendar and Gmail status is shown below.`);
-      if (!automatic) setNotice("Sync completed. Review any pending changes before applying them.");
+      if (!automatic) setNotice(outcome.message);
     } catch (cause) {
-      const message = cause instanceof Error ? cause.message : "Sync failed.";
+      const outcome = summarizeSyncError(cause);
+      nextAutomaticAttempt.current = Date.now() + outcome.retryAfterMs;
       setNotice("");
-      setSyncResult(`Last sync failed: ${message}`);
-      setError(message);
+      setSyncResult(outcome.message);
+      setError(outcome.state === "failed" ? outcome.message : "");
     } finally { setBusy(""); syncInFlight.current = false; }
   }, [loadDashboard]);
 
   useEffect(() => {
-    if (!session?.authenticated || !dashboard?.calendar.connected || (!dashboard.calendar.selectedCalendarId && !dashboard.gmail.selectedLabelId)) return;
+    if (!session?.authenticated || !dashboard || (!dashboard.calendar.connected && !dashboard.gmail.connected) || (!dashboard.calendar.selectedCalendarId && !dashboard.gmail.selectedLabelId)) return;
     const timer = window.setInterval(() => { void doSync(true); }, 60_000);
     return () => window.clearInterval(timer);
-  }, [session?.authenticated, dashboard?.calendar.connected, dashboard?.calendar.selectedCalendarId, dashboard?.gmail.selectedLabelId, doSync]);
+  }, [session?.authenticated, dashboard, doSync]);
 
   async function login(event: React.FormEvent) {
     event.preventDefault();
@@ -236,21 +252,24 @@ export function OperationsConsole() {
         <div className="operations-grid">
           <section className="operations-panel"><h2>Company Google connection</h2>
             <p>Signed in as owner via {session.mode === "google" ? "Google" : "local access"}. Connect only <strong>{session.ownerEmail}</strong> and verify the account on Google&apos;s consent screen.</p>
-            <p>Connection: <strong>{dashboard.calendar.connected ? `Connected as ${formatUnknown(dashboard.calendar.email)}` : "Not connected"}</strong></p>
-            {session.googleConfigured ? <a className="operations-button" href="/api/google/connect">Connect company Google account</a> : <p>Google OAuth is not configured yet. Set the server environment shown below.</p>}
+            <p>Company account: <strong>{dashboard.calendar.email ?? "Not connected"}</strong></p>
+            <p>Connection: <strong>{connectionLabel(dashboard.calendar.status, dashboard.calendar.connected)}</strong></p>
+            {session.googleConfigured ? <a className="operations-button" href="/api/google/connect">{dashboard.calendar.status === "reconnect_required" || dashboard.gmail.status === "reconnect_required" ? "Reconnect company Google account" : "Connect company Google account"}</a> : <p>Google OAuth is not configured yet. Set the server environment shown below.</p>}
             <p className="operations-small">The connection reads the chosen Gmail enquiry label and can write to the calendar you explicitly select.</p>
           </section>
           <SetupPanel session={session} callbackUrl={callbackUrl} />
         </div>
         <div className="operations-grid">
           <section className="operations-panel"><h2>Calendar</h2>
-            <p>Status: <strong>{dashboard.calendar.connected ? "Connected" : "Waiting for Google connection"}</strong>. Selected: {formatUnknown(calendars.find((item) => item.id === dashboard.calendar.selectedCalendarId)?.summary ?? dashboard.calendar.selectedCalendarId)}.</p>
+            <p>Status: <strong>{connectionLabel(dashboard.calendar.status, dashboard.calendar.connected)}</strong>. Selected: {formatUnknown(calendars.find((item) => item.id === dashboard.calendar.selectedCalendarId)?.summary ?? dashboard.calendar.selectedCalendarId)}.</p>
+            <p>Last checked: {timeLabel(dashboard.calendar.checkedAt ?? null)}.</p>
             <p>Last synced: {timeLabel(dashboard.calendar.lastSyncedAt)}.</p>
             {dashboard.calendar.error && <p className="operations-error" role="alert">{dashboard.calendar.error}</p>}
             <label>Company-owned calendar<select value={calendarId} onChange={(event) => setCalendarId(event.target.value)} disabled={!dashboard.calendar.connected}><option value="">Choose a calendar</option>{calendars.map((item) => <option key={item.id} value={item.id} disabled={item.accessRole !== "owner"}>{item.summary} ({item.accessRole})</option>)}</select></label>
             <button type="button" onClick={saveCalendar} disabled={!dashboard.calendar.connected || Boolean(busy)}>{busy === "calendar" ? "Saving…" : "Save calendar"}</button>
           </section>
           <section className="operations-panel"><h2>Gmail enquiry intake</h2>
+            <p>Status: <strong>{connectionLabel(dashboard.gmail.status, dashboard.gmail.connected)}</strong>. Last checked: {timeLabel(dashboard.gmail.checkedAt ?? null)}.</p>
             <p>Create a dedicated enquiry label in the company Gmail account, then apply it to relevant messages or make a Gmail filter. Only messages in the chosen label are read into this preview.</p>
             <p>Selected label: <strong>{formatUnknown(labels.find((item) => item.id === dashboard.gmail.selectedLabelId)?.name ?? dashboard.gmail.selectedLabelId)}</strong>. Last synced: {timeLabel(dashboard.gmail.lastSyncedAt)}.</p>
             {dashboard.gmail.error && <p className="operations-error" role="alert">{dashboard.gmail.error}</p>}
@@ -269,9 +288,9 @@ export function OperationsConsole() {
           </section>
         </div>
         <section className="operations-panel operations-sync"><h2>Sync and review</h2>
-          <p>Use Sync now to read labelled Gmail enquiries and Google Calendar changes. While this dashboard is open and a Gmail label or calendar is selected, it tries again every 60 seconds. Close the page and this polling stops.</p>
+          <p>Use Sync now to read labelled Gmail enquiries and Google Calendar changes. While this dashboard is open, it normally tries again every 60 seconds. Connection or configuration problems pause retries for five minutes. Close the page and this polling stops.</p>
           <p>Last attempt: {timeLabel(lastAttempt)}. {syncResult}</p>
-          <button type="button" onClick={() => void doSync(false)} disabled={Boolean(busy) || !dashboard.calendar.connected}>{busy === "sync" ? "Syncing…" : "Sync now"}</button>
+          <button type="button" onClick={() => void doSync(false)} disabled={Boolean(busy) || (!dashboard.calendar.connected && !dashboard.gmail.connected)}>{busy === "sync" ? "Syncing…" : "Sync now"}</button>
           <button type="button" className="operations-button-secondary" onClick={() => void loadDashboard().then(loadOptions).catch((cause) => setError(cause instanceof Error ? cause.message : "Refresh failed."))} disabled={Boolean(busy)}>Refresh records</button>
         </section>
         <section className="operations-panel"><h2>Calendar changes to review ({dashboard.changes.length})</h2>

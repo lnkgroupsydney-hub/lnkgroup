@@ -52,6 +52,8 @@ export interface ChangeRequest {
   createdAt: string
 }
 
+export type GoogleConnectionState = 'not_connected' | 'unverified' | 'ready' | 'target_required' | 'reconnect_required' | 'retrying' | 'configuration_error' | 'permission_denied' | 'partial'
+
 export interface CalendarConnectionStatus {
   configured: boolean
   connected: boolean
@@ -59,11 +61,13 @@ export interface CalendarConnectionStatus {
   selectedCalendarId: string | null
   lastSyncedAt: string | null
   error: string | null
+  status?: GoogleConnectionState
+  checkedAt?: string | null
 }
 
 export interface OperationsDashboard {
   enquiries: Enquiry[]
   calendar: CalendarConnectionStatus
-  gmail: { configured: boolean; connected: boolean; selectedLabelId: string | null; lastSyncedAt: string | null; error: string | null; quarantine: { messageId:string; reason:'invalid_response'|'payload_too_large'; lastSeenAt:string }[] }
+  gmail: { configured: boolean; connected: boolean; selectedLabelId: string | null; lastSyncedAt: string | null; error: string | null; status?: GoogleConnectionState; checkedAt?: string | null; quarantine: { messageId:string; reason:'invalid_response'|'payload_too_large'; lastSeenAt:string }[] }
   changes: ChangeRequest[]
 }

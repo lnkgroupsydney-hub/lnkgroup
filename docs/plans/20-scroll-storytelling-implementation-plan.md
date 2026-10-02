@@ -199,7 +199,7 @@ AssetRef는 src/크기/alt/caption/provenance와 필요 시 표현용 kind를 �
 
 ## 10. 단계별 구현·검수 단위
 
-계획·디자인·판정은 Astra xhigh, 코드·테스트 작성은 Sol xhigh로 맡기는 기존 분업을 따른다.
+계획·디자인·판정·코드·테스트 작성의 모델과 effort는 [개발 운영](13-ai-development-workflow.md)의 사용자 선택·에이전트 상속 원칙을 따른다. Sol 모델을 명시할 때는 `gpt-6.1-sol`을 사용한다.
 
 | 단계 | 실제 작업 | 완료 판정 |
 | --- | --- | --- |

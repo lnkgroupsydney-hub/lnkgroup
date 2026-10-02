@@ -246,3 +246,47 @@ test("overlarge and cyclic pages fail visibly instead of silently skipping mail"
     (error: unknown) => error instanceof GmailApiError && error.code === "invalid_response",
   );
 });
+
+test("transport authentication failures retain only allowlisted codes and safe messages", async () => {
+  const cases = [
+    ["google_reconnect_required", false], ["google_temporary", true],
+    ["google_configuration", false], ["google_permission_denied", false],
+    ["google_invalid_response", false], ["google_not_connected", false],
+    ["google_connection_changed", true], ["private-provider-code", true],
+  ] as const;
+  for (const [code, retryable] of cases) {
+    const request: AuthenticatedGmailRequest = async () => {
+      throw Object.assign(new Error("private body token=secret"), { code, status: 503 });
+    };
+    await assert.rejects(listGmailLabels({ request }), (error: unknown) => {
+      assert.ok(error instanceof GmailApiError);
+      assert.equal(error.code, code === "private-provider-code" ? "network_error" : code);
+      assert.equal(error.retryable, retryable);
+      assert.doesNotMatch(error.message, /private|secret/);
+      return true;
+    });
+  }
+});
+
+test("only a confirmed invalid saved page token receives the cursor recovery code", async () => {
+  const cases = [
+    { status: 400, pageToken: "expired", details: { message: "Invalid pageToken" }, code: "gmail_invalid_page_token" },
+    { status: 400, pageToken: "expired", details: { errors: [{ location: "pageToken", reason: "invalidArgument" }] }, code: "gmail_invalid_page_token" },
+    { status: 400, pageToken: undefined, details: { message: "Invalid pageToken" }, code: "http_error" },
+    { status: 400, pageToken: "expired", details: { message: "Invalid Argument" }, code: "http_error" },
+    { status: 400, pageToken: "expired", details: { errors: [{ location: "labelIds", reason: "invalidArgument" }] }, code: "http_error" },
+    { status: 429, pageToken: "expired", details: { message: "Invalid pageToken" }, code: "rate_limited" },
+    { status: 503, pageToken: "expired", details: { message: "Invalid pageToken" }, code: "server_error" },
+    { status: 400, pageToken: "expired", details: { message: "Invalid pageToken", padding: "x".repeat(20_000) }, code: "http_error" },
+  ];
+  for (const { status, pageToken, details, code } of cases) {
+    const request: AuthenticatedGmailRequest = async (path) => path === "/labels"
+      ? Response.json({ labels }) : Response.json({ error: details }, { status });
+    await assert.rejects(readEnquiryMessagePage({ request, labelId: "Label_enquiries", pageToken }), (error: unknown) => {
+      assert.ok(error instanceof GmailApiError);
+      assert.equal(error.code, code);
+      assert.doesNotMatch(error.message, /expired|Invalid Argument|padding/);
+      return true;
+    });
+  }
+});

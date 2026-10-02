@@ -8,6 +8,8 @@ import * as calendar from './infrastructure/supabase-calendar.ts'
 import {listGmailLabels,readEnquiryMessagePage} from '../gmail-intake/index.ts'
 import {randomUUID} from 'node:crypto'
 import {localEnabled} from './infrastructure/local-db.ts'
+import {googleFailure} from './infrastructure/google-errors.ts'
+import {connectionState,googleHealthCommand,recordGoogleHealth} from './infrastructure/supabase-google-health.ts'
 
 export const sessionGet=safe(async(req)=>{
  const session=await auth.getSession(req)
@@ -33,7 +35,7 @@ export const enquiryPost=safe(async(req)=>{
 export const operationsGet=safe(async(req)=>{
  await auth.requireSession(req)
  const [data,c]=await Promise.all([dashboardData(),auth.getConnection()])
- return json({enquiries:data.enquiries,changes:data.changes,storage:'supabase',calendar:{configured:googleConfigured(),connected:!!c&&googleConfigured(),email:c?.email??null,selectedCalendarId:c?.selected_calendar_id??null,lastSyncedAt:c?.calendar_last_synced_at??null,error:c?.calendar_error??null},gmail:{configured:googleConfigured(),connected:!!c&&googleConfigured(),selectedLabelId:c?.selected_gmail_label_id??null,lastSyncedAt:c?.gmail_last_synced_at??null,error:c?.gmail_error??null,quarantine:data.quarantine}})
+ return json({enquiries:data.enquiries,changes:data.changes,storage:'supabase',calendar:{configured:googleConfigured(),...connectionState(c,'calendar',googleConfigured()),email:c?.email??null,selectedCalendarId:c?.selected_calendar_id??null,lastSyncedAt:c?.calendar_last_synced_at??null},gmail:{configured:googleConfigured(),...connectionState(c,'gmail',googleConfigured()),selectedLabelId:c?.selected_gmail_label_id??null,lastSyncedAt:c?.gmail_last_synced_at??null,quarantine:data.quarantine}})
 })
 export const schedulePost=safe(async(req)=>{
  await auth.requireSession(req);const x=await body(req,3000)
@@ -48,25 +50,33 @@ export const calendarPost=safe(async(req)=>{
  await auth.requireSession(req);const x=await body(req,1000);if(typeof x.calendarId!=='string')throw new AppError(400,'Invalid calendar')
  await calendar.selectCalendar(x.calendarId);return json({selectedCalendarId:x.calendarId})
 })
-async function gmailRequest(path:string,init:RequestInit={}) {
+async function gmailRequest(path:string,init:RequestInit={},holder?:string) {
  if(!path.startsWith('/')||path.startsWith('//'))throw new AppError(400,'Invalid Gmail path')
- const {token}=await auth.accessToken()
- return fetch(`https://gmail.googleapis.com/gmail/v1/users/me${path}`,{...init,headers:{Authorization:`Bearer ${token}`,...init.headers},cache:'no-store',signal:AbortSignal.timeout(15000)})
+ return auth.googleRequest('gmail',`https://gmail.googleapis.com/gmail/v1/users/me${path}`,init,holder)
 }
 export const gmailLabelsGet=safe(async(req)=>{await auth.requireSession(req);return json({labels:await listGmailLabels({request:gmailRequest})})})
 export const gmailLabelPost=safe(async(req)=>{
  await auth.requireSession(req);const x=await body(req,1000)
  if(typeof x.labelId!=='string'||x.labelId.length>512)throw new AppError(400,'Invalid Gmail label')
  if(!(await listGmailLabels({request:gmailRequest})).some(l=>l.id===x.labelId))throw new AppError(403,'Choose a user-created Gmail label')
- await command('connection_select',{kind:'gmail',id:x.labelId});return json({selectedLabelId:x.labelId})
+ await googleHealthCommand('select',{kind:'gmail',id:x.labelId});return json({selectedLabelId:x.labelId})
 })
 async function syncGmail(holder:string) {
  const c=await auth.getConnection();if(!c?.selected_gmail_label_id)return {imported:0,scanned:0,partial:false,skipped:'No label selected'}
- const {account}=await auth.accessToken();let pageToken=c.gmail_page_token||undefined,imported=0,scanned=0
- const request=async(path:string,init?:RequestInit)=>{await calendar.renew(holder);return gmailRequest(path,init)}
+ const {account}=await auth.accessToken(holder);let pageToken=c.gmail_page_token||undefined,imported=0,scanned=0,restarted=false
+ const request=async(path:string,init?:RequestInit)=>{await calendar.renew(holder);return gmailRequest(path,init,holder)}
  for(let i=0;i<20;i++){
   await calendar.renew(holder)
-  const page=await readEnquiryMessagePage({request,labelId:c.selected_gmail_label_id,pageToken,maxResults:100,isAlreadyImported:async(message:string)=>command<boolean>('gmail_seen',{account,message})})
+  let page:Awaited<ReturnType<typeof readEnquiryMessagePage>>
+  try { page=await readEnquiryMessagePage({request,labelId:c.selected_gmail_label_id,pageToken,maxResults:100,isAlreadyImported:async(message:string)=>command<boolean>('gmail_seen',{account,message})}) }
+  catch(error) {
+   if(pageToken&&!restarted&&error&&typeof error==='object'&&'code' in error&&error.code==='gmail_invalid_page_token') {
+    await googleHealthCommand('reset_gmail_cursor',{holder,account,label:c.selected_gmail_label_id,expected_token:pageToken})
+    restarted=true;pageToken=undefined
+    continue
+   }
+   throw error
+  }
   scanned+=page.messages.length+page.alreadyImportedCount+page.missingMessageCount+page.skippedOutboundCount
   for(const item of page.rejectedMessages)await command('gmail_quarantine',{holder,account,message:item.messageId,reason:item.reason})
   for(const candidate of page.messages){await importGmail(account,candidate,holder);imported++}
@@ -78,11 +88,27 @@ async function syncGmail(holder:string) {
 }
 export async function syncAll() {
  const holder=randomUUID();if(!await command<boolean>('sync_acquire',{holder}))throw new AppError(409,'Sync already in progress')
- let gmail:unknown={imported:0,scanned:0,partial:false},cal:unknown={synced:0,conflicts:0,failed:0,scanned:0,reviewed:0,skipped:'No calendar selected'}
+ let gmail:unknown={imported:0,scanned:0,partial:false,skipped:'No label selected'},cal:unknown={synced:0,conflicts:0,failed:0,scanned:0,reviewed:0,skipped:'No calendar selected'}
+ const failureResult=async(error:unknown,kind:'gmail'|'calendar',started:number)=>{
+  const failure=googleFailure(error),current=await auth.getConnection()
+  const alreadyRecorded=error&&typeof error==='object'&&'code' in error&&String(error.code).startsWith('google_')
+  if(current&&!alreadyRecorded)await recordGoogleHealth(current,kind,failure.code,started,holder)
+  return {error:failure.message,code:failure.code,retryable:failure.retryable}
+ }
  try{
-  try{gmail=await syncGmail(holder)}catch{await command('sync_error',{kind:'gmail',holder});gmail={error:'Gmail sync failed; retry available'}}
-  const c=await auth.getConnection()
-  if(c?.selected_calendar_id)try{const pushed=await calendar.pushPending(c.selected_calendar_id,holder);const pulled=await calendar.pullChanges(c.selected_calendar_id,holder);cal={...pushed,...pulled}}catch{await command('sync_error',{kind:'calendar',holder});cal={error:'Calendar sync failed; retry available'}}
+  let started=Date.now()
+  try{
+   const result=await syncGmail(holder);gmail=result
+   const current=await auth.getConnection()
+   if(current?.selected_gmail_label_id)await recordGoogleHealth(current,'gmail',result.partial?'partial':'ready',started,holder)
+  }catch(error){gmail=await failureResult(error,'gmail',started)}
+  const c=await auth.getConnection();started=Date.now()
+  if(c?.selected_calendar_id)try{
+   const pushed=await calendar.pushPending(c.selected_calendar_id,holder)
+   const pulled=await calendar.pullChanges(c.selected_calendar_id,holder);cal={...pushed,...pulled}
+   const current=await auth.getConnection()
+   if(current)await recordGoogleHealth(current,'calendar',pushed.failed?'google_temporary':'ready',started,holder)
+  }catch(error){cal=await failureResult(error,'calendar',started)}
   return {gmail,calendar:cal}
  }finally{await command('sync_release',{holder})}
 }

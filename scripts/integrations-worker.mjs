@@ -1,5 +1,5 @@
 import { existsSync } from 'node:fs'
-import { syncFailureMessage } from '../src/modules/operations/domain/sync-result.ts'
+import { summarizeSyncError, summarizeSyncResult } from '../src/modules/operations/domain/sync-result.ts'
 
 if (existsSync('.env.local')) process.loadEnvFile('.env.local')
 if (process.env.OPERATIONS_STORE !== 'supabase' && process.env.LOCAL_OPERATIONS_ENABLED !== 'true') {
@@ -14,20 +14,31 @@ const stop = () => { running = false; finishSleep?.() }
 process.on('SIGINT', stop)
 process.on('SIGTERM', stop)
 while (running) {
-  try {
-    const result = await syncAll()
-    const failure = syncFailureMessage(result)
-    if (failure) {
-      process.stderr.write(`Integration poll failed: ${failure}${once ? '' : ' Retrying later.'}\n`)
-      if (once) process.exitCode = 1
-    } else process.stdout.write(`Integration poll completed: ${JSON.stringify(result)}\n`)
-  } catch {
-    process.stderr.write(`Integration poll failed.${once ? '' : ' Retrying later.'}\n`)
-    if (once) process.exitCode = 1
+  let deliveryFailed = false
+  if (process.env.QUOTE_DEMO_ENABLED === 'true') {
+    try {
+      const { runDemoDelivery } = await import('../src/modules/enquiries/infrastructure/demo-email.ts')
+      const delivery = await runDemoDelivery({limit:1})
+      deliveryFailed = delivery.failed > 0 || delivery.retrying > 0 || delivery.reviewRequired > 0 || delivery.storageErrors > 0
+      const line = `[${new Date().toISOString()}] Demo delivery: claimed ${delivery.claimed}, accepted ${delivery.accepted}, Calendar queued ${delivery.calendarQueued}, retrying ${delivery.retrying}, failed ${delivery.failed}, review required ${delivery.reviewRequired}.\n`
+      if (deliveryFailed) process.stderr.write(line)
+      else process.stdout.write(line)
+    } catch {
+      deliveryFailed = true
+      process.stderr.write('Demo delivery failed; pending work remains for retry or review.\n')
+    }
   }
-  if (once) break
+  if (!running) break
+  let outcome
+  try { outcome = summarizeSyncResult(await syncAll()) }
+  catch (error) { outcome = summarizeSyncError(error) }
+  const retry = once || !running ? '' : ` Next poll in ${outcome.retryAfterMs / 1000} seconds.`
+  const line = `[${new Date().toISOString()}] Integration poll ${outcome.state}: ${outcome.message}${retry}\n`
+  if (outcome.state === 'failed') process.stderr.write(line)
+  else process.stdout.write(line)
+  if (once) { process.exitCode = deliveryFailed ? 1 : outcome.exitCode; break }
   if (running) await new Promise((resolve) => {
-    const timer = setTimeout(resolve, 60000)
+    const timer = setTimeout(resolve, outcome.retryAfterMs)
     finishSleep = () => { clearTimeout(timer); resolve() }
   })
   finishSleep = null

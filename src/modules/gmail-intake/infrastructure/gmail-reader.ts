@@ -20,7 +20,15 @@ export type GmailErrorCode =
   | "network_error"
   | "invalid_response"
   | "payload_too_large"
-  | "invalid_label";
+  | "invalid_label"
+  | "gmail_invalid_page_token"
+  | "google_reconnect_required"
+  | "google_temporary"
+  | "google_configuration"
+  | "google_permission_denied"
+  | "google_invalid_response"
+  | "google_not_connected"
+  | "google_connection_changed";
 
 export class GmailApiError extends Error {
   readonly code: GmailErrorCode;
@@ -58,6 +66,12 @@ const MAX_MESSAGE_JSON_BYTES = 3_000_000;
 const MAX_PARTS = 200;
 const MAX_BODY_BYTES = 100_000;
 const MAX_BODY_CHARS = 12_000;
+const MAX_ERROR_JSON_BYTES = 16_384;
+const GOOGLE_TRANSPORT_CODES = new Set<GmailErrorCode>([
+  "google_reconnect_required", "google_temporary", "google_configuration",
+  "google_permission_denied", "google_invalid_response", "google_not_connected",
+  "google_connection_changed",
+]);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -86,14 +100,44 @@ async function requestJson(
   path: string,
   stage: GmailApiError["stage"],
   maxBytes: number,
+  hasPageToken = false,
 ): Promise<unknown> {
   let response: Response;
   try {
     response = await request(path, { method: "GET" });
-  } catch {
+  } catch (error) {
+    if (isRecord(error) && typeof error.code === "string" &&
+        GOOGLE_TRANSPORT_CODES.has(error.code as GmailErrorCode)) {
+      const code = error.code as GmailErrorCode;
+      throw new GmailApiError(code, stage,
+        typeof error.status === "number" && Number.isInteger(error.status) ? error.status : null,
+        code === "google_temporary" || code === "google_connection_changed");
+    }
     throw new GmailApiError("network_error", stage, null, true);
   }
-  if (!response.ok) throw apiError(response.status, stage);
+  if (!response.ok) {
+    if (response.status === 400 && stage === "list" && hasPageToken) {
+      let details: unknown;
+      try { details = await readBoundedJson(response, stage, MAX_ERROR_JSON_BYTES); } catch { /* Keep the original HTTP classification. */ }
+      if (invalidPageToken(details)) throw new GmailApiError("gmail_invalid_page_token", stage, 400, false);
+    }
+    throw apiError(response.status, stage);
+  }
+  return readBoundedJson(response, stage, maxBytes);
+}
+
+function invalidPageToken(data: unknown): boolean {
+  if (!isRecord(data) || !isRecord(data.error)) return false;
+  const error = data.error;
+  const isSpecificMessage = (value: unknown) => typeof value === "string" &&
+    /^invalid page\s?token\.?$/i.test(value.trim());
+  if (isSpecificMessage(error.message)) return true;
+  return Array.isArray(error.errors) && error.errors.some((item: unknown) =>
+    isRecord(item) && (isSpecificMessage(item.message) ||
+      (item.location === "pageToken" && ["invalid", "invalidArgument", "badRequest"].includes(String(item.reason)))));
+}
+
+async function readBoundedJson(response: Response, stage: GmailApiError["stage"], maxBytes: number): Promise<unknown> {
 
   // A successful provider response still has a hard cap before JSON parsing.
   const reader = response.body?.getReader();
@@ -356,7 +400,7 @@ export async function readEnquiryMessagePage({
     includeSpamTrash: "false",
   });
   if (pageToken) params.set("pageToken", pageToken);
-  const data = await requestJson(request, `/messages?${params}`, "list", MAX_LIST_JSON_BYTES);
+  const data = await requestJson(request, `/messages?${params}`, "list", MAX_LIST_JSON_BYTES, Boolean(pageToken));
   if (!isRecord(data) || (data.messages !== undefined && !Array.isArray(data.messages))) {
     throw new GmailApiError("invalid_response", "list", 200, false);
   }

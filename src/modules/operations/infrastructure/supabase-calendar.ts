@@ -2,7 +2,9 @@ import {createHash,randomUUID} from 'node:crypto'
 import {AppError,validDate,validateProposedInstants} from '../domain/validation.ts'
 import type {Enquiry} from '../domain/contracts.ts'
 import {operationsCommand as command} from './supabase-client.ts'
-import {accessToken,getConnection} from './supabase-auth.ts'
+import {googleRequest,getConnection} from './supabase-auth.ts'
+import {GoogleIntegrationError} from './google-errors.ts'
+import {googleHealthCommand} from './supabase-google-health.ts'
 import {enquiryFromRow,getEnquiry,type CloudEnquiryRow} from './supabase-store.ts'
 type Event={id:string;etag?:string;status?:string;start?:{date?:string;dateTime?:string};end?:{date?:string;dateTime?:string};recurrence?:string[];recurringEventId?:string;extendedProperties?:{private?:Record<string,string>}}
 type Link={enquiry_id:string;event_id:string;etag:string|null;synced_revision:number}
@@ -10,12 +12,11 @@ type Change={id:string;enquiry_id:string;kind:'move'|'delete'|'invalid';proposed
 const nextDate=(date:string)=>new Date(Date.parse(`${date}T00:00:00Z`)+86400000).toISOString().slice(0,10)
 const eventId=(id:string)=>`a${createHash('sha256').update(id).digest('hex').slice(0,40)}`
 const path=(calendar:string,id?:string)=>`/calendars/${encodeURIComponent(calendar)}/events${id?`/${encodeURIComponent(id)}`:''}`
-async function request(url:string,init:RequestInit={}) {
- const {token}=await accessToken()
- return fetch(`https://www.googleapis.com/calendar/v3${url}`,{...init,headers:{Authorization:`Bearer ${token}`,...init.headers},cache:'no-store',signal:AbortSignal.timeout(15000)})
+async function request(url:string,init:RequestInit={},holder?:string) {
+ return googleRequest('calendar',`https://www.googleapis.com/calendar/v3${url}`,init,holder)
 }
-async function getEvent(calendar:string,id:string):Promise<Event|null> {
- const res=await request(path(calendar,id));if(res.status===404||res.status===410)return null
+async function getEvent(calendar:string,id:string,holder?:string):Promise<Event|null> {
+ const res=await request(path(calendar,id),{},holder);if(res.status===404||res.status===410)return null
  if(!res.ok)throw new AppError(502,'Google Calendar request failed')
  return res.json() as Promise<Event>
 }
@@ -31,7 +32,7 @@ export async function ownedCalendars() {
 }
 export async function selectCalendar(id:string) {
  if(!id||id.length>512||!(await ownedCalendars()).some(x=>x.id===id))throw new AppError(403,'Calendar is not owned by the approved account')
- await command('connection_select',{kind:'calendar',id})
+ await googleHealthCommand('select',{kind:'calendar',id})
 }
 export async function renew(holder:string) { if(!await command<boolean>('sync_renew',{holder}))throw new AppError(409,'Sync lease expired') }
 function matches(e:Enquiry,v:Event) {
@@ -51,24 +52,26 @@ export async function pushPending(calendar:string,holder:string) {
   if(!row||row.revision!==snapshot.revision||row.calendar_status==='conflict')continue
   const e=enquiryFromRow(row)
   const link=await command<Link|null>('calendar_link',{id:e.id})
-  const base={id:link?.event_id||eventId(row.event_generation===0?e.id:`${e.id}:${row.event_generation}`),visibility:'private',transparency:'transparent',status:'confirmed',recurrence:[],summary:e.startAt?`KCP provisional · ${e.reference}`:`KCP enquiry · ${e.reference}`,description:`Reference ${e.reference}. ${e.startAt?'Provisional schedule; owner review required.':'Preferred date only; no booking confirmed.'}\n${process.env.APP_BASE_URL}/admin`,extendedProperties:{private:{enquiryId:e.id,revision:String(e.revision)}}}
+  const isDemo=typeof row.payload_json.demoSubmissionId==='string'
+  const base={id:link?.event_id||eventId(row.event_generation===0?e.id:`${e.id}:${row.event_generation}`),visibility:'private',transparency:'transparent',status:'confirmed',recurrence:[],summary:isDemo?`[DEMO] Pending confirmation · ${e.reference}`:e.startAt?`KCP provisional · ${e.reference}`:`KCP enquiry · ${e.reference}`,description:`${isDemo?'Demonstration only; sample price and terms are not a real contract. ':''}Reference ${e.reference}. ${e.startAt?'Provisional schedule; owner review required.':'Preferred date only; no booking confirmed.'}\n${process.env.APP_BASE_URL}/admin`,extendedProperties:{private:{enquiryId:e.id,revision:String(e.revision)}}}
   const payload=e.startAt&&e.endAt?{...base,start:{dateTime:e.startAt,timeZone:'Australia/Sydney'},end:{dateTime:e.endAt,timeZone:'Australia/Sydney'}}:{...base,start:{date:e.preferredDate},end:{date:nextDate(e.preferredDate!)}}
   try {
    const inserting=!link?.etag
-   const res=await request(`${path(calendar,inserting?undefined:link.event_id)}?sendUpdates=none`,{method:inserting?'POST':'PATCH',headers:{'content-type':'application/json',...(!inserting?{'If-Match':link!.etag!}:{})},body:JSON.stringify(payload)})
+   const res=await request(`${path(calendar,inserting?undefined:link.event_id)}?sendUpdates=none`,{method:inserting?'POST':'PATCH',headers:{'content-type':'application/json',...(!inserting?{'If-Match':link!.etag!}:{})},body:JSON.stringify(payload)},holder)
    let event:Event
    if(inserting&&res.status===409){
-    const current=await getEvent(calendar,payload.id)
+    const current=await getEvent(calendar,payload.id,holder)
     if(!current||current.extendedProperties?.private?.enquiryId!==e.id)throw new AppError(409,'Calendar event ID conflict')
     if(current.status!=='cancelled'&&!current.recurrence?.length&&!current.recurringEventId&&matches(e,current)&&current.extendedProperties.private.revision===String(e.revision))event=current
     else {if(await conflict(e,current,holder,link?.event_id??null,true))result.conflicts++;continue}
-   }else if(!inserting&&[412,404,410].includes(res.status)){if(await conflict(e,await getEvent(calendar,payload.id),holder,link!.event_id))result.conflicts++;continue}
+   }else if(!inserting&&[412,404,410].includes(res.status)){if(await conflict(e,await getEvent(calendar,payload.id,holder),holder,link!.event_id))result.conflicts++;continue}
    else {if(!res.ok)throw new AppError(502,'Calendar sync failed');event=await res.json() as Event}
    if(!event.id||!event.etag)throw new AppError(502,'Google returned incomplete event')
    const saved=await command<boolean>('calendar_success',{holder,id:e.id,event:event.id,etag:event.etag,expected_event:link?.event_id??null,generation:row.event_generation,revision:e.revision,start:e.startAt,end:e.endAt,preferred:e.preferredDate})
    if(saved)result.synced++
-  }catch{
+  }catch(error){
    result.failed++;await command('calendar_failure',{holder,id:e.id,revision:e.revision})
+   if(error instanceof GoogleIntegrationError)throw error
   }
  }
  return result
@@ -87,7 +90,7 @@ export async function pullChanges(calendar:string,holder:string) {
  }
  while(true){
   await renew(holder);const q=new URLSearchParams({maxResults:'2500',showDeleted:'true'});if(token)q.set('syncToken',token);if(page)q.set('pageToken',page)
-  const res=await request(`${path(calendar)}?${q}`)
+  const res=await request(`${path(calendar)}?${q}`,{},holder)
   if(res.status===410&&token&&!restarted){token=null;page=undefined;restarted=true;full=true;seen.clear();await command('calendar_cursor',{holder,calendar,token:null});continue}
   if(!res.ok)throw new AppError(502,'Google Calendar request failed')
   const data=await res.json() as {items?:Event[];nextPageToken?:string;nextSyncToken?:string}
@@ -97,7 +100,7 @@ export async function pullChanges(calendar:string,holder:string) {
   }
   page=data.nextPageToken
   if(!page){
-   if(full)for(const link of links){if(seen.has(link.event_id)||!link.etag)continue;await renew(holder);await inspect(link,await getEvent(calendar,link.event_id))}
+   if(full)for(const link of links){if(seen.has(link.event_id)||!link.etag)continue;await renew(holder);await inspect(link,await getEvent(calendar,link.event_id,holder))}
    if(!data.nextSyncToken)throw new AppError(502,'Google did not provide a sync cursor')
    await command('calendar_cursor',{holder,calendar,token:data.nextSyncToken});break
   }

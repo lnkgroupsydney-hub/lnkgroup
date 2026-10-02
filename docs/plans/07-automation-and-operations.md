@@ -1,6 +1,6 @@
 # 자동화와 통합 운영
 
-**2026-09-30 KCP:** [27번 Google Calendar 명세](27-kcp-google-calendar-sync.md)에 따라 날짜·시간·기간과 청구 날짜를 자동 표시하고 양방향 수정은 검증 후 확정한다. 후속 요청으로 [28번 Gmail 문의 수집·Calendar 구현](28-gmail-enquiry-calendar-implementation.md)을 먼저 진행한다. 실행 중인 로컬 앱/worker에서 선택 라벨을 수집하고 요청/제안 일정을 동기화하는 범위다. 실제 OAuth 연결은 회사 클라이언트 준비 대기이며 자동 발송·예약 확정·청구 실행은 후속 단계다.
+**2026-10-02 KCP:** [27번 Calendar 계약](27-kcp-google-calendar-sync.md)과 [32번 고객 제출 경계](32-client-quote-signature-submission.md)를 따른다. 회사 OAuth·Gmail/Calendar 핵심 연결은 [10월 1일 기록](../verification/2026-10-01-google-oauth-live.md)에서 확인했고 오늘은 고객 초안 선저장·서비스 정보, OAuth 상태/worker 복구를 구현한다. 고객 자동 경로는 최종 서명 제출 → 비공개 quote/계약서 → 이메일 제공자 수락 → Calendar 요청이며 회사 기간·충돌 확인 후에만 예약 확정한다. 실제 AI·Resend·사진·서명·고객 달력·청구는 후속이다.
 
 ## 이벤트 중심 업무
 
@@ -8,9 +8,11 @@
 
 | 이벤트 | 자동 실행 | 예외 처리와 담당 |
 | --- | --- | --- |
-| enquiry.submitted | 접수 확인, 담당자 업무 생성 | 필수 자료 부족 → 추가 정보 요청 |
-| quote.approved | 고정 견적 링크·유효기간 발송 | 이메일 반송 → 운영자 연락처 확인 |
-| quote.accepted | 예약 화면 연결, 후속 업무 | 만료·이미 대체된 버전 → 재발행 |
+| enquiry.submitted / gmail.imported | 일반 문의 접수·담당자 검토 | 고객 최종 계약 제출 아님. 자동 견적/계약 발송·Calendar 생성 금지 |
+| quote.approved / scope.approved | 회사 승인 버전 준비 / 고객 날짜 단계 진입 | 만료·대체 버전 재확인. KCP 자동 발송/최종 서명과 분리 |
+| quote_submission.submitted | 불변 원본으로 비공개 최종 견적·서명 계약 문서 생성 | 오래된 서명/버전·예약된 날짜 거부, 생성 실패는 동일 제출 재시도 |
+| submission_documents.ready | 고객 이메일 작업 생성 | 제공자 미설정/실패/결과 불명은 Calendar 보류 |
+| submission_email.provider_accepted | 회사 Calendar에 Pending confirmation 요청 업로드 | 실제 배달/반송은 별도 상태. 중복/응답 유실은 공급자 참조로 대사 |
 | booking.confirming / confirmed | Google 작업 이벤트 반영·확정 조건 검사 후 고객·직원 확인 | 최초 연동 실패는 sync_pending/검토, 이미 확정된 예약의 후속 장애는 기존 약속 보존·재시도 |
 | calendar.change_received | 앱/Google revision 비교·변경 요청·가용성 검증 | 충돌·고객 재동의·청구 권한 필요 시 검토 큐 |
 | invoice.plan_changed / issued / payment_recorded | 승인 규칙으로 미발행 계획 날짜 계산, 발행/납기/입금 이벤트 자동 갱신 | 이미 발행된 사실 보존, Calendar 편집은 입금 증거 아님 |
@@ -22,9 +24,11 @@
 | invoice.overdue | 정해진 일정의 리마인더 | 분쟁·환불·유예 상태 → 발송 중단 |
 | automation.failed | 운영 대시보드·경고 | 담당자 수정 후 재실행·감사 기록 |
 
+위 KCP 자동 경로는 일반 문의 접수·관리자의 명시적 검토용 제안과 구분한다. 문서·메일·Calendar는 별도 outbox/중복키·실패 상태를 갖고 같은 제출로 복구한다. 반송 때문에 서명 원본이나 일정을 자동 삭제하지 않는다.
+
 이메일은 최초 승인된 템플릿을 사용한다. 서비스·키트·김치별 발신 이름과 reply-to를 정하되 실제 소유 도메인을 확인한다. 발신 도메인 SPF·DKIM·DMARC와 반송·수신거부 처리를 구성한다. 견적 수락은 이메일 링크를 통한 고객 행동이고 이메일을 보냈다는 사실만으로 성립하지 않는다.
 
-각 서비스 상세의 문의는 service_id와 담당 사업 단위를 포함해 접수한다. 고객 답장은 견적·주문 참조번호와 함께 공유 수신함으로 전달하고 초기에는 담당자가 CRM 이력에 연결한다. 자동 수신 이메일 파싱·첨부 처리까지 필요하면 메시지 ID 중복 방지·발신 위조·악성 첨부·오연결 검증을 포함해 별도 백로그로 추가한다. 대표 이메일 주소의 소유·발신 권한은 착수 때 확인한다.
+각 서비스 상세의 문의는 service_id와 담당 사업 단위를 포함해 접수한다. KCP는 선택한 회사 Gmail 라벨의 문의와 답장을 메시지 ID·대화 연결로 수집한다. 일반 서비스의 다른 수신함·자동 전달·첨부 다운로드를 함께 활성화하지 않는다. 실제 AI 입력 사진은 고객 업로드 소유/검사를 거쳐야 하며 수신 첨부를 무조건 처리하지 않는다. 대표 이메일 주소의 소유·발신 권한은 착수 때 확인한다.
 
 ## 인보이스와 입금
 
@@ -44,7 +48,8 @@ Stripe 정산 수수료와 환불·분쟁은 원 결제에 연결한다. 현금�
 | --- | --- | --- |
 | POST /api/service-area/check | 주소와 서비스 ID, rate limit | eligible/review/outside, 정책 버전, 만료 |
 | POST /api/enquiries | 입력·사진키·연락처·동의 | enquiry_id, idempotency_key |
-| POST /api/quotes/{id}/accept | 소유 확인, version, hash, 약관 확인 | acceptance_id, 이미 수락이면 동일 결과 |
+| POST /api/quotes/{id}/accept | 일반 견적 수락: 소유 확인, version, hash | acceptance_id, 이미 수락이면 동일 결과. KCP 단계 계약은 26·32번 |
+| POST /api/quote-submissions | KCP 고객 소유·현재 견적/약관/날짜·서명·중복키 | 불변 submission·pending_confirmation, outbox 원자 저장·다른 내용 충돌 |
 | POST /api/booking-holds | accepted quote, 희망 slot, resource | hold_id, expires_at, 409 충돌 |
 | POST /api/checkout | hold 또는 cart, 서버 계산 | Checkout URL, 동일 키 재호출 동일 세션 |
 | POST /api/webhooks/stripe | raw body, signature | 영속 수신 후 빠른 2xx, 중복 무해 |

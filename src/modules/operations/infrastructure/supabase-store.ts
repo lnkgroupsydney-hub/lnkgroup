@@ -2,7 +2,7 @@ import {createHash,randomUUID} from 'node:crypto'
 import type {EnquiryInput,Enquiry,ChangeRequest} from '../domain/contracts.ts'
 import {operationsCommand as command} from './supabase-client.ts'
 import {rowToEnquiry,type GmailImportedCandidate} from './store.ts'
-export type CloudEnquiryRow=Omit<Parameters<typeof rowToEnquiry>[0],'payload_json'> & {payload_json:EnquiryInput;event_generation:number}
+export type CloudEnquiryRow=Omit<Parameters<typeof rowToEnquiry>[0],'payload_json'> & {payload_json:EnquiryInput & {demoSubmissionId?:string};event_generation:number}
 export function enquiryFromRow(row:CloudEnquiryRow):Enquiry { return rowToEnquiry({...row,payload_json:JSON.stringify(row.payload_json)}) }
 export async function getEnquiry(id:string):Promise<Enquiry|null> { const row=await command<CloudEnquiryRow|null>('enquiry_get',{id}); return row?enquiryFromRow(row):null }
 export async function createEnquiry(input:EnquiryInput):Promise<Enquiry> {
