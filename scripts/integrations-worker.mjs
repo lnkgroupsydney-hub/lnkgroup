@@ -27,6 +27,17 @@ while (running) {
       deliveryFailed = true
       process.stderr.write('Demo delivery failed; pending work remains for retry or review.\n')
     }
+    try {
+      const {runBookingDelivery}=await import('../src/modules/bookings/delivery.ts')
+      const booking=await runBookingDelivery({limit:1})
+      const attention=booking.failed>0||booking.retrying>0||booking.reviewRequired>0||booking.storageErrors>0
+      deliveryFailed ||= attention
+      const line=`[${new Date().toISOString()}] Booking proposal delivery: claimed ${booking.claimed}, accepted ${booking.accepted}, retrying ${booking.retrying}, failed ${booking.failed}, review required ${booking.reviewRequired}.\n`
+      if(attention)process.stderr.write(line);else process.stdout.write(line)
+    } catch {
+      deliveryFailed=true
+      process.stderr.write('Booking proposal delivery failed; pending work remains for retry or review.\n')
+    }
   }
   if (!running) break
   let outcome

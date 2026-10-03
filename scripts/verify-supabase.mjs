@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import { parseEnv } from 'node:util'
 import { createClient } from '@supabase/supabase-js'
 
-const tables = [
+const baselineTables = [
   'lk_enquiries', 'lk_sessions', 'lk_oauth_states', 'lk_google_connection',
   'lk_calendar_links', 'lk_outbox', 'lk_change_requests', 'lk_gmail_seen',
   'lk_gmail_threads', 'lk_gmail_quarantine', 'lk_sync_lease', 'lk_rate_buckets',
@@ -14,14 +14,39 @@ const healthMigration = 'supabase/migrations/20261002100953_google_connection_he
 const draftMigration = 'supabase/migrations/20261002101142_customer_quote_drafts.sql'
 const submissionMigration = 'supabase/migrations/20261002113243_demo_quote_submissions.sql'
 const healthColumns = 'auth_health_code,auth_health_checked_at,gmail_health_code,gmail_health_checked_at,calendar_health_code,calendar_health_checked_at'
-const privateRpcProbes = [
-  { name:'lk_quote_submission', input:{command:'read',args:{owner_hash:'verification-probe'}}, rejection:'LK403', migration:submissionMigration },
-  // The unknown action is rejected before the health RPC can select or update
-  // application rows. This proves function visibility without recording health.
-  { name:'lk_google_health', input:{action:'verify_read_only',args:{}}, rejection:'LK400', migration:healthMigration },
-  // An invalid owner hash is rejected before the draft read/save branches.
-  { name:'lk_quote_draft', input:{command:'read',args:{owner_hash:'verification-probe'}}, rejection:'LK403', migration:draftMigration },
+const bookingMigration = 'supabase/migrations/20261003111254_admin_booking_confirmation.sql'
+const bookingCalendarMigration = 'supabase/migrations/20261003111541_booking_calendar_sync.sql'
+const bookingTables = {
+  lk_bookings: { migration:bookingMigration, columns:'id,revision,calendar_id,resource_id,status,confirmed_proposal_id,pending_proposal_id,sync_status,confirmed_at' },
+  lk_booking_proposals: { migration:bookingMigration, columns:'id,booking_id,revision,snapshot,snapshot_hash,segments,signature,consented_at,email_status,email_payload,email_first_attempt_at,email_provider_id,lease_generation,lease_until,confirmed_at' },
+  lk_booking_segments: { migration:bookingMigration, columns:'booking_id,segment_id,start_at,end_at' },
+  lk_booking_outbox: { migration:bookingMigration, columns:'booking_id,revision,proposal_id,updated_at' },
+  lk_booking_calendar_links: { migration:bookingCalendarMigration, columns:'event_id,booking_id,proposal_id,segment_id,kind,calendar_id,etag,synced_revision' },
+  lk_booking_calendar_retire_intents: { migration:bookingCalendarMigration, columns:'event_id,booking_id,new_proposal_id,booking_revision,expected_provider_etag' },
+  lk_booking_calendar_changes: { migration:bookingCalendarMigration, columns:'id,booking_id,proposal_id,segment_id,event_id,provider_etag,booking_revision,kind,status' },
+}
+const baselineRpcProbes = [
+  { name:'lk_operations_command', input:{command:'verify_read_only_unknown',args:{}}, rejection:'LK400', migration:'supabase/migrations/20261001100420_operations_supabase.sql' },
+  { name:'lk_quote_submission', input:{command:'verify_read_only_unknown',args:{}}, rejection:'LK400', migration:submissionMigration },
+  { name:'lk_google_health', input:{action:'verify_read_only_unknown',args:{}}, rejection:'LK400', migration:healthMigration },
+  // Draft hash validation precedes dispatch. A valid, synthetic hash permits only
+  // the unknown-command branch, which raises before any draft row is accessed.
+  { name:'lk_quote_draft', input:{command:'verify_read_only_unknown',args:{owner_hash:'0'.repeat(64)}}, rejection:'LK400', migration:draftMigration },
 ]
+const bookingRpcProbes = [
+  { name:'lk_booking_command', input:{command:'verify_read_only_unknown',args:{}}, rejection:'LK400', migration:bookingMigration },
+  { name:'lk_booking_calendar', input:{command:'verify_read_only_unknown',args:{}}, rejection:'LK400', migration:bookingCalendarMigration },
+  // This SQL helper has no dispatch argument. PostgreSQL rejects the invalid UUID
+  // before executing its read-only body; no real submission identifier is sent.
+  { name:'lk_booking_detail', input:{booking_id:'verify-read-only-invalid-uuid'}, rejection:'22P02', migration:bookingMigration },
+]
+function tableMigration(table) {
+  return bookingTables[table]?.migration ?? (table === 'lk_quote_submissions' ? submissionMigration : table === 'lk_quote_drafts' ? draftMigration : 'supabase/migrations/20261001100420_operations_supabase.sql')
+}
+function schemaRequired(migrations) {
+  const required = [...new Set(migrations)]
+  fail(`Required schema is missing or not visible. Compare these migration files with the company schema and apply only missing changes: ${required.join(', ')}. Do not reapply earlier migrations or run db push blindly. Use --baseline to check the previous 14-table schema separately.`)
+}
 
 class VerificationFailure extends Error {}
 function fail(message) { throw new VerificationFailure(message) }
@@ -35,6 +60,15 @@ function client(url, key) {
 }
 
 async function main() {
+  const flags = process.argv.slice(2)
+  if (flags.some(flag => !['--baseline','--help'].includes(flag))) fail('Unknown option. Use --baseline for the previous schema or --help for usage.')
+  if (flags.includes('--help')) {
+    process.stdout.write('Usage: node scripts/verify-supabase.mjs [--baseline]\nDefault: verify the company booking schema, private RPCs and denied public access.\n--baseline: verify only the previous 14 private tables and 4 RPCs.\nThis command never applies migrations, writes application data or prints credentials/rows.\n')
+    return
+  }
+  const baseline = flags.includes('--baseline')
+  const tables = baseline ? baselineTables : [...baselineTables,...Object.keys(bookingTables)]
+  const privateRpcProbes = baseline ? baselineRpcProbes : [...baselineRpcProbes,...bookingRpcProbes]
   // Parse as data, with explicit environment values taking precedence. Never
   // evaluate .env as shell code or print its values, provider errors, or rows.
   if (existsSync('.env.local')) {
@@ -62,7 +96,7 @@ async function main() {
   const health = await server.rpc('lk_operations_command', { command:'health', args:{} })
   if (health.error) {
     if (missingSchemaCodes.has(health.error.code)) {
-      fail('Operations schema is not installed or visible yet. Apply supabase/migrations/20261001100420_operations_supabase.sql in the company project, then rerun this check.')
+      schemaRequired(['supabase/migrations/20261001100420_operations_supabase.sql'])
     }
     if ([401, 403].includes(health.status)) fail('Server access was denied. Check the server key and company project settings.')
     fail('Server health check failed. Check the network, server key, and database setup.')
@@ -70,12 +104,9 @@ async function main() {
   if (health.data?.ready !== true || health.data?.schemaVersion !== 1) fail('Operations schema version is not supported by this app.')
   pass('Server health RPC is ready; schema version 1.')
 
-  const privateReads = await Promise.all(tables.map(table => server.from(table).select('*').limit(0)))
-  const missingTableIndex = privateReads.findIndex(result => result.error && missingSchemaCodes.has(result.error.code))
-  if (missingTableIndex >= 0) {
-    const migration = tables[missingTableIndex] === 'lk_quote_submissions' ? submissionMigration : tables[missingTableIndex] === 'lk_quote_drafts' ? draftMigration : 'supabase/migrations/20261001100420_operations_supabase.sql'
-    fail(`A required private table is missing. Review ${migration} in the company project before using the app.`)
-  }
+  const privateReads = await Promise.all(tables.map(table => server.from(table).select(bookingTables[table]?.columns ?? '*').limit(0)))
+  const missingTables = privateReads.flatMap((result,index) => result.error && (missingSchemaCodes.has(result.error.code) || ['42703','PGRST204'].includes(result.error.code)) ? [tables[index]] : [])
+  if (missingTables.length) schemaRequired(missingTables.map(tableMigration))
   if (privateReads.some(result => result.error || !Array.isArray(result.data) || result.data.length !== 0)) {
     fail('Server read permissions are incomplete for the private operations tables.')
   }
@@ -84,24 +115,31 @@ async function main() {
   const connectionColumns = await server.from('lk_google_connection').select(healthColumns).limit(0)
   if (connectionColumns.error) {
     if (missingSchemaCodes.has(connectionColumns.error.code) || ['42703','PGRST204'].includes(connectionColumns.error.code)) {
-      fail(`Google recovery columns are missing or not visible. Apply ${healthMigration} in the company project, then rerun this check.`)
+      schemaRequired([healthMigration])
     }
     fail('The six Google recovery columns could not be checked. Review server access and network connectivity.')
   }
   if (!Array.isArray(connectionColumns.data) || connectionColumns.data.length !== 0) fail('Google recovery column verification returned an unexpected response.')
   pass('All six Google recovery columns are available with a zero-row limit.')
 
+  if (!baseline) {
+    const readyColumn = await server.from('lk_bookings').select('calendar_ready_revision').limit(0)
+    if (readyColumn.error && (missingSchemaCodes.has(readyColumn.error.code) || ['42703','PGRST204'].includes(readyColumn.error.code))) schemaRequired([bookingCalendarMigration])
+    if (readyColumn.error || !Array.isArray(readyColumn.data) || readyColumn.data.length !== 0) fail('The booking Calendar readiness column could not be verified.')
+    pass('The booking Calendar readiness column is available with a zero-row limit.')
+  }
+
   const serverProbes = await Promise.all(privateRpcProbes.map(probe => server.rpc(probe.name, probe.input)))
   for (const [index,result] of serverProbes.entries()) {
     const probe = privateRpcProbes[index]
     if (result.error && missingSchemaCodes.has(result.error.code)) {
-      fail(`A required private RPC is missing or not visible. Apply ${probe.migration} in the company project, then rerun this check.`)
+      schemaRequired([probe.migration])
     }
     if (result.error?.code !== probe.rejection) {
       fail(`The read-only rejection probe for ${probe.name} did not match its contract. Review ${probe.migration} and server access.`)
     }
   }
-  pass('Google recovery, draft and submission RPCs exist and reject non-mutating probes as expected.')
+  pass(`All ${privateRpcProbes.length} private RPCs exist and reject non-mutating probes as expected.`)
 
   // Confirm this public key is valid first; an invalid key must not masquerade
   // as successful table protection. The returned public settings are discarded.
@@ -117,7 +155,6 @@ async function main() {
     fail('Public table access did not return the expected permission denial. Review API permissions and network connectivity.')
   }
   const publicRpcs = await Promise.all([
-    publicClient.rpc('lk_operations_command', { command:'health', args:{} }),
     ...privateRpcProbes.map(probe => publicClient.rpc(probe.name, probe.input)),
   ])
   if (publicRpcs.some(result => !result.error)) fail('A private application RPC is publicly accessible. Revoke public execution before using the app.')
@@ -128,8 +165,8 @@ async function main() {
   if (publicRpcs.some(result => !['42501', 'PGRST202'].includes(result.error?.code))) {
     fail('Public RPC access did not return the expected permission denial. Review API permissions and network connectivity.')
   }
-  pass(`Publishable-key access is denied for all ${tables.length} private tables and all ${privateRpcProbes.length + 1} private RPCs.`)
-  pass('Read-only Supabase connection verification completed; no application data changed.')
+  pass(`Publishable-key access is denied for all ${tables.length} private tables and all ${privateRpcProbes.length} private RPCs.`)
+  pass(`Read-only Supabase ${baseline ? 'baseline' : 'booking-schema'} verification completed; no application data changed.`)
 }
 
 try {

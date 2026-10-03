@@ -27,7 +27,7 @@ globalThis.fetch=async(input,init)=>{
   assert.equal(url.origin,'https://demo-api-pglite.invalid','Unexpected external request')
   assert.equal(request.headers.get('apikey'),'synthetic-demo-key')
   const name=url.pathname.split('/').at(-1)!
-  assert.ok(['lk_quote_draft','lk_quote_submission','lk_operations_command','lk_google_health'].includes(name))
+  assert.ok(['lk_quote_draft','lk_quote_submission','lk_operations_command','lk_google_health','lk_booking_command'].includes(name))
   const body=await request.json() as {command:string;args:Record<string,unknown>}
   try{return Response.json((await db.query<{r:unknown}>(`select public.${name}($1,$2::jsonb) r`,[body.command,JSON.stringify(body.args)])).rows[0].r)}
   catch(err){const error=err as {code:string;message:string};return Response.json({code:error.code,message:error.message},{status:400})}
@@ -187,7 +187,7 @@ test('occupancy lookup fails closed on missing ownership, partial pages, repeate
 })
 
 test('malformed provider intervals fail closed and Sydney calendar boundaries stay explicit',async()=>{
-  await assert.rejects(demoAvailability(chosenMonth,async()=>({calendarId:'test',intervals:[{occupancy:'opaque',kind:'all_day',startDate:'invalid-date',endDateExclusive:chosenDate}]})))
+  await assert.rejects(demoAvailability(chosenMonth,async()=>({calendarId:'test',intervals:[{occupancy:'opaque',kind:'all_day',startDate:'invalid-date',endDateExclusive:chosenDate}]}),async()=>[]))
   assert.equal(sydneyToday(new Date('2026-10-03T14:30:00Z')),'2026-10-04')
   assert.equal(monthRange('2026-10',new Date('2026-10-02T00:00:00Z')).dates.length,31)
   assert.throws(()=>monthRange('2026-14',new Date('2026-10-02T00:00:00Z')))

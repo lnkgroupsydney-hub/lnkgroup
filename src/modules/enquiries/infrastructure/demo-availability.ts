@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { readCalendarOccupancy } from '../../operations/availability.ts';
 import { maskStartDates, type AvailabilitySnapshot } from '../domain/availability.ts';
 import { QuoteHttpError } from './quote-draft-api.ts';
+import {bookingOccupancy} from '../../bookings/server.ts';
 
 export function sydneyToday(now = new Date()): string {
   const parts = new Intl.DateTimeFormat('en-CA',{timeZone:'Australia/Sydney',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(now);
@@ -19,9 +20,13 @@ export function monthRange(month: unknown, now = new Date()) {
   for (let stamp = Date.parse(`${start}T00:00:00Z`); stamp < Date.parse(`${end}T00:00:00Z`); stamp += 86400000) dates.push(new Date(stamp).toISOString().slice(0,10));
   return { start, end, dates };
 }
-export async function demoAvailability(month: unknown, read = readCalendarOccupancy) {
+export async function demoAvailability(month: unknown, read = readCalendarOccupancy, occupancy = bookingOccupancy) {
   const { start, end, dates } = monthRange(month);
-  const { calendarId, intervals } = await read(start,end);
+  const min = new Date(Date.parse(`${start}T00:00:00Z`) - 86400000).toISOString();
+  const max = new Date(Date.parse(`${end}T00:00:00Z`) + 86400000).toISOString();
+  // Both sources must complete. A failed DB read cannot be mistaken for free time.
+  const [{calendarId,intervals:calendarIntervals},held] = await Promise.all([read(start,end),occupancy(min,max)]);
+  const intervals = [...calendarIntervals,...held.map(span=>({kind:'timed' as const,occupancy:'opaque' as const,startAt:span.startAt,endAt:span.endAt}))];
   const checkedAt = new Date().toISOString();
   const normalized = intervals.map(item => JSON.stringify(item)).sort();
   const revision = createHash('sha256').update(JSON.stringify({calendarId,start,end,normalized,policy:'demo-preferred-day-v1'})).digest('hex');

@@ -29,6 +29,14 @@ test('remaining pages, unselected integrations and held leases are never complet
   assert.equal(summarizeSyncError({status:409, message:'private lease ID'}).state, 'busy')
   assert.equal(summarizeSyncError({status:409, code:'google_connection_changed'}).state, 'failed')
 })
+test('booking retry and external busy review are not reported as a completed Calendar sync',()=>{
+ const retry=summarizeSyncResult({...successful,calendar:{synced:0,failed:0,bookings:{synced:0,retrying:1,reviewed:0}}})
+ assert.equal(retry.state,'failed')
+ assert.match(retry.message,/booking sync has pending retries/)
+ const review=summarizeSyncResult({...successful,calendar:{synced:0,failed:0,bookings:{synced:0,retrying:0,reviewed:0},busy:{reviewed:1}}})
+ assert.equal(review.state,'partial')
+ assert.match(review.message,/owner review/)
+})
 
 test('reconnect and configuration failures back off while transient failures retain normal polling', () => {
   for (const code of ['google_reconnect_required', 'google_configuration', 'google_permission_denied', 'google_not_connected']) {

@@ -8,7 +8,7 @@ type EnquiryRow = { id: string; reference: string; source: 'web'|'gmail'; payloa
 type ChangeRow = { id: string; enquiry_id: string; reference: string; kind: 'move'|'delete'|'invalid'; proposed_start_at: string|null; proposed_end_at: string|null; proposed_preferred_date: string|null; status: 'pending'|'approved'|'rejected'; revision: number; created_at: string }
 
 export function rowToEnquiry(row: EnquiryRow): Enquiry {
-  const payload = JSON.parse(row.payload_json) as EnquiryInput
+  const payload = JSON.parse(row.payload_json) as EnquiryInput & {demoSubmissionId?:string}
   return {
     ...payload, id: row.id, reference: row.reference, source: row.source,
     status: row.status, revision: row.revision, createdAt: row.created_at,

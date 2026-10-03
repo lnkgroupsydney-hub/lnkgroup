@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import { createClient } from '@supabase/supabase-js'
-import { createDemoEmailPayload, DEMO_RECIPIENT, type DemoDocumentSource, type DemoEmailPayload } from './demo-documents.ts'
+import { DEMO_RECIPIENT, type DemoDocumentSource, type DemoEmailPayload } from './demo-documents.ts'
+import { createDemoPdfEmailPayload } from './demo-pdf.ts'
 
 export interface DemoEmailJob extends DemoDocumentSource {
   lease_generation: number
@@ -18,6 +19,8 @@ export interface DemoDeliveryDependencies {
   request: typeof fetch
   now: () => number
   config: DemoDeliveryConfig
+  createPayload?: (job: DemoEmailJob, from: string, recipient: string) => Promise<DemoEmailPayload>
+  idempotencyPrefix?: 'demo-quote' | 'demo-booking'
 }
 export interface DemoDeliveryResult {
   disabled: boolean
@@ -51,14 +54,14 @@ function record(value: unknown): value is Record<string, unknown> { return typeo
 function isJob(value: unknown): value is DemoEmailJob {
   return record(value) && typeof value.id === 'string' && /^[a-f0-9-]{36}$/i.test(value.id) && Number.isSafeInteger(value.lease_generation) && Number(value.lease_generation) >= 1 && typeof value.lease_until === 'string' && typeof value.email_status === 'string'
 }
-function validFrozenPayload(payload: unknown): payload is DemoEmailPayload {
+export function validFrozenDemoPayload(payload: unknown): payload is DemoEmailPayload {
   if (!record(payload) || Object.keys(payload).some(key => !['from','to','subject','html','text','attachments'].includes(key)) ||
       typeof payload.from !== 'string' || !COMPANY_FROM.test(payload.from) || !Array.isArray(payload.to) || payload.to.length !== 1 || payload.to[0] !== DEMO_RECIPIENT ||
       typeof payload.subject !== 'string' || !payload.subject.startsWith('[DEMO]') || /[\r\n]/.test(payload.subject) || payload.subject.length > 200 ||
       typeof payload.html !== 'string' || typeof payload.text !== 'string' || payload.html.length > 200_000 || payload.text.length > 200_000 ||
       !Array.isArray(payload.attachments) || payload.attachments.length !== 2) return false
   return payload.attachments.every(item => record(item) && Object.keys(item).every(key => ['filename','content'].includes(key)) &&
-    typeof item.filename === 'string' && /^[A-Za-z0-9-]{1,100}\.html$/.test(item.filename) && typeof item.content === 'string' &&
+    typeof item.filename === 'string' && /^[A-Za-z0-9-]{1,100}\.(?:html|pdf)$/.test(item.filename) && typeof item.content === 'string' &&
     item.content.length > 0 && item.content.length < 1_000_000 && /^[A-Za-z0-9+/]*={0,2}$/.test(item.content))
 }
 async function providerJson(response: Response): Promise<unknown> {
@@ -128,14 +131,14 @@ export async function runDemoDelivery(options: { id?: string; limit?: number } =
       await fail('outcome_unknown','email_retry_window_expired'); continue
     }
     let payload: DemoEmailPayload
-    try { payload = job.email_payload ?? createDemoEmailPayload(job,deps.config.from,deps.config.recipient) }
+    try { payload = job.email_payload ?? await (deps.createPayload ?? createDemoPdfEmailPayload)(job,deps.config.from,deps.config.recipient) }
     catch { await fail('failed','email_document_invalid'); continue }
-    if (!validFrozenPayload(payload)) { await fail('failed','email_payload_conflict'); continue }
+    if (!validFrozenDemoPayload(payload)) { await fail('failed','email_payload_conflict'); continue }
     let attempt: unknown
     try { attempt = await deps.command('email_attempt', {...lease,payload}) }
     catch { result.failed++; result.storageErrors++; continue }
     if (record(attempt) && attempt.email_status === 'outcome_unknown') { result.reviewRequired++; continue }
-    if (!isJob(attempt) || attempt.id !== job.id || attempt.lease_generation !== job.lease_generation || !validFrozenPayload(attempt.email_payload) || !attempt.email_first_attempt_at ||
+    if (!isJob(attempt) || attempt.id !== job.id || attempt.lease_generation !== job.lease_generation || !validFrozenDemoPayload(attempt.email_payload) || !attempt.email_first_attempt_at ||
         !Number.isFinite(Date.parse(attempt.email_first_attempt_at)) || deps.now()-Date.parse(attempt.email_first_attempt_at) >= RETRY_WINDOW_MS ||
         Date.parse(attempt.lease_until) <= deps.now()+REQUEST_TIMEOUT_MS) {
       await fail('outcome_unknown','email_retry_window_expired'); continue
@@ -144,7 +147,7 @@ export async function runDemoDelivery(options: { id?: string; limit?: number } =
     let response: Response
     try {
       response = await deps.request('https://api.resend.com/emails', {
-        method:'POST', headers:{Authorization:`Bearer ${deps.config.apiKey}`,'Content-Type':'application/json','Idempotency-Key':`demo-quote:${job.id}`},
+        method:'POST', headers:{Authorization:`Bearer ${deps.config.apiKey}`,'Content-Type':'application/json','Idempotency-Key':`${deps.idempotencyPrefix ?? 'demo-quote'}:${job.id}`},
         body:JSON.stringify(attempt.email_payload), signal:AbortSignal.timeout(REQUEST_TIMEOUT_MS),
       })
     } catch { await fail('retrying','email_outcome_unknown'); continue }

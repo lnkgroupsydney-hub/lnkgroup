@@ -50,6 +50,8 @@ function count(value: unknown): number | null {
 }
 
 function integrationOutcome(name: 'Gmail' | 'Calendar', status: Record<string, unknown>): SyncOutcome {
+  const booking = name === 'Calendar' && isRecord(status.bookings) ? status.bookings : null
+  const bookingBusy = name === 'Calendar' && isRecord(status.busy) ? status.busy : null
   if (status.busy === true || status.code === 'sync_busy') {
     return { state: 'busy', message: `${name} sync is already in progress.`, retryAfterMs: POLL_DELAY, exitCode: 2 }
   }
@@ -60,6 +62,13 @@ function integrationOutcome(name: 'Gmail' | 'Calendar', status: Record<string, u
   }
   if (count(status.failed) !== null && Number(status.failed) > 0) {
     return failureOutcome(`${name} sync failed for ${status.failed} operation(s); retry available.`)
+  }
+  if(booking && count(booking.retrying)!==null && Number(booking.retrying)>0) {
+    return failureOutcome('Calendar booking sync has pending retries; confirmed work remains held for review or retry.')
+  }
+  if((booking && count(booking.reviewed)!==null && Number(booking.reviewed)>0) ||
+     (bookingBusy && count(bookingBusy.reviewed)!==null && Number(bookingBusy.reviewed)>0)) {
+    return {state:'partial',message:'Calendar booking changes need owner review; confirmed work remains held.',retryAfterMs:POLL_DELAY,exitCode:2}
   }
   if (typeof status.skipped === 'string' && status.skipped.trim()) {
     return { state: 'skipped', message: `${name} was not run because no ${name === 'Gmail' ? 'label' : 'calendar'} is selected.`, retryAfterMs: POLL_DELAY, exitCode: 2 }
