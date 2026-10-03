@@ -10,6 +10,7 @@ import {randomUUID} from 'node:crypto'
 import {localEnabled} from './infrastructure/local-db.ts'
 import {googleFailure} from './infrastructure/google-errors.ts'
 import {connectionState,googleHealthCommand,recordGoogleHealth} from './infrastructure/supabase-google-health.ts'
+import {pushBookingPending,reconcileBookingBusy} from '../bookings/server.ts'
 
 export const sessionGet=safe(async(req)=>{
  const session=await auth.getSession(req)
@@ -39,6 +40,8 @@ export const operationsGet=safe(async(req)=>{
 })
 export const schedulePost=safe(async(req)=>{
  await auth.requireSession(req);const x=await body(req,3000)
+ const existing=await command<CloudEnquiryRow|null>('enquiry_get',{id:idFrom(req,'enquiries')})
+ if(existing?.payload_json.demoSubmissionId)throw new AppError(409,'A signed demo schedule requires a new booking proposal')
  if(!Number.isInteger(x.expectedRevision)||(x.expectedRevision as number)<1)throw new AppError(400,'Invalid revision')
  const dates=validateSchedule(x.startLocal,x.endLocal)
  if(x.notes!==undefined&&(typeof x.notes!=='string'||x.notes.length>2000||/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/.test(x.notes)))throw new AppError(400,'Invalid notes')
@@ -105,9 +108,12 @@ export async function syncAll() {
   const c=await auth.getConnection();started=Date.now()
   if(c?.selected_calendar_id)try{
    const pushed=await calendar.pushPending(c.selected_calendar_id,holder)
-   const pulled=await calendar.pullChanges(c.selected_calendar_id,holder);cal={...pushed,...pulled}
+   const bookings=await pushBookingPending(c.selected_calendar_id,holder)
+   const pulled=await calendar.pullChanges(c.selected_calendar_id,holder)
+   const busy=await reconcileBookingBusy(c.selected_calendar_id,holder)
+   cal={...pushed,...pulled,bookings,busy}
    const current=await auth.getConnection()
-   if(current)await recordGoogleHealth(current,'calendar',pushed.failed?'google_temporary':'ready',started,holder)
+   if(current)await recordGoogleHealth(current,'calendar',pushed.failed||bookings.retrying?'google_temporary':bookings.reviewed||busy.reviewed?'partial':'ready',started,holder)
   }catch(error){cal=await failureResult(error,'calendar',started)}
   return {gmail,calendar:cal}
  }finally{await command('sync_release',{holder})}
@@ -116,6 +122,11 @@ export const syncPost=safe(async(req)=>{requireOrigin(req);await auth.requireSes
 export const changePost=safe(async(req)=>{
  await auth.requireSession(req);const x=await body(req,1000)
  if((x.action!=='approve'&&x.action!=='reject')||!Number.isInteger(x.expectedRevision)||(x.expectedRevision as number)<1)throw new AppError(400,'Invalid change decision')
+ const change=await command<{enquiry_id:string}|null>('change_get',{id:idFrom(req,'changes')})
+ if(change){
+  const enquiry=await command<CloudEnquiryRow|null>('enquiry_get',{id:change.enquiry_id})
+  if(enquiry?.payload_json.demoSubmissionId)throw new AppError(409,'A signed demo schedule requires a new booking proposal')
+ }
  return json(await calendar.decideChange(idFrom(req,'changes'),x.action,x.expectedRevision as number))
 })
 export const googleConnectGet=safe(async(req)=>{

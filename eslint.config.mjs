@@ -3,8 +3,10 @@ import nextVitals from "eslint-config-next/core-web-vitals";
 import nextTypeScript from "eslint-config-next/typescript";
 
 const publicModuleImports = {
-  group: ["@/modules/*/**"],
-  message: "Import a module through its public index; use relative imports inside the same module.",
+  // The explicitly declared UI entry avoids pulling the booking Node adapters
+  // into client bundles; other internal module paths remain restricted.
+  group: ["@/modules/*/**", "!@/modules/bookings/client"],
+  message: "Import through a public index or the declared bookings/client UI entry; use relative imports inside the same module.",
 };
 
 const innerLayerImports = {

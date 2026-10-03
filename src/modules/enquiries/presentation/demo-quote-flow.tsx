@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
+import { useEffect, useRef, useState } from "react";
+import { SignaturePad } from "@/shared/ui/signature-pad";
+import { CustomerBookingReview } from "@/modules/bookings/client";
 import { DEMO_PRICE, DEMO_TERMS, DEMO_VERSION, type DemoSignature, type DemoSnapshot, type DemoSubmissionStatus, type SignaturePoint } from "../domain/demo-submission";
 import { validateQuoteDraft, type QuoteDraft } from "../domain/quote-draft";
 import type { AvailabilityDay } from "../domain/availability";
@@ -53,55 +55,6 @@ function todayInSydney() {
 function shiftMonth(month: string, amount: number) { const [year,number] = month.split("-").map(Number); return new Date(Date.UTC(year, number - 1 + amount, 1)).toISOString().slice(0,7); }
 function pending(submission: DemoSubmissionStatus) { return !["failed","outcome_unknown"].includes(submission.emailStatus) && !["synced","conflict"].includes(submission.calendarStatus); }
 
-function SignaturePad({ strokes, onChange, disabled }: { strokes: SignaturePoint[][]; onChange: (value: SignaturePoint[][]) => void; disabled: boolean }) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const drawing = useRef<SignaturePoint[] | null>(null);
-  const cursor = useRef<SignaturePoint>({x:0.15,y:0.5});
-  const pointCount = () => strokes.reduce((total,stroke) => total + stroke.length, 0) + (drawing.current?.length ?? 0);
-  const redraw = () => {
-    const canvas = canvasRef.current, context = canvas?.getContext("2d");
-    if (!canvas || !context) return;
-    context.clearRect(0,0,canvas.width,canvas.height); context.strokeStyle = "#1d2522"; context.lineWidth = 3; context.lineCap = "round"; context.lineJoin = "round";
-    for (const stroke of [...strokes, ...(drawing.current ? [drawing.current] : [])]) {
-      context.beginPath(); stroke.forEach((point,index) => { if (!index) context.moveTo(point.x*canvas.width,point.y*canvas.height); else context.lineTo(point.x*canvas.width,point.y*canvas.height); }); context.stroke();
-    }
-  };
-  useEffect(() => {
-    const canvas = canvasRef.current, context = canvas?.getContext("2d");
-    if (!canvas || !context) return;
-    context.clearRect(0,0,canvas.width,canvas.height); context.strokeStyle = "#1d2522"; context.lineWidth = 3; context.lineCap = "round"; context.lineJoin = "round";
-    for (const stroke of strokes) { context.beginPath(); stroke.forEach((point,index) => { if (!index) context.moveTo(point.x*canvas.width,point.y*canvas.height); else context.lineTo(point.x*canvas.width,point.y*canvas.height); }); context.stroke(); }
-  }, [strokes]);
-  function point(event: PointerEvent<HTMLCanvasElement>): SignaturePoint {
-    const rect = event.currentTarget.getBoundingClientRect();
-    return { x:Math.max(0,Math.min(1,(event.clientX-rect.left)/rect.width)), y:Math.max(0,Math.min(1,(event.clientY-rect.top)/rect.height)) };
-  }
-  function finish() { const stroke = drawing.current; drawing.current = null; if (stroke && stroke.length > 1) onChange([...strokes,stroke]); else redraw(); }
-  function keyboard(event: KeyboardEvent<HTMLCanvasElement>) {
-    if (disabled || !["ArrowLeft","ArrowRight","ArrowUp","ArrowDown"," ","Enter","Escape"].includes(event.key)) return;
-    event.preventDefault();
-    if (event.key === " " || event.key === "Enter") { if (drawing.current) finish(); else if (pointCount() < 2000) drawing.current = [{...cursor.current}]; }
-    else if (event.key === "Escape") { drawing.current = null; redraw(); }
-    else {
-      cursor.current = { x:Math.max(0,Math.min(1,cursor.current.x + (event.key === "ArrowRight" ? .015 : event.key === "ArrowLeft" ? -.015 : 0))), y:Math.max(0,Math.min(1,cursor.current.y + (event.key === "ArrowDown" ? .04 : event.key === "ArrowUp" ? -.04 : 0))) };
-      if (drawing.current && pointCount() < 2000) drawing.current.push({...cursor.current});
-      redraw();
-    }
-    const context = canvasRef.current?.getContext("2d");
-    if (context) { context.fillStyle = "#236461"; context.fillRect(cursor.current.x*800-3,cursor.current.y*240-3,6,6); }
-  }
-  return <div className="demo-signature">
-    <p id="demo-signature-label"><strong>Draw your demonstration signature *</strong></p>
-    <p id="demo-signature-help" className="enquiry-hint">Use your mouse or finger. Keyboard: focus the pad, use arrows to position the pen, press Space to start, arrows to draw, then Enter to finish a stroke.</p>
-    <canvas ref={canvasRef} width={800} height={240} tabIndex={disabled ? -1 : 0} aria-labelledby="demo-signature-label" aria-describedby="demo-signature-help" aria-disabled={disabled} onKeyDown={keyboard}
-      onPointerDown={event => { if (disabled || !event.isPrimary || event.button !== 0 || pointCount() >= 2000) return; event.preventDefault(); event.currentTarget.focus(); event.currentTarget.setPointerCapture(event.pointerId); drawing.current = [point(event)]; }}
-      onPointerMove={event => { if (disabled || !drawing.current || pointCount() >= 2000) return; drawing.current.push(point(event)); redraw(); }}
-      onPointerUp={event => { if (!drawing.current) return; if (pointCount() < 2000) drawing.current.push(point(event)); finish(); if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId); }}
-      onPointerCancel={() => { drawing.current = null; redraw(); }}>Your browser does not support the signature pad.</canvas>
-    <button className="enquiry-button enquiry-button-secondary" type="button" disabled={disabled || !strokes.length} onClick={() => { drawing.current = null; onChange([]); }}>Clear signature</button>
-    <span className="enquiry-hint" role="status">{strokes.length ? " Signature captured on this page. Submit to save it." : " No signature captured yet."}</span>
-  </div>;
-}
 
 function SnapshotSummary({ snapshot }: { snapshot: DemoSnapshot }) {
   const { contact,service } = snapshot.payload;
@@ -124,10 +77,10 @@ function SubmissionResult({ submission, statusError, onRefresh, checking }: { su
   const emails: Record<DemoSubmissionStatus["emailStatus"],string> = { pending:"Queued", sending:"Sending", provider_accepted:"Accepted by email provider", retrying:"Waiting to retry", failed:"Needs attention — email not sent", outcome_unknown:"Delivery outcome needs verification" };
   const calendars: Record<DemoSubmissionStatus["calendarStatus"],string> = { blocked:"Waiting for email acceptance", pending:"Queued", synced:"Saved to company Google Calendar", retrying:"Waiting to retry", conflict:"Date conflict — company review required" };
   return <div className="enquiry-step demo-result" aria-live="polite">
-    <h2 tabIndex={-1}>Demonstration request saved</h2><p>Your signed demonstration was stored privately. This is not a confirmed booking or a binding contract.</p>
-    <dl className="enquiry-review"><div><dt>Reference</dt><dd>{submission.reference}</dd></div><div><dt>Preferred date</dt><dd>{dateLabel(submission.preferredDate)} (Sydney)</dd></div><div><dt>Email</dt><dd>{emails[submission.emailStatus]}</dd></div><div><dt>Google Calendar</dt><dd>{calendars[submission.calendarStatus]}</dd></div><div><dt>Booking</dt><dd>Pending company review of duration, scope and conflicts</dd></div></dl>
+    <h2 tabIndex={-1}>Demonstration request saved</h2><p>Your original signed demonstration was stored privately. Company work proposals and confirmation status are shown below. This demonstration is not a real booking or a binding contract.</p>
+    <dl className="enquiry-review"><div><dt>Reference</dt><dd>{submission.reference}</dd></div><div><dt>Preferred date</dt><dd>{dateLabel(submission.preferredDate)} (Sydney)</dd></div><div><dt>Email</dt><dd>{emails[submission.emailStatus]}</dd></div><div><dt>Google Calendar</dt><dd>{calendars[submission.calendarStatus]}</dd></div><div><dt>Original request</dt><dd>Preferred date only · see company work review below</dd></div></dl>
     {submission.emailStatus === "provider_accepted" && <p className="enquiry-hint">Email provider acceptance is not proof of delivery to the inbox. Check the company inbox and spam folder.</p>}
-    {submission.calendarStatus === "synced" && <p className="enquiry-notice">The calendar entry marks a preferred start date only. It does not reserve the day or specify a working duration.</p>}
+    {submission.calendarStatus === "synced" && <p className="enquiry-notice">The original calendar entry marks a preferred start date only. Confirmed demonstration work segments, when available, are listed separately below.</p>}
     {submission.error && <p className="enquiry-error">{submission.error}</p>}{statusError && <p className="enquiry-error" role="alert">{statusError}</p>}
     <button type="button" className="enquiry-button enquiry-button-secondary" disabled={checking} onClick={onRefresh}>{checking ? "Checking…" : "Refresh delivery status"}</button>
     <p className="enquiry-hint">Do not submit another request to retry email or calendar delivery. The saved request keeps the same reference.</p>
@@ -224,7 +177,7 @@ export function DemoQuoteFlow({ draft, recipientEmail, initialSubmission, onEdit
     }
     finally { setBusy(false); }
   }
-  if (submission) return <div ref={headingRef} tabIndex={-1} className="enquiry-step"><SubmissionResult submission={submission} statusError={statusError} onRefresh={() => void refreshStatus()} checking={checking} /></div>;
+  if (submission) return <div ref={headingRef} tabIndex={-1} className="enquiry-step"><SubmissionResult submission={submission} statusError={statusError} onRefresh={() => void refreshStatus()} checking={checking} /><CustomerBookingReview submissionId={submission.id} /></div>;
   return <div className="enquiry-step" ref={headingRef} tabIndex={-1}>
     {error && <p className="enquiry-error-box" role="alert">{error}</p>}
     {stage === "approve" && <>

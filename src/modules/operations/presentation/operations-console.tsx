@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "
 import Link from "next/link";
 import type { ChangeRequest, Enquiry, GoogleConnectionState, OperationsDashboard } from "../domain/contracts";
 import { summarizeSyncError, summarizeSyncResult } from "../domain/sync-result";
+import { BookingOperationsPanel } from "@/modules/bookings/client";
 import "./operations-console.css";
 
 type Session = {
@@ -60,6 +61,9 @@ function localValue(value: string | null) {
   return `${part("year")}-${part("month")}-${part("day")}T${part("hour")}:${part("minute")}`;
 }
 function formatUnknown(value: string | number | null | undefined) { return value === null || value === undefined || value === "" ? "Unknown" : String(value); }
+function signedDemoId(enquiry: Enquiry | undefined | null): string | null {
+  return enquiry && "demoSubmissionId" in enquiry && typeof enquiry.demoSubmissionId === "string" ? enquiry.demoSubmissionId : null;
+}
 const noOriginSubscription = () => () => {};
 
 export function OperationsConsole() {
@@ -236,7 +240,7 @@ export function OperationsConsole() {
     <header className="operations-header"><Link href="/" aria-label="L&K Group home">L&K Group</Link><span>Private operations · preview</span>{session?.authenticated && <button type="button" onClick={logout} disabled={Boolean(busy)}>Sign out</button>}</header>
     <div className="operations-shell" id="operations-content" tabIndex={-1}>
       <h1>Enquiries and company calendar</h1>
-      <p className="operations-intro">Company account: <strong>{session?.ownerEmail ?? "Lnkgroupsydney@gmail.com"}</strong>. {session?.storage === "supabase" ? "Requests are stored privately in the company Supabase database." : session ? "Requests are stored locally on this device." : "Checking data storage…"} It does not send customer email, issue a quote or confirm a booking.</p>
+      <p className="operations-intro">Company account: <strong>{session?.ownerEmail ?? "Lnkgroupsydney@gmail.com"}</strong>. {session?.storage === "supabase" ? "Requests are stored privately in the company Supabase database." : session ? "Requests are stored locally on this device." : "Checking data storage…"} Signed company-only demonstrations can be reviewed and scheduled below. Real prices, contracts and operational bookings are not enabled.</p>
       {error && <div className="operations-error" role="alert">{error}</div>}
       {notice && <div className="operations-notice" role="status">{notice}</div>}
       {loading && <p role="status">Loading operations status…</p>}
@@ -293,8 +297,9 @@ export function OperationsConsole() {
           <button type="button" onClick={() => void doSync(false)} disabled={Boolean(busy) || (!dashboard.calendar.connected && !dashboard.gmail.connected)}>{busy === "sync" ? "Syncing…" : "Sync now"}</button>
           <button type="button" className="operations-button-secondary" onClick={() => void loadDashboard().then(loadOptions).catch((cause) => setError(cause instanceof Error ? cause.message : "Refresh failed."))} disabled={Boolean(busy)}>Refresh records</button>
         </section>
+        {session.storage === "supabase" && <BookingOperationsPanel refreshKey={lastAttempt ?? undefined} />}
         <section className="operations-panel"><h2>Calendar changes to review ({dashboard.changes.length})</h2>
-          {dashboard.changes.length === 0 ? <p>No changes awaiting review.</p> : <ul className="operations-list">{dashboard.changes.map((change) => <li key={change.id}>
+          {dashboard.changes.length === 0 ? <p>No changes awaiting review.</p> : <ul className="operations-list">{dashboard.changes.map((change) => { const isSignedDemo=Boolean(signedDemoId(dashboard.enquiries.find(enquiry=>enquiry.id===change.enquiryId))); return <li key={change.id}>
             <strong>{change.reference}</strong> · {change.kind} · received {timeLabel(change.createdAt)}
             <p>Proposed Sydney time: {timeLabel(change.proposedStartAt)} → {timeLabel(change.proposedEndAt)}.</p>
             <p className="operations-small">{change.kind === "delete"
@@ -302,8 +307,8 @@ export function OperationsConsole() {
               : change.kind === "invalid"
                 ? "This Google change has an invalid or ambiguous Sydney time. It cannot be approved. Reject it and correct the event before syncing again."
                 : "Check the enquiry and customer commitment before approving a moved provisional time. A stale change may need a fresh sync."}</p>
-            <div className="operations-actions"><button type="button" onClick={() => reviewChange(change, "approve")} disabled={Boolean(busy) || change.kind === "invalid"}>{change.kind === "delete" ? "Remove provisional time" : "Approve change"}</button><button type="button" className="operations-button-secondary" onClick={() => reviewChange(change, "reject")} disabled={Boolean(busy)}>{change.kind === "delete" ? "Restore calendar event" : "Reject change"}</button></div>
-          </li>)}</ul>}
+            {isSignedDemo ? <p className="operations-notice">This change belongs to a signed demonstration. Review it in <a href="#signed-demo-requests">Signed demo requests</a>, create a revised proposal and obtain a new customer signature.</p> : <div className="operations-actions"><button type="button" onClick={() => reviewChange(change, "approve")} disabled={Boolean(busy) || change.kind === "invalid"}>{change.kind === "delete" ? "Remove provisional time" : "Approve change"}</button><button type="button" className="operations-button-secondary" onClick={() => reviewChange(change, "reject")} disabled={Boolean(busy)}>{change.kind === "delete" ? "Restore calendar event" : "Reject change"}</button></div>}
+          </li>;})}</ul>}
         </section>
         <section className="operations-panel"><h2>Enquiries ({dashboard.enquiries.length})</h2>
           {dashboard.enquiries.length === 0 ? <p>No requests have been stored or imported yet.</p> : <div className="operations-enquiries">
@@ -341,12 +346,12 @@ export function OperationsConsole() {
                   </li>)}</ol>
                 </> : <p className="operations-small">No thread detail is stored for this imported enquiry. Review the company Gmail account.</p>}
               </section>}
-              <div className="operations-schedule"><h4>Provisional Sydney schedule</h4><p>Enter times manually after reviewing scope and availability. Saving this time is not customer confirmation or a final booking. Ambiguous daylight saving times are rejected by the server.</p>
+              {signedDemoId(selected) ? <p className="operations-notice">This enquiry is linked to an immutable signed demonstration. Use <a href="#signed-demo-requests">Signed demo requests and company confirmation</a> above to propose work segments and obtain customer reconfirmation.</p> : <div className="operations-schedule"><h4>Provisional Sydney schedule</h4><p>Enter times manually after reviewing scope and availability. Saving this time is not customer confirmation or a final booking. Ambiguous daylight saving times are rejected by the server.</p>
                 {editingRevision !== null && selected.revision !== editingRevision && <p className="operations-error" role="alert">This enquiry changed while you were editing. Your entered times are preserved. Saving will be rejected until you reload the latest record.</p>}
                 <div className="operations-grid"><label>Start (Sydney)<input type="datetime-local" value={startLocal} onInput={(event) => setStartLocal(event.currentTarget.value)} onChange={(event) => setStartLocal(event.target.value)} /></label><label>End (Sydney)<input type="datetime-local" value={endLocal} onInput={(event) => setEndLocal(event.currentTarget.value)} onChange={(event) => setEndLocal(event.target.value)} /></label></div>
                 <label>Internal schedule note <span className="operations-small">Optional</span><textarea rows={3} maxLength={1000} value={scheduleNotes} onChange={(event) => setScheduleNotes(event.target.value)} /></label>
                 <div className="operations-actions"><button type="button" onClick={() => saveSchedule(selected)} disabled={Boolean(busy) || (editingRevision !== null && selected.revision !== editingRevision)}>{busy === `schedule-${selected.id}` ? "Saving…" : "Save provisional time"}</button>{editingRevision !== null && selected.revision !== editingRevision && <button type="button" className="operations-button-secondary" onClick={() => selectEnquiry(selected)}>Load latest schedule</button>}</div>
-              </div>
+              </div>}
             </article> : <p>Select an enquiry to review its details and plan a provisional time.</p>}
           </div>}
         </section>

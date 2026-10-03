@@ -6,6 +6,7 @@ import {googleRequest,getConnection} from './supabase-auth.ts'
 import {GoogleIntegrationError} from './google-errors.ts'
 import {googleHealthCommand} from './supabase-google-health.ts'
 import {enquiryFromRow,getEnquiry,type CloudEnquiryRow} from './supabase-store.ts'
+import {bookingLinks,inspectBookingCalendarEvent} from '../../bookings/server.ts'
 type Event={id:string;etag?:string;status?:string;start?:{date?:string;dateTime?:string};end?:{date?:string;dateTime?:string};recurrence?:string[];recurringEventId?:string;extendedProperties?:{private?:Record<string,string>}}
 type Link={enquiry_id:string;event_id:string;etag:string|null;synced_revision:number}
 type Change={id:string;enquiry_id:string;kind:'move'|'delete'|'invalid';proposed_start_at:string|null;proposed_end_at:string|null;proposed_preferred_date:string|null;provider_etag:string;enquiry_revision:number;status:string;revision:number}
@@ -78,8 +79,9 @@ export async function pushPending(calendar:string,holder:string) {
 }
 export async function pullChanges(calendar:string,holder:string) {
  const conn=await getConnection();let token=conn?.calendar_sync_token||null,page:string|undefined,restarted=false,full=!token
- const seen=new Set<string>();const result={scanned:0,reviewed:0}
+ const seen=new Set<string>();const result={scanned:0,reviewed:0,bookingReviewed:0}
  const links=await command<Link[]>('calendar_links');const byEvent=new Map(links.map(l=>[l.event_id,l]))
+ const bookLinks=await bookingLinks(calendar);const byBookingEvent=new Map(bookLinks.map(l=>[l.event_id,l]))
  const inspect=async(link:Link,event:Event|null)=>{
   // A review decision can restore a deleted event while the Google request is in flight.
   const current=await command<Link|null>('calendar_link',{id:link.enquiry_id})
@@ -94,13 +96,21 @@ export async function pullChanges(calendar:string,holder:string) {
   if(res.status===410&&token&&!restarted){token=null;page=undefined;restarted=true;full=true;seen.clear();await command('calendar_cursor',{holder,calendar,token:null});continue}
   if(!res.ok)throw new AppError(502,'Google Calendar request failed')
   const data=await res.json() as {items?:Event[];nextPageToken?:string;nextSyncToken?:string}
+  if(!data||data.items!==undefined&&!Array.isArray(data.items)||
+    data.nextPageToken!==undefined&&(typeof data.nextPageToken!=='string'||!data.nextPageToken))throw new AppError(502,'Google Calendar returned an incomplete page')
   for(const event of data.items||[]){
-   result.scanned++;const link=byEvent.get(event.id);if(!link)continue;seen.add(event.id);if(link.etag===event.etag)continue
+   if(!event||typeof event.id!=='string'||!event.id)throw new AppError(502,'Google Calendar returned an incomplete event')
+   result.scanned++;const bookingLink=byBookingEvent.get(event.id)
+   if(bookingLink){seen.add(event.id);if(await inspectBookingCalendarEvent(calendar,holder,bookingLink,event))result.bookingReviewed++;continue}
+   const link=byEvent.get(event.id);if(!link)continue;seen.add(event.id);if(link.etag===event.etag)continue
    await inspect(link,event)
   }
   page=data.nextPageToken
   if(!page){
-   if(full)for(const link of links){if(seen.has(link.event_id)||!link.etag)continue;await renew(holder);await inspect(link,await getEvent(calendar,link.event_id,holder))}
+   if(full){
+    for(const link of links){if(seen.has(link.event_id)||!link.etag)continue;await renew(holder);await inspect(link,await getEvent(calendar,link.event_id,holder))}
+    for(const link of bookLinks){if(seen.has(link.event_id))continue;await renew(holder);if(await inspectBookingCalendarEvent(calendar,holder,link,await getEvent(calendar,link.event_id,holder)))result.bookingReviewed++}
+   }
    if(!data.nextSyncToken)throw new AppError(502,'Google did not provide a sync cursor')
    await command('calendar_cursor',{holder,calendar,token:data.nextSyncToken});break
   }

@@ -16,14 +16,16 @@
     "check": "npm run lint && npm run typecheck && npm run build",
     "setup:local": "node scripts/setup-local.mjs",
     "integrations:worker": "node --experimental-strip-types scripts/integrations-worker.mjs",
-    "test:operations": "node --experimental-strip-types --test src/modules/operations/operations.test.mts src/modules/gmail-intake/infrastructure/gmail-reader.test.ts src/modules/operations/supabase.test.mts src/modules/operations/sync-result.test.mts src/modules/operations/oauth-recovery.test.mts src/modules/enquiries/quote-draft.test.mts src/modules/enquiries/domain/availability.test.mts src/modules/enquiries/demo-submission-db.test.mts src/modules/enquiries/infrastructure/demo-email.test.mts src/modules/enquiries/demo-api.test.mts",
+    "test:operations": "node --experimental-strip-types --test src/modules/operations/operations.test.mts src/modules/gmail-intake/infrastructure/gmail-reader.test.ts src/modules/operations/supabase.test.mts src/modules/operations/sync-result.test.mts src/modules/operations/oauth-recovery.test.mts src/modules/enquiries/quote-draft.test.mts src/modules/enquiries/domain/availability.test.mts src/modules/enquiries/demo-submission-db.test.mts src/modules/enquiries/infrastructure/demo-email.test.mts src/modules/enquiries/demo-api.test.mts src/modules/bookings/booking.test.mts src/modules/bookings/calendar-availability.test.mts src/modules/bookings/calendar.test.mts src/modules/bookings/delivery.test.mts src/modules/enquiries/infrastructure/demo-pdf.test.mts src/modules/enquiries/demo-availability-booking.test.mts",
     "test:supabase:connection": "node scripts/verify-supabase.mjs"
   },
   "dependencies": {
+    "@pdf-lib/fontkit": "1.1.1",
     "@supabase/ssr": "0.12.7",
     "@supabase/supabase-js": "2.117.2",
     "lucide-react": "1.48.0",
     "next": "16.3.6",
+    "pdf-lib": "1.17.1",
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "three": "0.186.1"

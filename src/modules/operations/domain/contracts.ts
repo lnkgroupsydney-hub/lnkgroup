@@ -22,6 +22,7 @@ export interface EnquiryInput {
 }
 
 export interface Enquiry extends Omit<EnquiryInput, 'acknowledgement' | 'idempotencyKey'> {
+  demoSubmissionId?: string
   id: string
   reference: string
   source: 'web' | 'gmail'
