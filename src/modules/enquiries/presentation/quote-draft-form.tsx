@@ -4,6 +4,8 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { QUOTE_PROGRESS, validateQuoteDraft, type QuoteDraft, type QuoteDraftInput } from "../domain/quote-draft";
 import { DemoQuoteFlow, loadDemoConfiguration } from "./demo-quote-flow";
 import type { DemoSubmissionStatus } from "../domain/demo-submission";
+import { mergeSelectedAddress, type AddressKind, type AddressSelection } from "@/shared/address";
+import { AddressAutocompleteInput } from "@/shared/ui/address-autocomplete-input";
 import "./enquiry-form.css";
 
 type Values = {
@@ -92,6 +94,12 @@ export function QuoteDraftForm() {
     setNotice("Your changes are not saved yet.");
     if (!conflict && !expired) setError("");
   }
+  function selectAddress(selection: AddressSelection, kind: AddressKind) {
+    setValues((current) => ({ ...current, ...mergeSelectedAddress(current, selection, kind) }));
+    setErrors((current) => ({ ...current, siteAddress: undefined, suburb: undefined, postcode: undefined }));
+    setNotice("Your address changes are not saved yet. Review the details before saving.");
+    if (!conflict && !expired) setError("");
+  }
   function toggleSurface(surface: string) {
     update("surfaces", values.surfaces.includes(surface) ? values.surfaces.filter(item => item !== surface)
       : surface === "unknown" ? ["unknown"] : [...values.surfaces.filter(item => item !== "unknown"), surface]);
@@ -171,6 +179,7 @@ export function QuoteDraftForm() {
   const fieldProps = (field: Field) => ({ id:`draft-${field}`, "aria-invalid":Boolean(errors[field]), "aria-describedby":errors[field] ? `draft-${field}-error` : undefined });
   const fieldError = (field: Field) => errors[field] ? <span className="enquiry-error" id={`draft-${field}-error`}>{errors[field]}</span> : null;
   const progress = demoEnabled ? ["Your details","Service details","Demo quote","Start date","Review & sign","Submitted"] : QUOTE_PROGRESS;
+  const addressContext = JSON.stringify([values.siteAddress, values.suburb, values.postcode]);
 
   return <div className="enquiry-page"><div className="enquiry-shell">
     <a href="/services/cabinet-painting" className="enquiry-back-link">← Kitchen Cabinet Painting</a>
@@ -196,10 +205,11 @@ export function QuoteDraftForm() {
               <label>Your name *<input {...fieldProps("name")} autoComplete="name" maxLength={120} value={values.name} onChange={event => update("name",event.target.value)} />{fieldError("name")}</label>
               <label>Email *<input {...fieldProps("email")} type="email" autoComplete="email" maxLength={254} value={values.email} onChange={event => update("email",event.target.value)} />{fieldError("email")}</label>
               <label>Phone <span className="enquiry-hint">Optional</span><input {...fieldProps("phone")} type="tel" autoComplete="tel" maxLength={40} value={values.phone} onChange={event => update("phone",event.target.value)} /></label>
-              <label>Site address *<input {...fieldProps("siteAddress")} autoComplete="street-address" maxLength={240} value={values.siteAddress} onChange={event => update("siteAddress",event.target.value)} />{fieldError("siteAddress")}</label>
-              <label>Suburb *<input {...fieldProps("suburb")} autoComplete="address-level2" maxLength={100} value={values.suburb} onChange={event => update("suburb",event.target.value)} />{fieldError("suburb")}</label>
-              <label>Postcode *<input {...fieldProps("postcode")} inputMode="numeric" autoComplete="postal-code" maxLength={4} value={values.postcode} onChange={event => update("postcode",event.target.value)} />{fieldError("postcode")}</label>
+              <div className="address-field"><label htmlFor="draft-siteAddress">Site address *</label><AddressAutocompleteInput {...fieldProps("siteAddress")} kind="street" addressContext={addressContext} onAddressSelect={selectAddress} autoComplete="street-address" maxLength={240} value={values.siteAddress} onChange={event => update("siteAddress",event.target.value)} />{fieldError("siteAddress")}</div>
+              <div className="address-field"><label htmlFor="draft-suburb">Suburb *</label><AddressAutocompleteInput {...fieldProps("suburb")} kind="suburb" addressContext={addressContext} onAddressSelect={selectAddress} autoComplete="address-level2" maxLength={100} value={values.suburb} onChange={event => update("suburb",event.target.value)} />{fieldError("suburb")}</div>
+              <div className="address-field"><label htmlFor="draft-postcode">Postcode *</label><AddressAutocompleteInput {...fieldProps("postcode")} kind="postcode" addressContext={addressContext} onAddressSelect={selectAddress} inputMode="numeric" autoComplete="postal-code" maxLength={4} value={values.postcode} onChange={event => update("postcode",event.target.value)} />{fieldError("postcode")}</div>
             </div>
+            <p className="enquiry-hint">When address suggestions are available, your search text is sent to Google. You can also enter your address manually. Check any unit or apartment number; the team will confirm service availability.</p>
             {demoEnabled && <p className="enquiry-hint">For this demonstration, use {recipientEmail} as the email address. The trial email service can only send to that company account.</p>}
             <label>Project details <span className="enquiry-hint">Optional</span><textarea {...fieldProps("details")} rows={4} maxLength={3000} value={values.details} onChange={event => update("details",event.target.value)} /></label>
             <label className="enquiry-confirm"><input {...fieldProps("consent")} type="checkbox" checked={values.consent} onChange={event => update("consent",event.target.checked)} /> I agree to L&K Group saving these details privately to prepare my quote draft. *</label>{fieldError("consent")}
