@@ -1,0 +1,10 @@
+.quote-photos { min-width: 0; }
+.quote-photo-picker, .quote-photo-actions { display: flex; flex-wrap: wrap; gap: 1rem; }
+.quote-photo-picker > label { flex: 1 1 14rem; min-width: 0; }
+.quote-photo-picker input[type="file"] { max-width: 100%; width: 100%; font-size: .9rem; }
+.quote-photo-list { list-style: none; margin: 1rem 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr)); gap: 1rem; }
+.quote-photo-list > li { min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: .6rem; border: 1px solid #d5ded7; border-radius: .75rem; padding: 1rem; overflow-wrap: anywhere; }
+.quote-photo-list > li p { margin: 0; }
+.quote-photo-list .enquiry-button { max-width: 100%; white-space: normal; overflow-wrap: anywhere; }
+.quote-photo-thumbnail { display: block; width: 100%; max-height: 15rem; object-fit: contain; background: #f5f5f2; }
+.quote-photo-reference { overflow-wrap: anywhere; }

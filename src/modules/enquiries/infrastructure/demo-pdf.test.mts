@@ -4,6 +4,11 @@ import { readFile } from 'node:fs/promises'
 import { PDFDocument, PDFName, PDFDict } from 'pdf-lib'
 import { createDemoPdfDocuments, createDemoPdfEmailPayload, type DemoPdfSchedule } from './demo-pdf.ts'
 import { pdfFixture } from './demo-document.fixture.mts'
+import { createDemoEmailPayload } from './demo-documents.ts'
+import { CURRENT_DEMO_VERSION, type DemoSnapshot } from '../domain/demo-submission.ts'
+import { PHOTO_PROCESSING_VERSION } from '../domain/quote-photos.ts'
+
+const photoEvidence = () => ({photoId:'33333333-2222-4333-8444-555555555555',contentHash:'c'.repeat(64),processingVersion:PHOTO_PROCESSING_VERSION})
 
 test('embedded font glyph offsets remain aligned when the PDF subset uses short loca offsets', async () => {
   const bytes = await readFile(new URL('../../../shared/assets/pdf-fonts/LKDemoSans-Regular.ttf', import.meta.url))
@@ -61,4 +66,64 @@ test('long saved notes paginate within A4 and email attachments remain bounded P
     assert.ok(pdf.getPageCount() >= 2)
     for (const page of pdf.getPages()) { assert.equal(page.getWidth(), 595.28); assert.equal(page.getHeight(), 841.89) }
   }
+})
+
+test('v2 photo evidence changes immutable PDF content without embedding images, private URLs or active actions', async () => {
+  const source=pdfFixture()
+  source.snapshot={...source.snapshot,version:CURRENT_DEMO_VERSION,photos:[photoEvidence()]}
+  const original=structuredClone(source)
+  const first=await createDemoPdfDocuments(source),second=await createDemoPdfDocuments(source)
+  const changed=structuredClone(source)
+  changed.snapshot.photos![0].contentHash='d'.repeat(64)
+  // Hold every other field fixed so this proves the manifest itself is rendered.
+  const changedDocuments=await createDemoPdfDocuments(changed)
+  const html=createDemoEmailPayload(source,'onboarding@resend.dev','lnkgroupsydney@gmail.com')
+  for(const attachment of html.attachments){
+    const text=Buffer.from(attachment.content,'base64').toString('utf8')
+    assert.ok(text.includes(photoEvidence().photoId))
+    assert.ok(text.includes(photoEvidence().contentHash))
+    assert.ok(text.includes(PHOTO_PROCESSING_VERSION))
+    assert.doesNotMatch(text,/<img\b|storage\/v1|\/api\/quote\/photos|https:\/\//i)
+  }
+  for(const kind of ['quote','agreement'] as const){
+    assert.deepEqual(first[kind].bytes,second[kind].bytes)
+    assert.notEqual(first[kind].sha256,changedDocuments[kind].sha256)
+    const pdf=await PDFDocument.load(first[kind].bytes)
+    assert.equal(pdf.catalog.has(PDFName.of('OpenAction')),false)
+    assert.equal(pdf.catalog.has(PDFName.of('Names')),false)
+    for(const [,object] of pdf.context.enumerateIndirectObjects()){
+      if(!(object instanceof PDFDict))continue
+      for(const key of ['URI','JavaScript','JS','AA','EF'])assert.equal(object.has(PDFName.of(key)),false)
+      assert.notEqual(object.get(PDFName.of('Subtype'))?.toString(),'/Image')
+      assert.notEqual(object.get(PDFName.of('Type'))?.toString(),'/Filespec')
+    }
+  }
+  assert.deepEqual(source,original)
+})
+
+test('v2 documents reject missing, duplicate, oversized or malformed photo manifests before producing attachments', async () => {
+  const entry=photoEvidence()
+  const invalid:unknown[]=[undefined,null,{},[entry,entry],[{...entry,photoId:'https://private.invalid/object'}],[{...entry,contentHash:'invalid'}],[{...entry,processingVersion:'https://private.invalid/image'}],Array.from({length:9},(_,i)=>({...entry,photoId:`33333333-2222-4333-8444-${String(i).padStart(12,'0')}`}))]
+  for(const photos of invalid){
+    const source=pdfFixture()
+    source.snapshot={...source.snapshot,version:CURRENT_DEMO_VERSION,photos} as DemoSnapshot
+    await assert.rejects(createDemoPdfDocuments(source))
+  }
+  const legacy=pdfFixture()
+  legacy.snapshot.photos=[entry]
+  await assert.rejects(createDemoPdfDocuments(legacy))
+})
+
+test('legacy photo-free documents remain unchanged and new photo-free v2 documents are valid', async () => {
+  const legacy=pdfFixture(),before=await createDemoPdfDocuments(legacy)
+  const current=pdfFixture()
+  current.snapshot={...current.snapshot,version:CURRENT_DEMO_VERSION,photos:[]}
+  const currentPayload=await createDemoPdfEmailPayload(current,'onboarding@resend.dev','lnkgroupsydney@gmail.com')
+  assert.equal(currentPayload.attachments.length,2)
+  for(const item of currentPayload.attachments)await PDFDocument.load(Buffer.from(item.content,'base64'))
+  const after=await createDemoPdfDocuments(legacy)
+  assert.deepEqual(after.quote.bytes,before.quote.bytes)
+  assert.deepEqual(after.agreement.bytes,before.agreement.bytes)
+  assert.equal(legacy.snapshot.version,'kcp-demo-v1')
+  assert.equal(legacy.snapshot.photos,undefined)
 })

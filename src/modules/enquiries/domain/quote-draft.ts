@@ -2,7 +2,7 @@ export type ContactDetails = { name: string; email: string; phone: string; siteA
 export type ServiceDetails = { serviceId: 'cabinet-painting'; intent: string; surfaces: string[]; doorCount: number | null; drawerCount: number | null; material: string; colourPreference: string };
 export type QuoteDraftInput = { contact: ContactDetails; service: ServiceDetails | null };
 export type QuoteDraft = { id: string; revision: number; payload: QuoteDraftInput; savedAt: string };
-export const QUOTE_PROGRESS = ['Your details', 'Service & photos', 'Assessment & price', 'Approve', 'Start date', 'Review & sign', 'Submit'] as const;
+export const QUOTE_PROGRESS = ['Your details', 'Service details', 'Photos', 'Assessment & price', 'Approve', 'Start date', 'Review & sign', 'Submit'] as const;
 export const PROJECT_INTENTS = ['full-repainting', 'partial-touch-ups', 'colour-change', 'advice'] as const;
 export const TARGET_SURFACES = ['doors', 'drawers', 'frames', 'panels', 'repairs', 'unknown'] as const;
 export class DraftValidationError extends Error {}

@@ -2,6 +2,8 @@
 
 import { useRef, useState } from "react";
 import type { EnquiryInput } from "@/modules/operations";
+import { mergeSelectedAddress, type AddressKind, type AddressSelection } from "@/shared/address";
+import { AddressAutocompleteInput } from "@/shared/ui/address-autocomplete-input";
 import "./enquiry-form.css";
 
 type FormValues = Omit<EnquiryInput, "serviceId" | "acknowledgement" | "idempotencyKey" | "doorCount" | "drawerCount"> & {
@@ -60,6 +62,11 @@ export function EnquiryForm() {
   function update<K extends Field>(field: K, value: FormValues[K]) {
     setValues((previous) => ({ ...previous, [field]: value }));
     setErrors((previous) => ({ ...previous, [field]: undefined }));
+    setSubmitError("");
+  }
+  function selectAddress(selection: AddressSelection, kind: AddressKind) {
+    setValues((current) => ({ ...current, ...mergeSelectedAddress({ ...current, siteAddress: current.siteAddress ?? "" }, selection, kind) }));
+    setErrors((current) => ({ ...current, siteAddress: undefined, suburb: undefined, postcode: undefined }));
     setSubmitError("");
   }
 
@@ -175,6 +182,7 @@ export function EnquiryForm() {
   const fieldError = (field: Field) => errors[field] ? <span className="enquiry-error" id={`enquiry-${field}-error`}>{errors[field]}</span> : null;
   const fieldProps = (field: Field) => ({ id: `enquiry-${field}`, "aria-invalid": Boolean(errors[field]) as boolean,
     "aria-describedby": errors[field] ? `enquiry-${field}-error` : undefined });
+  const addressContext = JSON.stringify([values.siteAddress, values.suburb, values.postcode]);
 
   return (
     <div className="enquiry-page">
@@ -212,13 +220,14 @@ export function EnquiryForm() {
                 {fieldError("targetSurfaces")}
               </fieldset>
               <div className="enquiry-grid">
-                <label>Suburb <span aria-hidden="true">*</span><input {...fieldProps("suburb")} aria-label="Suburb" autoComplete="address-level2" maxLength={100} value={values.suburb} onChange={(event) => update("suburb", event.target.value)} />{fieldError("suburb")}</label>
-                <label>Postcode <span aria-hidden="true">*</span><input {...fieldProps("postcode")} aria-label="Postcode" inputMode="numeric" autoComplete="postal-code" maxLength={4} value={values.postcode} onChange={(event) => update("postcode", event.target.value)} />{fieldError("postcode")}</label>
+                <div className="address-field"><label htmlFor="enquiry-suburb">Suburb <span aria-hidden="true">*</span></label><AddressAutocompleteInput {...fieldProps("suburb")} kind="suburb" addressContext={addressContext} onAddressSelect={selectAddress} autoComplete="address-level2" maxLength={100} value={values.suburb} onChange={(event) => update("suburb", event.target.value)} />{fieldError("suburb")}</div>
+                <div className="address-field"><label htmlFor="enquiry-postcode">Postcode <span aria-hidden="true">*</span></label><AddressAutocompleteInput {...fieldProps("postcode")} kind="postcode" addressContext={addressContext} onAddressSelect={selectAddress} inputMode="numeric" autoComplete="postal-code" maxLength={4} value={values.postcode} onChange={(event) => update("postcode", event.target.value)} />{fieldError("postcode")}</div>
                 <label>Cabinet doors <span className="enquiry-hint">Leave blank if unknown</span><input {...fieldProps("doorCount")} aria-label="Cabinet doors" type="number" min="0" max="500" step="1" value={values.doorCount} onChange={(event) => update("doorCount", event.target.value)} />{fieldError("doorCount")}</label>
                 <label>Drawer fronts <span className="enquiry-hint">Leave blank if unknown</span><input {...fieldProps("drawerCount")} aria-label="Drawer fronts" type="number" min="0" max="500" step="1" value={values.drawerCount} onChange={(event) => update("drawerCount", event.target.value)} />{fieldError("drawerCount")}</label>
                 <label>Material <span className="enquiry-hint">Optional; leave blank if unknown</span><input {...fieldProps("material")} maxLength={100} value={values.material} onChange={(event) => update("material", event.target.value)} /></label>
                 <label>Colour or finish idea <span className="enquiry-hint">Optional</span><input {...fieldProps("colourPreference")} maxLength={100} value={values.colourPreference} onChange={(event) => update("colourPreference", event.target.value)} /></label>
               </div>
+              <p className="enquiry-hint">When address suggestions are available, your search text is sent to Google. You can also enter your address manually. The team will confirm service availability.</p>
               <label>Anything else we should know? <span className="enquiry-hint">Optional</span><textarea {...fieldProps("notes")} rows={4} maxLength={3000} value={values.notes} onChange={(event) => update("notes", event.target.value)} /></label>
             </div>}
             {step === 1 && <div className="enquiry-step">
@@ -230,7 +239,8 @@ export function EnquiryForm() {
                 <label>Phone <span className="enquiry-hint">Optional</span><input {...fieldProps("phone")} type="tel" autoComplete="tel" maxLength={40} value={values.phone} onChange={(event) => update("phone", event.target.value)} /></label>
                 <label>Preferred date <span className="enquiry-hint">Optional</span><input {...fieldProps("preferredDate")} type="date" value={values.preferredDate ?? ""} onInput={(event) => update("preferredDate", event.currentTarget.value || null)} onChange={(event) => update("preferredDate", event.target.value || null)} />{fieldError("preferredDate")}</label>
               </div>
-              <label>Site address <span className="enquiry-hint">Optional at this stage</span><input {...fieldProps("siteAddress")} autoComplete="street-address" maxLength={240} value={values.siteAddress} onChange={(event) => update("siteAddress", event.target.value)} /></label>
+              <div className="address-field"><label htmlFor="enquiry-siteAddress">Site address <span className="enquiry-hint">Optional at this stage</span></label><AddressAutocompleteInput {...fieldProps("siteAddress")} kind="street" addressContext={addressContext} onAddressSelect={selectAddress} autoComplete="street-address" maxLength={240} value={values.siteAddress ?? ""} onChange={(event) => update("siteAddress", event.target.value)} /></div>
+              <p className="enquiry-hint">Address search sends what you type to Google when suggestions are available. Check any unit or apartment number. You can also enter your address manually.</p>
             </div>}
             {step === 2 && <div className="enquiry-step">
               <h2 ref={headingRef} tabIndex={-1}>Review your request</h2>

@@ -1,9 +1,10 @@
 import test,{after,beforeEach} from 'node:test'
 import assert from 'node:assert/strict'
-import {randomUUID} from 'node:crypto'
+import {createCipheriv,createHash,createHmac,randomBytes,randomUUID} from 'node:crypto'
 import {readFileSync,readdirSync} from 'node:fs'
 import {PGlite} from '@electric-sql/pglite'
-import type {DemoSnapshot,DemoSubmissionStatus} from './domain/demo-submission.ts'
+import {CURRENT_DEMO_VERSION,DEMO_VERSION,type DemoSnapshot,type DemoSubmissionStatus} from './domain/demo-submission.ts'
+import {PHOTO_NOTICE_VERSION,PHOTO_PROCESSING_VERSION,type QuotePhotoMutation} from './domain/quote-photos.ts'
 
 Object.assign(process.env,{
   OPERATIONS_STORE:'supabase',LOCAL_OPERATIONS_ENABLED:'true',APP_BASE_URL:'http://127.0.0.1:3002',QUOTE_DEMO_ENABLED:'true',QUOTE_DEMO_RECIPIENT_EMAIL:'lnkgroupsydney@gmail.com',
@@ -16,6 +17,7 @@ for(const name of readdirSync(new URL('../../../supabase/migrations/',import.met
 const tables=(await db.query<{tablename:string}>("select tablename from pg_tables where schemaname='public' and tablename like 'lk_%'")).rows.map(x=>x.tablename)
 const originalFetch=globalThis.fetch
 let events:unknown[]=[],googleFailed=false,googleCalls=0,scheduled:(()=>Promise<void>)[]=[]
+let beforeSubmitRpc:(()=>Promise<void>)|null=null
 globalThis.fetch=async(input,init)=>{
   const request=new Request(input,init),url=new URL(request.url)
   if(url.origin==='https://www.googleapis.com'){
@@ -27,8 +29,9 @@ globalThis.fetch=async(input,init)=>{
   assert.equal(url.origin,'https://demo-api-pglite.invalid','Unexpected external request')
   assert.equal(request.headers.get('apikey'),'synthetic-demo-key')
   const name=url.pathname.split('/').at(-1)!
-  assert.ok(['lk_quote_draft','lk_quote_submission','lk_operations_command','lk_google_health','lk_booking_command'].includes(name))
+  assert.ok(['lk_quote_draft','lk_quote_submission','lk_quote_photo','lk_operations_command','lk_google_health','lk_booking_command'].includes(name))
   const body=await request.json() as {command:string;args:Record<string,unknown>}
+  if(name==='lk_quote_submission'&&body.command==='submit'&&beforeSubmitRpc){const hook=beforeSubmitRpc;beforeSubmitRpc=null;await hook()}
   try{return Response.json((await db.query<{r:unknown}>(`select public.${name}($1,$2::jsonb) r`,[body.command,JSON.stringify(body.args)])).rows[0].r)}
   catch(err){const error=err as {code:string;message:string};return Response.json({code:error.code,message:error.message},{status:400})}
 }
@@ -47,7 +50,7 @@ beforeEach(async()=>{
   await db.exec(`truncate ${tables.map(x=>`public.${x}`).join(',')}`)
   await db.query("insert into public.lk_google_connection(id,account_sub,email,access_cipher,refresh_cipher,expires_at,selected_calendar_id) values(1,'test-company','lnkgroupsydney@gmail.com',$1,$2,$3,'test-calendar')",[encrypt('synthetic-access-token'),encrypt('synthetic-refresh-token'),Date.now()+3600000])
   await db.exec('set role service_role')
-  events=[];googleFailed=false;googleCalls=0;scheduled=[]
+  events=[];googleFailed=false;googleCalls=0;scheduled=[];beforeSubmitRpc=null
   process.env.QUOTE_DEMO_ENABLED='true';process.env.APP_BASE_URL='http://127.0.0.1:3002';process.env.QUOTE_DEMO_RECIPIENT_EMAIL='lnkgroupsydney@gmail.com'
 })
 after(async()=>{globalThis.fetch=originalFetch;await db.close()})
@@ -73,6 +76,36 @@ function submit(cookie:string,reviewToken:string,idempotencyKey=randomUUID(),ove
 }
 async function counts(){return (await db.query<{submissions:number;enquiries:number;outbox:number}>("select (select count(*)::int from public.lk_quote_submissions) submissions,(select count(*)::int from public.lk_enquiries) enquiries,(select count(*)::int from public.lk_outbox) outbox")).rows[0]}
 const busy=()=>({status:'confirmed',summary:'PRIVATE CALENDAR TITLE',attendees:[{email:'private@example.invalid'}],start:{date:chosenDate},end:{date:`${chosenMonth}-16`}})
+const hash=(value:unknown)=>createHash('sha256').update(JSON.stringify(value)).digest('hex')
+const ownerHash=(cookie:string)=>createHash('sha256').update(cookie.slice(cookie.indexOf('=')+1)).digest('hex')
+async function photoRpc<T=QuotePhotoMutation>(command:string,args:Record<string,unknown>):Promise<T>{
+  return (await db.query<{value:T}>('select public.lk_quote_photo($1,$2::jsonb) value',[command,JSON.stringify(args)])).rows[0].value
+}
+async function reservePhoto(cookie:string,expectedRevision=1){
+  return photoRpc('reserve',{owner_hash:ownerHash(cookie),expected_revision:expectedRevision,id:randomUUID(),key:randomUUID(),source_hash:'a'.repeat(64),input_bytes:500,source_mime:'image/jpeg',notice_version:PHOTO_NOTICE_VERSION,notice_accepted:true})
+}
+async function attachPhoto(cookie:string,id:string){
+  const holder=randomUUID()
+  const claimed=await photoRpc<{record:{lease_generation:number}}>('claim_upload',{owner_hash:ownerHash(cookie),id,holder})
+  const lease={id,holder,generation:claimed.record.lease_generation}
+  // Synthetic validated-image metadata; byte decoding/Storage have separate tests.
+  await photoRpc('prepare',{...lease,content_hash:'c'.repeat(64),stored_bytes:300,width:100,height:80})
+  return photoRpc('attach',lease)
+}
+// Compatibility fixture for an authentic, formerly issued v1 review. This is
+// deliberately separate from the application's current v2 token issuer.
+async function legacyReview(cookie:string){
+  const proof=await reviewed(cookie)
+  const snapshot={...proof.snapshot,version:DEMO_VERSION}
+  delete snapshot.photos
+  const key=process.env.GOOGLE_TOKEN_ENCRYPTION_KEY!
+  const iv=randomBytes(12),cipher=createCipheriv('aes-256-gcm',createHash('sha256').update(`quote-demo-review-encryption-v1:${key}`).digest(),iv)
+  const state={snapshot,owner:ownerHash(cookie),calendarId:'test-calendar',availabilityRevision:(await demoAvailability(chosenMonth)).snapshot.revision,expires:Date.now()+600_000}
+  const ciphertext=Buffer.concat([cipher.update(JSON.stringify(state),'utf8'),cipher.final()])
+  const value=Buffer.concat([iv,cipher.getAuthTag(),ciphertext]).toString('base64url')
+  const mac=createHmac('sha256',Buffer.from(key,'hex')).update(`quote-demo-review-v1:${value}`).digest('hex')
+  return {snapshot,reviewToken:`${value}.${mac}`}
+}
 
 test('demo handlers require explicit loopback enablement, private session and same-origin writes',async()=>{
   assert.equal((await api.availabilityGet(req(`availability?month=${chosenMonth}`))).status,401)
@@ -121,6 +154,64 @@ test('saved details changes invalidate approval and signature before submission'
   assert.equal(scheduled.length,0)
 })
 
+test('pending photos block a fresh review and cannot be bypassed by an earlier signed token',async()=>{
+  const cookie=await fixture(),proof=await reviewed(cookie)
+  const reserved=await reservePhoto(cookie)
+  const blockedReview=await review(cookie,reserved.draftRevision)
+  assert.equal(blockedReview.status,409,await blockedReview.clone().text())
+  assert.equal((await submit(cookie,proof.reviewToken)).status,409)
+  assert.deepEqual(await counts(),{submissions:0,enquiries:0,outbox:0})
+  assert.equal(scheduled.length,0)
+})
+
+test('adding or deleting saved photos invalidates previous signatures and new review freezes only the current manifest',async()=>{
+  const cookie=await fixture(),withoutPhotos=await reviewed(cookie)
+  const reserved=await reservePhoto(cookie),attached=await attachPhoto(cookie,reserved.photo.id)
+  assert.equal((await submit(cookie,withoutPhotos.reviewToken)).status,409)
+  const photoReview=await review(cookie,attached.draftRevision)
+  assert.equal(photoReview.status,200,await photoReview.clone().text())
+  const withPhotos=await photoReview.json() as {snapshot:DemoSnapshot;reviewToken:string}
+  assert.deepEqual(withPhotos.snapshot.photos,[{photoId:reserved.photo.id,contentHash:'c'.repeat(64),processingVersion:PHOTO_PROCESSING_VERSION}])
+  assert.equal(JSON.stringify(withPhotos.snapshot).includes('object_path'),false)
+  const deleted=await photoRpc('delete',{owner_hash:ownerHash(cookie),id:reserved.photo.id,expected_revision:attached.draftRevision})
+  const holder=randomUUID(),claim=await photoRpc<{record:{lease_generation:number}}>('claim_recovery',{id:reserved.photo.id,holder})
+  await photoRpc('delete_done',{id:reserved.photo.id,holder,generation:claim.record.lease_generation})
+  assert.equal((await submit(cookie,withPhotos.reviewToken)).status,409)
+  const emptyReview=await review(cookie,deleted.draftRevision)
+  assert.equal(emptyReview.status,200,await emptyReview.clone().text())
+  const current=await emptyReview.json() as {snapshot:DemoSnapshot;reviewToken:string}
+  assert.deepEqual(current.snapshot.photos,[])
+  assert.equal((await submit(cookie,current.reviewToken)).status,202)
+  assert.deepEqual(await counts(),{submissions:1,enquiries:0,outbox:0})
+})
+
+test('a photo mutation after API revalidation but before the submission transaction cannot freeze an outdated signature',async()=>{
+  const cookie=await fixture(),proof=await reviewed(cookie)
+  beforeSubmitRpc=async()=>{await reservePhoto(cookie)}
+  const response=await submit(cookie,proof.reviewToken)
+  assert.equal(response.status,409,await response.clone().text())
+  assert.deepEqual(await counts(),{submissions:0,enquiries:0,outbox:0})
+  assert.equal(scheduled.length,0)
+})
+
+test('a v2 submission freezes the server-owned photo evidence and retries keep the same saved request',async()=>{
+  const cookie=await fixture(),reserved=await reservePhoto(cookie),attached=await attachPhoto(cookie,reserved.photo.id)
+  const response=await review(cookie,attached.draftRevision)
+  assert.equal(response.status,200,await response.clone().text())
+  const proof=await response.json() as {snapshot:DemoSnapshot;reviewToken:string},key=randomUUID()
+  const submitted=await submit(cookie,proof.reviewToken,key,{photos:[{photoId:randomUUID(),contentHash:'e'.repeat(64),processingVersion:PHOTO_PROCESSING_VERSION}]})
+  assert.equal(submitted.status,202,await submitted.clone().text())
+  const receipt=await submitted.json() as {submission:DemoSubmissionStatus}
+  const stored=(await db.query<{snapshot:DemoSnapshot}>('select snapshot from public.lk_quote_submissions where id=$1',[receipt.submission.id])).rows[0].snapshot
+  assert.deepEqual(stored,proof.snapshot)
+  assert.deepEqual(stored.photos,[{photoId:reserved.photo.id,contentHash:'c'.repeat(64),processingVersion:PHOTO_PROCESSING_VERSION}])
+  googleFailed=true
+  const replay=await submit(cookie,proof.reviewToken,key)
+  assert.equal(replay.status,202,await replay.clone().text())
+  assert.deepEqual(await replay.json(),receipt)
+  assert.deepEqual(await counts(),{submissions:1,enquiries:0,outbox:0})
+})
+
 test('new busy events and Calendar target changes after signing are rejected by a fresh submission check',async()=>{
   const cookie=await fixture(),proof=await reviewed(cookie)
   events=[busy()]
@@ -134,6 +225,8 @@ test('new busy events and Calendar target changes after signing are rejected by 
 
 test('successful submission saves only the demo receipt; response-loss retry works without Google and queues no calendar before email',async()=>{
   const cookie=await fixture(),proof=await reviewed(cookie),key=randomUUID()
+  assert.equal(proof.snapshot.version,CURRENT_DEMO_VERSION)
+  assert.deepEqual(proof.snapshot.photos,[])
   const first=await submit(cookie,proof.reviewToken,key)
   assert.equal(first.status,202,await first.clone().text())
   const result=await first.json() as {submission:DemoSubmissionStatus}
@@ -146,6 +239,38 @@ test('successful submission saves only the demo receipt; response-loss retry wor
   assert.equal((await submit(cookie,proof.reviewToken,randomUUID())).status,409)
   assert.deepEqual(await counts(),{submissions:1,enquiries:0,outbox:0})
   assert.deepEqual(await (await api.submissionGet(req('submission','GET',cookie))).json(),result)
+})
+
+test('a valid unsubmitted v1 review must be reviewed again instead of silently signing a v2 snapshot',async()=>{
+  const cookie=await fixture(),proof=await legacyReview(cookie)
+  const rejected=await submit(cookie,proof.reviewToken)
+  assert.equal(rejected.status,409,await rejected.clone().text())
+  assert.match((await rejected.json() as {error:string}).error,/review/i)
+  assert.deepEqual(await counts(),{submissions:0,enquiries:0,outbox:0})
+  assert.equal(scheduled.length,0)
+  const current=await reviewed(cookie)
+  assert.equal(current.snapshot.version,CURRENT_DEMO_VERSION)
+  assert.equal((await submit(cookie,current.reviewToken)).status,202)
+})
+
+test('an already saved v1 submission keeps its exact snapshot and idempotent response-loss retry',async()=>{
+  const cookie=await fixture(),proof=await legacyReview(cookie),key=randomUUID(),id=randomUUID()
+  const savedSignature=api.validateDemoSignature(signature)
+  // Simulate a historical row created before the v2 migration. Existing immutable
+  // records must remain readable and replayable without issuing a new review.
+  await db.query('insert into public.lk_quote_submissions(id,draft_id,owner_hash,idempotency_key,request_hash,reference,snapshot,snapshot_hash,signature,calendar_id) values($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)',[id,proof.snapshot.draftId,ownerHash(cookie),key,hash({reviewToken:proof.reviewToken,signature:savedSignature}),`DEMO-${id.slice(0,8).toUpperCase()}`,JSON.stringify(proof.snapshot),hash(proof.snapshot),JSON.stringify(savedSignature),'test-calendar'])
+  const original=(await db.query<{snapshot:DemoSnapshot;signature:unknown}>('select snapshot,signature from public.lk_quote_submissions where id=$1',[id])).rows[0]
+  googleFailed=true
+  const before=googleCalls,replayed=await submit(cookie,proof.reviewToken,key)
+  assert.equal(replayed.status,202,await replayed.clone().text())
+  assert.equal((await replayed.json() as {submission:DemoSubmissionStatus}).submission.id,id)
+  assert.equal(googleCalls,before)
+  assert.equal((await submit(cookie,proof.reviewToken,randomUUID())).status,409)
+  const saved=(await db.query<{snapshot:DemoSnapshot;signature:unknown}>('select snapshot,signature from public.lk_quote_submissions where id=$1',[id])).rows[0]
+  assert.deepEqual(saved,original)
+  assert.equal(saved.snapshot.version,DEMO_VERSION)
+  assert.equal(saved.snapshot.photos,undefined)
+  assert.deepEqual(await counts(),{submissions:1,enquiries:0,outbox:0})
 })
 
 test('signature bounds reject empty, tiny, non-finite, oversized and unacknowledged drawings',()=>{

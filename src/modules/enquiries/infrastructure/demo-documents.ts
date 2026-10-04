@@ -1,5 +1,6 @@
-import { DEMO_PRICE, DEMO_TERMS, DEMO_VERSION, type DemoSignature, type DemoSnapshot } from '../domain/demo-submission.ts'
+import { DEMO_PRICE, DEMO_TERMS, DEMO_VERSION, CURRENT_DEMO_VERSION, type DemoSignature, type DemoSnapshot } from '../domain/demo-submission.ts'
 import { validateQuoteDraft } from '../domain/quote-draft.ts'
+import { validateQuotePhotoManifest } from '../domain/quote-photos.ts'
 
 export interface DemoDocumentSource {
   id: string
@@ -24,11 +25,13 @@ function escape(value: unknown): string {
 }
 function validSource(source: DemoDocumentSource) {
   const s = source.snapshot
-  if (!s || s.mode !== 'demo' || s.version !== DEMO_VERSION || !s.price || s.price.currency !== DEMO_PRICE.currency || s.price.totalCents !== DEMO_PRICE.totalCents || s.price.label !== DEMO_PRICE.label ||
+  if (!s || s.mode !== 'demo' || ![DEMO_VERSION,CURRENT_DEMO_VERSION].includes(s.version) || !s.price || s.price.currency !== DEMO_PRICE.currency || s.price.totalCents !== DEMO_PRICE.totalCents || s.price.label !== DEMO_PRICE.label ||
       JSON.stringify(s.terms) !== JSON.stringify(DEMO_TERMS) || !/^[A-Za-z0-9-]{1,80}$/.test(source.reference) ||
       !/^[a-f0-9]{64}$/.test(source.snapshot_hash) || !Number.isFinite(Date.parse(source.submitted_at)) ||
       !/^\d{4}-\d{2}-\d{2}$/.test(s.preferredDate)) throw new Error('Invalid demonstration document source')
   if (!validateQuoteDraft(s.payload).service) throw new Error('Missing demonstration service')
+  if (s.version === CURRENT_DEMO_VERSION) validateQuotePhotoManifest(s.photos)
+  else if (s.photos !== undefined) throw new Error('Legacy demonstration cannot include new photo evidence')
   const signature = source.signature
   if (!signature || signature.acknowledged !== true || typeof signature.name !== 'string' || !signature.name.trim() || signature.name.length > 120 || !Array.isArray(signature.strokes)) throw new Error('Invalid demonstration signature')
   let count = 0, minX = 1, maxX = 0, minY = 1, maxY = 0
@@ -60,7 +63,8 @@ export function createDemoEmailPayload(source: DemoDocumentSource, from: string,
   const amount = new Intl.NumberFormat('en-AU', { style:'currency', currency:'AUD' }).format(snapshot.price.totalCents/100)
   const notice = `<p class="notice"><strong>DEMONSTRATION ONLY.</strong> This is not a binding quote, contract or invoice. No payment is due. The preferred date remains pending company confirmation.</p>`
   const details = `<dl>${row('Reference',reference)}${row('Submitted',source.submitted_at)}${row('Customer',contact.name)}${row('Contact email',contact.email)}${row('Phone',contact.phone)}${row('Site address',[contact.siteAddress,contact.suburb,contact.postcode].filter(Boolean).join(', '))}${row('Project details',contact.details)}${row('Service','Kitchen Cabinet Painting — existing cabinets only')}${row('Requested work',service?.intent)}${row('Surfaces',service?.surfaces.join(', '))}${row('Cabinet doors',service?.doorCount ?? 'Unknown')}${row('Drawer fronts',service?.drawerCount ?? 'Unknown')}${row('Material',service?.material)}${row('Colour or finish',service?.colourPreference)}${row('Preferred start date',snapshot.preferredDate)}${row('Booking status','Pending confirmation — work duration and conflicts require company review')}${row('Demonstration amount',`${amount} AUD — sample only, no payment due`)}</dl>`
-  const audit = `<p>Demonstration version: ${escape(snapshot.version)}</p><p class="hash">Signed snapshot: ${escape(source.snapshot_hash)}</p>`
+  const photoEvidence = snapshot.photos ? `<p>Privately saved photos in this signed request: ${snapshot.photos.length}. Images are not attached to this email.</p><ul>${snapshot.photos.map(photo=>`<li>Photo ${escape(photo.photoId)}<br>Content SHA-256: ${escape(photo.contentHash)}<br>Processing version: ${escape(photo.processingVersion)}</li>`).join('')}</ul>` : ''
+  const audit = `${photoEvidence}<p>Demonstration version: ${escape(snapshot.version)}</p><p class="hash">Signed snapshot: ${escape(source.snapshot_hash)}</p>`
   const quote = document(`Demo quote ${reference}`, `<h1>L&amp;K Group — demonstration quote</h1>${notice}${details}${audit}`)
   const terms = document(`Signed demo terms ${reference}`, `<h1>L&amp;K Group — signed demonstration terms</h1>${notice}${details}<h2>Demonstration terms</h2><ol>${snapshot.terms.map(term=>`<li>${escape(term)}</li>`).join('')}</ol><h2>Demonstration acknowledgement</h2><p>Signed by: ${escape(signature.name)}</p><p>The signer acknowledged the demonstration terms above for this exact saved snapshot.</p>${signatureSvg(signature)}${audit}`)
   const subject = `[DEMO] L&K quote and signed terms — ${reference}`

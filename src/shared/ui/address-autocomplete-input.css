@@ -1,0 +1,12 @@
+.address-field{display:grid;align-content:start;gap:.4rem;min-width:0}
+.address-autocomplete{min-width:0;font-weight:400}
+.address-autocomplete-control{position:relative;min-width:0}
+.address-autocomplete input{min-width:0}
+.address-autocomplete-panel{position:absolute;inset-inline:0;top:calc(100% + .2rem);z-index:20;max-width:100%;border:1px solid var(--site-border-strong);border-radius:2px;background:#fff;box-shadow:0 5px 15px #0002;color:var(--site-foreground)}
+.address-autocomplete-options{max-height:17rem;overflow-y:auto;overscroll-behavior:contain;margin:0;padding:0;list-style:none}
+.address-autocomplete-options button{display:block;min-width:0;width:100%;min-height:44px;padding:.7rem .75rem;border:0;border-bottom:1px solid var(--site-border);border-radius:0;background:#fff;color:inherit;text-align:left;font:inherit;font-size:.9rem;line-height:1.4;white-space:normal;overflow-wrap:anywhere;cursor:pointer;touch-action:manipulation}
+.address-autocomplete-options button[aria-selected=true]{background:var(--site-background);box-shadow:inset 3px 0 var(--site-action)}
+.address-autocomplete-options button:focus-visible{outline:2px solid var(--site-action);outline-offset:-3px}
+.address-autocomplete-attribution{padding:10px 10px 5px;font-family:Arial,sans-serif;font-style:normal;font-weight:400;font-size:12px;letter-spacing:normal;white-space:nowrap;color:#5e5e5e;text-align:right}
+.address-autocomplete-status{display:block;margin-top:.35rem;font-size:.8rem;line-height:1.4;color:var(--site-muted);overflow-wrap:anywhere}
+.address-autocomplete-status:empty{display:none}

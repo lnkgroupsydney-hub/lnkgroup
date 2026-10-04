@@ -8,6 +8,10 @@ L&K Group의 서비스 홈페이지, 온라인 쇼핑몰, ERP·CRM 운영관리 
 
 ## 읽는 순서
 
+**2026-10-04 구현·실제 연결 — 예약·서명 보강과 비공개 사진:** 새 `codex/private-quote-photos` 브랜치에서 [35번](docs/plans/35-mobile-booking-private-photo-plan.md)의 사진 업로드·검사·비공개 저장/조회/삭제/복원과 사진 변경 시 재승인·서명 원본 보존을 구현했다. 회사 Supabase에 신규 migration을 적용해 업무 테이블 22개·신규 사진 테이블의 RLS/역할 차단과 private JPEG 버킷을 확인했다. 회사 Chrome에서 사진 포함 `kcp-demo-v2` 제출 `DEMO-F628C5C6`을 저장·새로고침 복원했고, 회사 Gmail 받은편지함 1통/PDF 2개와 10월 21일 `Pending confirmation` Calendar 이벤트 1개를 실제 확인했다. 별도 고객 세션의 예약일 차단 UI와 서명 포인터 처리를 검증·보강했으며, 실제 휴대폰 서명·관리자 화면 재로그인 후 열람·사진 화면 320px 확인은 남아 있다. 마지막 DB 보호 조건을 포함한 전체 **229/229 테스트**와 lint·타입·빌드가 통과했다. [실행 증거](docs/verification/2026-10-04-private-photos-mobile-booking.md)는 실제 연결과 격리 장애 시험을 구분한다. Google 주소 검색 결제 요청은 진행 중이며 AI·운영 가격/약관·운영 고객 인증·공개 배포는 후속이다.
+
+**2026-10-03 추가 요청 — 전체 주소 자동완성 코드 완료:** [34번](docs/plans/34-google-address-autocomplete.md)에 따라 견적·문의 폼의 주소·지역명·우편번호 6개 입력에 Google Places (New) 공통 검색/선택을 연결했다. 회사 Cloud의 결제 비활성·API 키 미설정을 확인했고, 사용자는 결제 등록을 나중에 하고 코드 구현까지만 진행하도록 확정했다. 실제 Google 검색은 후속이며 미연결 상태에서도 직접 입력·저장 경로를 유지한다. 전체 검사 180개·lint·타입·빌드와 가상 응답의 키보드/포인터 선택·320px·늦은 응답 무시·무키 수동 폼 동작을 [검증](docs/verification/2026-10-03-google-address-autocomplete.md)했다. 실제 Google 주소 선택/저장·복원 시험과 구분한다.
+
 **2026-10-03 회사 데모 확장·실제 왕복 검증:** [33번 관리자 검토·회사 일정 확정](docs/plans/33-admin-booking-confirmation-day-plan.md)의 비공개 제출/PDF·수동 작업 구간·재서명·전체 기간 충돌 검사·원자적 점유·Google 변경 검토를 연결했다. 회사 Supabase에 신규 migration 두 개를 적용하고 **21테이블/7 RPC·공개 역할 차단**, 보안 Advisor 오류·경고 0을 확인했다. 회사 Chrome에서 새 `DEMO-EE6B0405`의 고객/서비스 저장→날짜·키보드 서명→PDF 메일→회사 제안·재서명·확정→Google 외부 이동→재검토·재서명·재확정을 실제 확인했다. Google의 기본 `opaque` 생략 응답으로 생긴 검토 오류를 수정한 뒤 **164/164 테스트·lint·타입·빌드가 통과**했다. [검증 기록](docs/verification/2026-10-03-admin-booking-confirmation.md)에서 실제 연동과 격리 시험을 구분한다. 회사 Gmail 4통/PDF 8개와 Google 이벤트 4개(원본 요청·최종 작업 2·요약 1), 반복 worker 중복 없음·새로고침 복원·320/390px 화면·콘솔 오류 없음을 확인했다. 실제 모바일 터치·별도 작성 세션의 날짜 선택 UI는 남아 있으며, 운영 가격·약관·근무/자원 정책·고객 인증·발신 도메인·공개 배포는 별도다.
 
 **회사 전용 데모 실제 검증 완료(2026-10-02):** 서비스 저장 → 데모 금액·약관 승인 → 날짜 선택 → 서명·제출 → Resend → 회사 Calendar를 연결했다. [검증 결과](docs/verification/2026-10-02-demo-quote-email-calendar.md): 자동 검사 117개, 회사 Gmail 스팸함 1통/HTML 첨부 2개, Calendar 확정 대기 이벤트 1개, 실제 예약일 차단·중복 없음·새로고침 복원 확인. 시험 수신자는 회사 주소로 제한한다. PDF·실제 가격/약관/계약·사진/AI·운영 배포는 별도다.
@@ -22,11 +26,11 @@ L&K Group의 서비스 홈페이지, 온라인 쇼핑몰, ERP·CRM 운영관리 
 
 **현재 작업(2026-09-30): [Gmail 문의 → 회사 검토 → Google Calendar](docs/plans/28-gmail-enquiry-calendar-implementation.md) 로컬 구현·검증 완료.** [18번 후속 제품 흐름](docs/plans/18-kcp-page-prototype.md)·[25번 전체 계획](docs/plans/25-kcp-quote-to-booking-implementation.md)·[15번 TODO](docs/plans/15-home-cabinet-admin-todo.md)를 따른다. P0 명세 이후 KCP 견적 폼, 로컬 SQLite 저장, `/admin` 비공개 문의함, 회사 OAuth, Gmail 라벨 수집과 제안 일정의 Calendar 양방향 검토를 구현했다. 코드 검사·대체 전송 테스트 23개·실제 브라우저·재시작 보존 확인은 [검증 기록](docs/verification/2026-09-30-gmail-calendar.md)을 따른다. 9월 30일 당시 실제 Google 연결은 회사 OAuth 클라이언트 설정 대기였으며, 최신 상태는 위 10월 1일 항목을 따른다. 설정 방법·이번 구현 범위는 28번에 정리한다.
 
-연동 계정은 `Lnkgroupsydney@gmail.com`이며 공개 문의 이메일과 구분한다. Google에서의 수정은 검증 후 앱에 반영한다. **마지막 작업 후 프로젝트 Complete → 인보이스 발행 → 실제 발행일 +3 달력일 납기(Sydney)** 정책은 [27번](docs/plans/27-kcp-google-calendar-sync.md)에 보존한다. 청구 실행·사진·AI·운영 고객 이메일은 후속 단계다. Resend는 위 사용자 승인 회사 전용 데모 범위에서 먼저 연결한다. 근무시간·기간 산식은 보류하고 정찰제는 가격 수령 후 진행한다. 최초 제출 일정은 확정 대기 요청이다. 33번의 회사 검토·재서명·충돌 검사 후 확정은 회사 전용 데모이며 운영 예약 승인은 별도다. 과거 Cabinet ‘약 1주’는 소개·문의 접수 목표이며 전체 기능의 납기가 아니다.
+연동 계정은 `Lnkgroupsydney@gmail.com`이며 공개 문의 이메일과 구분한다. Google에서의 수정은 검증 후 앱에 반영한다. **마지막 작업 후 프로젝트 Complete → 인보이스 발행 → 실제 발행일 +3 달력일 납기(Sydney)** 정책은 [27번](docs/plans/27-kcp-google-calendar-sync.md)에 보존한다. 비공개 사진은 35번 회사 데모까지 연결했고 청구 실행·AI·운영 고객 이메일은 후속 단계다. Resend는 위 사용자 승인 회사 전용 데모 범위에서 먼저 연결한다. 근무시간·기간 산식은 보류하고 정찰제는 가격 수령 후 진행한다. 최초 제출 일정은 확정 대기 요청이다. 33번의 회사 검토·재서명·충돌 검사 후 확정은 회사 전용 데모이며 운영 예약 승인은 별도다. 과거 Cabinet ‘약 1주’는 소개·문의 접수 목표이며 전체 기능의 납기가 아니다.
 
 **현재 작업(2026-09-29): KCP 시네마틱 디자인 구현·로컬 검증 완료.** 메인은 기존 서비스 소개 프로토타입으로 유지하고, **Kitchen Cabinet Painting 상세에만** 사진형 Hero, 실제 WebGL 9단계 공정과 완료 장면, 전후 비교 슬라이더, 색상·광택 미리보기를 적용했다. [최신 구현 범위](docs/plans/24-cinematic-kitchen-webgl.md), [글로벌 디자인 시스템](docs/plans/21-global-design-system.md), [실제 검증 기록](docs/verification/2026-09-29-cinematic-v3.md)을 따른다. 같은 모델의 문짝·손잡이·힌지를 분리하고 세척·국소 퍼티 보수·프라이머·두 마감 코트·재조립을 가역 스크롤로 연결했다. 모델은 사진을 참고한 건축 컨셉이며 실측 CAD나 실사 재구성은 아니다. 모바일·JavaScript/WebGL 미지원 환경에는 읽을 수 있는 사진과 본문을 제공한다. 전역 토큰과 공용 KitchenScene 렌더러를 콘텐츠에서 분리했다. 현재 프로덕션 미리보기는 [KCP](http://127.0.0.1:3002/services/cabinet-painting) / [메인](http://127.0.0.1:3002)이다.
 
-회사 자료·메인 SEO는 앞서 반영했다. [회사 제공 자료](docs/reference-assets/company-brief.md)를 기준으로 실제 전화·이메일·지역·회사 로고·홍보 이미지·작업 사진을 유지한다. 회사 Supabase 연결·저장 검증은 완료했고 Google 핵심 실연동 검증은 완료했으며 운영 전환·배포 승인·운영 도메인은 대기다. `noindex`는 유지하며 로컬 요청 폼 이후 사진 업로드·AI·확정 견적/예약·인보이스·결제는 [순차 구현 목표](docs/plans/25-kcp-quote-to-booking-implementation.md)로 남긴다. 현장별 전후 사례 자료·실측 정밀 모델·정량 성능 및 실제 기기 검증은 남아 있다.
+회사 자료·메인 SEO는 앞서 반영했다. [회사 제공 자료](docs/reference-assets/company-brief.md)를 기준으로 실제 전화·이메일·지역·회사 로고·홍보 이미지·작업 사진을 유지한다. 회사 Supabase 연결·저장 검증은 완료했고 Google 핵심 실연동 검증은 완료했으며 운영 전환·배포 승인·운영 도메인은 대기다. `noindex`는 유지하며 사진 업로드는 35번 회사 데모 범위로 검증했고, 실제 AI·운영 견적/예약·인보이스·결제는 [순차 구현 목표](docs/plans/25-kcp-quote-to-booking-implementation.md)로 남긴다. 현장별 전후 사례 자료·실측 정밀 모델·정량 성능 및 실제 기기 검증은 남아 있다.
 
 Cabinet 상세 `/services/cabinet-painting`의 6개 서비스·적합성·포함/제외·공정·컨셉 사례·FAQ 최초 구성은 [SEO·지역 개정](docs/plans/19-kcp-seo-content-and-service-area.md)과 [이전 검증](docs/verification/2026-09-27-kcp-seo-content.md)을 참조한다. 회사가 제공한 최신 서비스 지역은 기존 지도 조사의 제한적인 후보 목록보다 우선한다.
 
@@ -88,6 +92,8 @@ npm run dev -- --port 3002
 | [31 Google 연동 복구·자동 수집](docs/plans/31-google-integration-recovery-and-operation-plan.md) | 10월 2일 OAuth 상태·재연결·worker 중단 복구·남은 예외·DB 점검·운영 전환 계획 |
 | [32 고객 견적·서명·제출](docs/plans/32-client-quote-signature-submission.md) | 고객 선저장·approve·예약일 차단·서명 제출·메일→Calendar·회사 최종 확정 계약 |
 | [33 관리자 검토·회사 일정 확정](docs/plans/33-admin-booking-confirmation-day-plan.md) | 10월 3일 제출 검토·수동 기간·재동의·충돌 방지·데모 확정·PDF의 구현 순서와 검증 기준 |
+| [34 Google 주소 자동완성](docs/plans/34-google-address-autocomplete.md) | 전체 주소 입력 검색/선택, 수동 입력 대체, 결제·키 설정과 실제 연결 검증 |
+| [35 예약·터치 서명·비공개 사진](docs/plans/35-mobile-booking-private-photo-plan.md) | 10월 4일 예약/서명 보강과 비공개 사진·불변 제출 구현, 실제 연결/격리 검증과 남은 기기 의존성 |
 
 클라이언트 전달본은 [Word 구현계획서](deliverables/LK_Group_Client_Implementation_Plan_KO.docx)이며, 편집 가능한 원문은 [클라이언트 제안서 Markdown](docs/client-proposal.md)이다. 기술 기준은 위 개발 문서가 원본이며, 클라이언트 문서를 변경할 때 관련 개발 문서도 함께 갱신한다. 문서 자체의 확인 결과는 [검증 기록](docs/document-validation.md)에 정리했다.
 
