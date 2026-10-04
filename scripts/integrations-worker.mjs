@@ -15,11 +15,25 @@ process.on('SIGINT', stop)
 process.on('SIGTERM', stop)
 while (running) {
   let deliveryFailed = false
+  if (process.env.OPERATIONS_STORE === 'supabase') {
+    try {
+      const {recoverQuotePhotos}=await import('../src/modules/enquiries/photos.ts')
+      const photos=await recoverQuotePhotos()
+      if(photos.recovered||photos.deferred) {
+        const line=`[${new Date().toISOString()}] Private photo recovery: recovered ${photos.recovered}, deferred ${photos.deferred}.\n`
+        if(photos.deferred)process.stderr.write(line);else process.stdout.write(line)
+      }
+      deliveryFailed ||= photos.deferred>0
+    } catch {
+      deliveryFailed=true
+      process.stderr.write('Private photo recovery is unavailable; recorded work remains for retry.\n')
+    }
+  }
   if (process.env.QUOTE_DEMO_ENABLED === 'true') {
     try {
       const { runDemoDelivery } = await import('../src/modules/enquiries/infrastructure/demo-email.ts')
       const delivery = await runDemoDelivery({limit:1})
-      deliveryFailed = delivery.failed > 0 || delivery.retrying > 0 || delivery.reviewRequired > 0 || delivery.storageErrors > 0
+      deliveryFailed ||= delivery.failed > 0 || delivery.retrying > 0 || delivery.reviewRequired > 0 || delivery.storageErrors > 0
       const line = `[${new Date().toISOString()}] Demo delivery: claimed ${delivery.claimed}, accepted ${delivery.accepted}, Calendar queued ${delivery.calendarQueued}, retrying ${delivery.retrying}, failed ${delivery.failed}, review required ${delivery.reviewRequired}.\n`
       if (deliveryFailed) process.stderr.write(line)
       else process.stdout.write(line)

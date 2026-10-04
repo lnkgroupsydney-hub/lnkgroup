@@ -1,6 +1,8 @@
 import type { QuoteDraftInput } from './quote-draft.ts';
+import type { QuotePhotoManifestEntry } from './quote-photos.ts';
 
 export const DEMO_VERSION = 'kcp-demo-v1';
+export const CURRENT_DEMO_VERSION = 'kcp-demo-v2';
 export const DEMO_PRICE = { currency: 'AUD', totalCents: 125000, label: 'Demonstration amount only — not a real quote or invoice.' } as const;
 export const DEMO_TERMS = [
   'This is a demonstration of the request, signature, email and calendar workflow. It is not a binding quote or contract.',
@@ -12,9 +14,11 @@ export const DEMO_TERMS = [
 export type SignaturePoint = { x: number; y: number };
 export type DemoSignature = { name: string; strokes: SignaturePoint[][]; acknowledged: true };
 export interface DemoSnapshot {
-  mode: 'demo'; version: typeof DEMO_VERSION; draftId: string; draftRevision: number;
+  mode: 'demo'; version: typeof DEMO_VERSION | typeof CURRENT_DEMO_VERSION; draftId: string; draftRevision: number;
   payload: QuoteDraftInput; preferredDate: string;
   price: typeof DEMO_PRICE; terms: readonly string[];
+  /** Required for v2; absent on immutable historical v1 submissions. */
+  photos?: QuotePhotoManifestEntry[];
 }
 export interface DemoSubmissionStatus {
   id: string; reference: string; submittedAt: string; preferredDate: string;

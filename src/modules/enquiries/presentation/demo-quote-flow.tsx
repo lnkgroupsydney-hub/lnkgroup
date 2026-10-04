@@ -1,11 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import { SignaturePad } from "@/shared/ui/signature-pad";
 import { CustomerBookingReview } from "@/modules/bookings/client";
-import { DEMO_PRICE, DEMO_TERMS, DEMO_VERSION, type DemoSignature, type DemoSnapshot, type DemoSubmissionStatus, type SignaturePoint } from "../domain/demo-submission";
+import { DEMO_PRICE, DEMO_TERMS, CURRENT_DEMO_VERSION, type DemoSignature, type DemoSnapshot, type DemoSubmissionStatus, type SignaturePoint } from "../domain/demo-submission";
 import { validateQuoteDraft, type QuoteDraft } from "../domain/quote-draft";
 import type { AvailabilityDay } from "../domain/availability";
+import { validateQuotePhotoManifest, type QuotePhotoManifestEntry } from "../domain/quote-photos";
+import "./quote-photo-upload.css";
 
 type DemoConfiguration = { enabled: boolean; recipientEmail: string; submission: DemoSubmissionStatus | null };
 type Availability = { days: AvailabilityDay[]; revision: string; checkedAt: string; expiresAt: string };
@@ -43,9 +46,11 @@ function parseAvailability(value: Record<string,unknown>): Availability {
   if (!Array.isArray(value.days) || !value.days.every(day => record(day) && typeof day.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(day.date) && typeof day.selectable === "boolean" && typeof day.reason === "string") || typeof value.revision !== "string" || typeof value.checkedAt !== "string" || typeof value.expiresAt !== "string" || !Number.isFinite(Date.parse(value.checkedAt)) || !Number.isFinite(Date.parse(value.expiresAt))) throw new Error("Available dates could not be verified. Please refresh the calendar.");
   return value as unknown as Availability;
 }
-function parseReview(value: Record<string,unknown>, draft: QuoteDraft, preferredDate: string): Review {
+function manifestKey(photos: QuotePhotoManifestEntry[]) { return JSON.stringify([...photos].sort((left, right) => left.photoId.localeCompare(right.photoId))); }
+function parseReview(value: Record<string,unknown>, draft: QuoteDraft, preferredDate: string, photos: QuotePhotoManifestEntry[]): Review {
   const snapshot = value.snapshot;
-  if (!record(snapshot) || snapshot.mode !== "demo" || snapshot.version !== DEMO_VERSION || snapshot.draftId !== draft.id || snapshot.draftRevision !== draft.revision || snapshot.preferredDate !== preferredDate || typeof value.reviewToken !== "string" || !value.reviewToken || !record(snapshot.price) || snapshot.price.currency !== DEMO_PRICE.currency || snapshot.price.totalCents !== DEMO_PRICE.totalCents || snapshot.price.label !== DEMO_PRICE.label || !Array.isArray(snapshot.terms) || JSON.stringify(snapshot.terms) !== JSON.stringify(DEMO_TERMS) || JSON.stringify(validateQuoteDraft(snapshot.payload)) !== JSON.stringify(draft.payload)) throw new Error("The saved details changed. Return to your service details and review the latest draft before signing.");
+  if (!record(snapshot) || snapshot.mode !== "demo" || snapshot.version !== CURRENT_DEMO_VERSION || snapshot.draftId !== draft.id || snapshot.draftRevision !== draft.revision || snapshot.preferredDate !== preferredDate || typeof value.reviewToken !== "string" || !value.reviewToken || !record(snapshot.price) || snapshot.price.currency !== DEMO_PRICE.currency || snapshot.price.totalCents !== DEMO_PRICE.totalCents || snapshot.price.label !== DEMO_PRICE.label || !Array.isArray(snapshot.terms) || JSON.stringify(snapshot.terms) !== JSON.stringify(DEMO_TERMS) || JSON.stringify(validateQuoteDraft(snapshot.payload)) !== JSON.stringify(draft.payload)) throw new Error("The saved details changed. Return to your service details and review the latest draft before signing.");
+  if (manifestKey(validateQuotePhotoManifest(snapshot.photos)) !== manifestKey(photos)) throw new Error("Your saved photos changed. Return to Photos and review the latest list before approving and signing.");
   return { snapshot:snapshot as unknown as DemoSnapshot, reviewToken:value.reviewToken };
 }
 function todayInSydney() {
@@ -56,6 +61,11 @@ function shiftMonth(month: string, amount: number) { const [year,number] = month
 function pending(submission: DemoSubmissionStatus) { return !["failed","outcome_unknown"].includes(submission.emailStatus) && !["synced","conflict"].includes(submission.calendarStatus); }
 
 
+function PhotoSummary({ photos }: { photos: QuotePhotoManifestEntry[] }) {
+  return <section aria-label="Photos included in this demonstration"><h3>Service photos · {photos.length}</h3>
+    {photos.length ? <><p>These saved photos are included in the summary you approve and sign. No AI assessment has been performed.</p><ul className="quote-photo-list">{photos.map((photo, index) => <li key={photo.photoId}><Image unoptimized src={`/api/quote/photos/${encodeURIComponent(photo.photoId)}/content`} width={240} height={180} alt={`Service photo ${index + 1} included in this review`} className="quote-photo-thumbnail" /><strong>Photo {index + 1}</strong><span className="enquiry-hint quote-photo-reference">Reference: {photo.photoId}</span></li>)}</ul></> : <p>No photos are included. Company review is still required.</p>}
+  </section>;
+}
 function SnapshotSummary({ snapshot }: { snapshot: DemoSnapshot }) {
   const { contact,service } = snapshot.payload;
   return <>
@@ -70,6 +80,7 @@ function SnapshotSummary({ snapshot }: { snapshot: DemoSnapshot }) {
       <div><dt>Preferred start</dt><dd>{dateLabel(snapshot.preferredDate)} (Sydney) · pending company review</dd></div>
       <div><dt>Demo amount</dt><dd>{MONEY_FORMAT.format(snapshot.price.totalCents/100)} {snapshot.price.currency}<br />{snapshot.price.label}</dd></div>
     </dl>
+    <PhotoSummary photos={snapshot.photos ?? []} />
     <div className="demo-terms"><h3>Demonstration terms · {snapshot.version}</h3><ul>{snapshot.terms.map(term => <li key={term}>{term}</li>)}</ul></div>
   </>;
 }
@@ -87,7 +98,7 @@ function SubmissionResult({ submission, statusError, onRefresh, checking }: { su
   </div>;
 }
 
-export function DemoQuoteFlow({ draft, recipientEmail, initialSubmission, onEdit, onProgress }: { draft: QuoteDraft; recipientEmail: string; initialSubmission: DemoSubmissionStatus | null; onEdit: () => void; onProgress: (step: number) => void }) {
+export function DemoQuoteFlow({ draft, photoReferences, recipientEmail, initialSubmission, onEdit, onEditPhotos, onProgress }: { draft: QuoteDraft; photoReferences: QuotePhotoManifestEntry[]; recipientEmail: string; initialSubmission: DemoSubmissionStatus | null; onEdit: () => void; onEditPhotos: () => void; onProgress: (step: number) => void }) {
   const [stage,setStage] = useState<"approve"|"date"|"review">("approve");
   const [approved,setApproved] = useState(false);
   const [month,setMonth] = useState(() => todayInSydney().slice(0,7));
@@ -113,7 +124,7 @@ export function DemoQuoteFlow({ draft, recipientEmail, initialSubmission, onEdit
   function focusHeading() { window.requestAnimationFrame(() => headingRef.current?.focus()); }
   useEffect(() => { headingRef.current?.focus(); },[]);
   function clearSignature() { setName(""); setStrokes([]); setAcknowledged(false); setReview(null); sendAttempt.current = null; }
-  function changeStage(next: typeof stage) { clearSignature(); setError(""); setStage(next); onProgress(next === "approve" ? 2 : next === "date" ? 3 : 4); focusHeading(); }
+  function changeStage(next: typeof stage) { clearSignature(); setError(""); setStage(next); onProgress(next === "approve" ? 3 : next === "date" ? 4 : 5); focusHeading(); }
   async function loadMonth(value: string) {
     const version = ++monthRequest.current;
     setMonth(value); setAvailability(null); setAvailabilityStale(false); setPreferredDate(""); clearSignature(); setBusy(true); setError("");
@@ -130,7 +141,7 @@ export function DemoQuoteFlow({ draft, recipientEmail, initialSubmission, onEdit
   async function refreshStatus() {
     if (statusRequest.current) return;
     statusRequest.current = true; setChecking(true); setStatusError("");
-    try { const result = parseSubmission((await request("/api/quote/submission")).submission); if (result) { setSubmission(result); setUncertain(false); onProgress(5); } else if (uncertain) setStatusError("No saved request is visible yet. Retry the same submission below; do not change the signed details."); }
+    try { const result = parseSubmission((await request("/api/quote/submission")).submission); if (result) { setSubmission(result); setUncertain(false); onProgress(6); } else if (uncertain) setStatusError("No saved request is visible yet. Retry the same submission below; do not change the signed details."); }
     catch (failure) { setStatusError(failureMessage(failure)); }
     finally { statusRequest.current = false; setChecking(false); }
   }
@@ -148,8 +159,8 @@ export function DemoQuoteFlow({ draft, recipientEmail, initialSubmission, onEdit
     if (!availability || !preferredDate || availabilityStale || !approved || busy) return;
     setBusy(true); setError(""); clearSignature();
     try {
-      const result = parseReview(await request("/api/quote/review",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({expectedRevision:draft.revision,preferredDate,availabilityRevision:availability.revision})}),draft,preferredDate);
-      setReview(result); setStage("review"); onProgress(4); focusHeading();
+      const result = parseReview(await request("/api/quote/review",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({expectedRevision:draft.revision,preferredDate,availabilityRevision:availability.revision})}),draft,preferredDate,photoReferences);
+      setReview(result); setStage("review"); onProgress(5); focusHeading();
     } catch (failure) { setAvailabilityStale(true); setError(failureMessage(failure)); }
     finally { setBusy(false); }
   }
@@ -165,13 +176,13 @@ export function DemoQuoteFlow({ draft, recipientEmail, initialSubmission, onEdit
     try {
       const result = parseSubmission((await request("/api/quote/submit",{method:"POST",headers:{"Content-Type":"application/json"},body:sendAttempt.current.body})).submission);
       if (!result) throw new Error("The server has not confirmed your submission. Check its status or retry the same request.");
-      setSubmission(result); setUncertain(false); onProgress(5); focusHeading();
+      setSubmission(result); setUncertain(false); onProgress(6); focusHeading();
     } catch (failure) {
       // A rejected request can be corrected. A missing/ambiguous response keeps the
       // exact signed body and idempotency key so retry cannot create a second request.
       if (failure instanceof DemoRequestError && [400,403,409,422].includes(failure.status)) {
         setUncertain(false); sendAttempt.current = null;
-        if (failure.status === 409) { clearSignature(); setAvailabilityStale(true); setStage("date"); onProgress(3); focusHeading(); }
+        if (failure.status === 409) { clearSignature(); setAvailabilityStale(true); setStage("date"); onProgress(4); focusHeading(); }
       }
       setError(failureMessage(failure));
     }
@@ -181,16 +192,17 @@ export function DemoQuoteFlow({ draft, recipientEmail, initialSubmission, onEdit
   return <div className="enquiry-step" ref={headingRef} tabIndex={-1}>
     {error && <p className="enquiry-error-box" role="alert">{error}</p>}
     {stage === "approve" && <>
-      <h2>3. Approve the demonstration quote</h2>
-      <p>Your service details are saved. Photo upload and AI assessment have not been performed. The amount below is fixed demonstration data.</p>
+      <h2>4. Approve the demonstration quote</h2>
+      <p>Your service details and selected photos are saved privately. AI assessment has not been performed. The amount below is fixed demonstration data.</p>
       <p className="demo-price">{MONEY_FORMAT.format(DEMO_PRICE.totalCents/100)} <span>{DEMO_PRICE.currency} · DEMO ONLY</span></p><p>{DEMO_PRICE.label}</p>
       <div className="demo-terms"><h3>Demonstration terms</h3><ul>{DEMO_TERMS.map(term => <li key={term}>{term}</li>)}</ul></div>
       <p className="enquiry-notice">Trial emails can only be sent to {recipientEmail}. Your saved email is {draft.payload.contact.email}.{!recipientMatches && " Edit your details to use the company trial address before continuing."}</p>
+      <PhotoSummary photos={photoReferences} />
       <label className="enquiry-confirm"><input type="checkbox" checked={approved} onChange={event => { setApproved(event.target.checked); clearSignature(); }} /> I approve this demonstration summary only. I understand this is not a real quote, contract or confirmed booking.</label>
-      <div className="enquiry-actions"><button type="button" className="enquiry-button enquiry-button-secondary" onClick={onEdit}>Edit saved details</button><button type="button" className="enquiry-button" disabled={!approved || !recipientMatches || busy} onClick={() => { changeStage("date"); void loadMonth(month); }}>Approve demo and choose date</button></div>
+      <div className="enquiry-actions"><button type="button" className="enquiry-button enquiry-button-secondary" onClick={onEdit}>Edit saved details</button><button type="button" className="enquiry-button enquiry-button-secondary" onClick={onEditPhotos}>Edit photos</button><button type="button" className="enquiry-button" disabled={!approved || !recipientMatches || busy} onClick={() => { changeStage("date"); void loadMonth(month); }}>Approve demo and choose date</button></div>
     </>}
     {stage === "date" && <>
-      <h2>4. Choose a preferred start date</h2><p>Dates already occupied in the company calendar cannot be selected. A selectable date is a preference only: the company must still review the full duration and confirm availability.</p>
+      <h2>5. Choose a preferred start date</h2><p>Dates already occupied in the company calendar cannot be selected. A selectable date is a preference only: the company must still review the full duration and confirm availability.</p>
       <div className="demo-calendar-nav"><button type="button" className="enquiry-button enquiry-button-secondary" disabled={busy || month <= firstMonth} aria-label="Previous month" onClick={() => void loadMonth(shiftMonth(month,-1))}>←</button><h3>{new Intl.DateTimeFormat("en-AU",{month:"long",year:"numeric",timeZone:"UTC"}).format(new Date(`${month}-01T12:00:00Z`))}</h3><button type="button" className="enquiry-button enquiry-button-secondary" disabled={busy || month >= lastMonth} aria-label="Next month" onClick={() => void loadMonth(shiftMonth(month,1))}>→</button></div>
       {busy && <p role="status">Checking company calendar…</p>}
       <div className="demo-calendar" aria-label="Preferred start date, Sydney time">
@@ -205,7 +217,7 @@ export function DemoQuoteFlow({ draft, recipientEmail, initialSubmission, onEdit
       <div className="enquiry-actions"><button type="button" className="enquiry-button enquiry-button-secondary" disabled={busy} onClick={() => changeStage("approve")}>Back to demo quote</button><button type="button" className="enquiry-button" disabled={busy || !preferredDate || availabilityStale} onClick={() => void prepareReview()}>{busy ? "Checking…" : "Continue to review and sign"}</button></div>
     </>}
     {stage === "review" && review && <>
-      <h2>5. Final review and demonstration signature</h2><p>Check this saved summary before signing. Changing the details or preferred date requires a new review and signature.</p>
+      <h2>6. Final review and demonstration signature</h2><p>Check this saved summary before signing. Changing the details, photos or preferred date requires a new review and signature.</p>
       <SnapshotSummary snapshot={review.snapshot} />
       <label>Full name for your signature *<input autoComplete="name" maxLength={120} value={name} disabled={busy || uncertain} onChange={event => setName(event.target.value)} /></label>
       <SignaturePad strokes={strokes} onChange={setStrokes} disabled={busy || uncertain} />

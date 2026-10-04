@@ -4,6 +4,8 @@
 
 [전체 고객 흐름](32-client-quote-signature-submission.md) · [TODO](15-home-cabinet-admin-todo.md)
 
+**2026-10-04 상태 갱신:** 사용자가 Google 결제를 요청했고 진행 중이라고 알렸다. 결제 활성·API 키 준비 완료를 확인한 상태는 아니다. 실제 주소 연결은 완료 통보 뒤 재개하며, 그동안 [35번 예약·터치 서명 검증과 비공개 사진 계획](35-mobile-booking-private-photo-plan.md)을 진행한다. 아래 10월 3일의 코드 완료·실제 검색 보류 기록은 유지한다.
+
 ## 적용 범위와 동작
 
 - 현재 실제 주소 입력은 `QuoteDraftForm`과 기존 `EnquiryForm`의 site address·suburb·postcode 총 6곳이다. 관리자 주소는 읽기 전용이므로 새 편집 화면을 만들지 않는다.

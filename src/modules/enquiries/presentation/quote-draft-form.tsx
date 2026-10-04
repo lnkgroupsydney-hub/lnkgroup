@@ -4,6 +4,8 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { QUOTE_PROGRESS, validateQuoteDraft, type QuoteDraft, type QuoteDraftInput } from "../domain/quote-draft";
 import { DemoQuoteFlow, loadDemoConfiguration } from "./demo-quote-flow";
 import type { DemoSubmissionStatus } from "../domain/demo-submission";
+import type { QuotePhotoManifestEntry } from "../domain/quote-photos";
+import { QuotePhotoUpload } from "./quote-photo-upload";
 import { mergeSelectedAddress, type AddressKind, type AddressSelection } from "@/shared/address";
 import { AddressAutocompleteInput } from "@/shared/ui/address-autocomplete-input";
 import "./enquiry-form.css";
@@ -70,6 +72,7 @@ export function QuoteDraftForm() {
   const [demoEnabled, setDemoEnabled] = useState(false);
   const [recipientEmail, setRecipientEmail] = useState("");
   const [submission, setSubmission] = useState<DemoSubmissionStatus | null>(null);
+  const [photoReferences, setPhotoReferences] = useState<QuotePhotoManifestEntry[]>([]);
   const headingRef = useRef<HTMLHeadingElement>(null);
   const errorRef = useRef<HTMLDivElement>(null);
   const initialization = useRef<ReturnType<typeof loadPrivateState> | null>(null);
@@ -81,7 +84,7 @@ export function QuoteDraftForm() {
     initialization.current.then(({saved,demo}) => {
       if (cancelled) return;
       setDemoEnabled(demo.enabled); setRecipientEmail(demo.recipientEmail); setSubmission(demo.submission);
-      if (saved) { setValues(restoredValues(saved)); setDraft(saved); setStep(demo.submission ? 5 : saved.payload.service && demo.enabled ? 2 : 1); setNotice(demo.submission ? "Your saved submission has been restored in this browser." : "Your saved draft has been restored in this browser."); }
+      if (saved) { setValues(restoredValues(saved)); setDraft(saved); setStep(demo.submission ? 6 : saved.payload.service ? 2 : 1); setNotice(demo.submission ? "Your saved submission has been restored in this browser." : "Your saved draft has been restored in this browser."); }
       setReady(true);
     }).catch((failure: unknown) => { if (!cancelled) setError(errorMessage(failure)); });
     return () => { cancelled = true; };
@@ -128,7 +131,7 @@ export function QuoteDraftForm() {
       const {saved,demo} = await loadPrivateState();
       setDemoEnabled(demo.enabled); setRecipientEmail(demo.recipientEmail); setSubmission(demo.submission);
       if (saved) {
-        setValues(restoredValues(saved)); setDraft(saved); setStep(demo.submission ? 5 : 1);
+        setValues(restoredValues(saved)); setDraft(saved); setStep(demo.submission ? 6 : saved.payload.service ? 2 : 1);
         setNotice("The latest saved draft has been loaded. Review it before making changes.");
       } else {
         // An expired session starts a new private draft without discarding the visible entries.
@@ -165,8 +168,7 @@ export function QuoteDraftForm() {
       }
       setDraft(saved);
       if (step === 0) { setStep(1); setNotice("Your details were saved. Choose your service details below."); focusHeading(); }
-      else if (demoEnabled) { setStep(2); setNotice("Your service details were saved. Review the demonstration quote to continue."); focusHeading(); }
-      else setNotice("Your service details were saved privately. Photo upload and assessment are not available in this preview yet. This draft has not been submitted.");
+      else { setStep(2); setPhotoReferences([]); setNotice("Your service details were saved. Add and review your service photos below."); focusHeading(); }
     } catch (failure) {
       if (failure instanceof DraftRequestError && failure.status === 409) {
         setConflict(true); setError("This draft changed in another tab. Your entries are still on this page and were not overwritten. Load the latest saved draft before editing again.");
@@ -178,7 +180,7 @@ export function QuoteDraftForm() {
   }
   const fieldProps = (field: Field) => ({ id:`draft-${field}`, "aria-invalid":Boolean(errors[field]), "aria-describedby":errors[field] ? `draft-${field}-error` : undefined });
   const fieldError = (field: Field) => errors[field] ? <span className="enquiry-error" id={`draft-${field}-error`}>{errors[field]}</span> : null;
-  const progress = demoEnabled ? ["Your details","Service details","Demo quote","Start date","Review & sign","Submitted"] : QUOTE_PROGRESS;
+  const progress = demoEnabled ? ["Your details","Service details","Photos","Demo quote","Start date","Review & sign","Submitted"] : QUOTE_PROGRESS;
   const addressContext = JSON.stringify([values.siteAddress, values.suburb, values.postcode]);
 
   return <div className="enquiry-page"><div className="enquiry-shell">
@@ -187,8 +189,8 @@ export function QuoteDraftForm() {
       <p className="enquiry-kicker">Kitchen Cabinet Painting · {demoEnabled ? "demonstration" : "private draft"}</p>
       <h1 id="draft-title">Start your cabinet painting quote</h1>
       <p className="enquiry-lead">Save your contact and project details first, then choose the cabinet work you have in mind.</p>
-      <p className="enquiry-notice">{demoEnabled ? `DEMO ONLY: prices and terms are sample data, not a real quote or contract. Submit to email a signed demonstration to ${recipientEmail} and save a pending company Calendar entry. Company confirmation is still required. Photo upload and AI assessment are not available yet.` : "This preview saves your details and service choices. Photo upload, AI assessment, pricing, date selection, signing and final email submission will follow. Saving a draft does not request or confirm a booking."}</p>
-      <ol className="enquiry-progress quote-draft-progress" aria-label="Quote progress">{progress.map((label,index) => <li key={label} aria-current={index === step ? "step" : undefined} className={index === step ? "active" : ""}>{index+1}. {label}{!demoEnabled && index > 1 && <span className="enquiry-hint"> · Coming later</span>}</li>)}</ol>
+      <p className="enquiry-notice">{demoEnabled ? `DEMO ONLY: prices and terms are sample data, not a real quote or contract. Submit to email a signed demonstration to ${recipientEmail} and save a pending company Calendar entry. Company confirmation is still required. You can save photos privately; AI assessment is not performed.` : "This preview saves your details, service choices and photos privately. AI assessment, pricing, date selection, signing and final email submission will follow. Saving a draft does not request or confirm a booking."}</p>
+      <ol className="enquiry-progress quote-draft-progress" aria-label="Quote progress">{progress.map((label,index) => <li key={label} aria-current={index === step ? "step" : undefined} className={index === step ? "active" : ""}>{index+1}. {label}{!demoEnabled && index > 2 && <span className="enquiry-hint"> · Coming later</span>}</li>)}</ol>
       {!ready && !error && <p role="status">Opening your private draft…</p>}
       {error && <div className="enquiry-error-box" ref={errorRef} tabIndex={-1} role="alert">
         <p>{error}</p>
@@ -196,7 +198,17 @@ export function QuoteDraftForm() {
         {(!ready || conflict || expired) && <button type="button" className="enquiry-button enquiry-button-secondary" disabled={busy} onClick={() => void restoreSaved()}>{busy ? "Loading…" : conflict ? "Load latest saved draft" : expired ? "Reopen private session" : "Retry loading draft"}</button>}
       </div>}
       <p className="quote-draft-status" role="status" aria-live="polite">{notice}</p>
-      {step >= 2 && draft ? <DemoQuoteFlow key={`${draft.id}:${draft.revision}`} draft={draft} recipientEmail={recipientEmail} initialSubmission={submission} onEdit={() => { setStep(1); setNotice(""); }} onProgress={setStep} /> : <form onSubmit={save} noValidate>
+      {step === 2 && draft ? <QuotePhotoUpload key={draft.id} draftRevision={draft.revision} demoEnabled={demoEnabled} onRevision={revision => setDraft(current => current ? {...current, revision} : current)} onContinue={async (photos, expectedRevision) => {
+        const {saved, demo} = await loadPrivateState();
+        if (!saved || saved.id !== draft.id || saved.revision !== expectedRevision) throw new Error("Your saved draft or photos changed. Refresh the saved photos and review them before continuing.");
+        setDraft(saved); setValues(restoredValues(saved)); setDemoEnabled(demo.enabled); setRecipientEmail(demo.recipientEmail); setSubmission(demo.submission); setPhotoReferences(photos);
+        setStep(demo.submission ? 6 : demo.enabled ? 3 : 2); setNotice("Your latest saved details and photos are ready for review.");
+      }} onEdit={async () => {
+        const {saved, demo} = await loadPrivateState();
+        if (!saved || saved.id !== draft.id) throw new Error("Your saved draft could not be restored. Refresh this page before editing.");
+        setDraft(saved); setValues(restoredValues(saved)); setDemoEnabled(demo.enabled); setRecipientEmail(demo.recipientEmail); setSubmission(demo.submission);
+        setStep(demo.submission ? 6 : 1); setNotice("The latest saved details have been loaded. Review them before making changes."); focusHeading();
+      }} /> : step >= 3 && draft ? <DemoQuoteFlow key={`${draft.id}:${draft.revision}`} draft={draft} photoReferences={photoReferences} recipientEmail={recipientEmail} initialSubmission={submission} onEdit={() => { setStep(1); setNotice(""); }} onEditPhotos={() => { setStep(2); setNotice(""); }} onProgress={setStep} /> : <form onSubmit={save} noValidate>
         <fieldset className="quote-draft-fields" disabled={!ready || busy}>
           {step === 0 ? <div className="enquiry-step">
             <h2 ref={headingRef} tabIndex={-1}>1. Your details</h2>
@@ -225,7 +237,7 @@ export function QuoteDraftForm() {
               <label>Material <span className="enquiry-hint">Optional; leave blank if unknown</span><input {...fieldProps("material")} maxLength={100} value={values.material} onChange={event => update("material",event.target.value)} /></label>
               <label>Colour or finish idea <span className="enquiry-hint">Optional</span><input {...fieldProps("colourPreference")} maxLength={100} value={values.colourPreference} onChange={event => update("colourPreference",event.target.value)} /></label>
             </div>
-            <p className="enquiry-notice">{demoEnabled ? "Photo upload and AI assessment are not available yet. Save these service details to continue with the demonstration quote, preferred date and signature." : "Photo upload is the next part of this step and is not available yet. Save these service details to return to your draft later."}</p>
+            <p className="enquiry-notice">Save these service details to add photos privately. Photos are optional for company review. AI assessment is not performed in this demonstration.</p>
           </div>}
           <div className="enquiry-actions">
             {step === 1 && <button type="button" className="enquiry-button enquiry-button-secondary" onClick={() => { setStep(0); setErrors({}); focusHeading(); }}>Edit your details</button>}
@@ -233,7 +245,7 @@ export function QuoteDraftForm() {
           </div>
         </fieldset>
       </form>}
-      {draft && step < 5 && <p className="enquiry-hint quote-draft-saved">Last saved: {new Date(draft.savedAt).toLocaleString("en-AU", {timeZone:"Australia/Sydney"})} (Sydney). Only saved changes are restored when you reopen this page.</p>}
+      {draft && step < 6 && <p className="enquiry-hint quote-draft-saved">Last saved: {new Date(draft.savedAt).toLocaleString("en-AU", {timeZone:"Australia/Sydney"})} (Sydney). Only saved changes are restored when you reopen this page.</p>}
     </section>
   </div></div>;
 }

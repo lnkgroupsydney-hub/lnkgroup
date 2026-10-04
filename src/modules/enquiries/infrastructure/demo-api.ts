@@ -1,9 +1,10 @@
 import { createCipheriv, createDecipheriv, createHash, createHmac, randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
-import { DEMO_PRICE, DEMO_TERMS, DEMO_VERSION, type DemoSnapshot, type DemoSignature, type DemoSubmissionStatus } from '../domain/demo-submission.ts';
+import { DEMO_PRICE, DEMO_TERMS, DEMO_VERSION, CURRENT_DEMO_VERSION, type DemoSnapshot, type DemoSignature, type DemoSubmissionStatus } from '../domain/demo-submission.ts';
 import type { QuoteDraft } from '../domain/quote-draft.ts';
 import { validateStartDateSubmission } from '../domain/availability.ts';
 import { quoteStorageClient, quoteSession, requireQuoteOrigin, QuoteHttpError, quoteJson } from './quote-draft-api.ts';
 import { demoAvailability } from './demo-availability.ts';
+import { readQuotePhotoManifest } from './quote-photo-api.ts';
 
 type ReviewProof = { snapshot: DemoSnapshot; owner: string; calendarId: string; availabilityRevision: string; expires: number };
 const hash = (value: unknown) => createHash('sha256').update(JSON.stringify(value)).digest('hex');
@@ -80,7 +81,7 @@ function verifyToken(value: unknown, owner: string): ReviewProof {
     decipher.setAuthTag(bytes.subarray(12,28));
     proof=JSON.parse(Buffer.concat([decipher.update(bytes.subarray(28)),decipher.final()]).toString('utf8'));
   } catch { throw new QuoteHttpError(400,'Invalid review.'); }
-  if(proof.owner!==owner || proof.snapshot?.mode!=='demo' || proof.snapshot.version!==DEMO_VERSION || !Number.isFinite(proof.expires)) throw new QuoteHttpError(403,'This review does not belong to your current draft.');
+  if(proof.owner!==owner || proof.snapshot?.mode!=='demo' || ![DEMO_VERSION,CURRENT_DEMO_VERSION].includes(proof.snapshot.version) || !Number.isFinite(proof.expires)) throw new QuoteHttpError(403,'This review does not belong to your current draft.');
   return proof;
 }
 export function validateDemoSignature(value: unknown): DemoSignature {
@@ -110,12 +111,14 @@ export const reviewPost = (req: Request) => safe(async () => {
   const owner=requireDemo(req,true);await rateLimit(owner.hash,'review',60);
   const body=await input(req),draft=await readDraft(owner.hash);
   if (draft.revision!==body.expectedRevision || !draft.payload.service) throw new QuoteHttpError(409,'Save and review the latest service details first.');
+  const photoState=await readQuotePhotoManifest(owner.hash);
+  if(photoState.draftRevision!==draft.revision) throw new QuoteHttpError(409,'Your photos changed. Reload your saved details and review again.');
   if (draft.payload.contact.email.toLowerCase()!==demoRecipient()) throw new QuoteHttpError(400,`For this trial, save ${demoRecipient()} as the contact email. No other recipient will be emailed.`);
   if (typeof body.preferredDate!=='string' || !/^\d{4}-\d{2}-\d{2}$/.test(body.preferredDate)) throw new QuoteHttpError(400,'Choose a start date.');
   const started=new Date().toISOString(),availability=await demoAvailability(body.preferredDate.slice(0,7));
   const date=validateStartDateSubmission({date:body.preferredDate,selectedSnapshotRevision:String(body.availabilityRevision),freshSnapshot:availability.snapshot,validationStartedAt:started,now:new Date().toISOString()});
   if (!date.selectable) throw new QuoteHttpError(409,'Date availability changed or this date cannot be requested. Refresh the calendar and choose again.');
-  const snapshot: DemoSnapshot = {mode:'demo',version:DEMO_VERSION,draftId:draft.id,draftRevision:draft.revision,payload:draft.payload,preferredDate:date.date,price:DEMO_PRICE,terms:DEMO_TERMS};
+  const snapshot: DemoSnapshot = {mode:'demo',version:CURRENT_DEMO_VERSION,draftId:draft.id,draftRevision:draft.revision,payload:draft.payload,preferredDate:date.date,price:DEMO_PRICE,terms:DEMO_TERMS,photos:photoState.photos};
   return quoteJson({snapshot,reviewToken:token({snapshot,owner:owner.hash,calendarId:availability.calendarId,availabilityRevision:availability.snapshot.revision,expires:Date.now()+600000})});
 });
 export const submissionGet = (req: Request) => safe(async () => {
@@ -127,10 +130,13 @@ export const submitPost = (req: Request, schedule: (task:()=>Promise<void>)=>voi
   if (typeof body.idempotencyKey!=='string' || !/^[a-zA-Z0-9_-]{16,100}$/.test(body.idempotencyKey)) throw new QuoteHttpError(400,'A valid submission key is required.');
   const existing=await submissionCommand<DemoSubmissionStatus|null>('read',{owner_hash:owner.hash});
   if (!existing) {
+    if(proof.snapshot.version!==CURRENT_DEMO_VERSION) throw new QuoteHttpError(409,'This review format has changed. Review your latest details and photos, then sign again.');
     if (proof.expires<Date.now()) throw new QuoteHttpError(409,'Your review expired. Review the latest details and sign again.');
     if (proof.snapshot.payload.contact.email.toLowerCase()!==demoRecipient()) throw new QuoteHttpError(400,'The demo recipient changed. Review your details again.');
     const draft=await readDraft(owner.hash);
     if(draft.id!==proof.snapshot.draftId || draft.revision!==proof.snapshot.draftRevision || hash(draft.payload)!==hash(proof.snapshot.payload)) throw new QuoteHttpError(409,'Your saved details changed. Review and sign the current version.');
+    const photoState=await readQuotePhotoManifest(owner.hash);
+    if(photoState.draftRevision!==draft.revision || hash(photoState.photos)!==hash(proof.snapshot.photos)) throw new QuoteHttpError(409,'Your photos changed. Review and sign the current version.');
     const started=new Date().toISOString(),availability=await demoAvailability(proof.snapshot.preferredDate.slice(0,7));
     const date=validateStartDateSubmission({date:proof.snapshot.preferredDate,selectedSnapshotRevision:proof.availabilityRevision,freshSnapshot:availability.snapshot,validationStartedAt:started,now:new Date().toISOString()});
     if (!date.selectable || availability.calendarId!==proof.calendarId) throw new QuoteHttpError(409,'Date availability changed. Refresh the calendar, review and sign again.');

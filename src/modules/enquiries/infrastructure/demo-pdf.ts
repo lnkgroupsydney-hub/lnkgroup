@@ -103,6 +103,10 @@ export async function createDemoPdfDocuments(source: DemoDocumentSource, schedul
     field('Cabinet doors / drawer fronts', `${service!.doorCount ?? 'Unknown'} / ${service!.drawerCount ?? 'Unknown'}`)
     field('Material / colour or finish', [service!.material, service!.colourPreference].filter(Boolean).join(' / '))
     field('Preferred start date in original request', source.snapshot.preferredDate)
+    if (source.snapshot.photos) {
+      field('Privately saved photos', `${source.snapshot.photos.length} - images remain private and are not attached to this email`)
+      for (const photo of source.snapshot.photos) field(`Photo ${photo.photoId}`, `Content SHA-256: ${photo.contentHash}\nProcessing: ${photo.processingVersion}`)
+    }
     field('Demonstration amount', `AUD ${(source.snapshot.price.totalCents / 100).toFixed(2)} - sample only; no tax or payment obligation established`)
     if (schedule) {
       field('Schedule proposal', `Revision ${schedule.revision} / ${schedule.proposalId}`)
