@@ -1,6 +1,6 @@
 # 10월 4일 구현 계획 — 예약·터치 서명 검증과 비공개 사진 업로드
 
-2026-10-04 · Australia/Sydney · **`codex/private-quote-photos` 구현·원격 적용·회사 데모 연결 완료 / 실제 휴대폰·관리자 화면 재로그인·사진 320px 검증 대기**
+2026-10-04 · Australia/Sydney · **구현·원격 적용·회사 데모 연결 완료 / 10월 6일 관리자 사진·PDF 읽기 보완 / 실제 휴대폰·사진 320px·사진 포함 재서명/확정 검증 대기**
 
 [전체 고객 흐름](32-client-quote-signature-submission.md) · [회사 일정 확정](33-admin-booking-confirmation-day-plan.md) · [주소 자동완성](34-google-address-autocomplete.md) · [TODO](15-home-cabinet-admin-todo.md)
 
@@ -165,6 +165,8 @@ DB/RPC·이미지·대체 Storage 시험과 실제 회사 Supabase 저장·권�
 | P03~P04 권한·중복 | 실제 다른 소유자 404·교차 Origin 403·비인증 401·공개 DB/RPC/Storage 차단·같은 예약/PUT 복원 | 다중 동시 요청 한도·경합은 격리 검사 결과로 구분 |
 | P05 복구 | lease·Storage 성공/DB 실패·삭제 실패·늦은 PUT tombstone 재대사 및 서명 참조 제외는 격리 시험; 실제 정상 삭제·tombstone 보존 확인 | 실제 공급자 장애/장시간 중단 복구는 미실행 |
 | P06~P07 고객 UI·버전 | JPEG 사진 저장/F5 동일 ID 복원·사진 포함 v2 불변 제출; 사진 추가/삭제 뒤 과거 서명·v1 미제출 토큰 차단과 기존 v1 보존은 격리 검사 | 사진 업로드 화면 320px, 실제 휴대폰 선택/복원 |
-| P08 이메일·Calendar·관리자 | `DEMO-F628C5C6`의 회사 Gmail INBOX 1통/PDF 2개·발송 시도 1회·10월 21일 private/transparent 확정 대기 Calendar 이벤트 1개·F5 복원; 관리자 사진 API 200/비인증 401/다른 제출 404 및 PDF 2개 저장 바이트 대조 | 관리자 브라우저 세션 재로그인 후 사진 열람 UI |
+| P08 이메일·Calendar·관리자 | `DEMO-F628C5C6`의 회사 Gmail INBOX 1통/PDF 2개·발송 시도 1회·10월 21일 private/transparent 확정 대기 Calendar 이벤트 1개·F5 복원; 관리자 사진 API 200/비인증 401/다른 제출 404 및 PDF 2개 저장 바이트 대조 | 10월 4일 당시 대기였던 관리자 사진 UI는 후속 인증에서 확인했고 10월 6일 PDF 본문·서명 읽기도 완료. 사진 포함 회사 기간 제안/재서명/최종 확정은 후속 |
 
 이번 새 데모는 회사 기간 검토 전 `Pending confirmation` 요청이다. 기존 10월 3일 회사 확정 결과와 별개의 제출이며, 사진 업로드만으로 AI 평가·예약 확정·인보이스를 실행하지 않는다. 가격·약관·받는 이메일은 승인된 회사 데모 제한을 유지한다.
+
+**10월 6일 후속 갱신:** [ESN 고객/세션 검증](../verification/2026-10-06-esn-customers-and-sessions.md)에서 직원 로그인·이메일 확인 뒤 `DEMO-F628C5C6`의 비공개 사진 640×480과 기존 PDF 두 개/총 4페이지를 읽었다. 당시 미검증 기록은 보존하며 현재 완료 상태와 [다음 작업 순서](../esn-admin/07-2026-10-06-main-status-and-next-steps.md)를 함께 따른다. ESN의 320/390px 합성 QA 완료를 KCP 사진 업로드 화면·실기기 검증 완료로 대체하지 않는다.

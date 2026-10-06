@@ -2,6 +2,8 @@
 
 작성: 2026-10-04 · 갱신: 2026-10-06 · Australia/Sydney · 상태: **ESN-01 세션 관리·ESN-02 고객 조회 구현 / 회사 DB 적용·실제 읽기 확인**
 
+**2026-10-06 EMS 대시보드 설계:** 사용자 참고 이미지의 sidebar·요약 카드·그래프·일정·목록을 기존 Slate/Greige에 맞춘 [디자인·UX 및 admin 적용 계획](08-ems-dashboard-design-and-implementation-plan.md)을 작성했다. [가상 와이어프레임](design/dashboard-wireframe.html)에서 현재 기능에 적용할 1차 화면과 작업/주문/재고 확장 목표를 구분한다. 기존 로그인·고객·예약·문서/사진·세션 기능을 재사용하고, 다음 구현 단위는 공통 프레임/경로 분리 → 정확한 서버 집계 → 업무별 상세다. **이번은 계획과 문서 시안이며 앱·DB 구현은 미착수**다. 기존 실제 인수의 미완료 항목도 유지한다.
+
 **2026-10-06 구현:** [오늘 계획](06-2026-10-06-implementation-plan.md)에 따라 본인 세션 조회·현재 세션을 보존하는 다른 세션 종료·복구 안내, 고객 생성/검색/상세·원본 수동 연결/해제·감사 이력을 구현했다. 기존 Operations를 유지하고 Customers·Session security 섹션을 연결했으며 구매/청구는 준비 상태로 표시한다. 전체 업무 검사 **359/359**·lint·타입·production 빌드가 통과했다. 합성 UI 브라우저 검증(생성·연결/해제·실패 재시도·모바일·키보드)을 완료했다. 신규 SQL 두 개의 Supabase 성공 결과, 새 테이블/함수 읽기·익명 접근 차단 14/14와 실제 고객 0건·미연결 원본 7건·본인 세션 조회를 확인했다. 실제 고객 생성/연결·세션 종료·다중 DB 연결 경합과 운영 인수도 미완료다.
 
 **2026-10-06 실제 읽기 확인:** 사용자가 직원 로그인·이메일 확인을 마친 뒤 기존 견적/서명 약관 PDF 두 개를 다운로드해 각 2페이지의 본문을 읽고 총 4페이지를 렌더링해 참조번호·데모 표시·서명·가독성을 확인했다. 기존 비공개 사진도 640×480으로 로드됐다. 회사 DB의 기존 21테이블/7 RPC 읽기 검사와 Dashboard의 Healthy 표시를 확인했다. 새 고객 schema 적용 결과와는 구분한다. 실행 증거와 남은 범위는 [당일 검증 기록](../verification/2026-10-06-esn-customers-and-sessions.md)·[진행표](05-progress.md)를 따른다.
@@ -40,9 +42,11 @@
 | [04 개발 순서와 인수 기준](04-roadmap-and-acceptance.md) | ESN-00~05, 의존성, 검증·출시 조건 |
 | [05 진행표·결정 대기](05-progress.md) | 현재 완료 수준, 다음 작업, 미확정 값과 변경 기록 |
 | [06 오늘 구현 계획](06-2026-10-06-implementation-plan.md) | 자기 세션 관리·고객 수동 연결/조회 계약, 구현 분담과 검증 기준 |
+| [07 최신 main와 다음 작업](07-2026-10-06-main-status-and-next-steps.md) | 로컬/원격 커밋 대조·완료 정정·실제 인수와 후속 구현 순서 |
+| [08 EMS 대시보드 디자인·적용 계획](08-ems-dashboard-design-and-implementation-plan.md) | 참고 이미지 UX 검토, 글로벌 색상, KPI/그래프 정의, 기존 admin 이관·단계별 인수 |
 
 ESN 상세 진행은 [05 진행표](05-progress.md)를 기준으로 갱신하고, 전체 프로젝트의 [기존 TODO](../plans/15-home-cabinet-admin-todo.md)에는 요약을 동기화한다. 기능 범위는 [전체 백로그](../plans/12-implementation-backlog.md), KCP 업무 상태는 [25번](../plans/25-kcp-quote-to-booking-implementation.md)·[32번](../plans/32-client-quote-signature-submission.md)·[33번](../plans/33-admin-booking-confirmation-day-plan.md)·[35번](../plans/35-mobile-booking-private-photo-plan.md)을 보존한다.
 
 ## 다음 구현 단위
 
-다음은 실제 고객 분류와 자기 세션 종료의 업무 인수다. 신규 SQL 적용·읽기/익명 권한 검사와 합성 UI 검증은 완료했다. 기존 실제 PDF/사진 읽기 완료와 신규 고객 상세를 통한 회사 인수를 구분한다. 첫 계정 권한은 최신 서버 소유 Auth metadata를 유지한다. 추가 관리자 초대·별도 membership 관리·권한 회수·분실 계정 복구 책임자/절차는 후속이며 자기 세션 종료 코드로 대신 완료 처리하지 않는다. 실기기·다중 DB 연결 경합·운영 도메인/배포·구매/청구 인수도 남아 있다.
+최신 요청에 따른 다음 구현 제안은 [08번 EMS-D1](08-ems-dashboard-design-and-implementation-plan.md)의 관리자 공통 프레임·업무 경로 분리다. 기존 실제 고객 분류와 자기 세션 종료의 업무 인수는 이관 회귀 검증에 결합한다. 신규 SQL 적용·읽기/익명 권한 검사와 합성 UI 검증은 완료했다. 기존 실제 PDF/사진 읽기 완료와 신규 고객 상세를 통한 회사 인수를 구분한다. 첫 계정 권한은 최신 서버 소유 Auth metadata를 유지한다. 추가 관리자 초대·별도 membership 관리·권한 회수·분실 계정 복구 책임자/절차는 후속이며 자기 세션 종료 코드로 대신 완료 처리하지 않는다. 실기기·다중 DB 연결 경합·운영 도메인/배포·구매/청구 인수도 남아 있다.
