@@ -1,5 +1,9 @@
 # 데이터 모델과 권한
 
+**2026-10-04 ESN 데이터·권한 개정:** [ESN 상세 계획](../esn-admin/03-data-and-access.md)에 따라 기존 문의·고객 초안·서명 제출·예약·비공개 사진의 원본을 유지하고 통합 고객 ID와 관계를 단계적으로 추가한다. 기존 22개 업무 테이블/7개 migration 소스와 아래 전체 목표의 후보 테이블은 구분한다. 고객 master·상품 주문·결제·인보이스는 아직 구현되지 않았으며 이메일/전화가 같다는 이유만으로 초안·Gmail·계약 이력을 자동 병합하지 않는다.
+
+초기 ESN 진입은 초대된 관리자 개별 계정·MFA·서버 membership 확인을 권장한다. 현재 localhost 관리자 비밀번호/Google 커스텀 세션이나 고객 작성 쿠키를 운영 관리자 인증 완료로 간주하지 않는다. 아래 현장 직원·회계·고객 역할은 전체 확장 목표이며 이번 ESN 초기 접근 허용 대상이 아니다. 관리 화면·API·PDF·사진 모두 서버 권한 검사를 거치고 통합 고객 정보 수정이 과거 서명/계약 snapshot을 덮어쓰지 않게 한다. 진행 상태의 원본은 [ESN 진행표](../esn-admin/05-progress.md)다.
+
 **2026-10-02 KCP 개정:** [25번 단계 계획](25-kcp-quote-to-booking-implementation.md)과 [32번 고객 제출 계약](32-client-quote-signature-submission.md)을 따른다. 회사 문의·Google 저장 기반은 [30번](30-supabase-storage-integration.md)에서 구현됐으며 아래 표는 전체 목표 후보로, 모두 적용됐다는 뜻은 아니다. 고객 선저장 초안·범위 approve·서명·불변 제출과 문서/메일/Calendar 결과를 분리한다. KCP AI는 일반 C 단계까지 미루지 않고 P4에서 제공자·평가 선행 조건을 충족한 뒤 도입한다.
 
 P0 정적 대조·구체 계약은 [26번](26-kcp-p0-contracts-and-reuse.md)에 작성했다. 사용자 확정 Google Calendar 양방향 연동은 [27번](27-kcp-google-calendar-sync.md)의 회사/자원 binding·이벤트 mapping·변경 요청·동기화 상태를 추가한다. OAuth credential은 브라우저 접근 불가인 서버 전용 저장 경계에 둔다.

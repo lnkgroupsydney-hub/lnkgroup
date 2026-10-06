@@ -5,9 +5,11 @@ import { clearOauthCookie, clearSessionCookie, createSession, destroySession, fi
 import { createEnquiry, listChanges, listEnquiries, rateLimit, saveImportedGmailEnquiry, scheduleEnquiry } from './infrastructure/store.ts'
 import { decideChange, listOwnedCalendars, pullChanges, pushPending, selectCalendar } from './infrastructure/google-calendar.ts'
 import { listGmailLabels, readEnquiryMessagePage } from '../gmail-intake/index.ts'
+import { requireLocalPreviewRequest } from './infrastructure/preview-access.ts'
+import { staffAuthEnabled, staffLoginPost, staffLogoutPost, staffOperationsSessionGet } from '../admin-access/server.ts'
 
 type JsonValue = Record<string, unknown>
-export function json(value: unknown, status = 200): Response { return Response.json(value, { status, headers:{ 'cache-control':'no-store' } }) }
+export function json(value: unknown, status = 200): Response { return Response.json(value, { status, headers:{ 'cache-control':'private, no-store', vary:'Cookie' } }) }
 
 export function safe(handler: (req: Request) => Promise<Response> | Response): (req: Request) => Promise<Response> {
   return async (req) => {
@@ -62,9 +64,11 @@ function connectionRow(): { account_sub:string; email:string; selected_calendar_
   return getDb().prepare('SELECT account_sub,email,selected_calendar_id,calendar_last_synced_at,calendar_error,selected_gmail_label_id,gmail_last_synced_at,gmail_error,gmail_page_token FROM google_connection WHERE id=1').get() as ReturnType<typeof connectionRow>
 }
 
-export const sessionGet = safe((req) => json(sessionInfo(req)))
+export const sessionGet = safe((req) => staffAuthEnabled() ? staffOperationsSessionGet(req) : json(sessionInfo(req)))
 
 export const loginPost = safe(async (req) => {
+  if (staffAuthEnabled()) return staffLoginPost(req)
+  requireLocalPreviewRequest(req)
   if (!localEnabled()) throw new AppError(503, 'Local operations are not enabled')
   const x = await body(req, 2000)
   const db = getDb()
@@ -76,6 +80,7 @@ export const loginPost = safe(async (req) => {
 })
 
 export const logoutPost = safe(async (req) => {
+  if (staffAuthEnabled()) return staffLogoutPost(req)
   requireOrigin(req)
   requireSession(req)
   destroySession(req)

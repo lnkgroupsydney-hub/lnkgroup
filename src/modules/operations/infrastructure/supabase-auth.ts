@@ -4,6 +4,9 @@ import { operationsCommand as command } from './supabase-client.ts'
 import { GoogleIntegrationError, googleFailure, googleResponseFailure, type GoogleHealthCode } from './google-errors.ts'
 import { googleHealthCommand, recordGoogleHealth, type HealthKind } from './supabase-google-health.ts'
 import { cookie, cookieValue, sha, encrypt, decrypt, GOOGLE_SCOPES, OWNER_EMAIL, SESSION_MS, OAUTH_COOKIE, redirectUri, googleConfigured, localLoginAvailable } from './auth.ts'
+import { localPreviewRequestAllowed, localPreviewSessionActive, requireLocalPreviewRequest } from './preview-access.ts'
+import { AdminAccessError, type AdminPermission } from '../../admin-access/index.ts'
+import { staffAuthEnabled, requireStaffAdmin } from '../../admin-access/server.ts'
 
 export type CloudConnection = {
   account_sub:string; email:string; access_cipher:string; refresh_cipher:string; expires_at:number;
@@ -13,24 +16,42 @@ export type CloudConnection = {
   gmail_health_code?:GoogleHealthCode; gmail_health_checked_at?:number|null;
   calendar_health_code?:GoogleHealthCode; calendar_health_checked_at?:number|null;
 }
-export type CloudSession = { token_hash:string; mode:'local'|'google'; account_sub:string|null; expires_at:number }
+export type CloudSession = { token_hash:string; mode:'local'|'google'|'staff'; account_sub:string|null; expires_at:number }
 const sessionCookie = 'lk_ops_session'
 const random = () => randomBytes(32).toString('base64url')
 export const getConnection = () => command<CloudConnection|null>('connection_get')
 
 export async function getSession(req:Request): Promise<CloudSession|null> {
+  if (staffAuthEnabled()) return requireStaffSession(req, 'operations.read')
+  if (!localPreviewRequestAllowed(req)) return null
   const token = cookieValue(req,sessionCookie)
   if (!token || token.length > 200) return null
   const session = await command<CloudSession|null>('session_get', { token_hash: sha(token) })
-  if (session?.mode === 'local' && !localLoginAvailable()) return null
+  if (session) {
+    if (session.mode !== 'local' && session.mode !== 'google') return null
+    if (session.mode === 'local' && !localLoginAvailable()) return null
+    if (!localPreviewSessionActive(req, { tokenHash: session.token_hash, mode: session.mode, expiresAt: session.expires_at })) return null
+  }
   return session
 }
-export async function requireSession(req:Request): Promise<CloudSession> {
+async function requireStaffSession(req:Request, permission:AdminPermission):Promise<CloudSession> {
+  try {
+    const principal=await requireStaffAdmin(req,permission)
+    return {token_hash:principal.tokenHash,mode:'staff',account_sub:principal.userId,expires_at:principal.expiresAt}
+  } catch(error) {
+    if(error instanceof AdminAccessError)throw new AppError(error.status,error.message)
+    throw error
+  }
+}
+export async function requireSession(req:Request, permission:AdminPermission = req.method === 'GET' || req.method === 'HEAD' ? 'operations.read' : 'operations.write'): Promise<CloudSession> {
+  if (staffAuthEnabled()) return requireStaffSession(req,permission)
+  requireLocalPreviewRequest(req)
   const session=await getSession(req)
   if (!session) throw new AppError(401,'Authentication required')
   return session
 }
 export async function createSession(mode:'local'|'google',accountSub:string|null): Promise<string> {
+  if (staffAuthEnabled()) throw new AppError(403, 'Legacy administrator sessions are disabled')
   if (mode === 'local' && !localLoginAvailable()) throw new AppError(503, 'Local operations login is not enabled')
   const token=random()
   await command('session_put',{token_hash:sha(token),mode,account_sub:accountSub,expires_at:Date.now()+SESSION_MS})
@@ -41,8 +62,10 @@ export async function destroySession(req:Request): Promise<void> {
   if(token) await command('session_delete',{token_hash:sha(token)})
 }
 export async function startOAuth(req:Request): Promise<{url:string;cookie:string}> {
+  requireLocalPreviewRequest(req)
   if(!googleConfigured()) throw new AppError(503,'Google connection is not configured')
-  const state=random(),nonce=random(),verifier=random(),session=await getSession(req)
+  const session=staffAuthEnabled()?await requireSession(req,'integrations.manage'):await getSession(req)
+  const state=random(),nonce=random(),verifier=random()
   await command('oauth_put',{state_hash:sha(state),nonce_hash:sha(nonce),verifier,session_hash:session?.token_hash??null,expires_at:Date.now()+600000})
   const url=new URL('https://accounts.google.com/o/oauth2/v2/auth')
   const params={client_id:process.env.GOOGLE_CLIENT_ID!,redirect_uri:redirectUri(),response_type:'code',scope:GOOGLE_SCOPES.join(' '),access_type:'offline',prompt:'consent select_account',state,code_challenge:createHash('sha256').update(verifier).digest('base64url'),code_challenge_method:'S256'}
@@ -72,11 +95,14 @@ function requireGoogleScopes(scope: string | undefined): void {
 }
 
 export async function finishOAuth(req:Request,state:string,code:string): Promise<string|null> {
+  requireLocalPreviewRequest(req)
   if(!googleConfigured()||!state||!code||state.length>200||code.length>3000) throw new AppError(400,'Invalid Google response')
+  const staffSession=staffAuthEnabled()?await requireSession(req,'integrations.manage'):null
   const row=await command<{nonce_hash:string;verifier:string;session_hash:string|null;expires_at:number}|null>('oauth_take',{state_hash:sha(state)})
   const nonce=cookieValue(req,OAUTH_COOKIE)
   if(!row||row.expires_at<Date.now()||!nonce||sha(nonce)!==row.nonce_hash) throw new AppError(400,'Google sign-in expired; try again')
-  if(row.session_hash&&(await getSession(req))?.token_hash!==row.session_hash) throw new AppError(401,'Owner session changed; try again')
+  if(staffSession && row.session_hash!==staffSession.token_hash)throw new AppError(401,'Staff session changed; reconnect Google from your current account')
+  if(!staffSession&&row.session_hash&&(await getSession(req))?.token_hash!==row.session_hash) throw new AppError(401,'Owner session changed; try again')
   const response=await fetch('https://oauth2.googleapis.com/token',{method:'POST',headers:{'content-type':'application/x-www-form-urlencoded'},body:new URLSearchParams({code,client_id:process.env.GOOGLE_CLIENT_ID!,client_secret:process.env.GOOGLE_CLIENT_SECRET!,redirect_uri:redirectUri(),grant_type:'authorization_code',code_verifier:row.verifier}),cache:'no-store',signal:AbortSignal.timeout(15000)})
   if(!response.ok) throw new AppError(502,'Google sign-in could not be completed')
   const tokens = tokenResponse(await response.json())
@@ -89,7 +115,7 @@ export async function finishOAuth(req:Request,state:string,code:string): Promise
   const refresh=tokens.refresh_token?encrypt(tokens.refresh_token):previous?.account_sub===user.sub?previous.refresh_cipher:null
   if(!refresh) throw new AppError(403,'Google offline access was not granted')
   await googleHealthCommand('reconnect',{account_sub:user.sub,email:OWNER_EMAIL,access_cipher:encrypt(tokens.access_token),refresh_cipher:refresh,expires_at:Date.now()+Math.max(60,tokens.expires_in||3600)*1000})
-  return row.session_hash?null:createSession('google',user.sub)
+  return staffSession||row.session_hash?null:createSession('google',user.sub)
 }
 export async function accessToken(holder?:string): Promise<{token:string;account:string;connection:CloudConnection}> {
   const row=await getConnection()

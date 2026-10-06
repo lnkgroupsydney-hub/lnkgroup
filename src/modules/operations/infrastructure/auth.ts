@@ -1,6 +1,8 @@
 import { createCipheriv, createDecipheriv, createHash, randomBytes, scryptSync, timingSafeEqual } from 'node:crypto'
 import { AppError } from '../domain/validation.ts'
 import { getDb, localEnabled } from './local-db.ts'
+import { localPreviewRequestAllowed, localPreviewSessionActive, requireLocalPreviewRequest } from './preview-access.ts'
+import { staffAuthEnabled } from '../../admin-access/server.ts'
 
 export const OWNER_EMAIL = 'Lnkgroupsydney@gmail.com'
 const SESSION_COOKIE = 'lk_ops_session'
@@ -28,22 +30,29 @@ export function cookie(key: string, value: string, maxAge: number, sameSite: 'St
 export function clearSessionCookie(): string { return cookie(SESSION_COOKIE, '', 0, 'Lax') }
 export function clearOauthCookie(): string { return cookie(OAUTH_COOKIE, '', 0, 'Lax') }
 
-export function getSession(req: Request, db = getDb()): OwnerSession | null {
+export function getSession(req: Request, database?: ReturnType<typeof getDb>): OwnerSession | null {
+  if (staffAuthEnabled()) return null
+  if (!localPreviewRequestAllowed(req)) return null
   const raw = cookieValue(req, SESSION_COOKIE)
   if (!raw || raw.length > 200) return null
+  const db = database ?? getDb()
   const tokenHash = sha(raw)
   const row = db.prepare('SELECT mode,account_sub,expires_at FROM sessions WHERE token_hash=?').get(tokenHash) as { mode:'local'|'google'; account_sub:string|null; expires_at:number } | undefined
-  if (!row || row.expires_at <= Date.now()) return null
+  if (!row || (row.mode === 'local' && !localLoginAvailable()) || !localPreviewSessionActive(req, { tokenHash, mode: row.mode, expiresAt: row.expires_at })) return null
   return { mode: row.mode, accountSub: row.account_sub, tokenHash }
 }
 
-export function requireSession(req: Request, db = getDb()): OwnerSession {
+export function requireSession(req: Request, db?: ReturnType<typeof getDb>): OwnerSession {
+  requireLegacyAccess()
+  requireLocalPreviewRequest(req)
   const session = getSession(req, db)
   if (!session) throw new AppError(401, 'Authentication required')
   return session
 }
 
-export function createSession(mode: 'local'|'google', accountSub: string | null, db = getDb()): string {
+export function createSession(mode: 'local'|'google', accountSub: string | null, database?: ReturnType<typeof getDb>): string {
+  requireLegacyAccess()
+  const db = database ?? getDb()
   const token = random()
   db.prepare('INSERT INTO sessions(token_hash,mode,account_sub,expires_at) VALUES(?,?,?,?)').run(sha(token), mode, accountSub, Date.now() + SESSION_MS)
   return cookie(SESSION_COOKIE, token, SESSION_MS / 1000, 'Lax')
@@ -54,7 +63,10 @@ export function destroySession(req: Request, db = getDb()): void {
   if (raw) db.prepare('DELETE FROM sessions WHERE token_hash=?').run(sha(raw))
 }
 
-export function localLoginAvailable(): boolean { return localEnabled() && !!process.env.LOCAL_OWNER_PASSWORD }
+export function requireLegacyAccess(): void {
+  if (staffAuthEnabled()) throw new AppError(403, 'Legacy administrator access is disabled. Sign in with your staff account.')
+}
+export function localLoginAvailable(): boolean { return !staffAuthEnabled() && localEnabled() && !!process.env.LOCAL_OWNER_PASSWORD }
 export function googleConfigured(): boolean {
   return localEnabled() && !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET && /^[0-9a-fA-F]{64}$/.test(process.env.GOOGLE_TOKEN_ENCRYPTION_KEY || ''))
 }
@@ -90,8 +102,11 @@ export function decrypt(value: string): string {
 
 export function redirectUri(): string { return `${process.env.APP_BASE_URL}/api/google/callback` }
 
-export function startGoogleOAuth(req: Request, db = getDb()): { url: string; cookie: string } {
+export function startGoogleOAuth(req: Request, database?: ReturnType<typeof getDb>): { url: string; cookie: string } {
+  requireLegacyAccess()
+  requireLocalPreviewRequest(req)
   if (!googleConfigured()) throw new AppError(503, 'Google connection is not configured')
+  const db = database ?? getDb()
   const state = random(), nonce = random(), verifier = random()
   const challenge = createHash('sha256').update(verifier).digest('base64url')
   const session = getSession(req, db)
@@ -111,8 +126,11 @@ export function startGoogleOAuth(req: Request, db = getDb()): { url: string; coo
 
 type TokenResponse = { access_token?: string; refresh_token?: string; expires_in?: number; scope?: string; token_type?: string }
 
-export async function finishGoogleOAuth(req: Request, state: string, code: string, db = getDb()): Promise<{ sessionCookie: string | null }> {
+export async function finishGoogleOAuth(req: Request, state: string, code: string, database?: ReturnType<typeof getDb>): Promise<{ sessionCookie: string | null }> {
+  requireLegacyAccess()
+  requireLocalPreviewRequest(req)
   if (!googleConfigured() || !state || !code || state.length > 200 || code.length > 3000) throw new AppError(400, 'Invalid Google response')
+  const db = database ?? getDb()
   const row = db.prepare('SELECT * FROM oauth_states WHERE state_hash=?').get(sha(state)) as { nonce_hash:string; verifier:string; session_hash:string|null; expires_at:number } | undefined
   db.prepare('DELETE FROM oauth_states WHERE state_hash=?').run(sha(state))
   const nonce = cookieValue(req, OAUTH_COOKIE)
@@ -166,10 +184,13 @@ export async function getAuthorizedGoogleAccessToken(db = getDb()): Promise<{ ac
   return { accessToken: tokens.access_token, accountSub: row.account_sub }
 }
 
-export function sessionInfo(req: Request): { authenticated:boolean; mode:'local'|'google'|null; ownerEmail:string; localLoginAvailable:boolean; googleConfigured:boolean; missingConfiguration:string[] } {
+export function sessionInfo(req: Request): { authenticated:boolean; mode:'local'|'google'|null; ownerEmail?:string; localLoginAvailable:boolean; googleConfigured:boolean; missingConfiguration?:string[] } {
+  requireLegacyAccess()
+  requireLocalPreviewRequest(req)
   const enabled = localEnabled()
   const db = enabled ? getDb() : null
   const session = db ? getSession(req, db) : null
+  if (!session) return { authenticated:false, mode:null, localLoginAvailable:localLoginAvailable(), googleConfigured:googleConfigured() }
   const missingConfiguration = [
     !enabled && 'LOCAL_OPERATIONS_ENABLED + loopback APP_BASE_URL',
     !process.env.LOCAL_OWNER_PASSWORD && 'LOCAL_OWNER_PASSWORD',
