@@ -1,0 +1,11 @@
+.staff-admin-shell{max-width:44rem}.staff-admin-shell .operations-intro{max-width:60ch}.staff-admin-shell .operations-panel h2{line-height:1.3}.staff-admin-shell .staff-admin-email{overflow-wrap:anywhere}.staff-admin-shell .staff-admin-qr{display:block;max-width:100%;height:auto;margin:1rem 0;background:#fff}.staff-admin-shell .staff-admin-secret{display:block;padding:.75rem;background:var(--site-background);user-select:all;overflow-wrap:anywhere}.staff-admin-shell .staff-admin-help{margin-top:1rem}.staff-admin-shell .staff-admin-code{max-width:14rem;letter-spacing:.25em;font-variant-numeric:tabular-nums}.staff-admin-shell input:focus-visible,.staff-admin-shell select:focus-visible,.staff-admin-shell button:focus-visible{outline:3px solid var(--site-action);outline-offset:3px}.staff-admin-shell h1:focus{outline:none}
+.staff-admin-shell button:active:not(:disabled):not(:focus-visible){transform:scale(.97)}@media(prefers-reduced-motion:reduce){.staff-admin-shell button:active:not(:disabled){transform:none}}
+.staff-admin-shell .staff-admin-countdown{font-variant-numeric:tabular-nums}
+.staff-session-security{max-width:60rem}.staff-session-security h3{margin-top:1.25rem}.staff-session-list{padding-left:1.25rem;font-variant-numeric:tabular-nums}.staff-session-list li+li{margin-top:.4rem}.staff-session-actions{display:flex;flex-wrap:wrap;gap:.75rem;margin-top:1rem}.staff-session-confirmation{margin-top:1.25rem;padding:1rem;border:1px solid var(--site-action)}.staff-session-confirmation h3{margin-top:0}.staff-session-security button:focus-visible{outline:3px solid var(--site-action);outline-offset:3px}.staff-session-security time{overflow-wrap:anywhere}
+
+.operations-page.staff-security-page{min-height:auto}
+.operations-page.staff-customers-page{min-height:auto}
+.staff-workspace-nav{display:flex;flex-wrap:wrap;gap:.5rem 1.5rem;padding:.75rem max(1rem,calc((100% - 76rem)/2));background:var(--site-background);border-bottom:1px solid var(--site-border);font-size:.9rem}
+.staff-workspace-nav a{display:inline-flex;align-items:center;min-height:2.75rem;color:var(--site-foreground);text-underline-offset:.25em}
+.staff-workspace-nav a:focus-visible{outline:3px solid var(--site-action);outline-offset:3px}
+#customers-heading,#staff-session-security-heading{scroll-margin-top:1.5rem}

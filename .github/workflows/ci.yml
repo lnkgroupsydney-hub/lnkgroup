@@ -27,6 +27,8 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm ci
+      - name: Operations and admin access tests
+        run: npm run test:operations
       - name: Lint
         run: npm run lint
       - name: Type check

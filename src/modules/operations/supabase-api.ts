@@ -11,13 +11,20 @@ import {localEnabled} from './infrastructure/local-db.ts'
 import {googleFailure} from './infrastructure/google-errors.ts'
 import {connectionState,googleHealthCommand,recordGoogleHealth} from './infrastructure/supabase-google-health.ts'
 import {pushBookingPending,reconcileBookingBusy} from '../bookings/server.ts'
+import {requireLocalPreviewRequest} from './infrastructure/preview-access.ts'
+import {staffAuthEnabled,staffLoginPost,staffLogoutPost,staffOperationsSessionGet} from '../admin-access/server.ts'
 
 export const sessionGet=safe(async(req)=>{
+ if(staffAuthEnabled())return staffOperationsSessionGet(req)
+ requireLocalPreviewRequest(req)
  const session=await auth.getSession(req)
+ if(!session)return json({authenticated:false,mode:null,localLoginAvailable:localLoginAvailable(),googleConfigured:googleConfigured()})
  const missing=[!localEnabled()&&'LOCAL_OPERATIONS_ENABLED + loopback APP_BASE_URL',!process.env.NEXT_PUBLIC_SUPABASE_URL&&'NEXT_PUBLIC_SUPABASE_URL',!process.env.SUPABASE_SECRET_KEY&&'SUPABASE_SECRET_KEY',!process.env.LOCAL_OWNER_PASSWORD&&'LOCAL_OWNER_PASSWORD',!process.env.GOOGLE_CLIENT_ID&&'GOOGLE_CLIENT_ID',!process.env.GOOGLE_CLIENT_SECRET&&'GOOGLE_CLIENT_SECRET',!/^[0-9a-fA-F]{64}$/.test(process.env.GOOGLE_TOKEN_ENCRYPTION_KEY||'')&&'GOOGLE_TOKEN_ENCRYPTION_KEY'].filter(Boolean)
  return json({authenticated:!!session,mode:session?.mode??null,ownerEmail:OWNER_EMAIL,localLoginAvailable:localLoginAvailable(),googleConfigured:googleConfigured(),missingConfiguration:missing,storage:'supabase'})
 })
 export const loginPost=safe(async(req)=>{
+ if(staffAuthEnabled())return staffLoginPost(req)
+ requireLocalPreviewRequest(req)
  if(!localLoginAvailable())throw new AppError(503,'Local operations login is not enabled')
  const x=await body(req,2000)
  await command('rate_limit',{bucket:'login:global',max:8,window:900000})
@@ -26,6 +33,7 @@ export const loginPost=safe(async(req)=>{
  response.headers.append('set-cookie',await auth.createSession('local',null));return response
 })
 export const logoutPost=safe(async(req)=>{
+ if(staffAuthEnabled())return staffLogoutPost(req)
  requireOrigin(req);await auth.requireSession(req);await auth.destroySession(req)
  const response=json({authenticated:false});response.headers.append('set-cookie',clearSessionCookie());return response
 })
@@ -34,12 +42,12 @@ export const enquiryPost=safe(async(req)=>{
  return json({id:saved.id,reference:saved.reference,status:saved.status,calendarStatus:saved.calendarStatus},201)
 })
 export const operationsGet=safe(async(req)=>{
- await auth.requireSession(req)
+ await auth.requireSession(req,'operations.read')
  const [data,c]=await Promise.all([dashboardData(),auth.getConnection()])
  return json({enquiries:data.enquiries,changes:data.changes,storage:'supabase',calendar:{configured:googleConfigured(),...connectionState(c,'calendar',googleConfigured()),email:c?.email??null,selectedCalendarId:c?.selected_calendar_id??null,lastSyncedAt:c?.calendar_last_synced_at??null},gmail:{configured:googleConfigured(),...connectionState(c,'gmail',googleConfigured()),selectedLabelId:c?.selected_gmail_label_id??null,lastSyncedAt:c?.gmail_last_synced_at??null,quarantine:data.quarantine}})
 })
 export const schedulePost=safe(async(req)=>{
- await auth.requireSession(req);const x=await body(req,3000)
+ await auth.requireSession(req,'operations.write');const x=await body(req,3000)
  const existing=await command<CloudEnquiryRow|null>('enquiry_get',{id:idFrom(req,'enquiries')})
  if(existing?.payload_json.demoSubmissionId)throw new AppError(409,'A signed demo schedule requires a new booking proposal')
  if(!Number.isInteger(x.expectedRevision)||(x.expectedRevision as number)<1)throw new AppError(400,'Invalid revision')
@@ -48,18 +56,18 @@ export const schedulePost=safe(async(req)=>{
  const row=await command<CloudEnquiryRow>('schedule',{id:idFrom(req,'enquiries'),revision:x.expectedRevision,start:dates.startAt,end:dates.endAt,notes:(x.notes as string||'').trim()})
  return json({enquiry:enquiryFromRow(row)})
 })
-export const calendarsGet=safe(async(req)=>{await auth.requireSession(req);return json({calendars:await calendar.ownedCalendars()})})
+export const calendarsGet=safe(async(req)=>{await auth.requireSession(req,'integrations.manage');return json({calendars:await calendar.ownedCalendars()})})
 export const calendarPost=safe(async(req)=>{
- await auth.requireSession(req);const x=await body(req,1000);if(typeof x.calendarId!=='string')throw new AppError(400,'Invalid calendar')
+ await auth.requireSession(req,'integrations.manage');const x=await body(req,1000);if(typeof x.calendarId!=='string')throw new AppError(400,'Invalid calendar')
  await calendar.selectCalendar(x.calendarId);return json({selectedCalendarId:x.calendarId})
 })
 async function gmailRequest(path:string,init:RequestInit={},holder?:string) {
  if(!path.startsWith('/')||path.startsWith('//'))throw new AppError(400,'Invalid Gmail path')
  return auth.googleRequest('gmail',`https://gmail.googleapis.com/gmail/v1/users/me${path}`,init,holder)
 }
-export const gmailLabelsGet=safe(async(req)=>{await auth.requireSession(req);return json({labels:await listGmailLabels({request:gmailRequest})})})
+export const gmailLabelsGet=safe(async(req)=>{await auth.requireSession(req,'integrations.manage');return json({labels:await listGmailLabels({request:gmailRequest})})})
 export const gmailLabelPost=safe(async(req)=>{
- await auth.requireSession(req);const x=await body(req,1000)
+ await auth.requireSession(req,'integrations.manage');const x=await body(req,1000)
  if(typeof x.labelId!=='string'||x.labelId.length>512)throw new AppError(400,'Invalid Gmail label')
  if(!(await listGmailLabels({request:gmailRequest})).some(l=>l.id===x.labelId))throw new AppError(403,'Choose a user-created Gmail label')
  await googleHealthCommand('select',{kind:'gmail',id:x.labelId});return json({selectedLabelId:x.labelId})
@@ -118,9 +126,9 @@ export async function syncAll() {
   return {gmail,calendar:cal}
  }finally{await command('sync_release',{holder})}
 }
-export const syncPost=safe(async(req)=>{requireOrigin(req);await auth.requireSession(req);return json(await syncAll())})
+export const syncPost=safe(async(req)=>{requireOrigin(req);await auth.requireSession(req,'integrations.manage');return json(await syncAll())})
 export const changePost=safe(async(req)=>{
- await auth.requireSession(req);const x=await body(req,1000)
+ await auth.requireSession(req,'operations.write');const x=await body(req,1000)
  if((x.action!=='approve'&&x.action!=='reject')||!Number.isInteger(x.expectedRevision)||(x.expectedRevision as number)<1)throw new AppError(400,'Invalid change decision')
  const change=await command<{enquiry_id:string}|null>('change_get',{id:idFrom(req,'changes')})
  if(change){

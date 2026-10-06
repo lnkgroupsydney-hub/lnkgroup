@@ -7,6 +7,7 @@ export async function updateSession(request: NextRequest) {
   const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
   if (!url || !key) return response;
   const supabase = createServerClient(url, key, {
+    ...(process.env.STAFF_ADMIN_AUTH_ENABLED === 'true' ? { cookieOptions: { name: 'lk-staff-auth', path: '/', httpOnly: true, sameSite: 'lax' as const, secure: false } } : {}),
     cookies: {
       getAll: () => request.cookies.getAll(),
       setAll(cookiesToSet, headers) {
@@ -18,5 +19,8 @@ export async function updateSession(request: NextRequest) {
     },
   });
   await supabase.auth.getClaims();
+  if (process.env.STAFF_ADMIN_AUTH_ENABLED === 'true') {
+    response.headers.set('cache-control', 'private, no-store');
+  }
   return response;
 }

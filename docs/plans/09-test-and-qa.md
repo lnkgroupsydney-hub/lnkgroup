@@ -1,5 +1,7 @@
 # 테스트와 QA 및 출시 기준
 
+**2026-10-04 ESN 추가 계획:** 관리자 전용 확장에는 [ESN-01~05 / EA01~EA12](../esn-admin/04-roadmap-and-acceptance.md)를 적용한다. 인증·host·직접 API/PDF/사진 접근, 고객 연결·계약 원본 보존, 구매·청구 원장과 복구를 단계별로 검증한다. 기존 T/KQ/GC 검증을 대체하지 않는다. 이번 기획에서는 문서만 점검했고 앱 검사·브라우저·원격 연결을 실행하지 않았다. 최신 구현 상태는 [진행표](../esn-admin/05-progress.md)와 과거 실제 검증 기록을 구분해 읽는다.
+
 **2026-09-30 KCP 실행 기준:** [25번 계획의 KQ01~KQ14](25-kcp-quote-to-booking-implementation.md)를 아래 기존 서비스 시나리오에 추가한다. 고객 AI 관찰 결과·가격 후보·희망일 요청·회사 duration·최종 수락·인보이스/결제가 이번 검증 범위다. 기존 A/B/C의 KCP AI 일정은 P4로 앞당기되 AI 평가와 공개 기준을 생략하지 않는다. 식품·쇼핑몰 검증이 KCP 출시의 선행 조건은 아니다.
 
 Google Calendar 양방향·자동 날짜 설정에는 [27번 GC01~GC14](27-kcp-google-calendar-sync.md)를 추가한다. P0에서는 Coatly 테스트 **소스만 검토**했으며 실행 통과·원격 DB·실제 Google 연결을 확인하지 않았다. etag 충돌·중복 생성·날짜/시간/DST·watch 갱신·Calendar 장애·인보이스 사실 보호와 Complete 중복/권한·실제 발행일 +3 달력일·발행 재시도는 후속 필수 검증이다.

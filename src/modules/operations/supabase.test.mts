@@ -295,7 +295,8 @@ test('connection selection and reconnection are blocked by active sync and linke
 test('Supabase HTTP handlers enforce owner session, origin, durable submit, schedule CAS, and logout', async () => {
   const unauthenticated = await api.operationsGet(new Request('http://127.0.0.1:3002/api/operations'))
   assert.equal(unauthenticated.status, 401)
-  assert.equal(unauthenticated.headers.get('cache-control'), 'no-store')
+  assert.equal(unauthenticated.headers.get('cache-control'), 'private, no-store')
+  assert.equal(unauthenticated.headers.get('vary'), 'Cookie')
   assert.equal((await api.loginPost(request('/api/operations/login', {password:'supabase-test-password-only'}, undefined, 'https://foreign.invalid'))).status, 403)
   assert.equal((await api.loginPost(request('/api/operations/login', {password:'wrong'}))).status, 401)
   const login = await api.loginPost(request('/api/operations/login', {password:'supabase-test-password-only'}))
