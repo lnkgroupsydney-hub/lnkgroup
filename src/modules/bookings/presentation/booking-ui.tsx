@@ -4,7 +4,7 @@ export class BookingRequestError extends Error {
   constructor(readonly status: number, message: string) { super(message); }
 }
 export async function bookingRequest<T>(path: string, init: RequestInit = {}): Promise<T> {
-  const response = await fetch(path, { ...init, credentials:"same-origin", cache:"no-store", signal:AbortSignal.timeout(30_000) });
+  const response = await fetch(path, { ...init, credentials:"same-origin", cache:"no-store", signal: init.signal ? AbortSignal.any([init.signal, AbortSignal.timeout(30_000)]) : AbortSignal.timeout(30_000) });
   const value: unknown = await response.json().catch(() => null);
   if (!response.ok) throw new BookingRequestError(response.status, value && typeof value === "object" && "error" in value && typeof value.error === "string" ? value.error : "The booking request could not be completed. Refresh its status before retrying.");
   if (!value || typeof value !== "object") throw new Error("The server did not return a valid booking response. Refresh its status before retrying.");

@@ -373,12 +373,14 @@ Cabinet은 **기존 캐비넷 페인팅** 기준이다. 과거 ‘약 1주’는
 
 ## 3. 회사 관리 웹 — ESN 통합과 Coatly 재사용
 
+**2026-10-07 EMS-D1 구현 완료:** [09 순차 계획](../esn-admin/09-2026-10-07-admin-shell-implementation-plan.md)의 인증 경계·데이터/동기화·입력 보호·공통 화면·기존 업무 경로·주소 호환을 구현했다. 전체 검사 **374/374**·lint·타입·build, 합성 브라우저 **36+8+4** 항목과 로컬 익명 접근 차단을 확인했다. [검증 기록](../verification/2026-10-07-ems-admin-shell.md)·[진행표](../esn-admin/05-progress.md)에 실행 수준을 반영했다. 다음은 D2 실제 집계/KPI/차트이며, 회사 고객/세션/사진 포함 예약 인수는 미완료다.
+
 **2026-10-06 EMS 대시보드 후속 계획:** 사용자 제공 두 참고 이미지와 글로벌 Slate/Greige를 기준으로 [08 디자인·UX 및 기존 admin 적용 계획](../esn-admin/08-ems-dashboard-design-and-implementation-plan.md)·[가상 와이어프레임](../esn-admin/design/dashboard-wireframe.html)을 작성했다. 오늘 일정/확인 필요 → 지표·차트 → 고객/업무 상세로 연결하며 기존 기능을 재사용한다. 이번은 계획·문서 시안만이며 앱 구현·DB 변경은 하지 않았다.
 
 - [x] EMS-D0: 관리자 대시보드 정보 구조·글로벌 색·KPI/그래프 정의·상태·반응형·현재 admin 이관 계획 작성.
-- [ ] EMS-D1: 공통 관리자 프레임과 업무별 경로를 나누고 로그인·이메일·세션·기존 API 경계 보존.
+- [x] EMS-D1: [09번 순서](../esn-admin/09-2026-10-07-admin-shell-implementation-plan.md)대로 공통 관리자 프레임·기존 업무 경로 이관, 인증·API·동기화·입력 보존 및 합성 회귀 검증 완료. 회사 실제 인수는 별도 미완료.
 - [ ] EMS-D2: 목록 API의 500/100건 제한과 무관한 서버 집계, Sydney 날짜·중복/데모 구분, KPI·차트·agenda·드릴다운 구현.
-- [ ] EMS-D3: 고객/문의·견적/예약/설정 화면 이관, 기존 상태/기간 필터와 실제 고객·세션·문서·사진·예약 인수 완료.
+- [ ] EMS-D3: D1에서 이관한 고객/문의·견적/예약/설정의 상세 UX와 상태/기간 필터를 정돈하고 실제 고객·세션·문서·사진·예약 인수 완료.
 - [ ] EMS-D4/D5: 정책·원장 준비 후 Jobs·운영 견적/청구·Orders·Inventory·Reports 연결. 미구현 수치를 0건/0원으로 표시하지 않기.
 
 2026-10-04 요청은 **관리자만 로그인해 고객별 계약·예약·구매·관련 데이터를 통합 확인하는 ESN**이다. [현황 분석](../esn-admin/01-current-state-analysis.md)·[분리 구조](../esn-admin/02-separation-architecture.md)·[데이터/권한](../esn-admin/03-data-and-access.md)·[구현 순서/인수 기준](../esn-admin/04-roadmap-and-acceptance.md) 작성 후 같은 날 ESN-01 구현을 시작했다. 아래는 단계 요약이며 세부 상태·다음 작업·막힌 의존성은 [ESN 진행표](../esn-admin/05-progress.md) 한 곳에서 관리한다.
