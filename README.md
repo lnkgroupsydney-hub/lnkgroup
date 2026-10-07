@@ -8,6 +8,8 @@ L&K Group의 서비스 홈페이지, 온라인 쇼핑몰, ERP·CRM 운영관리 
 
 ## 읽는 순서
 
+**2026-10-07 EMS-D1 구현 완료:** 승인한 관리자 공통 화면·메뉴별 경로에 기존 고객/문의/견적/예약/설정 기능을 연결했다. 인증 경계·자동 동기화·입력/불확실 요청을 보존하고 전체 검사 **374/374**·lint·타입·build와 합성 브라우저 **36+8+4** 항목을 통과했다. 로컬 앱은 기존 3002 주소에서 실행 중이다. [구현 계획](docs/esn-admin/09-2026-10-07-admin-shell-implementation-plan.md)·[검증 기록](docs/verification/2026-10-07-ems-admin-shell.md)·[진행표](docs/esn-admin/05-progress.md)에 결과와 미완료 인수를 반영했다. 실제 KPI/그래프 집계는 다음 D2이며 회사 자료 변경·운영 배포·커밋/merge/push는 수행하지 않았다.
+
 **2026-10-06 EMS 대시보드 설계:** 참고 이미지의 카드·그래프·일정·사이드바를 기존 글로벌 Slate/Greige로 적용하는 [디자인·UX 및 admin 이관 계획](docs/esn-admin/08-ems-dashboard-design-and-implementation-plan.md)과 [가상 와이어프레임](docs/esn-admin/design/dashboard-wireframe.html)을 추가했다. 현재 기능을 활용한 1차 화면과 Jobs·Orders·Inventory 확장 목표를 구분하며, 기존 인증·고객·예약·문서/사진·세션 규칙을 보존한다. 이번은 계획·문서 시안이고 실제 새 대시보드 구현은 후속이다.
 
 **2026-10-06 main 대조:** 로컬 `main@e2d4d73`에 직원 관리자 접근·고객 통합 조회·본인 세션 관리가 병합됐다. 회사 원격을 fetch한 결과 `origin/main@9ec6f6e`이며 로컬이 3커밋 앞선다. [최신 main 상태와 다음 작업](docs/esn-admin/07-2026-10-06-main-status-and-next-steps.md)에 이전 안내의 완료 상태를 정정하고 실제 고객 연결/세션 회수 인수·필터·KCP 왕복 검증 순서를 정리했다. 이번 확인은 Git·문서 대조이며 CI·배포 검증을 새로 실행한 결과가 아니다.

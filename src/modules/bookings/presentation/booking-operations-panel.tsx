@@ -1,11 +1,20 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { createContext, useContext, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import Image from "next/image";
 import type { BookingDetail, BookingProposal, BookingSummary } from "../domain/contracts";
-import { BookingRequestError, bookingPost, bookingRequest, requestMessage, SignaturePreview, statusLabel, sydneyInput, sydneyTime } from "./booking-ui";
+import { BookingRequestError, bookingRequest as rawBookingRequest, requestMessage, SignaturePreview, statusLabel, sydneyInput, sydneyTime } from "./booking-ui";
+import { useWorkspaceDraft, useUnsavedChanges, useWorkspaceNavigation } from "@/shared/ui/admin-workspace-state";
 import "./bookings.css";
 
+import { BookingRequestLifetime } from "./request-lifetime";
+type BookingRequests = { bookingRequest: <T>(path: string, init?: RequestInit) => Promise<T>; bookingPost: <T>(path: string, value: unknown) => Promise<T> };
+const BookingRequestsContext = createContext<BookingRequests | null>(null);
+function useBookingRequests() {
+  const requests = useContext(BookingRequestsContext);
+  if (!requests) throw new Error("Booking details require their private request boundary.");
+  return requests;
+}
 type SegmentInput = { startLocal: string; endLocal: string };
 const emptySegment = (): SegmentInput => ({startLocal:"",endLocal:""});
 type BookingCalendarChange = {id:string;kind:"move"|"delete"|"invalid";segment_id:string;proposed_start_at:string|null;proposed_end_at:string|null;created_at:string;booking_revision:number};
@@ -35,39 +44,47 @@ function OriginalSubmission({ detail }: { detail: BookingDetail }) {
   </details>;
 }
 function CalendarChangeReview({ submissionId }: {submissionId:string}) {
+  const {bookingRequest} = useBookingRequests();
   const [changes,setChanges]=useState<BookingCalendarChange[]>([]), [error,setError]=useState("");
   useEffect(()=>{
     let active=true;
     const load=()=>bookingRequest<{changes:BookingCalendarChange[]}>(`/api/operations/bookings/${submissionId}/changes`).then(result=>{if(active){setChanges(result.changes);setError("");}}).catch(failure=>{if(active)setError(requestMessage(failure));});
     void load();const timer=window.setInterval(()=>void load(),15_000);
     return()=>{active=false;window.clearInterval(timer);};
-  },[submissionId]);
+  },[submissionId, bookingRequest]);
   if(!changes.length&&!error)return null;
   return <section className="booking-history"><h4>Google changes awaiting review</h4>{error&&<p className="operations-error" role="alert">Change details could not be refreshed: {error}</p>}{changes.map(change=><div key={change.id} className="operations-notice"><p><strong>{statusLabel(change.kind)} · {change.segment_id}</strong> · received {sydneyTime(change.created_at)}</p><p>{change.kind==="delete"?"Google event was deleted. The previously confirmed work segment is still occupied in the app.":change.kind==="invalid"?"Google returned an unsupported or incomplete work time. No booking time was changed.":`Google proposed: ${sydneyTime(change.proposed_start_at)} → ${sydneyTime(change.proposed_end_at)} (Sydney).`}</p><p className="operations-small">Review these times against the preserved proposal above. Enter a revised full work proposal below and obtain a new customer signature before confirmation. A Google edit alone does not approve the new schedule.</p></div>)}</section>;
 }
 function ProposalEditor({ detail, disabled, onSaved }: { detail: BookingDetail; disabled: boolean; onSaved: (detail:BookingDetail)=>void }) {
-  const [segments,setSegments] = useState<SegmentInput[]>([emptySegment()]);
-  const [notes,setNotes] = useState("");
-  const [revision,setRevision] = useState(detail.booking.revision);
-  const [busy,setBusy] = useState(false), [uncertain,setUncertain] = useState(false);
+  const {bookingPost} = useBookingRequests();
+  const draftKey = `bookings.proposal.${detail.submission.id}`;
+  const [segments,setSegments] = useWorkspaceDraft<SegmentInput[]>(`${draftKey}.segments`, [emptySegment()]);
+  const [notes,setNotes] = useWorkspaceDraft(`${draftKey}.notes`, "");
+  const [revision,setRevision] = useWorkspaceDraft(`${draftKey}.revision`, detail.booking.revision);
+  const [busy,setBusy] = useState(false);
+  const [uncertain,setUncertain] = useWorkspaceDraft(`${draftKey}.uncertain`, false);
   const [error,setError] = useState(""), [notice,setNotice] = useState("");
-  const attempted = useRef<{expectedRevision:number;segments:SegmentInput[];notes:string;idempotencyKey:string}|null>(null);
+  type ProposalAttempt = {expectedRevision:number;segments:SegmentInput[];notes:string;idempotencyKey:string};
+  const [attempted,setAttempted] = useWorkspaceDraft<ProposalAttempt|null>(`${draftKey}.attempt`, null);
+  useUnsavedChanges(draftKey, {dirty: uncertain || Boolean(attempted) || Boolean(notes) || segments.some(segment => Boolean(segment.startLocal || segment.endLocal)), busy: busy || uncertain || Boolean(attempted), onDiscard: () => { setSegments([emptySegment()]); setNotes(""); setUncertain(false); setAttempted(null); setRevision(detail.booking.revision); }});
   const stale = revision !== detail.booking.revision;
   const existing = detail.proposals.find(proposal => proposal.id === detail.booking.pendingProposalId) ?? detail.proposals.find(proposal => proposal.id === detail.booking.confirmedProposalId);
-  function reloadVersion() { setRevision(detail.booking.revision); setUncertain(false); attempted.current = null; setError(""); setNotice("Current request version loaded. Your entered segments are preserved; review them before saving."); }
+  function reloadVersion() { setRevision(detail.booking.revision); setUncertain(false); setAttempted(null); setError(""); setNotice("Current request version loaded. Your entered segments are preserved; review them before saving."); }
   async function save() {
     if (busy || disabled || (stale && !uncertain)) return;
-    if (!attempted.current) {
+    let payload = attempted;
+    if (!payload) {
       if (segments.some(segment => !segment.startLocal || !segment.endLocal || segment.endLocal <= segment.startLocal)) { setError("Enter a start and a later end for every work segment. Times are Sydney local time."); return; }
-      attempted.current = {expectedRevision:revision,segments,notes,idempotencyKey:crypto.randomUUID()};
+      payload = {expectedRevision:revision,segments,notes,idempotencyKey:crypto.randomUUID()};
+      setAttempted(payload);
     }
     setBusy(true); setUncertain(true); setError(""); setNotice("");
     try {
-      const result = await bookingPost<{detail:BookingDetail}>(`/api/operations/bookings/${detail.submission.id}/proposals`,attempted.current);
-      onSaved(result.detail); setRevision(result.detail.booking.revision); setSegments([emptySegment()]); setNotes(""); setUncertain(false); attempted.current = null;
+      const result = await bookingPost<{detail:BookingDetail}>(`/api/operations/bookings/${detail.submission.id}/proposals`,payload);
+      onSaved(result.detail); setRevision(result.detail.booking.revision); setSegments([emptySegment()]); setNotes(""); setUncertain(false); setAttempted(null);
       setNotice("New work proposal saved. The customer must review and sign these exact segments before company confirmation.");
     } catch (failure) {
-      if (failure instanceof BookingRequestError && [400,403,409,422].includes(failure.status)) { setUncertain(false); attempted.current = null; }
+      if (failure instanceof BookingRequestError && [400,401,403,409,422].includes(failure.status)) { setUncertain(false); setAttempted(null); }
       setError(requestMessage(failure));
     } finally { setBusy(false); }
   }
@@ -83,20 +100,24 @@ function ProposalEditor({ detail, disabled, onSaved }: { detail: BookingDetail; 
   </section>;
 }
 function BookingDetailPanel({ detail, onSaved, onRefresh, refreshing }: { detail:BookingDetail; onSaved:(detail:BookingDetail)=>void; onRefresh:()=>void; refreshing:boolean }) {
+  const {bookingPost} = useBookingRequests();
   const [busy,setBusy] = useState(false), [error,setError] = useState(""), [notice,setNotice] = useState("");
-  const confirmAttempt = useRef<{expectedRevision:number;proposalId:string;idempotencyKey:string}|null>(null);
+  const confirmKey = `bookings.confirm.${detail.submission.id}`;
+  const [confirmAttempt,setConfirmAttempt] = useWorkspaceDraft<{expectedRevision:number;proposalId:string;idempotencyKey:string}|null>(confirmKey, null);
+  useUnsavedChanges(confirmKey, {dirty: Boolean(confirmAttempt), busy: busy || Boolean(confirmAttempt), onDiscard: () => setConfirmAttempt(null)});
   const current = detail.proposals.find(proposal => proposal.id === detail.booking.pendingProposalId) ?? detail.proposals.find(proposal => proposal.id === detail.booking.confirmedProposalId);
   const confirmed = detail.proposals.find(proposal => proposal.id === detail.booking.confirmedProposalId);
   const canConfirm = current && current.signature && current.emailStatus === "provider_accepted" && !current.confirmedAt && current.id !== detail.booking.confirmedProposalId;
   async function confirm() {
-    if (!current || busy) return;
-    confirmAttempt.current ??= {expectedRevision:detail.booking.revision,proposalId:current.id,idempotencyKey:crypto.randomUUID()};
+    if ((!current && !confirmAttempt) || busy) return;
+    const payload = confirmAttempt ?? {expectedRevision:detail.booking.revision,proposalId:current!.id,idempotencyKey:crypto.randomUUID()};
+    setConfirmAttempt(payload);
     setBusy(true); setError(""); setNotice("");
     try {
-      const result = await bookingPost<{detail:BookingDetail}>(`/api/operations/bookings/${detail.submission.id}/confirm`,confirmAttempt.current);
-      onSaved(result.detail); confirmAttempt.current = null;
+      const result = await bookingPost<{detail:BookingDetail}>(`/api/operations/bookings/${detail.submission.id}/confirm`,payload);
+      onSaved(result.detail); setConfirmAttempt(null);
       setNotice(result.detail.booking.status === "confirmed" && result.detail.booking.syncStatus === "synced" ? "Demo confirmation and Google verification are complete." : "Confirmation command saved. Wait for the Google verification status before treating this demonstration as confirmed.");
-    } catch (failure) { if (failure instanceof BookingRequestError && [400,403,409,422].includes(failure.status)) confirmAttempt.current = null; setError(requestMessage(failure)); }
+    } catch (failure) { if (failure instanceof BookingRequestError && [400,401,403,409,422].includes(failure.status)) setConfirmAttempt(null); setError(requestMessage(failure)); }
     finally { setBusy(false); }
   }
   return <article className="booking-detail"><div className="bookings-header"><div><h3>{detail.submission.reference}</h3><p>{bookingLabel(detail.booking)}</p></div><button type="button" className="operations-button-secondary" disabled={busy || refreshing} onClick={onRefresh}>{refreshing ? "Refreshing…" : "Refresh this request"}</button></div>
@@ -109,21 +130,36 @@ function BookingDetailPanel({ detail, onSaved, onRefresh, refreshing }: { detail
     {current ? <section><h4>Current work proposal · revision {current.revision}</h4><BookingSegments proposal={current} /><p>{current.notes || "No additional notes."}</p><dl className="booking-definition"><div><dt>Customer reconfirmation</dt><dd>{current.signature ? `Signed by ${current.signature.name} · ${sydneyTime(current.consentedAt)}` : "Required — not signed"}</dd></div><div><dt>Reconfirmation email</dt><dd>{statusLabel(current.emailStatus)}{current.emailError && ` · ${current.emailError}`}</dd></div><div><dt>Company confirmation</dt><dd>{current.confirmedAt || current.id === detail.booking.confirmedProposalId ? bookingLabel(detail.booking) : "Not yet confirmed"}</dd></div></dl>
       {current.signature && <><SignaturePreview name={current.signature.name} strokes={current.signature.strokes} label={`Proposal ${current.revision} demonstration signature`} /><PdfLinks submissionId={detail.submission.id} proposal={current} /></>}
       {!current.signature && <p className="operations-notice">Open the original customer browser at <a href="/quote/start?service=cabinet-painting" target="_blank" rel="noopener noreferrer">the quote page</a> to review and sign this work proposal. The demo browser cookie is not customer identity verification.</p>}
-      <button type="button" disabled={busy || !canConfirm} onClick={() => void confirm()}>{busy ? "Checking all segments…" : "Check conflicts and confirm demo"}</button><p className="operations-small">Enabled only after customer signature and email provider acceptance. The server checks all work segments against current Google busy and app occupancy. Google verification may remain pending.</p>
+      <button type="button" disabled={busy || (!confirmAttempt && !canConfirm)} onClick={() => void confirm()}>{busy ? "Checking all segments…" : confirmAttempt ? "Retry same confirmation" : "Check conflicts and confirm demo"}</button><p className="operations-small">Enabled only after customer signature and email provider acceptance. The server checks all work segments against current Google busy and app occupancy. Google verification may remain pending.</p>
     </section> : <p>No work proposal exists yet. Enter the actual work segments below.</p>}
-    <ProposalEditor detail={detail} disabled={busy} onSaved={onSaved} />
+    <ProposalEditor detail={detail} disabled={busy || Boolean(confirmAttempt)} onSaved={onSaved} />
     {detail.proposals.length > 1 && <details className="booking-history"><summary>Previous proposal versions ({detail.proposals.length-1})</summary>{detail.proposals.filter(proposal => proposal.id !== current?.id).map(proposal => <section key={proposal.id}><h4>Proposal {proposal.revision} · {sydneyTime(proposal.createdAt)}</h4><BookingSegments proposal={proposal} /><p>{proposal.notes || "No notes"}</p><p>{proposal.signature ? `Signed by ${proposal.signature.name} on ${sydneyTime(proposal.consentedAt)}.` : "Not signed."} Email: {statusLabel(proposal.emailStatus)}.</p>{proposal.signature && <><SignaturePreview name={proposal.signature.name} strokes={proposal.signature.strokes} label={`Preserved proposal ${proposal.revision} signature`} /><PdfLinks submissionId={detail.submission.id} proposal={proposal} /></>}</section>)}</details>}
   </article>;
 }
-export function BookingOperationsPanel({ refreshKey }: {refreshKey?:string}) {
+export function BookingOperationsPanel({refreshKey, onAccessLost, view = "schedule"}: {refreshKey?:string; onAccessLost?:()=>void; view?:"quotes"|"schedule"}) {
+  const [accessLost,setAccessLost] = useState(false);
+  const [lifecycle] = useState(() => new BookingRequestLifetime());
+  const callback = useRef(onAccessLost);
+  useEffect(() => { callback.current = onAccessLost; }, [onAccessLost]);
+  useLayoutEffect(() => { lifecycle.activate(); return () => lifecycle.dispose(); }, [lifecycle]);
+  const bookingRequest = useCallback(<T,>(path:string, init?:RequestInit):Promise<T> => lifecycle.run(signal => rawBookingRequest<T>(path, {...init, signal}), () => { setAccessLost(true); callback.current?.(); }), [lifecycle]);
+  const bookingPost = useCallback(<T,>(path:string,value:unknown) => bookingRequest<T>(path,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(value)}), [bookingRequest]);
+  if (accessLost) return <p role="status">Administrator access changed. Private booking data has been cleared.</p>;
+  return <BookingRequestsContext.Provider value={{bookingRequest,bookingPost}}><BookingOperationsContent refreshKey={refreshKey} view={view} /></BookingRequestsContext.Provider>;
+}
+function BookingOperationsContent({refreshKey,view}: {refreshKey?:string;view:"quotes"|"schedule"}) {
+  const {bookingRequest} = useBookingRequests();
   const [bookings,setBookings] = useState<BookingSummary[]>([]), [detail,setDetail] = useState<BookingDetail|null>(null);
   const [loading,setLoading] = useState(true), [refreshing,setRefreshing] = useState(false), [error,setError] = useState("");
-  const [selectedId,setSelectedId] = useState<string|null>(null);
+  const [selectedId,setSelectedId] = useWorkspaceDraft<string|null>("bookings.selectedId", null);
+  const selected = useRef(selectedId);
+  const navigate = useWorkspaceNavigation();
+  useLayoutEffect(() => { selected.current = selectedId; }, [selectedId]);
   const requestVersion = useRef(0);
   const loadList = useCallback(async () => {
     const result = await bookingRequest<{bookings:BookingSummary[]}>("/api/operations/bookings"); setBookings(result.bookings);
-  },[]);
-  useEffect(() => { let active = true; bookingRequest<{bookings:BookingSummary[]}>("/api/operations/bookings").then(result => { if(active) {setBookings(result.bookings);setError("");} }).catch(failure => {if(active)setError(requestMessage(failure));}).finally(() => {if(active)setLoading(false);}); return () => {active=false;}; },[refreshKey]);
+  },[bookingRequest]);
+  useEffect(() => { let active = true; bookingRequest<{bookings:BookingSummary[]}>("/api/operations/bookings").then(result => { if(active) {setBookings(result.bookings);setError("");} }).catch(failure => {if(active)setError(requestMessage(failure));}).finally(() => {if(active)setLoading(false);}); return () => {active=false;}; },[refreshKey,bookingRequest]);
   useEffect(() => {
     if(!selectedId)return;
     let active=true;
@@ -133,18 +169,24 @@ export function BookingOperationsPanel({ refreshKey }: {refreshKey?:string}) {
       bookingRequest<{detail:BookingDetail}>(`/api/operations/bookings/${selectedId}`).then(result => {if(active&&version===requestVersion.current)setDetail(result.detail);}).catch(failure=>{if(active&&version===requestVersion.current)setError(requestMessage(failure));});
     },15_000);
     return()=>{active=false;window.clearInterval(timer);};
-  },[selectedId,refreshing]);
-  async function select(id:string) {
-    const version = ++requestVersion.current; setSelectedId(id); setRefreshing(true);setError("");
-    if(detail?.submission.id !== id)setDetail(null);
+  },[selectedId,refreshing,bookingRequest]);
+  const select = useCallback(async (id:string) => {
+    const version = ++requestVersion.current; setRefreshing(true);setError("");
+    setDetail(current => current?.submission.id === id ? current : null);
     try { const result = await bookingRequest<{detail:BookingDetail}>(`/api/operations/bookings/${id}`); if(version===requestVersion.current)setDetail(result.detail); }
     catch(failure) {if(version===requestVersion.current)setError(requestMessage(failure));}
     finally {if(version===requestVersion.current)setRefreshing(false);}
-  }
-  function saved(value:BookingDetail) { requestVersion.current++; setDetail(value); void loadList().catch(failure => setError(requestMessage(failure))); }
-  return <section className="operations-panel bookings-panel" id="signed-demo-requests"><div className="bookings-header"><h2>Signed demo requests and company confirmation</h2><button type="button" className="operations-button-secondary" disabled={loading || refreshing} onClick={() => { setError("");void loadList().catch(failure => setError(requestMessage(failure))); }}>Refresh signed requests</button></div><p className="booking-demo-note">Company-only demonstration. Review the immutable signed request, propose actual work segments, obtain a new signature, then check conflicts and confirm. Sample prices and terms do not authorise real work.</p>
+  }, [bookingRequest]);
+  useEffect(() => {
+    let active = true;
+    if (selectedId) queueMicrotask(() => { if (active) void select(selectedId); });
+    const versions = requestVersion;
+    return () => { active = false; versions.current++; };
+  }, [selectedId, select]);
+  function saved(value:BookingDetail) { if (selected.current !== value.submission.id) return; requestVersion.current++; setDetail(value); void loadList().catch(failure => setError(requestMessage(failure))); }
+  return <section className="operations-panel bookings-panel" id="signed-demo-requests"><div className="bookings-header"><h2>{view === "quotes" ? "Signed demo quotes and preserved documents" : "Signed demo requests and company confirmation"}</h2><button type="button" className="operations-button-secondary" disabled={loading || refreshing} onClick={() => { setError("");void loadList().catch(failure => setError(requestMessage(failure))); }}>Refresh signed requests</button></div><p className="booking-demo-note">Company-only demonstration. Review the immutable signed request, propose actual work segments, obtain a new signature, then check conflicts and confirm. Sample prices and terms do not authorise real work.</p>
     {error && <p className="operations-error" role="alert">{error}</p>}{loading && <p role="status">Loading signed requests…</p>}
     {!loading && !bookings.length && !error && <p>No signed demo submissions are available.</p>}
-    {bookings.length > 0 && <div className="bookings-layout"><ul className="operations-list operations-inbox">{bookings.map(booking => <li key={booking.id}><button type="button" className={selectedId===booking.id ? "selected" : ""} aria-pressed={selectedId===booking.id} onClick={() => void select(booking.id)}><strong>{booking.reference}</strong><span>{booking.clientName}</span><span>Preferred: {booking.preferredDate}</span><span>{bookingLabel(booking)}</span></button></li>)}</ul><div>{refreshing && <p role="status">Loading the saved request…</p>}{detail ? <BookingDetailPanel key={detail.submission.id} detail={detail} onSaved={saved} onRefresh={() => void select(detail.submission.id)} refreshing={refreshing} /> : <p>Select a signed request to review its details.</p>}</div></div>}
+    {bookings.length > 0 && <div className="bookings-layout"><ul className="operations-list operations-inbox">{bookings.map(booking => <li key={booking.id}><button type="button" className={selectedId===booking.id ? "selected" : ""} aria-pressed={selectedId===booking.id} onClick={() => { if (booking.id !== selectedId) navigate(() => setSelectedId(booking.id)); }}><strong>{booking.reference}</strong><span>{booking.clientName}</span><span>Preferred: {booking.preferredDate}</span><span>{bookingLabel(booking)}</span></button></li>)}</ul><div>{refreshing && <p role="status">Loading the saved request…</p>}{detail ? <BookingDetailPanel key={detail.submission.id} detail={detail} onSaved={saved} onRefresh={() => void select(detail.submission.id)} refreshing={refreshing} /> : <p>Select a signed request to review its details.</p>}</div></div>}
   </section>;
 }

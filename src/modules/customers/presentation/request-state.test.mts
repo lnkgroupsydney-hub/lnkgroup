@@ -19,3 +19,28 @@ test('uncertain saves reuse the same key and payload and reject edited retries',
   attempt.clear()
   assert.equal(attempt.prepare({ name: 'Edited customer' }, key).idempotencyKey, 'synthetic-key-2')
 })
+
+
+test('a remounted customer draft retries its uncertain mutation with the original key and revision', () => {
+  const first = new MutationAttempt<{ reason: string; expectedRevision: number }>()
+  const payload = first.prepare({ reason: 'Reviewed source', expectedRevision: 4 }, () => 'original-key')
+  const snapshot = first.snapshot()!
+  const restored = new MutationAttempt(snapshot)
+  first.clear()
+  assert.deepEqual(restored.prepare({ reason: 'Reviewed source', expectedRevision: 4 }, () => 'wrong-new-key'), payload)
+  assert.throws(() => restored.prepare({ reason: 'Reviewed source', expectedRevision: 5 }, () => 'wrong-new-key'), /Retry the unchanged details/)
+  assert.equal(snapshot.value.idempotencyKey, 'original-key')
+  restored.clear()
+  assert.equal(restored.snapshot(), null)
+})
+
+test('mutation snapshots are independent of the instance and later snapshots', () => {
+  const attempt = new MutationAttempt<{ name: string }>()
+  attempt.prepare({ name: 'Customer A' }, () => 'same-key')
+  const snapshot = attempt.snapshot()!
+  snapshot.value.name = 'Changed outside the request'
+  assert.equal(attempt.snapshot()!.value.name, 'Customer A')
+  const restored = new MutationAttempt(attempt.snapshot())
+  attempt.clear()
+  assert.equal(restored.snapshot()!.value.name, 'Customer A')
+})

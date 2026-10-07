@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useUnsavedChanges, useWorkspaceDraft } from "@/shared/ui/admin-workspace-state";
 import { authRequest, AuthRequestError } from "./staff-auth-request";
 
 type SessionSummary = {
@@ -17,13 +18,13 @@ function validSummary(value: SessionSummary) {
     && value.truncated === (value.otherSessionCount > value.otherSessions.length);
 }
 
-export function SessionSecurity({ onAccessLost }: { onAccessLost: () => void }) {
+export function SessionSecurity({ onAccessLost, embedded = false }: { onAccessLost: () => void; embedded?: boolean }) {
   const [summary, setSummary] = useState<SessionSummary | null>(null);
   const [busy, setBusy] = useState("loading");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
-  const [confirming, setConfirming] = useState(false);
-  const [cleanupPending, setCleanupPending] = useState(false);
+  const [confirming, setConfirming] = useWorkspaceDraft("session-security:confirming", false);
+  const [cleanupPending, setCleanupPending] = useWorkspaceDraft("session-security:cleanup-pending", false);
   const inFlight = useRef(false);
   const active = useRef(true);
   const controller = useRef<AbortController | null>(null);
@@ -33,10 +34,11 @@ export function SessionSecurity({ onAccessLost }: { onAccessLost: () => void }) 
   const fail = useCallback((cause: unknown) => {
     if (!active.current) return;
     if (cause instanceof AuthRequestError && (cause.status === 401 || cause.status === 403)) {
+      active.current = false; controller.current?.abort(); setSummary(null); setConfirming(false); setCleanupPending(false);
       onAccessLost(); return;
     }
     setError(cause instanceof Error ? cause.message : "Session security is unavailable. Refresh the list and try again.");
-  }, [onAccessLost]);
+  }, [onAccessLost, setConfirming, setCleanupPending]);
 
   const load = useCallback(async (signal?: AbortSignal) => {
     const value = await authRequest<SessionSummary>("sessions", undefined, signal);
@@ -54,7 +56,7 @@ export function SessionSecurity({ onAccessLost }: { onAccessLost: () => void }) 
     return () => { active.current = false; abort.abort(); };
   }, [load, fail]);
 
-  useEffect(() => { if (confirming) confirmButton.current?.focus(); }, [confirming]);
+  useEffect(() => { if (confirming && !busy) confirmButton.current?.focus(); }, [confirming, busy]);
 
   async function refresh() {
     if (inFlight.current) return;
@@ -66,16 +68,20 @@ export function SessionSecurity({ onAccessLost }: { onAccessLost: () => void }) 
   async function revoke() {
     if (inFlight.current) return;
     inFlight.current = true; setBusy("revoke"); setError(""); setNotice("");
+    // A route can unmount while the server is already removing other sessions.
+    // Persist the uncertain outcome before sending; returning never replays it automatically.
+    setCleanupPending(true);
+    let cleanupConfirmed = false;
     try {
       const result = await authRequest<{ esnAccessRemoved: boolean; authCleanupComplete: boolean }>("sessions/revoke-others", {}, controller.current?.signal);
       if (result?.esnAccessRemoved !== true || result.authCleanupComplete !== true) throw new Error("Could not confirm session cleanup. Refresh the list and retry.");
       if (!active.current) return;
-      setCleanupPending(false); setConfirming(false);
+      cleanupConfirmed = true; setCleanupPending(false); setConfirming(false);
       setNotice("Other sessions have been signed out. Your current session is still open.");
       await load(controller.current?.signal);
       trigger.current?.focus();
     } catch (cause) {
-      if (active.current && !(cause instanceof AuthRequestError && (cause.status === 401 || cause.status === 403))) {
+      if (active.current && !cleanupConfirmed && !(cause instanceof AuthRequestError && (cause.status === 401 || cause.status === 403))) {
         // A lost response may follow committed ESN removal. Keep a retry
         // available even after refreshing shows no other registry rows.
         setCleanupPending(true);
@@ -88,14 +94,25 @@ export function SessionSecurity({ onAccessLost }: { onAccessLost: () => void }) 
     } finally { if (active.current) { setBusy(""); inFlight.current = false; } }
   }
 
+  const discard = useCallback(() => {
+    if (cleanupPending) return;
+    setConfirming(false);
+  }, [cleanupPending, setConfirming]);
+  useUnsavedChanges("session-security", {
+    dirty: confirming || cleanupPending,
+    busy: busy === "revoke" || cleanupPending,
+    onDiscard: discard,
+  });
+
   const disabled = Boolean(busy);
   const expiry = (time: number) => new Intl.DateTimeFormat("en-AU", { dateStyle: "medium", timeStyle: "short", timeZone: "Australia/Sydney" }).format(time);
-  return <section className="operations-panel staff-session-security" aria-labelledby="staff-session-security-heading" aria-busy={disabled}>
-    <h2 id="staff-session-security-heading" tabIndex={-1}>Session security</h2>
+  return <section className="operations-panel staff-session-security" id={embedded ? "staff-session-security-heading" : undefined} aria-label={embedded ? "Session security" : undefined} aria-labelledby={embedded ? undefined : "staff-session-security-heading"} aria-busy={disabled}>
+    {!embedded && <h2 id="staff-session-security-heading" tabIndex={-1}>Session security</h2>}
     <p>Review your ESN app sessions. Times are shown in Sydney time.</p>
     {busy === "loading" && <p role="status">Loading your sessions…</p>}
     {error && <p className="operations-error" role="alert">{error}</p>}
     {notice && <p role="status">{notice}</p>}
+    {cleanupPending && busy !== "revoke" && <p role="status">The previous session cleanup has not been confirmed. Review the refreshed list and retry cleanup before leaving this screen.</p>}
     {summary && <>
       <h3>Current session</h3>
       <p>Expires <time dateTime={new Date(summary.current.expiresAt).toISOString()}>{expiry(summary.current.expiresAt)}</time></p>
