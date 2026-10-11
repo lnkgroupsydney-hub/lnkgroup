@@ -1,10 +1,10 @@
 import { createHash, randomUUID } from 'node:crypto'
 import type { QuoteRequestStore } from './requests.ts'
 import type { InternalAnalysisJob, InternalPhoto, InternalPhotoWorkspace, PhotoWorkspace, PublicPhoto, PublicAnalysisJob } from '../domain/photo-workspace.ts'
-import type { PhotoAnalysis, AnalysisUsage, AnalysisCoverage } from '../domain/analysis.ts'
+import { PHOTO_ANALYSIS_MODEL, PHOTO_ANALYSIS_PROMPT_VERSION, PHOTO_ANALYSIS_SCHEMA_VERSION, type PhotoAnalysis, type AnalysisUsage, type AnalysisCoverage } from '../domain/analysis.ts'
 import type { ServiceDetails } from '../domain/contracts.ts'
 import { QuoteRequestError } from '../domain/contracts.ts'
-import { calculateEstimatePricing, pendingCompanyPricing, validateEstimatePricing, QUOTE_PRICING_VERSION } from '../domain/pricing.ts'
+import { calculateEstimatePricing, calculateLegacyEstimatePricing, pendingCompanyPricing, validateEstimatePricing, QUOTE_PRICING_VERSION, LEGACY_QUOTE_PRICING_VERSION } from '../domain/pricing.ts'
 
 export interface PhotoObjectPort {
   signUpload(photo: InternalPhoto): Promise<{ signedUrl: string; token: string; path: string }>
@@ -31,6 +31,13 @@ export function createAnalysisRunner(deps: { store: QuoteRequestStore; objects: 
     const leaseToken = randomUUID()
     const job = await deps.store.command<InternalAnalysisJob | null>('analysis_claim', { companyId: 'lk-group', jobId, leaseToken })
     if (!job) return
+    const snapshot = job.inputSnapshot as typeof job.inputSnapshot & { model?: unknown; promptVersion?: unknown; schemaVersion?: unknown }
+    if (snapshot.model !== PHOTO_ANALYSIS_MODEL || snapshot.promptVersion !== PHOTO_ANALYSIS_PROMPT_VERSION || snapshot.schemaVersion !== PHOTO_ANALYSIS_SCHEMA_VERSION) {
+      // Claim first so only this worker can settle an obsolete queued contract.
+      // Never use today's provider instructions under historical version labels.
+      await deps.store.command('analysis_fail', { companyId: 'lk-group', jobId, leaseToken, status: 'failed', error: 'The analysis version changed before processing. Explicitly retry to use the current analysis version.', providerResponseId: null, usage: null })
+      return
+    }
     let result: Awaited<ReturnType<CabinetPhotoAnalyzer>>
     try {
       let timer: ReturnType<typeof setTimeout> | undefined
@@ -53,7 +60,9 @@ export function createAnalysisRunner(deps: { store: QuoteRequestStore; objects: 
     }
     // A failed database commit must never trigger another paid provider call. Keep
     // the lease until expiry; retry only this exact immutable completion once.
-    const completed = { companyId: 'lk-group', jobId, leaseToken, analysis: result.analysis, pricing: job.inputSnapshot && 'pricingVersion' in job.inputSnapshot && job.inputSnapshot.pricingVersion === QUOTE_PRICING_VERSION ? calculateEstimatePricing(result.analysis, job.inputSnapshot.service) : pendingCompanyPricing(), usage: result.usage, providerResponseId: result.providerResponseId }
+    const pricingVersion=job.inputSnapshot&&'pricingVersion' in job.inputSnapshot?job.inputSnapshot.pricingVersion:null
+    const pricing=pricingVersion===QUOTE_PRICING_VERSION?calculateEstimatePricing(result.analysis,job.inputSnapshot.service):pricingVersion===LEGACY_QUOTE_PRICING_VERSION?calculateLegacyEstimatePricing(result.analysis,job.inputSnapshot.service):pendingCompanyPricing()
+    const completed = { companyId: 'lk-group', jobId, leaseToken, analysis: result.analysis, pricing, usage: result.usage, providerResponseId: result.providerResponseId }
     try { await deps.store.command('analysis_finish', completed) }
     catch { await deps.store.command('analysis_finish', completed) }
   }

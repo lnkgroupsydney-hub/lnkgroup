@@ -133,11 +133,12 @@ export function LiveQuoteForm({ previousDemoAvailable = false }: { previousDemoA
           <fieldset><legend>What would you like to do? *</legend><div className="lq-options">{Object.entries(intentLabels).map(([value, label]) => <label className="lq-option" key={value}><input required type="radio" name="live-intent" value={value} checked={values.intent === value} onChange={() => update('intent', value)} />{label}</label>)}</div></fieldset>
           <fieldset><legend>Which surfaces are involved? *</legend><div className="lq-options">{Object.entries(surfaceLabels).map(([value, label]) => <label className="lq-option" key={value}><input type="checkbox" checked={values.surfaces.includes(value)} onChange={() => update('surfaces', values.surfaces.includes(value) ? values.surfaces.filter(x => x !== value) : value === 'unknown' ? ['unknown'] : [...values.surfaces.filter(x => x !== 'unknown'), value])} />{label}</label>)}</div></fieldset>
           <div className="lq-grid">
-            <label>Cabinet doors (leave blank if unknown)<input type="number" min={0} max={500} step={1} value={values.doorCount} onChange={e => update('doorCount', e.target.value)} /></label>
-            <label>Drawer fronts (leave blank if unknown)<input type="number" min={0} max={500} step={1} value={values.drawerCount} onChange={e => update('drawerCount', e.target.value)} /></label>
+            <label>Cabinet doors (optional)<input type="number" min={0} max={500} step={1} aria-describedby="ai-quantity-help" value={values.doorCount} onChange={e => update('doorCount', e.target.value)} /></label>
+            <label>Drawer fronts (optional)<input type="number" min={0} max={500} step={1} aria-describedby="ai-quantity-help" value={values.drawerCount} onChange={e => update('drawerCount', e.target.value)} /></label>
             <label>Material (optional)<input maxLength={100} value={values.material} onChange={e => update('material', e.target.value)} /></label>
             <label>Colour or finish (optional)<input maxLength={100} value={values.colourPreference} onChange={e => update('colourPreference', e.target.value)} /></label>
           </div>
+          <p id="ai-quantity-help">Not sure how many? Leave these blank. AI will estimate quantities from your photos for an initial painting price. Exact quantities and the final price will be confirmed on site.</p>
         </>}
         <div className="lq-actions">{step === 1 && <button type="button" className="secondary" onClick={() => go(0)}>Edit your details</button>}<button type="submit">{busy ? 'Saving…' : step === 0 ? 'Save details and continue' : 'Save service details'}</button></div>
       </fieldset></form> : saved && !expired ? <div>

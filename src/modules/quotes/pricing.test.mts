@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { calculateEstimatePricing, pendingCompanyPricing, validateEstimatePricing, QUOTE_PRICING_VERSION } from './domain/pricing.ts'
-import { PHOTO_ROLES, type PhotoAnalysis } from './domain/analysis.ts'
+import { calculateLegacyEstimatePricing as calculateEstimatePricing, calculateEstimatePricing as calculateProvisionalEstimatePricing, pendingCompanyPricing, validateEstimatePricing, LEGACY_QUOTE_PRICING_VERSION as QUOTE_PRICING_VERSION, QUOTE_PRICING_VERSION as CURRENT_PRICING_VERSION } from './domain/pricing.ts'
+import { PHOTO_ROLES, type PhotoAnalysis, type ProvisionalPhotoAnalysis } from './domain/analysis.ts'
 import type { ServiceDetails } from './domain/contracts.ts'
 const service: ServiceDetails = {serviceId:'cabinet-painting',intent:'full-repainting',surfaces:['doors','drawers'],doorCount:8,drawerCount:3,material:'',colourPreference:''}
 function analysis(): PhotoAnalysis { return {summary:'Visible coating wear.',outcome:'analysis_ready',photoQuality:[{photoId:'photo-1',usable:true,issues:[],retakeInstruction:null}],coverage:PHOTO_ROLES.map(role=>({role,covered:true,photoIds:['photo-1'],note:'Visible.'})),observedDamage:[],quantities:{doors:{observed:8,customer:8,needsConfirmation:false},drawers:{observed:3,customer:3,needsConfirmation:false}},proposedWork:[],unknowns:[],siteChecks:[]} }
@@ -18,4 +18,39 @@ test('unselected drawer painting and repair-only scope never receive a whole-cab
   const input=analysis();input.quantities.doors={observed:selected.doorCount,customer:selected.doorCount,needsConfirmation:false};input.quantities.drawers={observed:selected.drawerCount,customer:selected.drawerCount,needsConfirmation:false};
   const value=calculateEstimatePricing(input,selected);assert.equal(value.status,'review_required');assert.deepEqual(value.lineItems,[]);assert.equal(value.total,null);assert.ok(value.reviewReasons.some(reason=>reason.includes('scope')));assert.deepEqual(validateEstimatePricing(value),value);
  }
+});
+function provisional():ProvisionalPhotoAnalysis {
+ const base=analysis()
+ return {...base,quantities:{doors:{...base.quantities.doors,estimated:8,basisPhotoIds:['photo-1'],confidence:'medium',note:'Estimated from the overview.'},drawers:{...base.quantities.drawers,estimated:3,basisPhotoIds:['photo-1'],confidence:'medium',note:'Estimated from the overview.'}},observedDamage:[],estimateScope:{status:'estimable',extent:'whole_project',anchorPhotoId:'photo-1',scopePhotoIds:['photo-1'],contextPhotoIds:[],conflictingPhotoIds:[],description:'Matching cabinet fronts in the overview.',assumptions:['Exact quantities need on-site confirmation.']}}
+}
+test('AI estimated quantities create a provisional painting amount despite missing or differing customer counts',()=>{
+ const input=provisional();input.outcome='site_review_required';input.quantities.doors={...input.quantities.doors,observed:null,customer:null,needsConfirmation:true,estimated:17};input.quantities.drawers={...input.quantities.drawers,observed:4,customer:6,needsConfirmation:true,estimated:5,confidence:'low'};
+ const price=calculateProvisionalEstimatePricing(input,{...service,doorCount:null,drawerCount:6});
+ assert.equal(price.status,'provisional_estimate');assert.equal(price.pricingVersion,CURRENT_PRICING_VERSION);assert.equal(price.subtotal,305000);assert.equal(price.tax,30500);assert.equal(price.total,335500);assert.equal(price.amountScope,'painting_only');assert.equal(price.siteConfirmationRequired,true);assert.deepEqual(price.basis,{type:'ai_estimated_quantities',extent:'whole_project',anchorPhotoId:'photo-1',doors:17,drawers:5});assert.ok(price.reviewReasons.some(reason=>reason.includes('low confidence')));assert.equal(input.quantities.doors.customer,null);assert.deepEqual(validateEstimatePricing(price),price);
+});
+test('mixed primary scope excludes context repairs and structural repairs without hiding the provisional painting amount',()=>{
+ const input=provisional();input.estimateScope={...input.estimateScope,extent:'primary_view',conflictingPhotoIds:['photo-2']};input.photoQuality.push({photoId:'photo-2',usable:true,issues:[],retakeInstruction:null});
+ input.observedDamage=[{...damage('repair-a','moderate'),estimateScope:'included',surface:'doors'},{...damage('repair-b','moderate'),estimateScope:'included',surface:'drawers'},{...damage('repair-c','severe'),estimateScope:'included',surface:'doors'},{...damage('repair-d','moderate'),photoIds:['photo-2'],estimateScope:'context_only',surface:'doors'}];
+ const price=calculateProvisionalEstimatePricing(input,{...service,surfaces:['doors','drawers','frames','panels','repairs']});
+ assert.equal(price.status,'provisional_estimate');assert.equal(price.total,192500);assert.equal(price.lineItems.filter(item=>item.code==='moderate_repairs').length,1);assert.deepEqual(price.exclusions.map(item=>[item.code,item.damageIds]),[['structural_or_unclassified_repairs',['repair-c']],['unverified_damage_scope',['repair-d']],['additional_surfaces',[]],['unseen_cabinetry',[]]]);assert.deepEqual(validateEstimatePricing(price),price);
+ const contextOnly=provisional();contextOnly.observedDamage=[{...damage('repair','moderate'),estimateScope:'unresolved',surface:'doors'}];assert.equal(calculateProvisionalEstimatePricing(contextOnly,service).lineItems.some(item=>item.code==='moderate_repairs'),false);
+});
+test('only selected AI-estimated fronts are priced; insufficient or unsupported selected scope remains money-free',()=>{
+ const selected=calculateProvisionalEstimatePricing(provisional(),{...service,surfaces:['doors']});assert.equal(selected.basis!.drawers,0);assert.equal(selected.lineItems.some(item=>item.code==='drawers'),false);assert.equal(selected.total,165000);assert.deepEqual(validateEstimatePricing(selected),selected);
+ const cases=[{input:{...provisional(),estimateScope:{...provisional().estimateScope,status:'insufficient' as const}},service},{input:provisional(),service:{...service,surfaces:['repairs']}},{input:provisional(),service:{...service,intent:'advice'}}];
+ const unknown=provisional();unknown.quantities.doors.estimated=null;cases.push({input:unknown,service});const noEvidence=provisional();noEvidence.quantities.drawers.basisPhotoIds=[];cases.push({input:noEvidence,service});
+ for(const entry of cases){const result=calculateProvisionalEstimatePricing(entry.input,entry.service);assert.equal(result.status,'review_required');assert.equal(result.total,null);assert.equal(result.basis,null);assert.deepEqual(result.lineItems,[]);assert.deepEqual(validateEstimatePricing(result),result)}
+});
+test('v2 pricing validation rejects forged basis, missing exclusions, wrong scope and money tampering while retaining v1',()=>{
+ const input=provisional();input.estimateScope.extent='primary_view';const price=calculateProvisionalEstimatePricing(input,service);
+ for(const value of [{...price,basis:{...price.basis,doors:9}},{...price,basis:null},{...price,exclusions:[]},{...price,status:'estimate_ready'},{...price,amountScope:'whole_project'},{...price,siteConfirmationRequired:false},{...price,tax:0},{...price,total:1},{...price,exclusions:[...price.exclusions,price.exclusions[0]]}])assert.throws(()=>validateEstimatePricing(value));
+ assert.equal(validateEstimatePricing(calculateEstimatePricing(analysis(),service)).pricingVersion,QUOTE_PRICING_VERSION);
+});
+test('moderate panel, unknown or unselected drawer damage in the same scope photo cannot add a repair charge',()=>{
+ for(const surface of ['panels','unknown','drawers'] as const){
+  const input=provisional();input.observedDamage=[{...damage('repair-same-photo','moderate'),estimateScope:'included',surface}];const price=calculateProvisionalEstimatePricing(input,{...service,surfaces:['doors']});
+  assert.equal(price.status,'provisional_estimate');assert.equal(price.total,165000);assert.equal(price.lineItems.some(item=>item.code==='moderate_repairs'),false);assert.deepEqual(price.exclusions.map(item=>[item.code,item.damageIds]),[['unverified_damage_scope',['repair-same-photo']]]);assert.deepEqual(validateEstimatePricing(price),price);
+ }
+ const selected=provisional();selected.observedDamage=[{...damage('door-repair','moderate'),estimateScope:'included',surface:'doors'},{...damage('drawer-excluded','severe'),estimateScope:'included',surface:'drawers'},{...damage('door-structural','severe'),estimateScope:'included',surface:'doors'}];
+ const price=calculateProvisionalEstimatePricing(selected,{...service,surfaces:['doors']});assert.equal(price.total,192500);assert.deepEqual(price.exclusions.map(item=>[item.code,item.damageIds]),[['structural_or_unclassified_repairs',['door-structural']],['unverified_damage_scope',['drawer-excluded']]]);assert.deepEqual(validateEstimatePricing(price),price);
 });

@@ -1,10 +1,18 @@
 # L&K Group 웹 서비스 구축 계획
 
-**2026-10-11 최신 구현·검증:** 사진 AI 분석 → 작업·예상 가격 → EMS 동일 저장본 → 현장 확인 후 필요한 가격 조정 흐름을 연결했다. 시작가는 **A$1,500 GST 별도 / A$1,650 GST 포함**이며, AI가 관찰한 문·서랍 수량과 손상에 [L&K 초기 가격 v1](docs/plans/39-sydney-cabinet-pricing-v1.md)의 서버 계산 규칙을 적용한다. 공개 Sydney 가격은 참고 자료이며 공식 시장 평균이 아니다. 회사 Chrome에서 지정 손상 사진 두 장 업로드·분석 중/완료 후 새로고침·고객/EMS 동일 결과와 320px 메뉴·키보드를 확인했고 콘솔 메시지는 0건이었다. 실제 결과는 추가 범위·심한/분류되지 않은 손상 확인이 필요해 `review_required`, 총액 null로 저장됐다. 전체 검사 **488/488**와 lint·타입·빌드가 통과했고 신규 가격 SQL을 회사 Supabase에 적용했다. 충분한 전체 사진으로 숫자 예상 총액을 내는 실제 인수, 현장 조정, 고객 이메일 본인 확인·서명·예약, Vercel 환경·상시 worker 운영은 남아 있다. 과거 `unconfigured`/`awaiting_company_rates` 결과는 유지한다. [실제·합성 검증과 남은 범위](docs/verification/2026-10-11-pricing-browser-qa.md)를 따른다. 커밋·main 병합·푸시는 승인됐으나 이 문서 갱신 시점에는 미실행이며 배포도 미실행이다.
+**2026-10-11 최신 개정 — AI 수량 추정 가견적 운영 완료:** 고객 수량을 비워 두어도 AI가 문·서랍 앞판을 추정하고 예상 도장 금액을 계산한다. 정확한 수량·상태·최종 가격은 현장에서 확인해 조정한다. 기존 단가와 GST는 유지하며, 같은 사진의 미선택 표면이나 다른 현장의 손상은 보수비에 합산하지 않는다. [40번 현행 명세](docs/plans/40-ai-quantity-provisional-estimates.md)가 아래 v1의 고객 수량 일치 조건을 대체한다. 기존 기록은 보존한다.
+
+전체 **524/524**·lint·타입·빌드, 회사 Supabase 적용, Vercel `dpl_FgjBEwxhuz17b5A4pUVWq4FAMUK7` READY를 확인했다. 5장씩 3세트의 실제 AI 추정 결과는 **14문/6서랍 A$2,970 · 21문/6서랍 A$4,125 · 12문/4서랍 A$2,420 (GST 포함)**이며 회사 Chrome EMS와 DB의 저장값이 일치한다. 모두 기준 전면 범위의 잠정 도장비이고 미산정 손상·미촬영 범위는 별도다. 현장 최종견적 편집·발행(RQ-04c), 재동의·정식 예약은 후속이다. [실행 증거](docs/verification/2026-10-11-ai-quantity-provisional-estimates.md). 소스는 `codex/ai-quantity-estimates-20261011`; 이번 main 병합·push는 수행하지 않았다.
+
+**앞선 v1 운영 검증 기록(2026-10-11):** 회사 Vercel Production 환경을 설정하고 [운영 앱](https://lnkgroup.vercel.app/)에 배포했다. `dpl_7yQ7MBKWgcX8bp9ufkMUos9f3QP5`는 READY이며, 회사 Chrome의 실제 EMS 로그인·비공개 사진·가격표 열람을 확인했다. 분석은 Mac worker가 꺼진 상태에서도 Vercel `after()`로 완료됐다. Forwarded `sig`/`exp` 호환, 프롬프트 v2의 사진 근거 계약과 실행 버전 검사를 보강했고 전체 검사 **502/502**, lint·타입·production build가 통과했다.
+
+운영 API에서 생성 예시의 **단일 수납장 문 3개·서랍 2개**가 A$1,500 + GST A$150 = **A$1,650**으로 저장되고 EMS에 같은 항목·총액이 표시됐다. 사용자가 요청한 전체·상부·하부·측면·손상 **5장 세트 1·2·3, 총 15장**의 비공개 저장·분석을 완료했다. 세트 1은 회사 Chrome에서 5장 업로드·새로고침 복원·EMS 동일 사진/작업을 확인했고, 전체 수량·손상 위치 확인이 필요해 `review_required`, 총액 null이다. 세트 2·3도 범위·수량·손상 확인이 필요해 총액을 보류했다. 단일 수납장 가격을 전체 주방 견적으로 표시하지 않는다.
+
+동일 주방의 충분한 전체 사진·확인 수량을 사용한 숫자 견적 인수, 현장 조정, 일반 고객 이메일 본인 확인·정식 약관/서명·예약, 만료 staging 사진의 클라우드 정기 정리는 남아 있다. 과거 `unconfigured`/`awaiting_company_rates` 저장본은 유지한다. [운영 검증 기록](docs/verification/2026-10-11-vercel-live-quote.md)을 따른다. 앞선 구현은 `main@f1f071b`에 병합됐다. 이번 운영 수정의 소스 기준은 `codex/vercel-live-quote-qa-20261011`이며 회사 Vercel CLI 배포와 별도로 관리한다. 이번 작업의 main 병합·원격 push는 수행하지 않았으며 배포 READY를 main 최신 소스 반영으로 간주하지 않는다.
 
 2026년 9월 25일 · 계획 버전 1.0 · 기준 지역 Australia/Sydney · 문서 언어 한국어
 
-L&K Group의 서비스 홈페이지, 온라인 쇼핑몰, ERP·CRM 운영관리 시스템을 구축하기 위한 개발 참조 문서와 로컬 Next.js 앱 저장소다. 기존 분석 자산은 ChatGPT 프로젝트의 대화 3개와 화면 시안 3개다. 2026-09-27 로컬 기본 앱을 생성했고, 2026-10-01 사용자가 지정한 회사 Supabase 프로젝트로 업무 저장소 연결을 진행한다. 앱의 공개 배포는 별도 단계다.
+L&K Group의 서비스 홈페이지, 온라인 쇼핑몰, ERP·CRM 운영관리 시스템을 구축하기 위한 개발 참조 문서와 로컬 Next.js 앱 저장소다. 기존 분석 자산은 ChatGPT 프로젝트의 대화 3개와 화면 시안 3개다. 2026-09-27 로컬 기본 앱을 생성했고, 2026-10-01 사용자가 지정한 회사 Supabase 프로젝트로 업무 저장소 연결을 진행한다. 회사 Vercel 운영 배포와 사진 견적 인수의 최신 상태는 위 2026-10-11 기록을 따른다.
 
 권장 방향은 **하나의 고객·운영 데이터 기반 위에 서비스 예약과 상품 구매 흐름을 구분하고, 서비스 매출부터 단계적으로 운영을 검증하는 것**이다. 핸디맨·페인팅·캐비넷 페인팅과 터치업 키트·김치는 동일 관리자에서 관리하되, 식품의 배송·위생·재고 정책은 별도로 적용한다. 현재 명칭은 EMS(Enterprise Management System)이며 ERP·CRM 중심 운영관리를 뜻한다. 기존 `esn-admin` 경로와 과거 기록은 유지한다.
 
@@ -56,7 +64,7 @@ L&K Group의 서비스 홈페이지, 온라인 쇼핑몰, ERP·CRM 운영관리 
 
 **당시 작업 기록(2026-09-29): KCP 시네마틱 디자인 구현·로컬 검증 완료.** 메인은 기존 서비스 소개 프로토타입으로 유지하고, **Kitchen Cabinet Painting 상세에만** 사진형 Hero, 실제 WebGL 9단계 공정과 완료 장면, 전후 비교 슬라이더, 색상·광택 미리보기를 적용했다. [최신 구현 범위](docs/plans/24-cinematic-kitchen-webgl.md), [글로벌 디자인 시스템](docs/plans/21-global-design-system.md), [실제 검증 기록](docs/verification/2026-09-29-cinematic-v3.md)을 따른다. 같은 모델의 문짝·손잡이·힌지를 분리하고 세척·국소 퍼티 보수·프라이머·두 마감 코트·재조립을 가역 스크롤로 연결했다. 모델은 사진을 참고한 건축 컨셉이며 실측 CAD나 실사 재구성은 아니다. 모바일·JavaScript/WebGL 미지원 환경에는 읽을 수 있는 사진과 본문을 제공한다. 전역 토큰과 공용 KitchenScene 렌더러를 콘텐츠에서 분리했다. 현재 프로덕션 미리보기는 [KCP](http://127.0.0.1:3002/services/cabinet-painting) / [메인](http://127.0.0.1:3002)이다.
 
-회사 자료·메인 SEO는 앞서 반영했다. [회사 제공 자료](docs/reference-assets/company-brief.md)를 기준으로 실제 전화·이메일·지역·회사 로고·홍보 이미지·작업 사진을 유지한다. 회사 Supabase 연결·저장 검증은 완료했고 Google 핵심 실연동 검증은 완료했으며 운영 전환·배포 승인·운영 도메인은 대기다. `noindex`는 유지하며 사진 업로드·실제 AI 분석·초기 가격 계산/검토 결과와 EMS 저장은 10월 11일 검증을 따르고, 충분한 전체 사진의 실제 숫자 견적·현장 조정·운영 계약/예약·인보이스·결제는 [순차 구현 목표](docs/plans/25-kcp-quote-to-booking-implementation.md)로 남긴다. 현장별 전후 사례 자료·실측 정밀 모델·정량 성능 및 실제 기기 검증은 남아 있다.
+회사 자료·메인 SEO는 앞서 반영했다. [회사 제공 자료](docs/reference-assets/company-brief.md)를 기준으로 실제 전화·이메일·지역·회사 로고·홍보 이미지·작업 사진을 유지한다. 회사 Supabase 연결·저장 및 Google 핵심 실연동 검증은 완료했다. 회사 Vercel 주소의 배포·Quote/EMS 검증은 10월 11일 기록을 따르며 별도 회사 도메인·Google 전체 운영 전환은 후속이다. `noindex`는 유지하며 사진 업로드·실제 AI 분석·초기 가격 계산/검토 결과와 EMS 저장은 10월 11일 검증을 따르고, 충분한 전체 사진의 실제 숫자 견적·현장 조정·운영 계약/예약·인보이스·결제는 [순차 구현 목표](docs/plans/25-kcp-quote-to-booking-implementation.md)로 남긴다. 현장별 전후 사례 자료·실측 정밀 모델·정량 성능 및 실제 기기 검증은 남아 있다.
 
 Cabinet 상세 `/services/cabinet-painting`의 6개 서비스·적합성·포함/제외·공정·컨셉 사례·FAQ 최초 구성은 [SEO·지역 개정](docs/plans/19-kcp-seo-content-and-service-area.md)과 [이전 검증](docs/verification/2026-09-27-kcp-seo-content.md)을 참조한다. 회사가 제공한 최신 서비스 지역은 기존 지도 조사의 제한적인 후보 목록보다 우선한다.
 
@@ -74,7 +82,7 @@ npm run setup:local
 npm run dev -- --port 3002
 ```
 
-현재 기능 검증 주소는 `http://127.0.0.1:3002`다. `setup:local`은 기존 설정을 보존하고, 최초 실행 때 비공개 `.env.local`에 관리자 비밀번호·토큰 암호화 키를 생성한다. [28번 로컬 설정과 Google 연결 안내](docs/plans/28-gmail-enquiry-calendar-implementation.md)를 따른다. 다른 포트로 실행하려면 `APP_BASE_URL`과 Google redirect URI도 함께 맞춘다. 최신 저장소 설정은 [30번 Supabase 안내](docs/plans/30-supabase-storage-integration.md)를 따른다. `setup:local`의 신규 설정은 `OPERATIONS_STORE=supabase`이며, 회사 키와 DB 스키마가 준비돼야 문의 저장과 운영 검토가 동작한다. 기존 `.env.local`은 덮어쓰지 않으므로 저장소 선택을 직접 확인한다. `OPERATIONS_STORE=sqlite`는 격리된 오프라인 테스트에 사용하고 Supabase 장애 시 자동 전환하지 않는다. Google 키 없이도 DB 접수·검토는 가능하고, 실제 Gmail·Calendar 동기화에는 별도 OAuth 설정이 필요하다. 검사 명령은 `npm run lint`, `npm run typecheck`, `npm run build`이며 `npm run check`로 순서대로 실행할 수도 있다. CI 설정과 실제 GitHub 실행 결과는 구분한다.
+로컬 기능 검증 주소는 `http://127.0.0.1:3002`이며, 회사 운영 검증 주소는 `https://lnkgroup.vercel.app`이다. `setup:local`은 기존 설정을 보존하고, 최초 실행 때 비공개 `.env.local`에 관리자 비밀번호·토큰 암호화 키를 생성한다. [28번 로컬 설정과 Google 연결 안내](docs/plans/28-gmail-enquiry-calendar-implementation.md)를 따른다. 다른 포트로 실행하려면 `APP_BASE_URL`과 Google redirect URI도 함께 맞춘다. 최신 저장소 설정은 [30번 Supabase 안내](docs/plans/30-supabase-storage-integration.md)를 따른다. `setup:local`의 신규 설정은 `OPERATIONS_STORE=supabase`이며, 회사 키와 DB 스키마가 준비돼야 문의 저장과 운영 검토가 동작한다. 기존 `.env.local`은 덮어쓰지 않으므로 저장소 선택을 직접 확인한다. `OPERATIONS_STORE=sqlite`는 격리된 오프라인 테스트에 사용하고 Supabase 장애 시 자동 전환하지 않는다. Google 키 없이도 DB 접수·검토는 가능하고, 실제 Gmail·Calendar 동기화에는 별도 OAuth 설정이 필요하다. 검사 명령은 `npm run lint`, `npm run typecheck`, `npm run build`이며 `npm run check`로 순서대로 실행할 수도 있다. CI 설정과 실제 GitHub 실행 결과는 구분한다.
 
 현재 Mac에서 Turbopack의 CSS worker 포트 권한 오류를 확인해 공식 Webpack 옵션으로 dev·build를 구성했다. Webpack production 빌드는 통과했다. Next.js 공식 ESLint preset의 peer 호환 범위에 맞춰 ESLint 9를 고정했으며 npm의 지원 종료 경고는 남아 있다. 자세한 결과는 [검증 기록](docs/verification/2026-09-27-home-prototype.md)을 따른다.
 
@@ -122,6 +130,10 @@ npm run dev -- --port 3002
 | [34 Google 주소 자동완성](docs/plans/34-google-address-autocomplete.md) | 전체 주소 입력 검색/선택, 수동 입력 대체, 결제·키 설정과 실제 연결 검증 |
 | [35 예약·터치 서명·비공개 사진](docs/plans/35-mobile-booking-private-photo-plan.md) | 10월 4일 예약/서명 보강과 비공개 사진·불변 제출 구현, 실제 연결/격리 검증과 남은 기기 의존성 |
 | [36 두 손상 사진으로 Quote 마무리](docs/plans/36-quote-damage-demo-completion-plan.md) | 지정 사진 2장·저장/서명/제출·EMS 고객 연결·회사 제안/재서명/확정·메일/Calendar의 순차 인수 계획 |
+| [37 실제 Quote·EMS·예약](docs/plans/37-live-quote-ems-booking-implementation.md) | 운영 요청 저장부터 고객 확인·예약까지의 RQ 순서 |
+| [38 사진 AI 예상 견적](docs/plans/38-ai-photo-estimate-and-ems-plan.md) | 5개 촬영 범주·AI 관찰·EMS 저장·운영 분석 실행과 남은 인수 |
+| [39 Sydney 초기 가격 v1](docs/plans/39-sydney-cabinet-pricing-v1.md) | 기존 단가와 v1 검증 기록 |
+| [40 AI 수량 추정 가견적](docs/plans/40-ai-quantity-provisional-estimates.md) | 현행 AI 추정 수량·기준 사진 범위·잠정 금액·현장 조정·v2 계약 |
 
 클라이언트 전달본은 [Word 구현계획서](deliverables/LK_Group_Client_Implementation_Plan_KO.docx)이며, 편집 가능한 원문은 [클라이언트 제안서 Markdown](docs/client-proposal.md)이다. 기술 기준은 위 개발 문서가 원본이며, 클라이언트 문서를 변경할 때 관련 개발 문서도 함께 갱신한다. 문서 자체의 확인 결과는 [검증 기록](docs/document-validation.md)에 정리했다.
 
@@ -132,7 +144,7 @@ npm run dev -- --port 3002
 - 일정·가격·전환율은 사업 자료가 없는 상태에서 세운 **계획 가정**이다. 승인된 계약금액, 견적 단가 또는 실적이 아니다.
 - 고객용 영어 사이트를 우선하고 한국어 콘텐츠를 다음 단계에서 추가하는 안이다. 브랜드명과 법인·ABN·GST 등록 상태는 착수 단계에서 확인한다.
 - 최신 회사 제공 서비스 지역은 **Ermington 중심 10km + Inner West Sydney 및 명시된 21개 suburb**다. 목록의 모든 지역이 10km 안에 있다는 뜻은 아니며 실제 주소별 가능 여부는 회사에 확인한다. [회사 답변](docs/reference-assets/company-brief.md)이 이전 15km 가정과 지도 후보 목록보다 우선한다. 식품 배송 범위는 별도다.
-- 실제 서비스 판매가격은 비워 두고, 산식 설명용 가격은 모두 예시로 표시한다.
+- Kitchen Cabinet Painting 사진 예상 견적은 승인된 [39번 초기 가격 v1](docs/plans/39-sydney-cabinet-pricing-v1.md)을 적용한다. 그 밖의 미확정 판매가격과 산식 설명용 예시는 운영값으로 사용하지 않는다.
 - 기존 산출물은 계획서와 작업 설정이며, 2026-09-27 로컬 Next.js 메인 프로토타입 개발 요청이 추가됐다. 회사 DB는 2026-10-01 지정 프로젝트 연결 요청을 따라 진행하고, 앱 배포는 별도 승인 후 진행하며 결제 계정 개설·광고 집행은 이번 범위에 포함하지 않는다.
 
 ## 첫 착수 회의 산출물

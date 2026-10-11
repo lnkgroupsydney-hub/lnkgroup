@@ -3,8 +3,8 @@ import assert from 'node:assert/strict'
 import { createHash, randomUUID } from 'node:crypto'
 import { readdirSync, readFileSync } from 'node:fs'
 import { PGlite } from '@electric-sql/pglite'
-import { calculateEstimatePricing, pendingCompanyPricing, QUOTE_PRICING_VERSION } from './domain/pricing.ts'
-import { PHOTO_ROLES, type PhotoAnalysis } from './domain/analysis.ts'
+import { calculateLegacyEstimatePricing as calculateEstimatePricing, calculateEstimatePricing as calculateProvisionalPricing, pendingCompanyPricing, LEGACY_QUOTE_PRICING_VERSION as QUOTE_PRICING_VERSION } from './domain/pricing.ts'
+import { PHOTO_ROLES, type LegacyPhotoAnalysis } from './domain/analysis.ts'
 const db = new PGlite()
 await db.exec(`create role anon; create role authenticated; create role service_role bypassrls;
  create schema storage; create table storage.buckets(id text primary key,name text,public boolean,file_size_limit bigint,allowed_mime_types text[]);`)
@@ -17,7 +17,7 @@ const companyId = 'lk-group'
 const ownerA = 'a'.repeat(64), ownerB = 'b'.repeat(64)
 const actor = { actorUserId:randomUUID(),actorSessionId:randomUUID() }
 const hash = (s:string) => createHash('sha256').update(s).digest('hex')
-const service = { serviceId:'cabinet-painting', intent:'full-repainting', surfaces:['doors','drawers'], doorCount:5, drawerCount:2, material:'', colourPreference:'' }
+const service: import('./domain/contracts.ts').ServiceDetails = { serviceId:'cabinet-painting', intent:'full-repainting', surfaces:['doors','drawers'], doorCount:5, drawerCount:2, material:'', colourPreference:'' }
 const payload = { contact:{name:'PRIVATE PERSON',email:'private@example.invalid',siteAddress:'PRIVATE ADDRESS',suburb:'Test',postcode:'2000',consent:true},service }
 const code = (value:string) => (e:unknown) => !!e && typeof e==='object' && 'code' in e && e.code===value
 async function raw<T>(fn:string,cmd:string,args:Record<string,unknown>):Promise<T> {return (await db.query<{result:T}>(`select public.${fn}($1,$2::jsonb) result`,[cmd,JSON.stringify({companyId,...args})])).rows[0].result}
@@ -255,7 +255,7 @@ test('legacy queued jobs cannot accept the new price version and new version key
  await assert.rejects(media('analysis_finish',completion(oldJob,{analysis:priceAnalysis(oldJob),pricing:calculateEstimatePricing(priceAnalysis(oldJob),service)})),code('LK400'));
  const oldResult=await media('analysis_finish',completion(oldJob));const current=await start(2,{pricingVersion:QUOTE_PRICING_VERSION});assert.notEqual(current.latest!.id,oldJob.id);assert.equal(current.jobs.length,2);assert.deepEqual(current.jobs.find(j=>j.id===oldJob.id)!.pricing,oldResult.latest!.pricing);
 })
-function priceAnalysis(job:Job): PhotoAnalysis {
+function priceAnalysis(job:Job): LegacyPhotoAnalysis {
  const photoId=job.manifest[0].id;
  return {summary:'Synthetic observed coating wear.',outcome:'analysis_ready',photoQuality:[{photoId,usable:true,issues:[],retakeInstruction:null}],coverage:PHOTO_ROLES.map(role=>({role,covered:true,photoIds:[photoId],note:'Synthetic coverage.'})),observedDamage:['edge-1','edge-2'].map(id=>({id,kind:'chipping' as const,location:id,description:'Visible coating damage.',photoIds:[photoId],severity:'moderate' as const})),quantities:{doors:{observed:5,customer:5,needsConfirmation:false},drawers:{observed:2,customer:2,needsConfirmation:false}},proposedWork:[],unknowns:[],siteChecks:[]};
 }
@@ -267,4 +267,142 @@ for(const scenario of [{label:'unselected drawers',surfaces:['doors'],doorCount:
  const wholeCabinetPrice=calculateEstimatePricing(input,{...selected,surfaces:['doors','drawers']});assert.equal(wholeCabinetPrice.status,'estimate_ready');
  await assert.rejects(media('analysis_finish',completion(job,{analysis:input,pricing:wholeCabinetPrice})),code('LK400'));
  const review=calculateEstimatePricing(input,selected);assert.equal(review.status,'review_required');const values=completion(job,{analysis:input,pricing:review});const done=await media('analysis_finish',values);assert.deepEqual(done.latest!.pricing,review);assert.equal(review.total,null);assert.deepEqual(await media('analysis_finish',values),done);
+});
+
+function estimatedAnalysis(job:Job): import('./domain/analysis.ts').ProvisionalPhotoAnalysis {
+ const photoId=job.manifest[0].id;
+ return {...priceAnalysis(job),quantities:{doors:{observed:8,customer:null,needsConfirmation:true,estimated:10,basisPhotoIds:[photoId],confidence:'medium',note:'Two partially visible fronts included in the provisional count.'},drawers:{observed:4,customer:null,needsConfirmation:true,estimated:4,basisPhotoIds:[photoId],confidence:'high',note:'Four visible drawer fronts.'}},observedDamage:[],estimateScope:{status:'estimable',extent:'whole_project',anchorPhotoId:photoId,scopePhotoIds:job.manifest.map(p=>p.id),contextPhotoIds:[],conflictingPhotoIds:[],description:'Visible cabinet painting project.',assumptions:['Exact quantities and the final scope require site inspection.']}};
+}
+const estimatedService={...service,doorCount:null,drawerCount:null};
+const v2Versions={pricingVersion:'lk-sydney-cabinet-v2-20261011',promptVersion:'cabinet-observations-v3',schemaVersion:'cabinet-photo-analysis-v2'};
+async function estimatedReady(extraPhotos=0){
+ await create(ownerA,estimatedService);let revision=1;
+ for(let index=0;index<=extraPhotos;index++){const photo=await begin(revision,{role:index===0?'overview':'damage'});await finalize(photo.id,revision);revision++}
+ const queued=await start(revision,v2Versions);return (await claim(queued.latest!.id))!;
+}
+
+test('provisional pricing v2 preserves private function grants and rejects mismatched versions',async()=>{
+ await ready();
+ for(const role of ['anon','authenticated']){
+  await db.exec(`set role ${role}`);
+  await assert.rejects(db.query("select public.lk_quote_pricing_v2_valid('{}','{}','{}','[]')"),code('42501'));
+ }
+ await db.exec('set role service_role');
+ for(const extra of [{schemaVersion:'cabinet-photo-analysis-v1'},{promptVersion:'cabinet-observations-v2'},{pricingVersion:'lk-sydney-cabinet-v3'}])await assert.rejects(start(2,{...v2Versions,...extra}),code('LK400'));
+ const permissions=(await db.query<{definer:boolean;config:string[];public_allowed:boolean;anonymous_allowed:boolean}>("select p.prosecdef definer,p.proconfig config,has_function_privilege('anon',p.oid,'EXECUTE') anonymous_allowed,has_function_privilege('authenticated',p.oid,'EXECUTE') public_allowed from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname='lk_quote_pricing_v2_valid'")).rows[0];
+ assert.equal(permissions.definer,false);assert.equal(permissions.anonymous_allowed,false);assert.equal(permissions.public_allowed,false);assert.ok(permissions.config.some(setting=>setting.startsWith('search_path=')));
+});
+
+test('AI estimated quantities save a provisional amount without changing missing customer counts',async()=>{
+ const job=await estimatedReady(),analysis=estimatedAnalysis(job),pricing=calculateProvisionalPricing(analysis,estimatedService);
+ assert.equal(pricing.status,'provisional_estimate');assert.equal(pricing.subtotal,190000);assert.equal(pricing.tax,19000);assert.equal(pricing.total,209000);
+ assert.equal(pricing.siteConfirmationRequired,true);assert.deepEqual(pricing.basis,{type:'ai_estimated_quantities',extent:'whole_project',anchorPhotoId:job.manifest[0].id,doors:10,drawers:4});
+ const values=completion(job,{analysis,pricing});
+ for(const bad of [{...pricing,total:1},{...pricing,tax:0},{...pricing,siteConfirmationRequired:false},{...pricing,basis:{...pricing.basis,doors:8}},{...pricing,pricingVersion:QUOTE_PRICING_VERSION},{...pricing,lineItems:pricing.lineItems.map(x=>({...x,quantity:x.quantity+1}))}])await assert.rejects(media('analysis_finish',{...values,pricing:bad}),code('LK400'));
+ const done=await media('analysis_finish',values);assert.deepEqual(done.latest!.pricing,pricing);assert.deepEqual(done.latest!.analysis,analysis);assert.deepEqual(await media('analysis_finish',values),done);
+ const request=(await db.query<{payload:typeof payload}>('select payload from public.lk_quote_requests where id=$1',[job.inputSnapshot.requestId??done.request.id])).rows[0];
+ assert.equal(request.payload.service.doorCount,null);assert.equal(request.payload.service.drawerCount,null);
+ assert.equal((await db.query<{n:number}>("select count(*)::integer n from public.lk_quote_media_audit where action='analysis_finish'")).rows[0].n,1);
+});
+
+test('DB rejects estimated money with foreign, conflicting, duplicate or unusable quantity evidence',async()=>{
+ const job=await estimatedReady(1),analysis=estimatedAnalysis(job),pricing=calculateProvisionalPricing(analysis,estimatedService),id=job.manifest[0].id,other=job.manifest[1].id;
+ const variants=[
+  {...analysis,outcome:'invented'},
+  {...analysis,estimateScope:{...analysis.estimateScope,status:'invented'}},
+  {...analysis,estimateScope:{...analysis.estimateScope,extent:'invented'}},
+  {...analysis,quantities:{...analysis.quantities,doors:{...analysis.quantities.doors,confidence:'invented'}}},
+  {...analysis,coverage:analysis.coverage.map(x=>x.role==='damage'?{...x,role:'invented'}:x)},
+  {...analysis,estimateScope:{...analysis.estimateScope,scopePhotoIds:[id,id]}},
+  {...analysis,estimateScope:{...analysis.estimateScope,scopePhotoIds:[id],conflictingPhotoIds:[other]},quantities:{...analysis.quantities,doors:{...analysis.quantities.doors,basisPhotoIds:[other]}}},
+  {...analysis,quantities:{...analysis.quantities,doors:{...analysis.quantities.doors,basisPhotoIds:[randomUUID()]}}},
+  {...analysis,quantities:{...analysis.quantities,doors:{...analysis.quantities.doors,estimated:501}}},
+  {...analysis,quantities:{...analysis.quantities,doors:{...analysis.quantities.doors,customer:10}}},
+  {...analysis,quantities:{...analysis.quantities,doors:{...analysis.quantities.doors,needsConfirmation:false}}},
+  {...analysis,photoQuality:analysis.photoQuality.map(x=>({...x,usable:false}))},
+  {...analysis,coverage:analysis.coverage.map(x=>x.role==='overview'?{...x,covered:false,photoIds:[]}:x)},
+  {...analysis,estimateScope:{...analysis.estimateScope,anchorPhotoId:other},photoQuality:analysis.photoQuality.map(x=>x.photoId===other?{...x,usable:false}:x)},
+ ];
+ // Every manifest item must have quality data, including context views.
+ analysis.photoQuality.push({photoId:other,usable:true,issues:[],retakeInstruction:null});
+ for(const input of variants)await assert.rejects(media('analysis_finish',completion(job,{analysis:input,pricing})),code('LK400'));
+ const done=await media('analysis_finish',completion(job,{analysis,pricing}));assert.equal((done.latest!.pricing as typeof pricing).total,209000);
+});
+
+test('primary view prices painting while excluding conflicting damage and severe repairs',async()=>{
+ const job=await estimatedReady(1),analysis=estimatedAnalysis(job),id=job.manifest[0].id,other=job.manifest[1].id;
+ analysis.photoQuality.push({photoId:other,usable:true,issues:[],retakeInstruction:null});
+ analysis.estimateScope={...analysis.estimateScope,extent:'primary_view',scopePhotoIds:[id],conflictingPhotoIds:[other]};
+ analysis.outcome='site_review_required';
+ analysis.observedDamage=[
+  {id:'moderate-one',kind:'chipping',location:'Front edge',description:'Visible coating chip.',photoIds:[id],severity:'moderate',surface:'doors',estimateScope:'included'},
+  {id:'moderate-two',kind:'peeling',location:'Front edge',description:'Visible peeling.',photoIds:[id],severity:'moderate',surface:'doors',estimateScope:'included'},
+  {id:'severe-one',kind:'swelling',location:'Front edge',description:'Visible material change.',photoIds:[id],severity:'severe',surface:'doors',estimateScope:'included'},
+  {id:'other-damage',kind:'chipping',location:'Another view',description:'Separate photo damage.',photoIds:[other],severity:'moderate',surface:'panels',estimateScope:'context_only'},
+ ];
+ const pricing=calculateProvisionalPricing(analysis,estimatedService);
+ assert.equal(pricing.status,'provisional_estimate');assert.equal(pricing.subtotal,215000);assert.equal(pricing.total,236500);assert.equal(pricing.lineItems.filter(x=>x.code==='moderate_repairs').length,1);
+ assert.deepEqual(pricing.exclusions.map(x=>({code:x.code,damageIds:x.damageIds})),[{code:'structural_or_unclassified_repairs',damageIds:['severe-one']},{code:'unverified_damage_scope',damageIds:['other-damage']},{code:'unseen_cabinetry',damageIds:[]}]);
+ for(const exclusions of [[],pricing.exclusions.filter(x=>x.code!=='unseen_cabinetry'),pricing.exclusions.map(x=>x.code==='unverified_damage_scope'?{...x,damageIds:['severe-one']}:x),[...pricing.exclusions,pricing.exclusions[0]]])await assert.rejects(media('analysis_finish',completion(job,{analysis,pricing:{...pricing,exclusions}})),code('LK400'));
+ await assert.rejects(media('analysis_finish',completion(job,{analysis:{...analysis,observedDamage:analysis.observedDamage.map(x=>x.id==='other-damage'?{...x,estimateScope:'included'}:x)},pricing})),code('LK400'));
+ for(const exclusion of pricing.exclusions)await assert.rejects(media('analysis_finish',completion(job,{analysis,pricing:{...pricing,exclusions:pricing.exclusions.map(x=>x.code===exclusion.code?{...x,description:'Forged exclusion wording'}:x)}})),code('LK400'));
+ const done=await media('analysis_finish',completion(job,{analysis,pricing}));assert.deepEqual(done.latest!.pricing,pricing);
+});
+
+test('unknown selected quantities and unusable overview remain review only with no invented amount',async()=>{
+ const job=await estimatedReady(),analysis=estimatedAnalysis(job);
+ analysis.estimateScope={...analysis.estimateScope,status:'insufficient',anchorPhotoId:null};analysis.quantities.doors={...analysis.quantities.doors,estimated:null,basisPhotoIds:[]};
+ const pricing=calculateProvisionalPricing(analysis,estimatedService);assert.equal(pricing.status,'review_required');assert.equal(pricing.total,null);assert.equal(pricing.basis,null);
+ const forged=calculateProvisionalPricing(estimatedAnalysis(job),estimatedService);
+ await assert.rejects(media('analysis_finish',completion(job,{analysis,pricing:forged})),code('LK400'));
+ const done=await media('analysis_finish',completion(job,{analysis,pricing}));assert.deepEqual(done.latest!.pricing,pricing);
+});
+
+test('selected doors alone use AI door estimates and do not charge unselected drawer fronts or panels',async()=>{
+ const selected:typeof service={...estimatedService,surfaces:['doors','panels']};
+ await create(ownerA,selected);const photo=await begin();await finalize(photo.id);const queued=await start(2,v2Versions),job=(await claim(queued.latest!.id))!,analysis=estimatedAnalysis(job);
+ const pricing=calculateProvisionalPricing(analysis,selected);assert.equal(pricing.status,'provisional_estimate');assert.equal(pricing.total,165000);assert.equal(pricing.basis!.drawers,0);assert.equal(pricing.lineItems.some(x=>x.code==='drawers'),false);assert.deepEqual(pricing.exclusions.map(x=>x.code),['additional_surfaces']);
+ const allFronts=calculateProvisionalPricing(analysis,estimatedService);
+ await assert.rejects(media('analysis_finish',completion(job,{analysis,pricing:allFronts})),code('LK400'));
+ await assert.rejects(media('analysis_finish',completion(job,{analysis,pricing:{...pricing,exclusions:pricing.exclusions.map(x=>({...x,description:'Forged additional work wording'}))}})),code('LK400'));
+ await assert.rejects(media('analysis_finish',completion(job,{analysis,pricing:{...pricing,exclusions:[]}})),code('LK400'));
+ assert.deepEqual((await media('analysis_finish',completion(job,{analysis,pricing}))).latest!.pricing,pricing);
+});
+
+test('v2 estimated prices create new history without rewriting v1 quantities, prices or provider results',async()=>{
+ await ready();const queued=await start(2,{pricingVersion:QUOTE_PRICING_VERSION}),previous=(await claim(queued.latest!.id))!,oldAnalysis=priceAnalysis(previous),oldPricing=calculateEstimatePricing(oldAnalysis,service);
+ const oldResult=await media('analysis_finish',completion(previous,{analysis:oldAnalysis,pricing:oldPricing}));
+ const current=await start(2,v2Versions),job=(await claim(current.latest!.id))!,analysis=estimatedAnalysis(job);
+ analysis.quantities.doors.customer=service.doorCount;analysis.quantities.drawers.customer=service.drawerCount;
+ const pricing=calculateProvisionalPricing(analysis,service);assert.equal(pricing.status,'provisional_estimate');
+ const done=await media('analysis_finish',completion(job,{analysis,pricing}));assert.equal(done.jobs.length,2);assert.notEqual(done.latest!.id,previous.id);
+ const preserved=done.jobs.find(x=>x.id===previous.id)!;assert.deepEqual(preserved,oldResult.latest);assert.deepEqual(preserved.analysis,oldAnalysis);assert.deepEqual(preserved.pricing,oldPricing);
+ assert.equal((await start(2,v2Versions)).latest!.id,job.id);assert.equal(await count('lk_quote_analysis_jobs'),2);
+});
+
+test('context-only moderate damage cannot add a repair charge to the primary-view painting price',async()=>{
+ const job=await estimatedReady(1),analysis=estimatedAnalysis(job),id=job.manifest[0].id,other=job.manifest[1].id;
+ analysis.photoQuality.push({photoId:other,usable:true,issues:[],retakeInstruction:null});
+ analysis.estimateScope={...analysis.estimateScope,extent:'primary_view',scopePhotoIds:[id],contextPhotoIds:[other]};
+ analysis.observedDamage=[{id:'context-repair',kind:'peeling',location:'Context photo',description:'Visible peeling in an unrelated area.',photoIds:[other],severity:'moderate',surface:'panels',estimateScope:'context_only'}];
+ const pricing=calculateProvisionalPricing(analysis,estimatedService);assert.equal(pricing.subtotal,190000);assert.equal(pricing.lineItems.some(x=>x.code==='moderate_repairs'),false);
+ const forged={...pricing,lineItems:[...pricing.lineItems,{code:'moderate_repairs',label:'Incorrect context charge',quantity:1,unitAmount:25000,amount:25000}],subtotal:215000,tax:21500,total:236500};
+ await assert.rejects(media('analysis_finish',completion(job,{analysis,pricing:forged})),code('LK400'));
+ assert.deepEqual((await media('analysis_finish',completion(job,{analysis,pricing}))).latest!.pricing,pricing);
+});
+
+test('same-photo panel, unknown-surface and unselected drawer damage cannot add a doors-only repair charge',async()=>{
+ const selected:typeof service={...estimatedService,surfaces:['doors']};
+ await create(ownerA,selected);const photo=await begin();await finalize(photo.id);const queued=await start(2,v2Versions),job=(await claim(queued.latest!.id))!,analysis=estimatedAnalysis(job),id=job.manifest[0].id;
+ analysis.observedDamage=[
+  {id:'panel-chip',kind:'chipping',location:'Panel edge',description:'Visible panel coating chip.',photoIds:[id],severity:'moderate',surface:'panels',estimateScope:'included'},
+  {id:'drawer-peeling',kind:'peeling',location:'Drawer front',description:'Visible drawer front peeling.',photoIds:[id],severity:'moderate',surface:'drawers',estimateScope:'included'},
+  {id:'unknown-crack',kind:'cracking',location:'Unclassified surface',description:'Surface cannot be determined from this view.',photoIds:[id],severity:'severe',surface:'unknown',estimateScope:'included'},
+ ];
+ const pricing=calculateProvisionalPricing(analysis,selected);assert.equal(pricing.status,'provisional_estimate');assert.equal(pricing.subtotal,150000);assert.equal(pricing.total,165000);assert.equal(pricing.lineItems.some(x=>x.code==='moderate_repairs'),false);
+ assert.deepEqual(pricing.exclusions.map(x=>({code:x.code,damageIds:x.damageIds})),[{code:'unverified_damage_scope',damageIds:['panel-chip','drawer-peeling','unknown-crack']}]);
+ const forged={...pricing,lineItems:[...pricing.lineItems,{code:'moderate_repairs',label:'Incorrect panel or drawer charge',quantity:1,unitAmount:25000,amount:25000}],subtotal:175000,tax:17500,total:192500};
+ await assert.rejects(media('analysis_finish',completion(job,{analysis,pricing:forged})),code('LK400'));
+ for(const surface of ['arbitrary',null,undefined])await assert.rejects(media('analysis_finish',completion(job,{analysis:{...analysis,observedDamage:analysis.observedDamage.map((x,index)=>index===0?{...x,surface}:x)},pricing})),code('LK400'));
+ assert.deepEqual((await media('analysis_finish',completion(job,{analysis,pricing}))).latest!.pricing,pricing);
 });

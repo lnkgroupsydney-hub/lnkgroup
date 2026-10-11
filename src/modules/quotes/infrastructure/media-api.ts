@@ -87,7 +87,10 @@ export function createQuoteMediaApi(deps: { access: Access; store: QuoteRequestS
         if (!previous) throw new QuoteRequestError(404,'Analysis request not found.')
         if (previous.stale || previous.inputRevision!==current.request.revision || previous.inputRevision!==command.expectedRevision) throw new QuoteRequestError(409,'The saved details or photos changed. Request a new analysis instead.')
         if (!['failed','uncertain'].includes(previous.status)) throw new QuoteRequestError(409,'Only a failed or uncertain analysis can be explicitly retried.')
-        if ('pricingVersion' in previous.inputSnapshot && previous.inputSnapshot.pricingVersion!==QUOTE_PRICING_VERSION) retryOf=null
+        const versions=record(previous.inputSnapshot)
+        // An explicit retry after an execution-contract update starts a new job;
+        // historical results and exact response-loss receipts stay immutable.
+        if (versions.model!==PHOTO_ANALYSIS_MODEL || versions.promptVersion!==PHOTO_ANALYSIS_PROMPT_VERSION || versions.schemaVersion!==PHOTO_ANALYSIS_SCHEMA_VERSION || versions.pricingVersion!==QUOTE_PRICING_VERSION) retryOf=null
       }
       const result=await deps.store.command<InternalPhotoWorkspace>('analysis_start',{...args,...command,aiConsentVersion:AI_CONSENT_VERSION,model:PHOTO_ANALYSIS_MODEL,promptVersion:PHOTO_ANALYSIS_PROMPT_VERSION,schemaVersion:PHOTO_ANALYSIS_SCHEMA_VERSION,pricingVersion:QUOTE_PRICING_VERSION,coverage:{upperNotApplicable:coverage.upperNotApplicable,damageNotPresent:coverage.damageNotPresent},retryOf})
       return json(publicWorkspace(result))

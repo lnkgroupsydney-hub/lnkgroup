@@ -1,8 +1,16 @@
 # 관리자 전용 ESN 계획
 
-**2026-10-11 최신 구현·검증:** 사진 AI 분석 → 작업·예상 가격 → EMS 동일 저장본 → 현장 확인 후 필요한 가격 조정 흐름을 연결했다. 시작가는 **A$1,500 GST 별도 / A$1,650 GST 포함**이며, AI가 관찰한 문·서랍 수량과 손상에 [L&K 초기 가격 v1](../plans/39-sydney-cabinet-pricing-v1.md)의 서버 계산 규칙을 적용한다. 공개 Sydney 가격은 참고 자료이며 공식 시장 평균이 아니다. 회사 Chrome에서 지정 손상 사진 두 장 업로드·분석 중/완료 후 새로고침·고객/EMS 동일 결과와 320px 메뉴·키보드를 확인했고 콘솔 메시지는 0건이었다. 실제 결과는 추가 범위·심한/분류되지 않은 손상 확인이 필요해 `review_required`, 총액 null로 저장됐다. 전체 검사 **488/488**와 lint·타입·빌드가 통과했고 신규 가격 SQL을 회사 Supabase에 적용했다. 충분한 전체 사진으로 숫자 예상 총액을 내는 실제 인수, 현장 조정, 고객 이메일 본인 확인·서명·예약, Vercel 환경·상시 worker 운영은 남아 있다. 과거 `unconfigured`/`awaiting_company_rates` 결과는 유지한다. [실제·합성 검증과 남은 범위](../verification/2026-10-11-pricing-browser-qa.md)를 따른다. 커밋·main 병합·푸시는 승인됐으나 이 문서 갱신 시점에는 미실행이며 배포도 미실행이다.
+**2026-10-11 최신 개정 — AI 수량 추정 가견적 운영 완료:** 고객 수량을 비워 두어도 AI가 문·서랍 앞판을 추정하고 예상 도장 금액을 계산한다. 정확한 수량·상태·최종 가격은 현장에서 확인해 조정한다. 기존 단가와 GST는 유지하며, 같은 사진의 미선택 표면이나 다른 현장의 손상은 보수비에 합산하지 않는다. [40번 현행 명세](../plans/40-ai-quantity-provisional-estimates.md)가 아래 v1의 고객 수량 일치 조건을 대체한다. 기존 기록은 보존한다.
 
-작성: 2026-10-04 · 갱신: 2026-10-11 · Australia/Sydney · 상태: **ESN-01 세션 관리·ESN-02 고객 조회 구현 / EMS-D1 구현·합성 검증 완료 / 실제 Quote 사진 AI·초기 가격 v1/검토 결과와 고객·EMS 동일 저장 확인**
+전체 **524/524**·lint·타입·빌드, 회사 Supabase 적용, Vercel `dpl_FgjBEwxhuz17b5A4pUVWq4FAMUK7` READY를 확인했다. 5장씩 3세트의 실제 AI 추정 결과는 **14문/6서랍 A$2,970 · 21문/6서랍 A$4,125 · 12문/4서랍 A$2,420 (GST 포함)**이며 회사 Chrome EMS와 DB의 저장값이 일치한다. 모두 기준 전면 범위의 잠정 도장비이고 미산정 손상·미촬영 범위는 별도다. 현장 최종견적 편집·발행(RQ-04c), 재동의·정식 예약은 후속이다. [실행 증거](../verification/2026-10-11-ai-quantity-provisional-estimates.md). 소스는 `codex/ai-quantity-estimates-20261011`; 이번 main 병합·push는 수행하지 않았다.
+
+**앞선 v1 운영 검증 기록(2026-10-11):** 회사 Vercel Production 환경을 설정하고 [운영 앱](https://lnkgroup.vercel.app/)에 배포했다. `dpl_7yQ7MBKWgcX8bp9ufkMUos9f3QP5`는 READY이며, 회사 Chrome의 실제 EMS 로그인·비공개 사진·가격표 열람을 확인했다. 분석은 Mac worker가 꺼진 상태에서도 Vercel `after()`로 완료됐다. Forwarded `sig`/`exp` 호환, 프롬프트 v2의 사진 근거 계약과 실행 버전 검사를 보강했고 전체 검사 **502/502**, lint·타입·production build가 통과했다.
+
+운영 API에서 생성 예시의 **단일 수납장 문 3개·서랍 2개**가 A$1,500 + GST A$150 = **A$1,650**으로 저장되고 EMS에 같은 항목·총액이 표시됐다. 사용자가 요청한 전체·상부·하부·측면·손상 **5장 세트 1·2·3, 총 15장**의 비공개 저장·분석을 완료했다. 세트 1은 회사 Chrome에서 5장 업로드·새로고침 복원·EMS 동일 사진/작업을 확인했고, 전체 수량·손상 위치 확인이 필요해 `review_required`, 총액 null이다. 세트 2·3도 범위·수량·손상 확인이 필요해 총액을 보류했다. 단일 수납장 가격을 전체 주방 견적으로 표시하지 않는다.
+
+동일 주방의 충분한 전체 사진·확인 수량을 사용한 숫자 견적 인수, 현장 조정, 일반 고객 이메일 본인 확인·정식 약관/서명·예약, 만료 staging 사진의 클라우드 정기 정리는 남아 있다. 과거 `unconfigured`/`awaiting_company_rates` 저장본은 유지한다. [운영 검증 기록](../verification/2026-10-11-vercel-live-quote.md)을 따른다. 앞선 구현은 `main@f1f071b`에 병합됐다. 이번 운영 수정의 소스 기준은 `codex/vercel-live-quote-qa-20261011`이며 회사 Vercel CLI 배포와 별도로 관리한다. 이번 작업의 main 병합·원격 push는 수행하지 않았으며 배포 READY를 main 최신 소스 반영으로 간주하지 않는다.
+
+작성: 2026-10-04 · 갱신: 2026-10-11 · Australia/Sydney · 상태: **회사 Vercel READY·실제 EMS 로그인/사진/단일 수납장 가격표 확인 / 5장 세트 1·2·3 분석·금액 보류 및 세트 1 고객/EMS 일치 확인 / 전체 주방 숫자 인수·현장 조정 후속**
 
 **2026-10-08 최신 구현 — 실제 고객 저장 → EMS 연결:** [37번 운영 전환 계획](../plans/37-live-quote-ems-booking-implementation.md)의 RQ-00~02를 새 `codex/live-quote-ems-foundation-20261008`에서 구현했다. 실제 이메일·연락처·서비스·수량 저장, 복원, EMS 동일 요청/이력 조회와 검토 요청 전환을 회사 Chrome·Supabase에서 확인했다. 전체 검사 **420/420**, 후속 관련 검사 **20/20**, lint·타입·빌드가 통과했고 기존 네 테이블 fingerprint는 일치한다. 고객 이메일 인증·사진·회사 금액·서명·예약은 후속이다. 로컬 3002에는 반영했으며 [Vercel 앱](https://lnkgroup.vercel.app/)은 이전 배포다. [검증 기록](../verification/2026-10-08-live-quote-foundation.md). 현재 다음 순서는 10월 11일 개정에 따라 RQ-03 촬영 안내/사진 → RQ-04 AI 예상 견적·EMS 저장/현장 조정이며 EMS-D2는 이후다.
 
@@ -56,6 +64,6 @@ ESN 상세 진행은 [05 진행표](05-progress.md)를 기준으로 갱신하고
 
 ## 다음 구현 단위
 
-다음 구현 단위는 [38번 AI 사진 견적](../plans/38-ai-photo-estimate-and-ems-plan.md)의 약 5장 촬영 안내·비공개 업로드 → 실제 AI 분석 → 고객 예상 가격/EMS 저장 → 현장 조정이다. RQ-00~02 저장·EMS 연결과 HTTPS 코드 기반은 [실행 기록](../verification/2026-10-08-live-quote-foundation.md)에 확인했다. AI 예상 견적·현장 조정·고객 승인·예약을 연결한 뒤 [08번 EMS-D2](08-ems-dashboard-design-and-implementation-plan.md)의 전체 서버 집계·4 KPI·차트/일정·동일 조건 드릴다운을 진행한다.
+다음 인수 단위는 [38번 AI 사진 견적](../plans/38-ai-photo-estimate-and-ems-plan.md)의 동일 주방 전체 사진·확인 수량으로 숫자 총액 검증과 RQ-04c 현장 조정이다. 회사 Vercel의 사진 업로드·AI 분석·단일 수납장 가격/EMS 조회 및 5장 세트 1·2·3의 검토 필요 결과는 확인했다. 세트 1은 실제 회사 Chrome에서 5장 업로드·새로고침·EMS 동일 결과를 인수했다. RQ-00~02 저장·EMS 연결과 HTTPS 코드 기반은 [실행 기록](../verification/2026-10-08-live-quote-foundation.md)에 확인했다. AI 예상 견적·현장 조정·고객 승인·예약을 연결한 뒤 [08번 EMS-D2](08-ems-dashboard-design-and-implementation-plan.md)의 전체 서버 집계·4 KPI·차트/일정·동일 조건 드릴다운을 진행한다.
 
-D1 공통 화면·기존 업무 경로 이관은 [09번](09-2026-10-07-admin-shell-implementation-plan.md)과 [검증 기록](../verification/2026-10-07-ems-admin-shell.md)에 완료했다. 기존 실제 고객 분류와 자기 세션 종료의 업무 인수는 합성 이관 검증과 구분해 미완료로 유지한다. 신규 SQL 적용·읽기/익명 권한 검사와 합성 UI 검증은 완료했다. 기존 실제 PDF/사진 읽기 완료와 신규 고객 상세를 통한 회사 인수를 구분한다. 첫 계정 권한은 최신 서버 소유 Auth metadata를 유지한다. 추가 관리자 초대·별도 membership 관리·권한 회수·분실 계정 복구 책임자/절차는 후속이며 자기 세션 종료 코드로 대신 완료 처리하지 않는다. 실기기·다중 DB 연결 경합·운영 배포·구매/청구 인수도 남아 있다.
+D1 공통 화면·기존 업무 경로 이관은 [09번](09-2026-10-07-admin-shell-implementation-plan.md)과 [검증 기록](../verification/2026-10-07-ems-admin-shell.md)에 완료했다. 기존 실제 고객 분류와 자기 세션 종료의 업무 인수는 합성 이관 검증과 구분해 미완료로 유지한다. 신규 SQL 적용·읽기/익명 권한 검사와 합성 UI 검증은 완료했다. 기존 실제 PDF/사진 읽기 완료와 신규 고객 상세를 통한 회사 인수를 구분한다. 첫 계정 권한은 최신 서버 소유 Auth metadata를 유지한다. 추가 관리자 초대·별도 membership 관리·권한 회수·분실 계정 복구 책임자/절차는 후속이며 자기 세션 종료 코드로 대신 완료 처리하지 않는다. 실기기·다중 DB 연결 경합·전체 운영 복구·구매/청구 인수도 남아 있다. 회사 Vercel 배포와 실제 EMS 로그인은 완료 범위에 포함한다.
