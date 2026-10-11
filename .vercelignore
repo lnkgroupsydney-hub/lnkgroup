@@ -1,0 +1,16 @@
+# Private local settings and verification artifacts must never be uploaded.
+.env*
+.local/
+.git/
+.next/
+node_modules/
+tmp/
+output/
+*.log
+*.tsbuildinfo
+
+# User-supplied QA photos are uploaded through private quote storage only.
+public/images/story/quote photo/
+
+# Internal business documents are not needed by the web runtime.
+deliverables/

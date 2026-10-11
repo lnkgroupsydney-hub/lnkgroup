@@ -1,3 +1,4 @@
+import { parseSingleForwarded } from '../../../shared/http/forwarded.ts'
 import { AdminAccessError } from './errors.ts'
 
 export type StaffTransport = { origin: string; secure: boolean; mode: 'https' | 'local' }
@@ -31,13 +32,8 @@ export function assertStaffHttpsTransport(input: {
   if (input.forwarded !== null) {
     // Multiple proxy authorities and duplicate parameters are ambiguous. The
     // application deliberately does not infer an origin from a proxy chain.
-    if (input.forwarded.includes(',')) return denied()
-    const values = new Map<string, string>()
-    for (const parameter of input.forwarded.split(';')) {
-      const match = /^\s*(host|proto|for|by)=(?:"([^"\\]*)"|([^\s"\\;]+))\s*$/i.exec(parameter)
-      if (!match || values.has(match[1].toLowerCase())) return denied()
-      values.set(match[1].toLowerCase(), match[2] ?? match[3])
-    }
+    const values = parseSingleForwarded(input.forwarded)
+    if (!values) return denied()
     if (values.has('host') && values.get('host')!.toLowerCase() !== configured.host.toLowerCase()) return denied()
     if (values.has('proto') && values.get('proto') !== 'https') return denied()
   }

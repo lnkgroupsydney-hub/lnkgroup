@@ -1,3 +1,4 @@
+import { parseSingleForwarded } from '../../shared/http/forwarded.ts'
 import test, {after, beforeEach} from 'node:test'
 import assert from 'node:assert/strict'
 import {createHmac, randomUUID} from 'node:crypto'
@@ -546,4 +547,22 @@ test('local staff transport retains the Next loopback alias and denies forwarded
  configureDeployed()
  assert.throws(()=>staffRequestClient(normalized),errorCode('STAFF_ORIGIN_DENIED'))
  assert.equal(requests.length,0)
+})
+
+test('staff HTTPS accepts opaque Vercel sig/exp while authority mismatches remain denied',async()=>{
+ configureDeployed();const forwarded='for=192.0.2.1;host="lnkgroup.vercel.app";proto=https;sig=synthetic==;exp=123';
+ const coherent=deployedRequest('/api/admin-auth/session',{headers:{forwarded}});assert.equal(requireStaffRequest(coherent).origin,deployedBase);assert.equal((await staffSessionGet(coherent)).status,200);
+ const before=requests.length;
+ for(const headers of [{host:'foreign.invalid',forwarded},{'x-forwarded-host':'foreign.invalid',forwarded},{'x-forwarded-proto':'http',forwarded},{'x-forwarded-port':'80',forwarded},{forwarded:forwarded.replace('lnkgroup.vercel.app','foreign.invalid')},{forwarded:forwarded.replace('proto=https','proto=http')}]){
+  const req=deployedRequest('/api/admin-auth/session',{headers});assert.throws(()=>staffRequestClient(req),errorCode('STAFF_ORIGIN_DENIED'));assert.equal((await staffSessionGet(req)).status,403);
+ }
+ assert.equal(requests.length,before);
+})
+test('staff HTTPS rejects duplicate or malformed Forwarded extension parameters before provider access',async()=>{
+ configureDeployed();
+ for(const extension of ['sig=x;SIG=y','exp=1;EXP=2','invalid name=x','sig="unterminated','sig="escaped\\value"','sig=one,two','sig=','sig=x;']){
+  const req=deployedRequest('/api/admin-auth/session',{headers:{forwarded:`host=lnkgroup.vercel.app;proto=https;${extension}`}});assert.throws(()=>staffRequestClient(req),errorCode('STAFF_ORIGIN_DENIED'));assert.equal((await staffSessionGet(req)).status,403);
+ }
+ assert.equal(requests.length,0);
+ assert.equal(parseSingleForwarded('host=lnkgroup.vercel.app;sig="bad\u0000value"'),null);
 })

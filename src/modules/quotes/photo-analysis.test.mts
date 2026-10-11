@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { PHOTO_ROLES, validatePhotoAnalysis } from './domain/analysis.ts';
-import { pendingCompanyPricing } from './domain/pricing.ts';
+import { calculateEstimatePricing, pendingCompanyPricing } from './domain/pricing.ts';
 import { analyzeCabinetPhotos, parseAnalysisUsage, PhotoAnalysisError, type CabinetPhotoInput } from './infrastructure/openai-photo-analyzer.ts';
 
 const photoId='75a324c8-72a5-42d8-b083-799141d9dc33';
@@ -52,6 +52,39 @@ test('declared absent upper/damage views are exceptions, while count discrepanci
   assert.equal(validatePhotoAnalysis(absent,{...context,coverage:{upperNotApplicable:true,damageNotPresent:true}}).outcome,'analysis_ready');
   const mismatch=analysis();mismatch.quantities.doors.observed=7;
   const result=validatePhotoAnalysis(mismatch,context);assert.equal(result.quantities.doors.needsConfirmation,true);assert.equal(result.outcome,'site_review_required');
+});
+test('absent upper view cannot claim evidence; corrected mismatch remains review-only and normal counts retain the minimum',()=>{
+  const value=analysis();value.observedDamage=[];value.proposedWork[0].repairIds=[];
+  value.quantities={doors:{observed:3,customer:4,needsConfirmation:true},drawers:{observed:2,customer:2,needsConfirmation:false}};
+  const upper=value.coverage.find(item=>item.role==='upper')!;upper.photoIds=[];
+  const saved={photoIds:[photoId],doorCount:4,drawerCount:2,coverage:{upperNotApplicable:true,damageNotPresent:true}};
+  assert.throws(()=>validatePhotoAnalysis(value,saved)); // Real provider failure: covered true with no evidence.
+  upper.covered=false;
+  const mismatch=validatePhotoAnalysis(value,saved);
+  assert.equal(mismatch.quantities.doors.customer,4);assert.equal(mismatch.quantities.doors.observed,3);assert.equal(mismatch.outcome,'site_review_required');
+  const service={...input.service,surfaces:['doors','drawers'],doorCount:4,drawerCount:2};
+  assert.equal(calculateEstimatePricing(mismatch,service).total,null);
+  value.quantities.doors={observed:3,customer:3,needsConfirmation:false};
+  const normal=validatePhotoAnalysis(value,{...saved,doorCount:3});
+  assert.equal(calculateEstimatePricing(normal,{...service,doorCount:3}).total,165000);
+});
+test('coverage needs usable known evidence and a no-damage declaration cannot remove visible repairs',()=>{
+  const unknown=analysis();unknown.coverage[0].photoIds=['unknown'];assert.throws(()=>validatePhotoAnalysis(unknown,context));
+  const absent=validatePhotoAnalysis(analysis(),{...context,coverage:{upperNotApplicable:true,damageNotPresent:true}});
+  assert.equal(absent.observedDamage.length,1);assert.equal(absent.observedDamage[0].severity,'moderate');
+});
+test('provider coverage schema prevents covered true without evidence while preserving uncovered partial evidence',async()=>{
+  const request=(async(_url,options)=>{
+    const body=JSON.parse(String(options?.body)),branches=body.text.format.schema.properties.coverage.items.anyOf;
+    assert.equal(branches.length,2);
+    const covered=branches.find((item:{properties:{covered:{enum:boolean[]}}})=>item.properties.covered.enum[0]===true);
+    const uncovered=branches.find((item:{properties:{covered:{enum:boolean[]}}})=>item.properties.covered.enum[0]===false);
+    assert.equal(covered.properties.photoIds.minItems,1);assert.equal(covered.properties.photoIds.maxItems,8);
+    assert.equal(uncovered.properties.photoIds.minItems,0);assert.equal(uncovered.properties.photoIds.maxItems,8);
+    assert.match(body.instructions,/A declaration alone never counts as photographed coverage/);
+    return Response.json(providerBody());
+  }) as typeof fetch;
+  assert.equal((await analyzeCabinetPhotos(input,{apiKey:'test-key',request})).analysis.outcome,'analysis_ready');
 });
 test('provider sends exact model/medium, bounded private request without contact or free text service data',async()=>{
   let calls=0;let sent:Record<string,unknown>={};

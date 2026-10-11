@@ -1,3 +1,4 @@
+import { parseSingleForwarded } from '../../../shared/http/forwarded.ts'
 import { QuoteRequestError } from './contracts.ts'
 /** Fixed application authority. Proxy headers corroborate it and never select it. */
 export function quoteRequestTransport(req: Request, configuredUrl: string | undefined): URL {
@@ -22,13 +23,9 @@ export function quoteRequestTransport(req: Request, configuredUrl: string | unde
   if (forwardedProto !== null && forwardedProto !== configured.protocol.slice(0, -1)) return deny()
   if (forwardedPort !== null && forwardedPort !== (configured.port || (configured.protocol === 'https:' ? '443' : '80'))) return deny()
   if (forwarded !== null) {
-    if (configured.protocol === 'http:' || forwarded.includes(',')) return deny()
-    const values = new Map<string, string>()
-    for (const parameter of forwarded.split(';')) {
-      const match = /^\s*(host|proto|for|by)=(?:"([^"\\]*)"|([^\s"\\;]+))\s*$/i.exec(parameter)
-      if (!match || values.has(match[1].toLowerCase())) return deny()
-      values.set(match[1].toLowerCase(), match[2] ?? match[3])
-    }
+    if (configured.protocol === 'http:') return deny()
+    const values = parseSingleForwarded(forwarded)
+    if (!values) return deny()
     if (values.has('host') && values.get('host')!.toLowerCase() !== configured.host.toLowerCase()) return deny()
     if (values.has('proto') && values.get('proto') !== 'https') return deny()
   }

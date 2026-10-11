@@ -1,3 +1,4 @@
+import { parseSingleForwarded } from '../../shared/http/forwarded.ts'
 import test, { after, beforeEach } from 'node:test'
 import assert from 'node:assert/strict'
 import { createHash, createHmac, randomUUID } from 'node:crypto'
@@ -228,4 +229,18 @@ test('pausing live writes preserves existing owner/staff reads and creates no ne
   assert.equal((await api.save(request('PUT', cookie, input(1, { contact, service })))).status, 503)
   assert.equal((await api.review(request('POST', cookie, { expectedRevision: 1, idempotencyKey: randomUUID() }))).status, 503)
   assert.equal(await count('lk_quote_requests'), 1); assert.equal(await count('lk_quote_request_audit'), 1)
+})
+
+test('HTTPS accepts Vercel Forwarded sig/exp extensions without trusting them as authority',async()=>{
+ baseUrl='https://lnkgroup.vercel.app';const cookie=await session();
+ const forwarded='for=192.0.2.1;host="lnkgroup.vercel.app";proto=https;sig=synthetic==;exp=123;x-trace="opaque metadata"';
+ assert.equal((await api.read(request('GET',cookie,undefined,'/api/quote/requests',{forwarded}))).status,200);
+ for(const headers of [{host:'evil.invalid',forwarded},{'x-forwarded-host':'evil.invalid',forwarded},{'x-forwarded-proto':'http',forwarded},{'x-forwarded-port':'80',forwarded},{forwarded:forwarded.replace('lnkgroup.vercel.app','evil.invalid')},{forwarded:forwarded.replace('proto=https','proto=http')}])assert.equal((await api.read(request('GET',cookie,undefined,'/api/quote/requests',headers))).status,403);
+ for(const extension of ['sig=synthetic==;SIG=other','exp=1;EXP=2','invalid name=x','sig="unterminated','sig="escaped\\value"','sig=one,two','sig=','sig=x;'])assert.equal((await api.read(request('GET',cookie,undefined,'/api/quote/requests',{forwarded:`host=lnkgroup.vercel.app;proto=https;${extension}`}))).status,403);
+})
+test('shared Forwarded parser rejects controls, malformed extensions and duplicate names',()=>{
+ assert.deepEqual([...parseSingleForwarded('host=lnkgroup.vercel.app;proto=https;sig=synthetic==;exp=123')!],[['host','lnkgroup.vercel.app'],['proto','https']]);
+ for(const control of ['\u0000','\r','\n','\u007f','\u001f'])assert.equal(parseSingleForwarded(`host=lnkgroup.vercel.app;sig="a${control}b"`),null);
+ assert.equal(parseSingleForwarded('SIG=x;sig=y'),null);assert.equal(parseSingleForwarded('host=x,host=y'),null);
+ assert.deepEqual([...parseSingleForwarded('\thost=lnkgroup.vercel.app; proto=https\t;sig=synthetic==')!],[['host','lnkgroup.vercel.app'],['proto','https']]);
 })
