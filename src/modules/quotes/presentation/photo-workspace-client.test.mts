@@ -1,8 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { parsePhotoWorkspace, canRequestPhotoAnalysis, validatePhotoFile, photoAnalysisRequestBody } from './photo-workspace-client.ts';
-import { calculateEstimatePricing, pendingCompanyPricing } from '../domain/pricing.ts';
-import { PHOTO_ROLES, type PhotoAnalysis } from '../domain/analysis.ts';
+import { calculateEstimatePricing, calculateLegacyEstimatePricing, pendingCompanyPricing } from '../domain/pricing.ts';
+import { PHOTO_ROLES, type PhotoAnalysis, type ProvisionalPhotoAnalysis } from '../domain/analysis.ts';
 import type { ServiceDetails } from '../domain/contracts.ts';
 const id = 'b65b5359-f90d-45be-b4b9-c249aa7f6daf', photoId = '205f3d74-69e5-4cbe-b4b4-31d4a382cfad';
 const request = { id, reference: 'RQ-1234567890ABCDEF1234567890ABCDEF', mode: 'live', companyId: 'lk-group', revision: 2, status: 'draft', savedAt: '2026-10-11T00:00:00Z', createdAt: '2026-10-11T00:00:00Z', consentVersion: 'quote-storage-review-v1', reviewRequestedAt: null, customerId: null, payload: { contact: { name: 'Synthetic client', email: 'client@example.test', phone: '', siteAddress: 'Test address', suburb: 'Test suburb', postcode: '2000', details: '', consent: true }, service: { serviceId: 'cabinet-painting', intent: 'full-repainting', surfaces: ['doors', 'drawers'], doorCount: 8, drawerCount: 3, material: '', colourPreference: '' } } };
@@ -29,7 +29,7 @@ test('customer result rejects invented pricing and malformed nested analysis bef
 });
 test('workspace accepts the saved cents estimate and preserves the GST-inclusive total', () => {
   const savedJob = job();
-  const pricing = calculateEstimatePricing(savedJob.analysis as PhotoAnalysis, { ...request.payload.service, doorCount: 5, drawerCount: 2 } as ServiceDetails);
+  const pricing = calculateLegacyEstimatePricing(savedJob.analysis as PhotoAnalysis, { ...request.payload.service, doorCount: 5, drawerCount: 2 } as ServiceDetails);
   const current = { ...savedJob, pricing };
   const saved = parsePhotoWorkspace({ request, photos: [], jobs: [current], latest: current }, id);
   assert.equal(saved.latest?.pricing?.status, 'estimate_ready');
@@ -40,7 +40,7 @@ test('workspace accepts the saved cents estimate and preserves the GST-inclusive
 });
 test('workspace rejects manipulated money, currency, tax, units and duplicate price rows', () => {
   const savedJob = job();
-  const pricing = calculateEstimatePricing(savedJob.analysis as PhotoAnalysis, { ...request.payload.service, doorCount: 5, drawerCount: 2 } as ServiceDetails);
+  const pricing = calculateLegacyEstimatePricing(savedJob.analysis as PhotoAnalysis, { ...request.payload.service, doorCount: 5, drawerCount: 2 } as ServiceDetails);
   for (const invalid of [
     { ...pricing, total: 1650 }, { ...pricing, subtotal: 149999 }, { ...pricing, tax: 0 },
     { ...pricing, currency: 'USD' }, { ...pricing, amountUnit: 'dollars' }, { ...pricing, pricingVersion: 'invented' },
@@ -53,7 +53,7 @@ test('workspace rejects manipulated money, currency, tax, units and duplicate pr
 });
 test('workspace preserves concrete review reasons while rejecting a misleading partial total', () => {
   const savedJob = job();
-  const pricing = calculateEstimatePricing({ ...savedJob.analysis, outcome: 'additional_photos_required' } as PhotoAnalysis, { ...request.payload.service, doorCount: 5, drawerCount: 2 } as ServiceDetails);
+  const pricing = calculateLegacyEstimatePricing({ ...savedJob.analysis, outcome: 'additional_photos_required' } as PhotoAnalysis, { ...request.payload.service, doorCount: 5, drawerCount: 2 } as ServiceDetails);
   const review = { ...savedJob, pricing };
   const saved = parsePhotoWorkspace({ request, photos: [], jobs: [review], latest: review }, id);
   assert.equal(saved.latest?.pricing?.status, 'review_required');
@@ -89,4 +89,30 @@ test('analysis serialization requires fresh consent and sends current revision w
   assert.equal(JSON.parse(photoAnalysisRequestBody(retry, true, { upperNotApplicable: false, damageNotPresent: false }, photoId)).retryOf, failed.id);
   const stale = parsePhotoWorkspace({ request, photos: [photo], jobs: [{ ...failed, stale: true }], latest: { ...failed, stale: true } }, id);
   assert.equal(Object.hasOwn(JSON.parse(photoAnalysisRequestBody(stale, true, { upperNotApplicable: false, damageNotPresent: false }, photoId)), 'retryOf'), false);
+});
+
+test('workspace restores mixed historical and AI-quantity results without replacing customer inputs', () => {
+  const previous = job();
+  const analysis: ProvisionalPhotoAnalysis = { ...previous.analysis, outcome: 'site_review_required', observedDamage: [],
+    quantities: {
+      doors: { customer: null, observed: 10, estimated: 12, needsConfirmation: true, confidence: 'medium', basisPhotoIds: [photoId], note: 'Estimated from the main cabinet view.' },
+      drawers: { customer: null, observed: 4, estimated: 4, needsConfirmation: true, confidence: 'high', basisPhotoIds: [photoId], note: 'Four visible drawer fronts.' },
+    },
+    estimateScope: { status: 'estimable', extent: 'whole_project', anchorPhotoId: photoId, scopePhotoIds: [photoId], contextPhotoIds: [], conflictingPhotoIds: [], description: 'The main cabinet run.', assumptions: ['Exact quantities require an on-site check.'] },
+  };
+  const pricing = calculateEstimatePricing(analysis, { ...request.payload.service, doorCount: null, drawerCount: null } as ServiceDetails);
+  const current = { ...previous, id: 'ae9ea361-bef7-4c6a-9788-4e341f0480bc', analysis, pricing };
+  const payload = { request, photos: [photo], jobs: [previous, current], latest: current };
+  const parsed = parsePhotoWorkspace(payload, id);
+  assert.equal(parsed.jobs[0].pricing?.status, 'awaiting_company_rates');
+  assert.equal(parsed.latest?.pricing?.status, 'provisional_estimate');
+  assert.equal(parsed.latest?.pricing?.total, 242000);
+  assert.equal(parsed.latest?.analysis?.quantities.doors.customer, null);
+  assert.equal(parsed.request.payload.service?.doorCount, 8);
+  assert.deepEqual(parsed.latest?.analysis, analysis);
+  const mismatchedAnalysis = { ...analysis, quantities: { ...analysis.quantities, doors: { ...analysis.quantities.doors, estimated: 13 } } };
+  const invalid = { ...current, analysis: mismatchedAnalysis };
+  assert.throws(() => parsePhotoWorkspace({ ...payload, jobs: [previous, invalid], latest: invalid }, id), /does not match/);
+  const noEvidence = { ...current, analysis: previous.analysis };
+  assert.throws(() => parsePhotoWorkspace({ ...payload, jobs: [noEvidence], latest: noEvidence }, id), /missing its AI quantity evidence/);
 });

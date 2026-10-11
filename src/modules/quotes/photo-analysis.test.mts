@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { PHOTO_ROLES, validatePhotoAnalysis } from './domain/analysis.ts';
-import { calculateEstimatePricing, pendingCompanyPricing } from './domain/pricing.ts';
+import { PHOTO_ROLES, validatePhotoAnalysis, validateLegacyPhotoAnalysis, PHOTO_ANALYSIS_SCHEMA_VERSION, type ProvisionalPhotoAnalysis } from './domain/analysis.ts';
+import { calculateLegacyEstimatePricing as calculateEstimatePricing, pendingCompanyPricing } from './domain/pricing.ts';
 import { analyzeCabinetPhotos, parseAnalysisUsage, PhotoAnalysisError, type CabinetPhotoInput } from './infrastructure/openai-photo-analyzer.ts';
 
 const photoId='75a324c8-72a5-42d8-b083-799141d9dc33';
@@ -12,7 +12,11 @@ function analysis() {
   return {summary:'Visible cabinet edges need preparation and repainting.',outcome:'analysis_ready',photoQuality:[{photoId,usable:true,issues:[],retakeInstruction:null}],coverage:PHOTO_ROLES.map(role=>({role,covered:true,photoIds:[photoId],note:'Visible in supplied photo.'})),observedDamage:[{id:'repair-1',kind:'chipping',location:'Lower door edge',description:'Existing finish is chipped at the edge.',photoIds:[photoId],severity:'moderate'}],quantities:{doors:{observed:8,customer:8,needsConfirmation:false},drawers:{observed:3,customer:3,needsConfirmation:false}},proposedWork:[{id:'work-1',title:'Prepare chipped edge',description:'Remove loose coating and assess the exposed edge before repainting.',photoIds:[photoId],repairIds:['repair-1']}],unknowns:['Hidden substrate condition cannot be confirmed.'],siteChecks:['Check adhesion and the exposed substrate on site.']};
 }
 const usage={input_tokens:10000,output_tokens:3000,total_tokens:13000,input_tokens_details:{cached_tokens:1000},output_tokens_details:{reasoning_tokens:2000}};
-function providerBody(overrides:Record<string,unknown>={}) { return {id:'resp_test_123',status:'completed',output:[{type:'reasoning'},{type:'message',role:'assistant',content:[{type:'output_text',text:JSON.stringify(analysis())}]}],usage,...overrides}; }
+function provisionalAnalysis():ProvisionalPhotoAnalysis {
+ const base=validateLegacyPhotoAnalysis(analysis(),context);
+ return {...base,quantities:{doors:{...base.quantities.doors,estimated:8,basisPhotoIds:[photoId],confidence:'medium',note:'Indicative quantity from the overview.'},drawers:{...base.quantities.drawers,estimated:3,basisPhotoIds:[photoId],confidence:'medium',note:'Indicative quantity from the overview.'}},observedDamage:base.observedDamage.map(damage=>({...damage,estimateScope:'included',surface:'doors'})),estimateScope:{status:'estimable',extent:'whole_project',anchorPhotoId:photoId,scopePhotoIds:[photoId],contextPhotoIds:[],conflictingPhotoIds:[],description:'Cabinet fronts supported by matching views.',assumptions:['Confirm exact quantities on site.']}};
+}
+function providerBody(overrides:Record<string,unknown>={}) { return {id:'resp_test_123',status:'completed',output:[{type:'reasoning'},{type:'message',role:'assistant',content:[{type:'output_text',text:JSON.stringify(provisionalAnalysis())}]}],usage,...overrides}; }
 const reply=(body:unknown,status=200)=>(async()=>new Response(JSON.stringify(body),{status})) as typeof fetch;
 
 test('validated analysis retains known image evidence and pure pending pricing has no invented amount',()=>{
@@ -85,6 +89,41 @@ test('provider coverage schema prevents covered true without evidence while pres
     return Response.json(providerBody());
   }) as typeof fetch;
   assert.equal((await analyzeCabinetPhotos(input,{apiKey:'test-key',request})).analysis.outcome,'analysis_ready');
+});
+test('v2 scope and quantity evidence preserve customer counts and allow provisional low-confidence estimates',()=>{
+ const value=provisionalAnalysis();value.quantities.doors={...value.quantities.doors,customer:null,observed:7,estimated:9,needsConfirmation:true,confidence:'low'};
+ const validated=validatePhotoAnalysis(value,{...context,doorCount:null,schemaVersion:PHOTO_ANALYSIS_SCHEMA_VERSION});assert.ok('estimateScope' in validated);assert.equal(validated.quantities.doors.customer,null);assert.equal(validated.quantities.doors.estimated,9);assert.equal(validated.quantities.doors.observed,7);assert.equal(validated.quantities.doors.needsConfirmation,true);assert.equal(validated.outcome,'site_review_required');
+ assert.throws(()=>validatePhotoAnalysis(value,{...context,schemaVersion:PHOTO_ANALYSIS_SCHEMA_VERSION}));assert.throws(()=>validatePhotoAnalysis(value,{...context,doorCount:null}));
+ const unavailable=provisionalAnalysis();unavailable.estimateScope.status='insufficient';unavailable.estimateScope.anchorPhotoId=null;for(const count of Object.values(unavailable.quantities)){count.estimated=null;count.basisPhotoIds=[];}
+ assert.ok('estimateScope' in validatePhotoAnalysis(unavailable,{...context,schemaVersion:PHOTO_ANALYSIS_SCHEMA_VERSION}));
+});
+test('v2 rejects unknown, duplicate, conflicting or unusable quantity/scope evidence and unsupported schema contracts',()=>{
+ const invalids:ProvisionalPhotoAnalysis[]=[];
+ const unknown=provisionalAnalysis();unknown.quantities.doors.basisPhotoIds=['unknown'];invalids.push(unknown);
+ const duplicate=provisionalAnalysis();duplicate.estimateScope.contextPhotoIds=[photoId];invalids.push(duplicate);
+ const omitted=provisionalAnalysis();omitted.estimateScope.scopePhotoIds=[];invalids.push(omitted);
+ const noAnchor=provisionalAnalysis();noAnchor.estimateScope.anchorPhotoId=null;invalids.push(noAnchor);
+ const zeroUnproven=provisionalAnalysis();zeroUnproven.quantities.drawers.estimated=0;zeroUnproven.quantities.drawers.basisPhotoIds=[];invalids.push(zeroUnproven);
+ const fractional=provisionalAnalysis();fractional.quantities.doors.estimated=2.5;invalids.push(fractional);
+ const invalidDamage=provisionalAnalysis();invalidDamage.observedDamage[0].estimateScope='context_only';invalids.push(invalidDamage);
+ const money=provisionalAnalysis();money.quantities.doors.note='Painting will cost AUD 1500.';invalids.push(money);
+ for(const value of invalids)assert.throws(()=>validatePhotoAnalysis(value,{...context,schemaVersion:PHOTO_ANALYSIS_SCHEMA_VERSION}));
+ assert.throws(()=>validatePhotoAnalysis(provisionalAnalysis(),{...context,schemaVersion:'unsupported'}));
+});
+test('v2 damage requires a physical surface classification while legacy damage stays unchanged',()=>{
+ const value=provisionalAnalysis(),missing=structuredClone(value) as unknown as {observedDamage:Record<string,unknown>[]};delete missing.observedDamage[0].surface;
+ assert.throws(()=>validatePhotoAnalysis(missing,{...context,schemaVersion:PHOTO_ANALYSIS_SCHEMA_VERSION}));
+ const unsupported=structuredClone(value) as unknown as {observedDamage:Record<string,unknown>[]};unsupported.observedDamage[0].surface='assumed-selected-surface';assert.throws(()=>validatePhotoAnalysis(unsupported,{...context,schemaVersion:PHOTO_ANALYSIS_SCHEMA_VERSION}));
+ value.observedDamage[0].surface='unknown';const valid=validatePhotoAnalysis(value,{...context,schemaVersion:PHOTO_ANALYSIS_SCHEMA_VERSION});assert.ok('estimateScope' in valid);assert.equal(valid.observedDamage[0].surface,'unknown');assert.equal(Object.hasOwn(validateLegacyPhotoAnalysis(analysis(),context).observedDamage[0],'surface'),false);
+});
+test('mixed photos are partitioned without inflating estimated quantities or classifying other cabinets as included repairs',()=>{
+ const otherId='other-photo';const value=provisionalAnalysis();value.photoQuality.push({photoId:otherId,usable:true,issues:[],retakeInstruction:null});value.estimateScope.extent='primary_view';value.estimateScope.conflictingPhotoIds=[otherId];value.observedDamage.push({...value.observedDamage[0],id:'repair-context',location:'Different cabinet edge',photoIds:[otherId],estimateScope:'context_only'});
+ const mixedContext={...context,photoIds:[photoId,otherId],schemaVersion:PHOTO_ANALYSIS_SCHEMA_VERSION};
+ const result=validatePhotoAnalysis(value,mixedContext);assert.ok('estimateScope' in result);assert.equal(result.quantities.doors.estimated,8);assert.equal(result.observedDamage[1].estimateScope,'context_only');
+ const wrongBasis=structuredClone(value);wrongBasis.quantities.doors.basisPhotoIds=[otherId];assert.throws(()=>validatePhotoAnalysis(wrongBasis,mixedContext));
+ const whole=structuredClone(value);whole.estimateScope.extent='whole_project';assert.throws(()=>validatePhotoAnalysis(whole,mixedContext));
+ const wrongDamage=structuredClone(value);wrongDamage.observedDamage[1].estimateScope='included';assert.throws(()=>validatePhotoAnalysis(wrongDamage,mixedContext));
+ const unusable=structuredClone(value);unusable.photoQuality[1]={photoId:otherId,usable:false,issues:['Blurred'],retakeInstruction:'Retake in focus.'};unusable.estimateScope.scopePhotoIds.push(otherId);unusable.estimateScope.conflictingPhotoIds=[];unusable.quantities.doors.basisPhotoIds=[otherId];assert.throws(()=>validatePhotoAnalysis(unusable,mixedContext));
 });
 test('provider sends exact model/medium, bounded private request without contact or free text service data',async()=>{
   let calls=0;let sent:Record<string,unknown>={};

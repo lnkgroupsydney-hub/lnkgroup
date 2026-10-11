@@ -1,6 +1,10 @@
 # EMS 진행표와 결정 대기
 
-**2026-10-11 최신 운영 검증:** 회사 Vercel Production 환경을 설정하고 [운영 앱](https://lnkgroup.vercel.app/)에 배포했다. `dpl_7yQ7MBKWgcX8bp9ufkMUos9f3QP5`는 READY이며, 회사 Chrome의 실제 EMS 로그인·비공개 사진·가격표 열람을 확인했다. 분석은 Mac worker가 꺼진 상태에서도 Vercel `after()`로 완료됐다. Forwarded `sig`/`exp` 호환, 프롬프트 v2의 사진 근거 계약과 실행 버전 검사를 보강했고 전체 검사 **502/502**, lint·타입·production build가 통과했다.
+**2026-10-11 최신 개정 — AI 수량 추정 가견적 운영 완료:** 고객 수량을 비워 두어도 AI가 문·서랍 앞판을 추정하고 예상 도장 금액을 계산한다. 정확한 수량·상태·최종 가격은 현장에서 확인해 조정한다. 기존 단가와 GST는 유지하며, 같은 사진의 미선택 표면이나 다른 현장의 손상은 보수비에 합산하지 않는다. [40번 현행 명세](../plans/40-ai-quantity-provisional-estimates.md)가 아래 v1의 고객 수량 일치 조건을 대체한다. 기존 기록은 보존한다.
+
+전체 **524/524**·lint·타입·빌드, 회사 Supabase 적용, Vercel `dpl_FgjBEwxhuz17b5A4pUVWq4FAMUK7` READY를 확인했다. 5장씩 3세트의 실제 AI 추정 결과는 **14문/6서랍 A$2,970 · 21문/6서랍 A$4,125 · 12문/4서랍 A$2,420 (GST 포함)**이며 회사 Chrome EMS와 DB의 저장값이 일치한다. 모두 기준 전면 범위의 잠정 도장비이고 미산정 손상·미촬영 범위는 별도다. 현장 최종견적 편집·발행(RQ-04c), 재동의·정식 예약은 후속이다. [실행 증거](../verification/2026-10-11-ai-quantity-provisional-estimates.md). 소스는 `codex/ai-quantity-estimates-20261011`; 이번 main 병합·push는 수행하지 않았다.
+
+**앞선 v1 운영 검증 기록(2026-10-11):** 회사 Vercel Production 환경을 설정하고 [운영 앱](https://lnkgroup.vercel.app/)에 배포했다. `dpl_7yQ7MBKWgcX8bp9ufkMUos9f3QP5`는 READY이며, 회사 Chrome의 실제 EMS 로그인·비공개 사진·가격표 열람을 확인했다. 분석은 Mac worker가 꺼진 상태에서도 Vercel `after()`로 완료됐다. Forwarded `sig`/`exp` 호환, 프롬프트 v2의 사진 근거 계약과 실행 버전 검사를 보강했고 전체 검사 **502/502**, lint·타입·production build가 통과했다.
 
 운영 API에서 생성 예시의 **단일 수납장 문 3개·서랍 2개**가 A$1,500 + GST A$150 = **A$1,650**으로 저장되고 EMS에 같은 항목·총액이 표시됐다. 사용자가 요청한 전체·상부·하부·측면·손상 **5장 세트 1·2·3, 총 15장**의 비공개 저장·분석을 완료했다. 세트 1은 회사 Chrome에서 5장 업로드·새로고침 복원·EMS 동일 사진/작업을 확인했고, 전체 수량·손상 위치 확인이 필요해 `review_required`, 총액 null이다. 세트 2·3도 범위·수량·손상 확인이 필요해 총액을 보류했다. 단일 수납장 가격을 전체 주방 견적으로 표시하지 않는다.
 

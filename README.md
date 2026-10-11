@@ -1,6 +1,10 @@
 # L&K Group 웹 서비스 구축 계획
 
-**2026-10-11 최신 운영 검증:** 회사 Vercel Production 환경을 설정하고 [운영 앱](https://lnkgroup.vercel.app/)에 배포했다. `dpl_7yQ7MBKWgcX8bp9ufkMUos9f3QP5`는 READY이며, 회사 Chrome의 실제 EMS 로그인·비공개 사진·가격표 열람을 확인했다. 분석은 Mac worker가 꺼진 상태에서도 Vercel `after()`로 완료됐다. Forwarded `sig`/`exp` 호환, 프롬프트 v2의 사진 근거 계약과 실행 버전 검사를 보강했고 전체 검사 **502/502**, lint·타입·production build가 통과했다.
+**2026-10-11 최신 개정 — AI 수량 추정 가견적 운영 완료:** 고객 수량을 비워 두어도 AI가 문·서랍 앞판을 추정하고 예상 도장 금액을 계산한다. 정확한 수량·상태·최종 가격은 현장에서 확인해 조정한다. 기존 단가와 GST는 유지하며, 같은 사진의 미선택 표면이나 다른 현장의 손상은 보수비에 합산하지 않는다. [40번 현행 명세](docs/plans/40-ai-quantity-provisional-estimates.md)가 아래 v1의 고객 수량 일치 조건을 대체한다. 기존 기록은 보존한다.
+
+전체 **524/524**·lint·타입·빌드, 회사 Supabase 적용, Vercel `dpl_FgjBEwxhuz17b5A4pUVWq4FAMUK7` READY를 확인했다. 5장씩 3세트의 실제 AI 추정 결과는 **14문/6서랍 A$2,970 · 21문/6서랍 A$4,125 · 12문/4서랍 A$2,420 (GST 포함)**이며 회사 Chrome EMS와 DB의 저장값이 일치한다. 모두 기준 전면 범위의 잠정 도장비이고 미산정 손상·미촬영 범위는 별도다. 현장 최종견적 편집·발행(RQ-04c), 재동의·정식 예약은 후속이다. [실행 증거](docs/verification/2026-10-11-ai-quantity-provisional-estimates.md). 소스는 `codex/ai-quantity-estimates-20261011`; 이번 main 병합·push는 수행하지 않았다.
+
+**앞선 v1 운영 검증 기록(2026-10-11):** 회사 Vercel Production 환경을 설정하고 [운영 앱](https://lnkgroup.vercel.app/)에 배포했다. `dpl_7yQ7MBKWgcX8bp9ufkMUos9f3QP5`는 READY이며, 회사 Chrome의 실제 EMS 로그인·비공개 사진·가격표 열람을 확인했다. 분석은 Mac worker가 꺼진 상태에서도 Vercel `after()`로 완료됐다. Forwarded `sig`/`exp` 호환, 프롬프트 v2의 사진 근거 계약과 실행 버전 검사를 보강했고 전체 검사 **502/502**, lint·타입·production build가 통과했다.
 
 운영 API에서 생성 예시의 **단일 수납장 문 3개·서랍 2개**가 A$1,500 + GST A$150 = **A$1,650**으로 저장되고 EMS에 같은 항목·총액이 표시됐다. 사용자가 요청한 전체·상부·하부·측면·손상 **5장 세트 1·2·3, 총 15장**의 비공개 저장·분석을 완료했다. 세트 1은 회사 Chrome에서 5장 업로드·새로고침 복원·EMS 동일 사진/작업을 확인했고, 전체 수량·손상 위치 확인이 필요해 `review_required`, 총액 null이다. 세트 2·3도 범위·수량·손상 확인이 필요해 총액을 보류했다. 단일 수납장 가격을 전체 주방 견적으로 표시하지 않는다.
 
@@ -128,7 +132,8 @@ npm run dev -- --port 3002
 | [36 두 손상 사진으로 Quote 마무리](docs/plans/36-quote-damage-demo-completion-plan.md) | 지정 사진 2장·저장/서명/제출·EMS 고객 연결·회사 제안/재서명/확정·메일/Calendar의 순차 인수 계획 |
 | [37 실제 Quote·EMS·예약](docs/plans/37-live-quote-ems-booking-implementation.md) | 운영 요청 저장부터 고객 확인·예약까지의 RQ 순서 |
 | [38 사진 AI 예상 견적](docs/plans/38-ai-photo-estimate-and-ems-plan.md) | 5개 촬영 범주·AI 관찰·EMS 저장·운영 분석 실행과 남은 인수 |
-| [39 Sydney 초기 가격 v1](docs/plans/39-sydney-cabinet-pricing-v1.md) | 최소금액·문/서랍 단가·손상 가산·GST·금액 보류 기준 |
+| [39 Sydney 초기 가격 v1](docs/plans/39-sydney-cabinet-pricing-v1.md) | 기존 단가와 v1 검증 기록 |
+| [40 AI 수량 추정 가견적](docs/plans/40-ai-quantity-provisional-estimates.md) | 현행 AI 추정 수량·기준 사진 범위·잠정 금액·현장 조정·v2 계약 |
 
 클라이언트 전달본은 [Word 구현계획서](deliverables/LK_Group_Client_Implementation_Plan_KO.docx)이며, 편집 가능한 원문은 [클라이언트 제안서 Markdown](docs/client-proposal.md)이다. 기술 기준은 위 개발 문서가 원본이며, 클라이언트 문서를 변경할 때 관련 개발 문서도 함께 갱신한다. 문서 자체의 확인 결과는 [검증 기록](docs/document-validation.md)에 정리했다.
 

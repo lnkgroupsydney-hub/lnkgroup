@@ -1,4 +1,4 @@
-import { validatePhotoAnalysis } from '../domain/analysis.ts';
+import { LEGACY_PHOTO_ANALYSIS_SCHEMA_VERSION, PHOTO_ANALYSIS_SCHEMA_VERSION, validatePhotoAnalysis } from '../domain/analysis.ts';
 import { validateEstimatePricing } from '../domain/pricing.ts';
 import { isRecord, parseLiveRequest } from './request-client.ts';
 import type { PhotoWorkspace, PublicPhoto, PublicAnalysisJob, LivePhotoRole } from '../domain/photo-workspace.ts';
@@ -30,8 +30,15 @@ function parseJob(value: unknown, requestId: string): PublicAnalysisJob {
     const analysis = value.analysis as Record<string, unknown>;
     if (!Array.isArray(analysis.photoQuality) || !isRecord(analysis.quantities) || !isRecord(analysis.quantities.doors) || !isRecord(analysis.quantities.drawers)) throw new Error('The saved analysis details could not be verified.');
     for (const quantity of [analysis.quantities.doors.customer, analysis.quantities.drawers.customer]) if (quantity !== null && (!Number.isSafeInteger(quantity) || Number(quantity) < 0 || Number(quantity) > 500)) throw new Error('The saved analysis quantities could not be verified.');
-    const verified = validatePhotoAnalysis(analysis, { photoIds: analysis.photoQuality.map(photo => isRecord(photo) && typeof photo.photoId === 'string' ? photo.photoId : ''), doorCount: analysis.quantities.doors.customer as number | null, drawerCount: analysis.quantities.drawers.customer as number | null, coverage: { upperNotApplicable: true, damageNotPresent: true } });
+    const verified = validatePhotoAnalysis(analysis, { photoIds: analysis.photoQuality.map(photo => isRecord(photo) && typeof photo.photoId === 'string' ? photo.photoId : ''), doorCount: analysis.quantities.doors.customer as number | null, drawerCount: analysis.quantities.drawers.customer as number | null, coverage: { upperNotApplicable: true, damageNotPresent: true }, schemaVersion: Object.hasOwn(analysis, 'estimateScope') ? PHOTO_ANALYSIS_SCHEMA_VERSION : LEGACY_PHOTO_ANALYSIS_SCHEMA_VERSION });
     const pricing = validateEstimatePricing(value.pricing);
+    if ('amountScope' in pricing && !('estimateScope' in verified)) throw new Error('The saved estimate is missing its AI quantity evidence.');
+    if (pricing.status === 'provisional_estimate' && 'estimateScope' in verified) {
+      const basis = pricing.basis;
+      if (!basis || basis.anchorPhotoId !== verified.estimateScope.anchorPhotoId || basis.extent !== verified.estimateScope.extent
+        || (basis.doors !== 0 && basis.doors !== verified.quantities.doors.estimated)
+        || (basis.drawers !== 0 && basis.drawers !== verified.quantities.drawers.estimated)) throw new Error('The saved price does not match its AI-estimated quantities and scope.');
+    }
     return { ...value, pricing, analysis: { ...verified, outcome: analysis.outcome } } as unknown as PublicAnalysisJob;
   }
   return value as unknown as PublicAnalysisJob;

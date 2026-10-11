@@ -120,7 +120,7 @@ export function LivePhotoWorkspace({ request, onSaved, onAccessLost, disabled = 
   const latest = workspace?.latest;
   return <section className="lq-photo-workspace" aria-labelledby="live-photos-title">
     <h3 id="live-photos-title">Photos and cabinet estimate</h3>
-    <p>Clear photos and confirmed quantities help us calculate your photo-based estimate. If the scope or condition needs checking, we will explain what to add or confirm before showing a total.</p>
+    <p>AI will estimate the door and drawer-front quantities from your photos and calculate a provisional painting amount. You can leave unknown quantities blank. Exact counts, condition and the final price will be checked and adjusted on site.</p>
     <p>Add around five photos showing the whole front, upper and lower cabinets, an exposed side, and the worst damage. A clear photo may cover more than one area. You can add up to eight photos.</p>
     <p className="lq-muted">Use JPEG, PNG or WebP, up to 10 MB each. Avoid people, documents, addresses and other private details. Photos are saved privately for this request.</p>
     <details><summary>Photo checklist</summary><ul>{Object.values(photoRoleLabels).map(label => <li key={label}>{label}</li>)}</ul><p>Include the sink area and all surfaces you want painted. If an area is missing or unclear, the analysis will ask for more information.</p></details>
