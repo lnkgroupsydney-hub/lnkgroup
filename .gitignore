@@ -32,6 +32,10 @@ tmp/
 .vercel/
 supabase/.temp/
 
+# Local quote QA photos and generated verification deliverables
+/output/
+/public/images/story/quote photo/
+
 # OS and editor files
 .DS_Store
 ._*
