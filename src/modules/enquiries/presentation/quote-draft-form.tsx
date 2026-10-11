@@ -8,6 +8,7 @@ import type { QuotePhotoManifestEntry } from "../domain/quote-photos";
 import { QuotePhotoUpload } from "./quote-photo-upload";
 import { mergeSelectedAddress, type AddressKind, type AddressSelection } from "@/shared/address";
 import { AddressAutocompleteInput } from "@/shared/ui/address-autocomplete-input";
+import { quoteApiPath } from "./quote-workspace";
 import "./enquiry-form.css";
 
 type Values = {
@@ -33,7 +34,7 @@ function parseDraft(value: unknown): QuoteDraft {
   return { id:value.id, revision:Number(value.revision), savedAt:value.savedAt, payload:validateQuoteDraft(value.payload) };
 }
 async function request(path: string, init: RequestInit = {}): Promise<Record<string, unknown>> {
-  const response = await fetch(path, { ...init, credentials:"same-origin", cache:"no-store", signal:AbortSignal.timeout(25_000) });
+  const response = await fetch(quoteApiPath(path), { ...init, credentials:"same-origin", cache:"no-store", signal:AbortSignal.timeout(25_000) });
   const body: unknown = await response.json().catch(() => null);
   if (!response.ok) throw new DraftRequestError(response.status, record(body) && typeof body.error === "string" ? body.error : "Draft storage is unavailable. Keep your entries and retry.");
   if (!record(body)) throw new Error("The server returned an invalid draft response. Please retry.");
@@ -182,6 +183,7 @@ export function QuoteDraftForm() {
   const fieldError = (field: Field) => errors[field] ? <span className="enquiry-error" id={`draft-${field}-error`}>{errors[field]}</span> : null;
   const progress = demoEnabled ? ["Your details","Service details","Photos","Demo quote","Start date","Review & sign","Submitted"] : QUOTE_PROGRESS;
   const addressContext = JSON.stringify([values.siteAddress, values.suburb, values.postcode]);
+  const separateQuote = ready && typeof window !== "undefined" && new URLSearchParams(window.location.search).has("quote");
 
   return <div className="enquiry-page"><div className="enquiry-shell">
     <a href="/services/cabinet-painting" className="enquiry-back-link">← Kitchen Cabinet Painting</a>
@@ -189,6 +191,7 @@ export function QuoteDraftForm() {
       <p className="enquiry-kicker">Kitchen Cabinet Painting · {demoEnabled ? "demonstration" : "private draft"}</p>
       <h1 id="draft-title">Start your cabinet painting quote</h1>
       <p className="enquiry-lead">Save your contact and project details first, then choose the cabinet work you have in mind.</p>
+      {separateQuote && <p className="enquiry-notice">This is a separate private quote. Your original submitted request, photos and documents remain preserved. This quote is accessible in this browser for up to 24 hours. <a href="/quote/start?service=cabinet-painting&mode=demo" target="_blank" rel="noopener noreferrer">View original submitted request</a> (opens in a new tab, keeping this form open).</p>}
       <p className="enquiry-notice">{demoEnabled ? `DEMO ONLY: prices and terms are sample data, not a real quote or contract. Submit to email a signed demonstration to ${recipientEmail} and save a pending company Calendar entry. Company confirmation is still required. You can save photos privately; AI assessment is not performed.` : "This preview saves your details, service choices and photos privately. AI assessment, pricing, date selection, signing and final email submission will follow. Saving a draft does not request or confirm a booking."}</p>
       <ol className="enquiry-progress quote-draft-progress" aria-label="Quote progress">{progress.map((label,index) => <li key={label} aria-current={index === step ? "step" : undefined} className={index === step ? "active" : ""}>{index+1}. {label}{!demoEnabled && index > 2 && <span className="enquiry-hint"> · Coming later</span>}</li>)}</ol>
       {!ready && !error && <p role="status">Opening your private draft…</p>}

@@ -2,11 +2,11 @@ import test, {after, beforeEach} from 'node:test'
 import assert from 'node:assert/strict'
 import {createHmac, randomUUID} from 'node:crypto'
 import {AdminAccessError} from './index.ts'
-import {requireStaffAdmin, staffRequestClient, staffSessionHash, STAFF_COOKIE} from './infrastructure/staff-auth.ts'
+import {requireStaffAdmin, requireStaffRequest, staffRequestClient, staffSessionHash, STAFF_COOKIE} from './infrastructure/staff-auth.ts'
 import {staffLoginPost, staffLogoutPost, staffMfaEnrollPost, staffMfaVerifyPost, staffOperationsSessionGet, staffPasswordPost, staffSessionGet, staffEmailSendPost, staffEmailVerifyPost, staffSessionsGet, staffSessionsRevokeOthersPost} from './server.ts'
 import { staffEmailCodeHash, staffEmailHash } from './infrastructure/email-verification.ts'
 import {startOAuth,finishOAuth} from '../operations/infrastructure/supabase-auth.ts'
-import {GOOGLE_SCOPES,OWNER_EMAIL} from '../operations/infrastructure/auth.ts'
+import {GOOGLE_SCOPES,OWNER_EMAIL,googleConfigured,localLoginAvailable} from '../operations/infrastructure/auth.ts'
 
 // Real Supabase SDK/SSR clients, signed synthetic tokens and an intercepted Auth
 // and PostgREST transport. No .env files or external provider requests are used.
@@ -28,9 +28,9 @@ function jwt(extra:Record<string,unknown>={}) {
 }
 function session(extra:Record<string,unknown>={}) {return {access_token:jwt(extra),refresh_token:'synthetic-refresh-token',expires_in:3600,expires_at:Math.floor(Date.now()/1000)+3600,token_type:'bearer',user:structuredClone(user)}}
 function cookie(extra:Record<string,unknown>={}) {return `${STAFF_COOKIE}=base64-${Buffer.from(JSON.stringify(session(extra))).toString('base64url')}`}
-function request(path:string, options:{body?:unknown;cookie?:string;origin?:string;headers?:Record<string,string>;raw?:string}={}) {
+function request(path:string, options:{body?:unknown;cookie?:string;origin?:string;headers?:Record<string,string>;raw?:string;urlBase?:string}={}) {
  const post=options.body!==undefined || options.raw!==undefined
- return new Request(`${base}${path}`,{method:post?'POST':'GET',headers:{cookie:options.cookie??cookie(),...(post?{'content-type':'application/json',origin:options.origin??base}:{}),...options.headers},...(post?{body:options.raw??JSON.stringify(options.body)}:{})})
+ return new Request(`${options.urlBase??base}${path}`,{method:post?'POST':'GET',headers:{cookie:options.cookie??cookie(),...(post?{'content-type':'application/json',origin:options.origin??base}:{}),...options.headers},...(post?{body:options.raw??JSON.stringify(options.body)}:{})})
 }
 function errorCode(code:string) {return (error:unknown)=>error instanceof AdminAccessError&&error.code===code}
 const originalFetch=globalThis.fetch
@@ -420,4 +420,130 @@ test('an admin can manage their own sessions without owner-only integration priv
  user.app_metadata.lk_staff={company_id:'lk-group',role:'admin',status:'active'}
  assert.equal((await staffSessionsGet(request('/api/admin-auth/sessions'))).status,200)
  assert.equal((await staffSessionsRevokeOthersPost(request('/api/admin-auth/sessions/revoke-others',{body:{}}))).status,200)
+})
+
+const deployedBase='https://lnkgroup.vercel.app'
+function deployedRequest(path:string,options:Parameters<typeof request>[1]={}) {
+ return request(path,{...options,urlBase:deployedBase,origin:options.origin??deployedBase,
+  headers:{host:'lnkgroup.vercel.app','x-forwarded-host':'lnkgroup.vercel.app','x-forwarded-proto':'https','x-forwarded-port':'443',...options.headers}})
+}
+function configureDeployed() {process.env.APP_BASE_URL=deployedBase;process.env.LOCAL_OPERATIONS_ENABLED='false'}
+function assertSecureCookies(response:Response) {
+ const values=response.headers.getSetCookie();assert.ok(values.length)
+ for(const value of values) {
+  assert.match(value,/^lk-staff-auth(?:\.\d+)?=/)
+  assert.match(value,/; Secure(?:;|$)/);assert.match(value,/; HttpOnly(?:;|$)/)
+  assert.match(value,/; SameSite=Lax(?:;|$)/);assert.match(value,/; Path=\/(?:;|$)/)
+  assert.doesNotMatch(value,/; Domain=/)
+ }
+}
+
+test('configured HTTPS staff login works with local preview disabled and sets host-only secure cookies',async()=>{
+ configureDeployed()
+ assert.deepEqual(requireStaffRequest(deployedRequest('/api/admin-auth/session')),{origin:deployedBase,secure:true,mode:'https'})
+ const response=await staffLoginPost(deployedRequest('/api/admin-auth/login',{cookie:'',body:{email:user.email,password:'synthetic-password'}}))
+ assert.equal(response.status,200,await response.clone().text());assert.equal((await response.json()).stage,'ready')
+ assertSecureCookies(response)
+ assert.equal((await requireStaffAdmin(deployedRequest('/api/operations'))).role,'owner')
+ assert.equal((await(await staffOperationsSessionGet(deployedRequest('/api/operations/session'))).json()).authenticated,true)
+ assert.equal(localLoginAvailable(),false)
+})
+
+test('HTTPS session refresh and revoked-member logout retain secure cookie flags',async()=>{
+ configureDeployed()
+ const expired=session();expired.expires_at=Math.floor(Date.now()/1000)-60
+ const refreshed=await staffSessionGet(deployedRequest('/api/admin-auth/session',{cookie:`${STAFF_COOKIE}=base64-${Buffer.from(JSON.stringify(expired)).toString('base64url')}`}))
+ assert.equal(refreshed.status,200,await refreshed.clone().text());assertSecureCookies(refreshed)
+ assert.ok(requests.includes('POST /auth/v1/token'))
+ user.app_metadata.lk_staff={company_id:'lk-group',role:'owner',status:'revoked'}
+ const cleared=await staffLogoutPost(deployedRequest('/api/admin-auth/logout',{body:{}}))
+ assert.equal(cleared.status,200);assertSecureCookies(cleared)
+ assert.ok(cleared.headers.getSetCookie().some(value=>value.includes('Max-Age=0')))
+ assert.equal(registry.has(staffSessionHash(sessionId)),false)
+})
+
+test('HTTPS rejects foreign URLs authorities and ambiguous proxy headers before any provider call',async()=>{
+ configureDeployed()
+ const invalid=[
+  request('/api/admin-auth/session',{urlBase:'https://foreign.invalid',headers:{host:'lnkgroup.vercel.app','x-forwarded-host':'lnkgroup.vercel.app','x-forwarded-proto':'https'}}),
+  request('/api/admin-auth/session',{urlBase:'http://lnkgroup.vercel.app',headers:{host:'lnkgroup.vercel.app','x-forwarded-proto':'https'}}),
+  new Request(`${deployedBase}/api/admin-auth/session`),
+  ...[
+   {host:'foreign.invalid'},{host:'lnkgroup.vercel.app:443'},
+   {'x-forwarded-host':'foreign.invalid'},{'x-forwarded-host':'lnkgroup.vercel.app, foreign.invalid'},
+   {'x-forwarded-proto':'http'},{'x-forwarded-proto':'https, http'},{'x-forwarded-port':'80'},
+   {forwarded:'host=foreign.invalid;proto=https'},{forwarded:'host=lnkgroup.vercel.app;proto=http'},
+   {forwarded:'host=lnkgroup.vercel.app;proto=https, host=foreign.invalid;proto=https'},
+   {forwarded:'host=lnkgroup.vercel.app;host=foreign.invalid;proto=https'},
+   {forwarded:'host="lnkgroup.vercel.app\\";proto=https'},
+  ].map(headers=>deployedRequest('/api/admin-auth/session',{headers})),
+ ]
+ for(const req of invalid) {
+  assert.throws(()=>staffRequestClient(req),errorCode('STAFF_ORIGIN_DENIED'))
+  const response=await staffSessionGet(req);assert.equal(response.status,403);assert.equal(response.headers.get('set-cookie'),null)
+ }
+ assert.equal(requests.length,0)
+ const coherent=deployedRequest('/api/admin-auth/session',{headers:{forwarded:'for="192.0.2.1";host="lnkgroup.vercel.app";proto=https'}})
+ assert.equal(requireStaffRequest(coherent).secure,true)
+})
+
+test('HTTPS mutations require exact origin including direct admin grants and deny missing origin',async()=>{
+ configureDeployed()
+ for(const req of [
+  deployedRequest('/api/admin-auth/login',{body:{},origin:'https://foreign.invalid'}),
+  deployedRequest('/api/admin-auth/login',{body:{},origin:'https://branch.lnkgroup.vercel.app'}),
+  deployedRequest('/api/admin-auth/login',{body:{},headers:{'sec-fetch-site':'cross-site'}}),
+  new Request(`${deployedBase}/api/operations`,{method:'POST',headers:{host:'lnkgroup.vercel.app',cookie:cookie()}}),
+ ]) {
+  assert.equal((await staffLoginPost(req)).status,403)
+  await assert.rejects(requireStaffAdmin(req,'operations.write'),errorCode('STAFF_ORIGIN_DENIED'))
+ }
+ assert.equal(requests.length,0)
+})
+
+test('HTTPS never converts customer draft customer auth or legacy cookies into staff sessions',async()=>{
+ configureDeployed()
+ const req=deployedRequest('/api/admin-auth/session',{cookie:`lk_quote_draft=synthetic-draft; lk_ops_session=synthetic-legacy; lk-customer-auth=${cookie().split('=')[1]}`})
+ const response=await staffSessionGet(req)
+ assert.deepEqual(await response.json(),{authenticated:false,stage:'signed_out'})
+ await assert.rejects(requireStaffAdmin(req),errorCode('AUTHENTICATION_REQUIRED'))
+ assert.equal(requests.length,0)
+})
+
+test('HTTPS staff Google reconnect uses the configured callback and current staff binding',async()=>{
+ configureDeployed()
+ assert.equal(googleConfigured(),true)
+ const started=await startOAuth(deployedRequest('/api/google/connect'))
+ const url=new URL(started.url),state=url.searchParams.get('state')!
+ assert.equal(url.searchParams.get('redirect_uri'),`${deployedBase}/api/google/callback`)
+ assert.match(started.cookie,/; Secure$/)
+ assert.equal([...oauthStates.values()][0].session_hash,staffSessionHash(sessionId))
+ const response=await finishOAuth(deployedRequest('/api/google/callback',{cookie:`${cookie()}; ${started.cookie.split(';')[0]}`,headers:{'sec-fetch-site':'cross-site'}}),state,'synthetic-code')
+ assert.equal(response,null);assert.equal(googleRequests,2);assert.deepEqual(writes,['google_reconnect'])
+})
+
+test('Google HTTPS configuration is unavailable without staff store or a valid fixed origin',()=>{
+ configureDeployed()
+ assert.equal(googleConfigured(),true)
+ for(const configured of ['https://lnkgroup.vercel.app/path','https://lnkgroup.vercel.app?next=1','https://user@lnkgroup.vercel.app','https://localhost','https://*.vercel.app']) {
+  process.env.APP_BASE_URL=configured
+  assert.equal(googleConfigured(),false,configured)
+  assert.throws(()=>staffRequestClient(deployedRequest('/api/admin-auth/session')),errorCode('ACCESS_UNAVAILABLE'))
+ }
+ process.env.APP_BASE_URL=deployedBase;process.env.OPERATIONS_STORE='sqlite';assert.equal(googleConfigured(),false)
+ process.env.OPERATIONS_STORE='supabase';process.env.STAFF_ADMIN_AUTH_ENABLED='false';assert.equal(googleConfigured(),false)
+})
+
+test('local staff transport retains the Next loopback alias and denies forwarded or disabled preview',()=>{
+ const normalized=request('/api/admin-auth/session',{urlBase:'http://localhost:3002',headers:{host:'127.0.0.1:3002'}})
+ assert.deepEqual(requireStaffRequest(normalized),{origin:base,secure:false,mode:'local'})
+ for(const headers of [
+  {'x-forwarded-host':'foreign.invalid'}, {'x-forwarded-proto':'https'},
+  {'x-forwarded-port':'443'}, {forwarded:'host=lnkgroup.vercel.app;proto=https'},
+ ]) assert.throws(()=>staffRequestClient(request('/api/admin-auth/session',{headers})),errorCode('LOCAL_PREVIEW_ORIGIN_DENIED'))
+ process.env.LOCAL_OPERATIONS_ENABLED='false'
+ assert.throws(()=>staffRequestClient(normalized),errorCode('LOCAL_PREVIEW_UNAVAILABLE'))
+ configureDeployed()
+ assert.throws(()=>staffRequestClient(normalized),errorCode('STAFF_ORIGIN_DENIED'))
+ assert.equal(requests.length,0)
 })

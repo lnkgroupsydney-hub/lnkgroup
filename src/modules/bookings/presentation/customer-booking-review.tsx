@@ -2,28 +2,35 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { SignaturePad, type SignaturePoint } from "@/shared/ui/signature-pad";
+import { QuotePhotoSummary, quoteApiPath } from "@/modules/enquiries/client";
 import type { BookingDetail, BookingProposal } from "../domain/contracts";
-import { BookingRequestError, bookingPost, bookingRequest, requestMessage, SignaturePreview, statusLabel, sydneyTime, validDrawnSignature } from "./booking-ui";
+import { BookingRequestError, bookingRequest, requestMessage, SignaturePreview, statusLabel, sydneyTime, validDrawnSignature } from "./booking-ui";
+import { BookingRequestLifetime, StaleBookingRequest } from "./request-lifetime";
+import { CustomerBookingReadLane } from "./customer-booking-read-lane";
 import "./bookings.css";
 
 function CustomerPdfLinks({ proposal }: {proposal?:BookingProposal}) {
   const query = proposal ? `?proposalId=${encodeURIComponent(proposal.id)}` : "";
-  return <div className="booking-actions"><a className="enquiry-button enquiry-button-secondary" href={`/api/quote/booking/documents/quote${query}`} target="_blank" rel="noopener noreferrer">Download {proposal ? "reconfirmed " : "original "}demo quote PDF</a><a className="enquiry-button enquiry-button-secondary" href={`/api/quote/booking/documents/agreement${query}`} target="_blank" rel="noopener noreferrer">Download signed demo terms PDF</a></div>;
+  return <div className="booking-actions"><a className="enquiry-button enquiry-button-secondary" href={quoteApiPath(`/api/quote/booking/documents/quote${query}`)} target="_blank" rel="noopener noreferrer">Download {proposal ? "reconfirmed " : "original "}demo quote PDF</a><a className="enquiry-button enquiry-button-secondary" href={quoteApiPath(`/api/quote/booking/documents/agreement${query}`)} target="_blank" rel="noopener noreferrer">Download signed demo terms PDF</a></div>;
 }
 function ProposalTerms({ proposal }: {proposal:BookingProposal}) {
   const {submission} = proposal.snapshot, {contact,service} = submission.payload;
   return <>
     <dl className="booking-definition"><div><dt>Request</dt><dd>{proposal.snapshot.reference} · work proposal {proposal.revision}</dd></div><div><dt>Customer</dt><dd>{contact.name} · {contact.email}</dd></div><div><dt>Phone</dt><dd>{contact.phone || "Not provided"}</dd></div><div><dt>Site</dt><dd>{contact.siteAddress}, {contact.suburb} {contact.postcode}</dd></div><div><dt>Service</dt><dd>Kitchen Cabinet Painting · {statusLabel(service?.intent)} · {service?.surfaces.join(", ")}</dd></div><div><dt>Quantity / finish</dt><dd>{service?.doorCount ?? "Unknown"} doors · {service?.drawerCount ?? "Unknown"} drawer fronts · {service?.material || "Material unknown"} · {service?.colourPreference || "Finish not specified"}</dd></div><div><dt>Project details</dt><dd>{contact.details || "Not provided"}</dd></div><div><dt>Original preferred date</dt><dd>{submission.preferredDate} · replaced for this proposal by the exact segments below</dd></div><div><dt>Demonstration amount</dt><dd>{new Intl.NumberFormat("en-AU",{style:"currency",currency:submission.price.currency}).format(submission.price.totalCents/100)} · {submission.price.label}</dd></div></dl>
+    <QuotePhotoSummary photos={submission.photos ?? []} />
     <div><h3>Exact proposed work segments · Australia/Sydney</h3><ol className="booking-segments">{proposal.snapshot.segments.map((segment,index) => <li key={segment.id}><strong>Segment {index+1}</strong>{sydneyTime(segment.startAt)} → {sydneyTime(segment.endAt)} (Sydney)<br />{Math.round((Date.parse(segment.endAt)-Date.parse(segment.startAt))/60_000)} minutes</li>)}</ol><p>Only these work segments occupy the single test resource. Gaps between segments are not working time.</p></div>
     <p><strong>Company notes:</strong> {proposal.snapshot.notes || "None"}</p>
     <ul className="booking-terms">{submission.terms.map(term => <li key={term}>{term}</li>)}</ul>
     <p className="booking-demo-note">This new signature acknowledges the exact proposed segments and sample terms above. It preserves your earlier signature separately. This is a company-only demonstration, not a real contract or authorisation for work.</p>
   </>;
 }
-function ProposalConsent({ proposal, onSaved, onRefresh }: {proposal:BookingProposal;onSaved:(detail:BookingDetail)=>void;onRefresh:()=>void}) {
+type ConsentAttempt = {proposalId:string;snapshotHash:string;idempotencyKey:string;signature:{name:string;strokes:SignaturePoint[][];acknowledged:true}};
+function ProposalConsent({ proposal, onSaved, onRefresh, saveConsent }: {proposal:BookingProposal;onSaved:(detail:BookingDetail)=>void;onRefresh:()=>void;saveConsent:(attempt:ConsentAttempt)=>Promise<{detail:BookingDetail}>}) {
   const [name,setName] = useState(""), [strokes,setStrokes] = useState<SignaturePoint[][]>([]), [acknowledged,setAcknowledged] = useState(false);
   const [busy,setBusy] = useState(false), [uncertain,setUncertain] = useState(false), [error,setError] = useState("");
-  const attempt = useRef<{proposalId:string;snapshotHash:string;idempotencyKey:string;signature:{name:string;strokes:SignaturePoint[][];acknowledged:true}}|null>(null);
+  const attempt = useRef<ConsentAttempt|null>(null);
+  const active = useRef(true);
+  useEffect(()=>{active.current=true;return()=>{active.current=false;};},[]);
   async function consent() {
     if (busy) return;
     if (!attempt.current) {
@@ -31,11 +38,12 @@ function ProposalConsent({ proposal, onSaved, onRefresh }: {proposal:BookingProp
       attempt.current = {proposalId:proposal.id,snapshotHash:proposal.snapshotHash,idempotencyKey:crypto.randomUUID(),signature:{name:name.trim(),strokes,acknowledged:true}};
     }
     setBusy(true);setUncertain(true);setError("");
-    try { const result = await bookingPost<{detail:BookingDetail}>("/api/quote/booking/consent",attempt.current);onSaved(result.detail);setUncertain(false);attempt.current=null; }
+    try { const result = await saveConsent(attempt.current);if(!active.current)return;onSaved(result.detail);setUncertain(false);attempt.current=null; }
     catch(failure) {
-      if(failure instanceof BookingRequestError && [400,403,409,422].includes(failure.status)) {setUncertain(false);attempt.current=null;if(failure.status===409){setName("");setStrokes([]);setAcknowledged(false);onRefresh();}}
+      if(!active.current || failure instanceof StaleBookingRequest)return;
+      if(failure instanceof BookingRequestError && [400,409,422].includes(failure.status)) {setUncertain(false);attempt.current=null;if(failure.status===409){setName("");setStrokes([]);setAcknowledged(false);onRefresh();}}
       setError(requestMessage(failure));
-    } finally {setBusy(false);}
+    } finally {if(active.current)setBusy(false);}
   }
   return <>
     <ProposalTerms proposal={proposal} />
@@ -51,17 +59,35 @@ function ProposalConsent({ proposal, onSaved, onRefresh }: {proposal:BookingProp
 }
 export function CustomerBookingReview({submissionId}:{submissionId:string}) {
   const [detail,setDetail] = useState<BookingDetail|null>(null), [loading,setLoading] = useState(true), [checking,setChecking] = useState(false), [error,setError] = useState("");
+  const [accessLost,setAccessLost] = useState(false);
+  const accessLostRef = useRef(false), mounted = useRef(false);
+  const [lifetime] = useState(()=>new BookingRequestLifetime());
+  const [readLane] = useState(()=>new CustomerBookingReadLane());
+  const pollTimer = useRef<number|null>(null);
   const requestGeneration = useRef(0);
   const invalidateRequests = useCallback(() => { requestGeneration.current++; },[]);
+  const loseAccess = useCallback(()=>{
+    accessLostRef.current=true;requestGeneration.current++;
+    if(pollTimer.current!==null){window.clearInterval(pollTimer.current);pollTimer.current=null;}
+    setAccessLost(true);setDetail(null);setError("");setChecking(false);setLoading(false);
+  },[]);
   const refresh = useCallback(() => {
-    const generation=++requestGeneration.current;
-    return bookingRequest<{detail:BookingDetail|null}>("/api/quote/booking").then(result => {
-      if(result.detail && result.detail.submission.id!==submissionId)throw new Error("This browser is linked to a different saved request. Reload the quote page before continuing.");
-      if(generation===requestGeneration.current){setDetail(result.detail);setError("");}
-    }).catch(failure => {if(generation===requestGeneration.current)setError(requestMessage(failure));})
-      .finally(() => {if(generation===requestGeneration.current){setChecking(false);setLoading(false);}});
-  },[submissionId]);
-  useEffect(()=>{void refresh();const timer=window.setInterval(()=>void refresh(),15_000);return()=>{window.clearInterval(timer);invalidateRequests();};},[refresh,invalidateRequests]);
+    if(accessLostRef.current || !mounted.current)return Promise.resolve();
+    return readLane.run(()=>{
+      const generation=++requestGeneration.current;
+      return lifetime.run(signal=>bookingRequest<{detail:BookingDetail|null}>(quoteApiPath("/api/quote/booking"),{signal}),loseAccess).then(result => {
+        if(result.detail && result.detail.submission.id!==submissionId)throw new Error("This browser is linked to a different saved request. Reload the quote page before continuing.");
+        if(generation===requestGeneration.current){setDetail(result.detail);setError("");}
+      }).catch(failure => {if(!(failure instanceof StaleBookingRequest) && generation===requestGeneration.current)setError(requestMessage(failure));})
+        .finally(() => {if(generation===requestGeneration.current){setChecking(false);setLoading(false);}});
+    });
+  },[submissionId,lifetime,readLane,loseAccess]);
+  const saveConsent = useCallback((attempt:ConsentAttempt)=>lifetime.run(signal=>bookingRequest<{detail:BookingDetail}>(quoteApiPath("/api/quote/booking/consent"),{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(attempt),signal}),loseAccess),[lifetime,loseAccess]);
+  useEffect(()=>{
+    mounted.current=true;
+    if(!accessLostRef.current){lifetime.activate();void refresh();pollTimer.current=window.setInterval(()=>void refresh(),15_000);}
+    return()=>{mounted.current=false;if(pollTimer.current!==null){window.clearInterval(pollTimer.current);pollTimer.current=null;}invalidateRequests();lifetime.dispose();readLane.clear();};
+  },[refresh,invalidateRequests,lifetime,readLane]);
   const current=detail?.proposals.find(proposal=>proposal.id===detail.booking.pendingProposalId) ?? detail?.proposals.find(proposal=>proposal.id===detail.booking.confirmedProposalId);
   const confirmed=detail?.proposals.find(proposal=>proposal.id===detail.booking.confirmedProposalId);
   const revisedProposal=Boolean(confirmed && current && confirmed.id!==current.id);
@@ -71,13 +97,14 @@ export function CustomerBookingReview({submissionId}:{submissionId:string}) {
     : current?.signature
       ? "Your revised demonstration schedule is signed. Company email processing and confirmation are pending; previously confirmed segments remain occupied."
       : "Your previously confirmed demonstration segments remain occupied. Review and sign the revised proposal below before company confirmation.";
-  function saved(value:BookingDetail){requestGeneration.current++;setDetail(value);setError("");}
+  function saved(value:BookingDetail){if(accessLostRef.current || !mounted.current)return;requestGeneration.current++;setDetail(current=>current && current.booking.revision>=value.booking.revision?current:value);setError("");setChecking(false);setLoading(false);}
+  if(accessLost)return <section className="booking-consent enquiry-step" aria-labelledby="customer-booking-title"><h2 id="customer-booking-title">Company work proposal and reconfirmation</h2><p className="enquiry-error-box" role="alert">Access to this private demonstration has expired or is no longer available in this browser. Your original signed request, photos and documents remain preserved. This browser session can no longer review or sign this request.</p></section>;
   return <section className="booking-consent enquiry-step" aria-labelledby="customer-booking-title"><div className="bookings-header"><h2 id="customer-booking-title">Company work proposal and reconfirmation</h2><button type="button" className="enquiry-button enquiry-button-secondary" disabled={checking} onClick={()=>{setChecking(true);void refresh();}}>{checking?"Checking…":"Refresh proposal"}</button></div>
     {loading && <p role="status">Loading company review status…</p>}{error && <p className="enquiry-error-box" role="alert">{error}</p>}
     {detail && <><p className="booking-demo-note" role="status">{detail.booking.syncStatus==="review_required"?"The work schedule needs company review. Existing occupied segments remain protected; a Google change is not automatic customer approval.":revisedProposal?revisedMessage:confirmedVerified?"Demonstration booking confirmed and verified in Google Calendar. This remains a company-only demo, not a real booking.":detail.booking.status==="confirmed"?"Company confirmation has been saved. Google verification is pending; final demonstration confirmation is not complete.":"Awaiting company proposal or confirmation. Your original signed request remains preserved."}</p>
       <details className="booking-history"><summary>Original signed demonstration documents</summary><CustomerPdfLinks /></details>
       {confirmed && current?.id!==confirmed.id && <details className="booking-history" open><summary>Previously confirmed work segments · preserved during review</summary><ol className="booking-segments">{confirmed.segments.map(segment=><li key={segment.id}>{sydneyTime(segment.startAt)} → {sydneyTime(segment.endAt)} (Sydney)</li>)}</ol></details>}
-      {current ? <ProposalConsent key={`${current.id}:${current.snapshotHash}`} proposal={current} onSaved={saved} onRefresh={()=>void refresh()} /> : <p>The company has not proposed work times yet. Return here after the company adds the exact segments. Your original preferred date does not reserve a working period.</p>}
+      {current ? <ProposalConsent key={`${current.id}:${current.snapshotHash}`} proposal={current} onSaved={saved} onRefresh={()=>void refresh()} saveConsent={saveConsent} /> : <p>The company has not proposed work times yet. Return here after the company adds the exact segments. Your original preferred date does not reserve a working period.</p>}
       <p className="booking-refresh-note">This page checks for a revised proposal every 15 seconds. A changed proposal requires a fresh review and signature. Access is limited to this original demonstration browser.</p>
     </>}
     {!loading&&!detail&&!error&&<p>No company work proposal is available for this signed request yet.</p>}

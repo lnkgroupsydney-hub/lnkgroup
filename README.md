@@ -1,12 +1,22 @@
 # L&K Group 웹 서비스 구축 계획
 
+**2026-10-11 최신 구현·검증:** 사진 AI 분석 → 작업·예상 가격 → EMS 동일 저장본 → 현장 확인 후 필요한 가격 조정 흐름을 연결했다. 시작가는 **A$1,500 GST 별도 / A$1,650 GST 포함**이며, AI가 관찰한 문·서랍 수량과 손상에 [L&K 초기 가격 v1](docs/plans/39-sydney-cabinet-pricing-v1.md)의 서버 계산 규칙을 적용한다. 공개 Sydney 가격은 참고 자료이며 공식 시장 평균이 아니다. 회사 Chrome에서 지정 손상 사진 두 장 업로드·분석 중/완료 후 새로고침·고객/EMS 동일 결과와 320px 메뉴·키보드를 확인했고 콘솔 메시지는 0건이었다. 실제 결과는 추가 범위·심한/분류되지 않은 손상 확인이 필요해 `review_required`, 총액 null로 저장됐다. 전체 검사 **488/488**와 lint·타입·빌드가 통과했고 신규 가격 SQL을 회사 Supabase에 적용했다. 충분한 전체 사진으로 숫자 예상 총액을 내는 실제 인수, 현장 조정, 고객 이메일 본인 확인·서명·예약, Vercel 환경·상시 worker 운영은 남아 있다. 과거 `unconfigured`/`awaiting_company_rates` 결과는 유지한다. [실제·합성 검증과 남은 범위](docs/verification/2026-10-11-pricing-browser-qa.md)를 따른다. 커밋·main 병합·푸시는 승인됐으나 이 문서 갱신 시점에는 미실행이며 배포도 미실행이다.
+
 2026년 9월 25일 · 계획 버전 1.0 · 기준 지역 Australia/Sydney · 문서 언어 한국어
 
 L&K Group의 서비스 홈페이지, 온라인 쇼핑몰, ERP·CRM 운영관리 시스템을 구축하기 위한 개발 참조 문서와 로컬 Next.js 앱 저장소다. 기존 분석 자산은 ChatGPT 프로젝트의 대화 3개와 화면 시안 3개다. 2026-09-27 로컬 기본 앱을 생성했고, 2026-10-01 사용자가 지정한 회사 Supabase 프로젝트로 업무 저장소 연결을 진행한다. 앱의 공개 배포는 별도 단계다.
 
-권장 방향은 **하나의 고객·운영 데이터 기반 위에 서비스 예약과 상품 구매 흐름을 구분하고, 서비스 매출부터 단계적으로 운영을 검증하는 것**이다. 핸디맨·페인팅·캐비넷 페인팅과 터치업 키트·김치는 동일 관리자에서 관리하되, 식품의 배송·위생·재고 정책은 별도로 적용한다. 사용자가 ESN의 의미를 ERP·CRM 중심으로 확정했다.
+권장 방향은 **하나의 고객·운영 데이터 기반 위에 서비스 예약과 상품 구매 흐름을 구분하고, 서비스 매출부터 단계적으로 운영을 검증하는 것**이다. 핸디맨·페인팅·캐비넷 페인팅과 터치업 키트·김치는 동일 관리자에서 관리하되, 식품의 배송·위생·재고 정책은 별도로 적용한다. 현재 명칭은 EMS(Enterprise Management System)이며 ERP·CRM 중심 운영관리를 뜻한다. 기존 `esn-admin` 경로와 과거 기록은 유지한다.
 
 ## 읽는 순서
+
+**2026-10-08 최신 구현 — 실제 고객 저장 → EMS 연결:** [37번 운영 전환 계획](docs/plans/37-live-quote-ems-booking-implementation.md)의 RQ-00~02를 새 `codex/live-quote-ems-foundation-20261008`에서 구현했다. 실제 이메일·연락처·서비스·수량 저장, 복원, EMS 동일 요청/이력 조회와 검토 요청 전환을 회사 Chrome·Supabase에서 확인했다. 전체 검사 **420/420**, 후속 관련 검사 **20/20**, lint·타입·빌드가 통과했고 기존 네 테이블 fingerprint는 일치한다. 고객 이메일 인증·사진·회사 금액·서명·예약은 후속이다. 로컬 3002에는 반영했으며 [Vercel 앱](https://lnkgroup.vercel.app/)은 이전 배포다. [검증 기록](docs/verification/2026-10-08-live-quote-foundation.md). 현재 다음 순서는 10월 11일 개정에 따라 RQ-03 촬영 안내/사진 → RQ-04 AI 예상 견적·EMS 저장/현장 조정이며 EMS-D2는 이후다.
+
+**2026-10-08 추가 완료 — 새 견적 전체 폼:** 제출 완료 화면의 `Start a new quote → Open new quote form`을 구현했다. 기존 제출·사진·서명과 작성 탭을 보존하며 별도 비공개 세션의 빈 폼을 새 탭으로 연다. 고객 정보 → 서비스 → 사진 → 데모 승인 → 날짜 → 서명·제출 흐름을 직접 진행할 수 있다. 전체 검사 **392/392**, lint·타입·빌드와 추가 두 미제출 작성 탭 분리 검사 **18/18**을 통과했다. 회사 Chrome에 사용자 입력용 빈 폼을 열었고 실제 `DEMO-3E8E831C` snapshot/사진 두 장/발송 1회 보존을 확인했다. 가격·약관은 데모이며 회사 제안·최종 확정의 잔여 인수와 구분한다. [검증 기록](docs/verification/2026-10-08-quote-damage-demo.md#새-견적-전체-폼--후속-요청-완료)을 참조한다.
+
+**2026-10-08 구현·일부 실연동 검증 — 두 사진 Quote 데모:** 새 `codex/quote-damage-demo-implementation-20261008`에서 재서명 사진 표시·권한 만료 화면 제거·느린 조회/늦은 동의 응답 처리를 보완했다. **380/380 검사·lint·타입·빌드**가 통과했고 지정 두 사진으로 `DEMO-3E8E831C` 저장·복원·서명 제출 → 회사 INBOX 1통/PDF 2개 → 확정 대기 Calendar 이벤트를 실제 확인했다. 기존 네 제출과 새 사진은 보존됐다. [검증 기록](docs/verification/2026-10-08-quote-damage-demo.md)에 합성 UI·실제 연결·남은 항목을 구분한다. **직원 관리자 로그인 대기와 Mac 잠금으로 EMS 고객 연결·회사 제안/재서명/최종 확정 및 일부 화면 인수는 미완료**다. 성공 빌드는 작업 폴더에 반영했고 로컬 3002에서 실행한다. [계획](docs/plans/36-quote-damage-demo-completion-plan.md)·[TODO](docs/plans/15-home-cabinet-admin-todo.md)를 갱신했으며 커밋·병합·푸시는 수행하지 않았다.
+
+**2026-10-08 다음 구현 계획 — 두 손상 사진으로 Quote 마무리:** `main@3f7e8c9` 기준으로 [36번 순차 계획](docs/plans/36-quote-damage-demo-completion-plan.md)을 작성했다. 사용자 지정 `damage 1.jpeg`·`damage 2.jpeg`를 비공개 데모 자료로 사용해 고객/서비스/사진 저장 → 승인·날짜·서명·제출 → PDF·회사 메일·확정 대기 Calendar → EMS 고객 연결·기간 제안 → 고객 재서명·회사 확정·Google 동기화 순으로 인수한다. 현재는 계획·TODO 갱신이며 사진 업로드·실연동·코드 구현은 미착수다. 실제 AI·운영 가격/약관은 후속이고 EMS D2 집계보다 Quote 완료를 먼저 진행한다. 당시 Git 조회에서 로컬 main은 회사 `origin/main`보다 7커밋 앞서며 새 계획 브랜치는 `codex/quote-finish-20261008`이다. 아래 날짜별 설명은 당시 구현/검증 기록이다.
 
 **2026-10-07 EMS-D1 구현 완료:** 승인한 관리자 공통 화면·메뉴별 경로에 기존 고객/문의/견적/예약/설정 기능을 연결했다. 인증 경계·자동 동기화·입력/불확실 요청을 보존하고 전체 검사 **374/374**·lint·타입·build와 합성 브라우저 **36+8+4** 항목을 통과했다. 로컬 앱은 기존 3002 주소에서 실행 중이다. [구현 계획](docs/esn-admin/09-2026-10-07-admin-shell-implementation-plan.md)·[검증 기록](docs/verification/2026-10-07-ems-admin-shell.md)·[진행표](docs/esn-admin/05-progress.md)에 결과와 미완료 인수를 반영했다. 실제 KPI/그래프 집계는 다음 D2이며 회사 자료 변경·운영 배포·커밋/merge/push는 수행하지 않았다.
 
@@ -42,11 +52,11 @@ L&K Group의 서비스 홈페이지, 온라인 쇼핑몰, ERP·CRM 운영관리 
 
 **당시 작업 기록(2026-09-30): [Gmail 문의 → 회사 검토 → Google Calendar](docs/plans/28-gmail-enquiry-calendar-implementation.md) 로컬 구현·검증 완료.** [18번 후속 제품 흐름](docs/plans/18-kcp-page-prototype.md)·[25번 전체 계획](docs/plans/25-kcp-quote-to-booking-implementation.md)·[15번 TODO](docs/plans/15-home-cabinet-admin-todo.md)를 따른다. P0 명세 이후 KCP 견적 폼, 로컬 SQLite 저장, `/admin` 비공개 문의함, 회사 OAuth, Gmail 라벨 수집과 제안 일정의 Calendar 양방향 검토를 구현했다. 코드 검사·대체 전송 테스트 23개·실제 브라우저·재시작 보존 확인은 [검증 기록](docs/verification/2026-09-30-gmail-calendar.md)을 따른다. 9월 30일 당시 실제 Google 연결은 회사 OAuth 클라이언트 설정 대기였으며, 최신 상태는 위 10월 1일 항목을 따른다. 설정 방법·이번 구현 범위는 28번에 정리한다.
 
-연동 계정은 `Lnkgroupsydney@gmail.com`이며 공개 문의 이메일과 구분한다. Google에서의 수정은 검증 후 앱에 반영한다. **마지막 작업 후 프로젝트 Complete → 인보이스 발행 → 실제 발행일 +3 달력일 납기(Sydney)** 정책은 [27번](docs/plans/27-kcp-google-calendar-sync.md)에 보존한다. 비공개 사진은 35번 회사 데모까지 연결했고 청구 실행·AI·운영 고객 이메일은 후속 단계다. Resend는 위 사용자 승인 회사 전용 데모 범위에서 먼저 연결한다. 근무시간·기간 산식은 보류하고 정찰제는 가격 수령 후 진행한다. 최초 제출 일정은 확정 대기 요청이다. 33번의 회사 검토·재서명·충돌 검사 후 확정은 회사 전용 데모이며 운영 예약 승인은 별도다. 과거 Cabinet ‘약 1주’는 소개·문의 접수 목표이며 전체 기능의 납기가 아니다.
+연동 계정은 `Lnkgroupsydney@gmail.com`이며 공개 문의 이메일과 구분한다. Google에서의 수정은 검증 후 앱에 반영한다. **마지막 작업 후 프로젝트 Complete → 인보이스 발행 → 실제 발행일 +3 달력일 납기(Sydney)** 정책은 [27번](docs/plans/27-kcp-google-calendar-sync.md)에 보존한다. 비공개 사진과 실제 AI 분석·초기 예상 가격 계산은 10월 11일 고객/EMS 흐름까지 연결했고 청구 실행·운영 고객 이메일은 후속 단계다. Resend는 위 사용자 승인 회사 전용 데모 범위에서 먼저 연결한다. 근무시간·기간 산식은 보류하고 KCP 초기 예상 가격은 39번의 승인된 v1 규칙을 사용한다. 다른 정찰제·현장 조정·운영 계약 정책은 후속이다. 최초 제출 일정은 확정 대기 요청이다. 33번의 회사 검토·재서명·충돌 검사 후 확정은 회사 전용 데모이며 운영 예약 승인은 별도다. 과거 Cabinet ‘약 1주’는 소개·문의 접수 목표이며 전체 기능의 납기가 아니다.
 
 **당시 작업 기록(2026-09-29): KCP 시네마틱 디자인 구현·로컬 검증 완료.** 메인은 기존 서비스 소개 프로토타입으로 유지하고, **Kitchen Cabinet Painting 상세에만** 사진형 Hero, 실제 WebGL 9단계 공정과 완료 장면, 전후 비교 슬라이더, 색상·광택 미리보기를 적용했다. [최신 구현 범위](docs/plans/24-cinematic-kitchen-webgl.md), [글로벌 디자인 시스템](docs/plans/21-global-design-system.md), [실제 검증 기록](docs/verification/2026-09-29-cinematic-v3.md)을 따른다. 같은 모델의 문짝·손잡이·힌지를 분리하고 세척·국소 퍼티 보수·프라이머·두 마감 코트·재조립을 가역 스크롤로 연결했다. 모델은 사진을 참고한 건축 컨셉이며 실측 CAD나 실사 재구성은 아니다. 모바일·JavaScript/WebGL 미지원 환경에는 읽을 수 있는 사진과 본문을 제공한다. 전역 토큰과 공용 KitchenScene 렌더러를 콘텐츠에서 분리했다. 현재 프로덕션 미리보기는 [KCP](http://127.0.0.1:3002/services/cabinet-painting) / [메인](http://127.0.0.1:3002)이다.
 
-회사 자료·메인 SEO는 앞서 반영했다. [회사 제공 자료](docs/reference-assets/company-brief.md)를 기준으로 실제 전화·이메일·지역·회사 로고·홍보 이미지·작업 사진을 유지한다. 회사 Supabase 연결·저장 검증은 완료했고 Google 핵심 실연동 검증은 완료했으며 운영 전환·배포 승인·운영 도메인은 대기다. `noindex`는 유지하며 사진 업로드는 35번 회사 데모 범위로 검증했고, 실제 AI·운영 견적/예약·인보이스·결제는 [순차 구현 목표](docs/plans/25-kcp-quote-to-booking-implementation.md)로 남긴다. 현장별 전후 사례 자료·실측 정밀 모델·정량 성능 및 실제 기기 검증은 남아 있다.
+회사 자료·메인 SEO는 앞서 반영했다. [회사 제공 자료](docs/reference-assets/company-brief.md)를 기준으로 실제 전화·이메일·지역·회사 로고·홍보 이미지·작업 사진을 유지한다. 회사 Supabase 연결·저장 검증은 완료했고 Google 핵심 실연동 검증은 완료했으며 운영 전환·배포 승인·운영 도메인은 대기다. `noindex`는 유지하며 사진 업로드·실제 AI 분석·초기 가격 계산/검토 결과와 EMS 저장은 10월 11일 검증을 따르고, 충분한 전체 사진의 실제 숫자 견적·현장 조정·운영 계약/예약·인보이스·결제는 [순차 구현 목표](docs/plans/25-kcp-quote-to-booking-implementation.md)로 남긴다. 현장별 전후 사례 자료·실측 정밀 모델·정량 성능 및 실제 기기 검증은 남아 있다.
 
 Cabinet 상세 `/services/cabinet-painting`의 6개 서비스·적합성·포함/제외·공정·컨셉 사례·FAQ 최초 구성은 [SEO·지역 개정](docs/plans/19-kcp-seo-content-and-service-area.md)과 [이전 검증](docs/verification/2026-09-27-kcp-seo-content.md)을 참조한다. 회사가 제공한 최신 서비스 지역은 기존 지도 조사의 제한적인 후보 목록보다 우선한다.
 
@@ -111,6 +121,7 @@ npm run dev -- --port 3002
 | [33 관리자 검토·회사 일정 확정](docs/plans/33-admin-booking-confirmation-day-plan.md) | 10월 3일 제출 검토·수동 기간·재동의·충돌 방지·데모 확정·PDF의 구현 순서와 검증 기준 |
 | [34 Google 주소 자동완성](docs/plans/34-google-address-autocomplete.md) | 전체 주소 입력 검색/선택, 수동 입력 대체, 결제·키 설정과 실제 연결 검증 |
 | [35 예약·터치 서명·비공개 사진](docs/plans/35-mobile-booking-private-photo-plan.md) | 10월 4일 예약/서명 보강과 비공개 사진·불변 제출 구현, 실제 연결/격리 검증과 남은 기기 의존성 |
+| [36 두 손상 사진으로 Quote 마무리](docs/plans/36-quote-damage-demo-completion-plan.md) | 지정 사진 2장·저장/서명/제출·EMS 고객 연결·회사 제안/재서명/확정·메일/Calendar의 순차 인수 계획 |
 
 클라이언트 전달본은 [Word 구현계획서](deliverables/LK_Group_Client_Implementation_Plan_KO.docx)이며, 편집 가능한 원문은 [클라이언트 제안서 Markdown](docs/client-proposal.md)이다. 기술 기준은 위 개발 문서가 원본이며, 클라이언트 문서를 변경할 때 관련 개발 문서도 함께 갱신한다. 문서 자체의 확인 결과는 [검증 기록](docs/document-validation.md)에 정리했다.
 

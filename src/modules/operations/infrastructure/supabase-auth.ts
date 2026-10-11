@@ -62,7 +62,7 @@ export async function destroySession(req:Request): Promise<void> {
   if(token) await command('session_delete',{token_hash:sha(token)})
 }
 export async function startOAuth(req:Request): Promise<{url:string;cookie:string}> {
-  requireLocalPreviewRequest(req)
+  if (!staffAuthEnabled()) requireLocalPreviewRequest(req)
   if(!googleConfigured()) throw new AppError(503,'Google connection is not configured')
   const session=staffAuthEnabled()?await requireSession(req,'integrations.manage'):await getSession(req)
   const state=random(),nonce=random(),verifier=random()
@@ -95,7 +95,7 @@ function requireGoogleScopes(scope: string | undefined): void {
 }
 
 export async function finishOAuth(req:Request,state:string,code:string): Promise<string|null> {
-  requireLocalPreviewRequest(req)
+  if (!staffAuthEnabled()) requireLocalPreviewRequest(req)
   if(!googleConfigured()||!state||!code||state.length>200||code.length>3000) throw new AppError(400,'Invalid Google response')
   const staffSession=staffAuthEnabled()?await requireSession(req,'integrations.manage'):null
   const row=await command<{nonce_hash:string;verifier:string;session_hash:string|null;expires_at:number}|null>('oauth_take',{state_hash:sha(state)})

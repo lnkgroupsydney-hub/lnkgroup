@@ -1,14 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Image from "next/image";
 import { SignaturePad } from "@/shared/ui/signature-pad";
 import { CustomerBookingReview } from "@/modules/bookings/client";
 import { DEMO_PRICE, DEMO_TERMS, CURRENT_DEMO_VERSION, type DemoSignature, type DemoSnapshot, type DemoSubmissionStatus, type SignaturePoint } from "../domain/demo-submission";
 import { validateQuoteDraft, type QuoteDraft } from "../domain/quote-draft";
 import type { AvailabilityDay } from "../domain/availability";
 import { validateQuotePhotoManifest, type QuotePhotoManifestEntry } from "../domain/quote-photos";
-import "./quote-photo-upload.css";
+import { QuotePhotoSummary } from "./quote-photo-summary";
+import { newQuoteHref, quoteApiPath } from "./quote-workspace";
 
 type DemoConfiguration = { enabled: boolean; recipientEmail: string; submission: DemoSubmissionStatus | null };
 type Availability = { days: AvailabilityDay[]; revision: string; checkedAt: string; expiresAt: string };
@@ -26,7 +26,7 @@ class DemoRequestError extends Error {
   constructor(readonly status: number, message: string) { super(message); }
 }
 async function request(path: string, init: RequestInit = {}): Promise<Record<string,unknown>> {
-  const response = await fetch(path, { ...init, credentials:"same-origin", cache:"no-store", signal:AbortSignal.timeout(25_000) });
+  const response = await fetch(quoteApiPath(path), { ...init, credentials:"same-origin", cache:"no-store", signal:AbortSignal.timeout(25_000) });
   const value: unknown = await response.json().catch(() => null);
   if (!response.ok) throw new DemoRequestError(response.status, record(value) && typeof value.error === "string" ? value.error : "The service is unavailable. Please retry.");
   if (!record(value)) throw new Error("The server returned an incomplete response. Please retry.");
@@ -61,11 +61,6 @@ function shiftMonth(month: string, amount: number) { const [year,number] = month
 function pending(submission: DemoSubmissionStatus) { return !["failed","outcome_unknown"].includes(submission.emailStatus) && !["synced","conflict"].includes(submission.calendarStatus); }
 
 
-function PhotoSummary({ photos }: { photos: QuotePhotoManifestEntry[] }) {
-  return <section aria-label="Photos included in this demonstration"><h3>Service photos · {photos.length}</h3>
-    {photos.length ? <><p>These saved photos are included in the summary you approve and sign. No AI assessment has been performed.</p><ul className="quote-photo-list">{photos.map((photo, index) => <li key={photo.photoId}><Image unoptimized src={`/api/quote/photos/${encodeURIComponent(photo.photoId)}/content`} width={240} height={180} alt={`Service photo ${index + 1} included in this review`} className="quote-photo-thumbnail" /><strong>Photo {index + 1}</strong><span className="enquiry-hint quote-photo-reference">Reference: {photo.photoId}</span></li>)}</ul></> : <p>No photos are included. Company review is still required.</p>}
-  </section>;
-}
 function SnapshotSummary({ snapshot }: { snapshot: DemoSnapshot }) {
   const { contact,service } = snapshot.payload;
   return <>
@@ -80,9 +75,31 @@ function SnapshotSummary({ snapshot }: { snapshot: DemoSnapshot }) {
       <div><dt>Preferred start</dt><dd>{dateLabel(snapshot.preferredDate)} (Sydney) · pending company review</dd></div>
       <div><dt>Demo amount</dt><dd>{MONEY_FORMAT.format(snapshot.price.totalCents/100)} {snapshot.price.currency}<br />{snapshot.price.label}</dd></div>
     </dl>
-    <PhotoSummary photos={snapshot.photos ?? []} />
+    <QuotePhotoSummary photos={snapshot.photos ?? []} />
     <div className="demo-terms"><h3>Demonstration terms · {snapshot.version}</h3><ul>{snapshot.terms.map(term => <li key={term}>{term}</li>)}</ul></div>
   </>;
+}
+function NewQuoteAction() {
+  const [busy,setBusy] = useState(false), [error,setError] = useState(""), [href,setHref] = useState("");
+  const attempt = useRef<{nextId:string;pending:boolean}|null>(null), active = useRef(true);
+  useEffect(()=>{active.current=true;return()=>{active.current=false;};},[]);
+  async function create() {
+    if(attempt.current?.pending || href)return;
+    const current = attempt.current ??= {nextId:crypto.randomUUID(),pending:false};
+    current.pending=true;setBusy(true);setError("");
+    try {
+      const response = await request("/api/quote/draft/session/new",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({nextId:current.nextId})});
+      const target = newQuoteHref(response,current.nextId);
+      if(active.current)setHref(target);
+    } catch(failure) {
+      if(active.current)setError(`${failureMessage(failure)} Your saved request is unchanged. Retry to open the same new quote.`);
+    } finally {current.pending=false;if(active.current)setBusy(false);}
+  }
+  return <div className="enquiry-step">
+    <p>Start a separate private quote with blank details. Your saved request stays open in this tab. Existing submissions, photos and documents remain preserved; the new quote is accessible in this browser for up to 24 hours.</p>
+    {error && <p className="enquiry-error-box" role="alert">{error}</p>}
+    {href ? <a className="enquiry-button" href={href} target="_blank" rel="noopener noreferrer">Open new quote form<span className="enquiry-hint"> · opens in a new tab</span></a> : <button type="button" className="enquiry-button" disabled={busy} onClick={()=>void create()}>{busy ? "Preparing a new quote…" : error ? "Retry starting a new quote" : "Start a new quote"}</button>}
+  </div>;
 }
 function SubmissionResult({ submission, statusError, onRefresh, checking }: { submission: DemoSubmissionStatus; statusError: string; onRefresh: () => void; checking: boolean }) {
   const emails: Record<DemoSubmissionStatus["emailStatus"],string> = { pending:"Queued", sending:"Sending", provider_accepted:"Accepted by email provider", retrying:"Waiting to retry", failed:"Needs attention — email not sent", outcome_unknown:"Delivery outcome needs verification" };
@@ -95,6 +112,7 @@ function SubmissionResult({ submission, statusError, onRefresh, checking }: { su
     {submission.error && <p className="enquiry-error">{submission.error}</p>}{statusError && <p className="enquiry-error" role="alert">{statusError}</p>}
     <button type="button" className="enquiry-button enquiry-button-secondary" disabled={checking} onClick={onRefresh}>{checking ? "Checking…" : "Refresh delivery status"}</button>
     <p className="enquiry-hint">Do not submit another request to retry email or calendar delivery. The saved request keeps the same reference.</p>
+    <NewQuoteAction />
   </div>;
 }
 
@@ -197,7 +215,7 @@ export function DemoQuoteFlow({ draft, photoReferences, recipientEmail, initialS
       <p className="demo-price">{MONEY_FORMAT.format(DEMO_PRICE.totalCents/100)} <span>{DEMO_PRICE.currency} · DEMO ONLY</span></p><p>{DEMO_PRICE.label}</p>
       <div className="demo-terms"><h3>Demonstration terms</h3><ul>{DEMO_TERMS.map(term => <li key={term}>{term}</li>)}</ul></div>
       <p className="enquiry-notice">Trial emails can only be sent to {recipientEmail}. Your saved email is {draft.payload.contact.email}.{!recipientMatches && " Edit your details to use the company trial address before continuing."}</p>
-      <PhotoSummary photos={photoReferences} />
+      <QuotePhotoSummary photos={photoReferences} />
       <label className="enquiry-confirm"><input type="checkbox" checked={approved} onChange={event => { setApproved(event.target.checked); clearSignature(); }} /> I approve this demonstration summary only. I understand this is not a real quote, contract or confirmed booking.</label>
       <div className="enquiry-actions"><button type="button" className="enquiry-button enquiry-button-secondary" onClick={onEdit}>Edit saved details</button><button type="button" className="enquiry-button enquiry-button-secondary" onClick={onEditPhotos}>Edit photos</button><button type="button" className="enquiry-button" disabled={!approved || !recipientMatches || busy} onClick={() => { changeStage("date"); void loadMonth(month); }}>Approve demo and choose date</button></div>
     </>}
