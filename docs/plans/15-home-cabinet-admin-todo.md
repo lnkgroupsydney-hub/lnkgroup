@@ -2,7 +2,7 @@
 
 **2026-10-11 최신 개정 — AI 수량 추정 가견적 운영 완료:** 고객 수량을 비워 두어도 AI가 문·서랍 앞판을 추정하고 예상 도장 금액을 계산한다. 정확한 수량·상태·최종 가격은 현장에서 확인해 조정한다. 기존 단가와 GST는 유지하며, 같은 사진의 미선택 표면이나 다른 현장의 손상은 보수비에 합산하지 않는다. [40번 현행 명세](40-ai-quantity-provisional-estimates.md)가 아래 v1의 고객 수량 일치 조건을 대체한다. 기존 기록은 보존한다.
 
-전체 **524/524**·lint·타입·빌드, 회사 Supabase 적용, Vercel `dpl_FgjBEwxhuz17b5A4pUVWq4FAMUK7` READY를 확인했다. 5장씩 3세트의 실제 AI 추정 결과는 **14문/6서랍 A$2,970 · 21문/6서랍 A$4,125 · 12문/4서랍 A$2,420 (GST 포함)**이며 회사 Chrome EMS와 DB의 저장값이 일치한다. 모두 기준 전면 범위의 잠정 도장비이고 미산정 손상·미촬영 범위는 별도다. 현장 최종견적 편집·발행(RQ-04c), 재동의·정식 예약은 후속이다. [실행 증거](../verification/2026-10-11-ai-quantity-provisional-estimates.md). 소스는 `codex/ai-quantity-estimates-20261011`; 이번 main 병합·push는 수행하지 않았다.
+전체 **524/524**·lint·타입·빌드, 회사 Supabase 적용, Vercel `dpl_FgjBEwxhuz17b5A4pUVWq4FAMUK7` READY를 확인했다. 5장씩 3세트의 실제 AI 추정 결과는 **14문/6서랍 A$2,970 · 21문/6서랍 A$4,125 · 12문/4서랍 A$2,420 (GST 포함)**이며 회사 Chrome EMS와 DB의 저장값이 일치한다. 모두 기준 전면 범위의 잠정 도장비이고 미산정 손상·미촬영 범위는 별도다. 현장 최종견적 편집·발행(RQ-04c), 재동의·정식 예약은 후속이다. [실행 증거](../verification/2026-10-11-ai-quantity-provisional-estimates.md). 후속 사용자 요청으로 운영 수정·AI 수량 견적을 `main`에 병합했다(`425959b`). 회사 원격은 `origin` = `lnkgroupsydney-hub/lnkgroup`이며 이번 통합의 push 대상이다. 아래 이전 시점의 미병합 설명은 당시 기록이다.
 
 - [x] AI 추정 문/서랍 수량과 현장 조정 안내를 고객·EMS에 표시.
 - [x] 새 분석·가격/DB 계약, 표면별 보수 가산, 이전 결과 보존과 변조/권한 검사.

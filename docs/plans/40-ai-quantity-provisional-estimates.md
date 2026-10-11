@@ -1,6 +1,6 @@
 # AI 수량 추정 기반 사진 가견적
 
-2026-10-11 · Australia/Sydney · 구현·회사 운영 검증 완료 · `codex/ai-quantity-estimates-20261011`
+2026-10-11 · Australia/Sydney · 구현·회사 운영 검증 완료 · 구현 브랜치 `codex/ai-quantity-estimates-20261011` → `main` 병합 `425959b`
 
 ## 사용자 결정
 
