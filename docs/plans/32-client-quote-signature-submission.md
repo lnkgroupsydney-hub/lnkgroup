@@ -2,6 +2,8 @@
 
 2026-10-02 · Australia/Sydney · 사용자 확정 제품 흐름과 단계 구현 계약
 
+**2026-10-11 고객 흐름 개정:** 고객이 일반 Cabinet 페이지에서 필요한 부위의 사진 약 5장을 업로드하면 **AI 분석 → 상세 작업·예상 가격 즉시 표시 → EMS 자동 저장 → 현장 확인 후 필요한 가격 조정**으로 진행한다. 회사 수동 금액 선확정은 기본 경로에서 대체한다. 회사 단가/가산 기준·AI 제공자/예산은 아직 미정이며 임의 운영 가격을 만들지 않는다. 고객 본인 확인·서명·회사 기간/충돌 확인 후 예약 확정은 후속으로 유지한다. [38번 AI 사진 견적 계획](38-ai-photo-estimate-and-ems-plan.md)과 [37번 전체 순서](37-live-quote-ems-booking-implementation.md)를 따른다. 아래 날짜별 기록은 당시 구현/검증 범위로 보존한다.
+
 [전체 구현 순서](25-kcp-quote-to-booking-implementation.md) · [진행 TODO](15-home-cabinet-admin-todo.md) · [오늘 연동 복구](31-google-integration-recovery-and-operation-plan.md) · [Google 일정 계약](27-kcp-google-calendar-sync.md)
 
 **2026-10-03 후속 구현·실제 검증:** [33번](33-admin-booking-confirmation-day-plan.md)의 관리자 제출/서명 검토·수동 작업 구간·재서명·충돌 검사·회사 데모 확정·양방향 검토·PDF를 연결했다. 새 PDF는 비공개 발송 payload로 고정하고 다운로드도 동일 바이트를 사용하며 기존 HTML 발송은 보존한다. 신규 원격 migration 두 개와 21테이블/7 RPC·공개 역할 차단을 확인했다. 회사 Chrome의 새 `DEMO-EE6B0405`로 저장·키보드 서명·PDF 수신·회사 확정과 실제 Google 이동 후 재검토/재확정을 실행했고, 오류 수정 후 164/164 테스트·lint·타입·빌드가 통과했다. [검증 기록](../verification/2026-10-03-admin-booking-confirmation.md)에 회사 Gmail 4통/PDF 8개·Google 이벤트 4개·중복 없음과 남은 실제 모바일 터치/별도 날짜 선택 UI를 구분한다. 아래 1.1절은 10월 2일 당시 HTML 데모 기록이며 최신 PDF·회사 데모 확정 범위는 1.2절을 따른다.

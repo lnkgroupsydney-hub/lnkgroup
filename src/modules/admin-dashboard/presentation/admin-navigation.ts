@@ -2,7 +2,7 @@ export const adminPages = [
   { id: "overview", href: "/admin", label: "Overview", description: "Your workspace for clients, enquiries and schedules." },
   { id: "customers", href: "/admin/customers", label: "Clients", description: "Find client records, their enquiries and connected documents." },
   { id: "enquiries", href: "/admin/enquiries", label: "Enquiries", description: "Review incoming enquiries, conversations and proposed schedules." },
-  { id: "quotes", href: "/admin/quotes", label: "Quotes", description: "Review signed demo submissions and their supporting documents." },
+  { id: "quotes", href: "/admin/quotes", label: "Quotes", description: "Review customer quote requests and their saved details." },
   { id: "schedule", href: "/admin/schedule", label: "Schedule", description: "Review booking requests, proposed work periods and calendar changes." },
   { id: "jobs", href: "/admin/jobs", label: "Jobs", description: "Job management is being prepared.", upcoming: true },
   { id: "orders", href: "/admin/orders", label: "Orders", description: "Order management is being prepared.", upcoming: true },

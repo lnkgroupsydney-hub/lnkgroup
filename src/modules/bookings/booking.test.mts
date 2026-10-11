@@ -3,7 +3,8 @@ import assert from 'node:assert/strict'
 import {createHash,randomUUID} from 'node:crypto'
 import {readFileSync,readdirSync} from 'node:fs'
 import {PGlite} from '@electric-sql/pglite'
-import {DEMO_PRICE,DEMO_TERMS,DEMO_VERSION} from '../enquiries/domain/demo-submission.ts'
+import {CURRENT_DEMO_VERSION,DEMO_PRICE,DEMO_TERMS,DEMO_VERSION} from '../enquiries/domain/demo-submission.ts'
+import {PHOTO_NOTICE_VERSION,PHOTO_PROCESSING_VERSION,type QuotePhotoManifestEntry} from '../enquiries/domain/quote-photos.ts'
 import type {BookingDetail,BookingEmailWork,BookingProposalSnapshot,BookingSegment} from './domain/contracts.ts'
 import {validateSegments} from './domain/validation.ts'
 Object.assign(process.env,{OPERATIONS_STORE:'supabase',APP_BASE_URL:'http://127.0.0.1:3002',LOCAL_OPERATIONS_ENABLED:'true',QUOTE_DEMO_ENABLED:'true',QUOTE_DEMO_RECIPIENT_EMAIL:'lnkgroupsydney@gmail.com',NEXT_PUBLIC_SUPABASE_URL:'https://booking-pglite.invalid',SUPABASE_SECRET_KEY:'synthetic',GOOGLE_TOKEN_ENCRYPTION_KEY:'66'.repeat(32),GOOGLE_CLIENT_ID:'synthetic',GOOGLE_CLIENT_SECRET:'synthetic'})
@@ -87,6 +88,66 @@ test('original signed submission is preserved and only owner sees its detail',as
  assert.equal(await rpc('customer_detail',{owner_hash:hash('foreign')}),null)
  assert.equal(JSON.stringify(detail).includes(a.owner),false)
  const list=await rpc<{id:string}[]>('admin_list');assert.equal(list.length,2)
+})
+test('two RPC-attached photos remain bound to the original submission through proposal, re-signing and confirmation',async()=>{
+ const cookie=(await draftSessionPost(req('quote/draft/session','POST',''))).headers.get('set-cookie')!.split(';')[0]
+ const owner=createHash('sha256').update(cookie.slice(cookie.indexOf('=')+1)).digest('hex'),id=randomUUID()
+ const payload={contact:{name:'Synthetic photo client',email:'lnkgroupsydney@gmail.com',phone:'',siteAddress:'TEST ONLY',suburb:'Test',postcode:'2000',details:'Synthetic photo evidence only',consent:true},service:{serviceId:'cabinet-painting',intent:'full-repainting',surfaces:['doors'],doorCount:4,drawerCount:null,material:'',colourPreference:''}}
+ const draft=(await db.query<{r:{id:string;revision:number}}>("select public.lk_quote_draft('save',$1::jsonb) r",[JSON.stringify({owner_hash:owner,revision:0,payload,payload_hash:hash(payload),expires_at:new Date(Date.now()+3600000).toISOString()})])).rows[0].r
+ const photoCommand=async<T>(command:string,args:Record<string,unknown>)=>(await db.query<{r:T}>('select public.lk_quote_photo($1,$2::jsonb) r',[command,JSON.stringify(args)])).rows[0].r
+ const submissionCommand=async<T>(command:string,args:Record<string,unknown>)=>(await db.query<{r:T}>('select public.lk_quote_submission($1,$2::jsonb) r',[command,JSON.stringify(args)])).rows[0].r
+ let revision=draft.revision
+ const expectedPhotos:QuotePhotoManifestEntry[]=[]
+ // Synthetic metadata exercises the real photo/submission SQL boundary without
+ // reading user photos, writing Storage, or issuing any provider request.
+ for(let index=0;index<2;index++){
+  const photoId=randomUUID(),contentHash=hash(`synthetic-normalized-${index}`)
+  const reserved=await photoCommand<{draftRevision:number}>('reserve',{owner_hash:owner,id:photoId,key:randomUUID(),expected_revision:revision,input_bytes:100,source_hash:hash(`synthetic-source-${index}`),source_mime:'image/png',notice_version:PHOTO_NOTICE_VERSION,notice_accepted:true})
+  revision=reserved.draftRevision
+  const claimed=await photoCommand<{record:{lease_holder:string;lease_generation:number}}>('claim_upload',{owner_hash:owner,id:photoId,holder:randomUUID()})
+  const lease={id:photoId,holder:claimed.record.lease_holder,generation:claimed.record.lease_generation}
+  await photoCommand('prepare',{...lease,content_hash:contentHash,stored_bytes:60,width:100,height:80})
+  revision=(await photoCommand<{draftRevision:number}>('attach',lease)).draftRevision
+  expectedPhotos.push({photoId,contentHash,processingVersion:PHOTO_PROCESSING_VERSION})
+ }
+ const manifest=await photoCommand<{photos:QuotePhotoManifestEntry[];draftRevision:number}>('manifest',{owner_hash:owner})
+ assert.deepEqual(manifest.photos,[...expectedPhotos].sort((a,b)=>a.photoId.localeCompare(b.photoId)))
+ assert.equal(manifest.draftRevision,revision)
+ const snapshot={mode:'demo',version:CURRENT_DEMO_VERSION,draftId:draft.id,draftRevision:revision,payload,preferredDate:segments[0].startAt.slice(0,10),price:DEMO_PRICE,terms:DEMO_TERMS,photos:manifest.photos}
+ await submissionCommand('submit',{id,reference:`DEMO-${id.slice(0,8).toUpperCase()}`,owner_hash:owner,expected_revision:revision,key:randomUUID(),request_hash:hash({snapshot,signature}),snapshot,snapshot_hash:hash(snapshot),signature,calendar_id:'test-calendar'})
+ const holder='synthetic-photo-original-delivery'
+ const work=(await submissionCommand<{id:string;lease_generation:number}[]>('claim',{id,holder}))[0]
+ const originalLease={id,holder,generation:work.lease_generation}
+ await submissionCommand('email_attempt',{...originalLease,payload:{from:'onboarding@resend.dev',to:['lnkgroupsydney@gmail.com'],subject:'DEMO',text:'Synthetic original delivery'}})
+ await submissionCommand('email_accepted',{...originalLease,provider_id:'synthetic-photo-original-mail'})
+ const original=(await rpc('admin_detail',{id})).submission
+ const photoRows=(await db.query('select * from public.lk_quote_photos where draft_id=$1 order by id',[draft.id])).rows
+ const response=await api.proposalPost(req('operations/bookings','POST',adminCookie,{expectedRevision:0,idempotencyKey:randomUUID(),notes:'Synthetic photo work proposal',segments}),id)
+ assert.equal(response.status,201,await response.clone().text())
+ const proposed=(await response.json() as {detail:BookingDetail}).detail,p=proposed.proposals[0]
+ assert.deepEqual(p.snapshot.submission,original.snapshot)
+ assert.deepEqual(p.snapshot.submission.photos,manifest.photos)
+ assert.equal(p.snapshot.submissionId,id)
+ const newSignature={...signature,name:'Synthetic re-signer'}
+ const signed=await api.consentPost(req('quote/booking/consent','POST',cookie,{proposalId:p.id,snapshotHash:p.snapshotHash,idempotencyKey:randomUUID(),signature:newSignature}),task=>tasks.push(task))
+ assert.equal(signed.status,202,await signed.clone().text())
+ const consented=(await signed.json() as {detail:BookingDetail}).detail
+ assert.deepEqual(consented.proposals[0].signature,newSignature)
+ assert.deepEqual(consented.submission.signature,signature)
+ await assert.rejects(rpc('confirm',confirmArgs(id,p.id,consented.booking.revision)),code('LK409'))
+ const proposalHolder='synthetic-photo-proposal-delivery',proposalWork=(await rpc<BookingEmailWork[]>('email_claim',{holder:proposalHolder,id:p.id}))[0]
+ assert.deepEqual(proposalWork.snapshot.submission.photos,manifest.photos)
+ const proposalLease={id:p.id,holder:proposalHolder,generation:proposalWork.lease_generation}
+ await rpc('email_attempt',{...proposalLease,payload:{from:'onboarding@resend.dev',to:['lnkgroupsydney@gmail.com'],subject:'DEMO',text:'Synthetic re-signed delivery'}})
+ await rpc('email_accepted',{...proposalLease,provider_id:'synthetic-photo-proposal-mail'})
+ const confirmed=await rpc('confirm',confirmArgs(id,p.id,consented.booking.revision))
+ assert.equal(confirmed.booking.status,'confirmed');assert.equal(confirmed.booking.syncStatus,'pending')
+ assert.deepEqual(confirmed.submission,original)
+ assert.deepEqual(confirmed.proposals[0].snapshot.submission.photos,manifest.photos)
+ assert.deepEqual((await rpc('customer_detail',{owner_hash:owner})).submission,original)
+ assert.deepEqual((await db.query('select * from public.lk_quote_photos where draft_id=$1 order by id',[draft.id])).rows,photoRows)
+ for(const photo of manifest.photos)await assert.rejects(photoCommand('delete',{owner_hash:owner,id:photo.photoId,expected_revision:revision}),code('LK409'))
+ assert.equal(await count('lk_booking_segments'),segments.length);assert.equal(await count('lk_booking_outbox'),1)
 })
 test('proposal revision, exact retry and immutable evidence block stale overwrite',async()=>{
  const f=await fixture(),a=await propose(f)

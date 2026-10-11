@@ -1,5 +1,7 @@
 # KCP 고객 저장 → AI 견적 → 서명 제출 → 이메일·Calendar 구현 계획
 
+**2026-10-11 고객 흐름 개정:** 고객이 일반 Cabinet 페이지에서 필요한 부위의 사진 약 5장을 업로드하면 **AI 분석 → 상세 작업·예상 가격 즉시 표시 → EMS 자동 저장 → 현장 확인 후 필요한 가격 조정**으로 진행한다. 회사 수동 금액 선확정은 기본 경로에서 대체한다. 회사 단가/가산 기준·AI 제공자/예산은 아직 미정이며 임의 운영 가격을 만들지 않는다. 고객 본인 확인·서명·회사 기간/충돌 확인 후 예약 확정은 후속으로 유지한다. [38번 AI 사진 견적 계획](38-ai-photo-estimate-and-ems-plan.md)과 [37번 전체 순서](37-live-quote-ems-booking-implementation.md)를 따른다. 아래 날짜별 기록은 당시 구현/검증 범위로 보존한다.
+
 **2026-10-02 추가 확정:** 고객이 서명 제출해도 일정은 **회사 기간·충돌 확인 전 요청(pending confirmation)**이다. 회사가 전체 기간·자원을 검토한 뒤 확정하며 변경 조건에는 필요한 고객 재동의·재서명을 받는다. **이미 예약된 날짜는 고객 앱 달력에서 선택할 수 없고 서버 제출에서도 재검사**한다. 이 구분은 최종 견적·서명 계약 문서, 이메일, 앱, 회사 Calendar에 동일하게 표시한다.
 
 작성일: 2026-09-30 · 갱신: 2026-10-02 · 상태: 회사 Supabase·OAuth·Gmail/Calendar 핵심 실연동 검증 완료, 고객 전체 흐름은 단계 구현 · 실행 체크리스트: [15 TODO](15-home-cabinet-admin-todo.md) · 최신 고객 계약: [32번](32-client-quote-signature-submission.md)
@@ -188,7 +190,7 @@
 
 ## 7. 근거와 문서 우선순위
 
-- 최신 고객 흐름과 제출 경계는 [32](32-client-quote-signature-submission.md), 소개 페이지 연결은 [18](18-kcp-page-prototype.md), 단계별 실행은 이 문서, 실제 진행 체크는 [15](15-home-cabinet-admin-todo.md)가 기준이다.
+- 운영 v1의 최신 순서·권한·수동 견적·배포 의존성은 [37](37-live-quote-ems-booking-implementation.md), 기존 제출 경계는 [32](32-client-quote-signature-submission.md), 소개 페이지 연결은 [18](18-kcp-page-prototype.md), 실제 진행 체크는 [15](15-home-cabinet-admin-todo.md)가 기준이다. 이 문서의 AI/정찰제 단계는 후속 확장 목표로 보존한다.
 - 기존 [05 견적·예약](05-quote-ai-booking.md)의 불변 조건과 [08 보호 원칙](08-security-and-compliance.md)은 유지한다. 일반 A/B/C 일정 중 KCP AI·예약·결제는 이번 순서로 앞당긴다. 다른 서비스·쇼핑몰·식품의 범위를 확대하지 않는다.
 - 회사 사실은 [회사 제공 자료](../reference-assets/company-brief.md)를 우선하며 결정 상태는 [14 결정표](14-decisions-and-sources.md)에 기록한다.
 - 2026-09-30 문서 확인: 노출 DB 스키마의 권한/RLS와 사진 접근 범위를 함께 설계한다. [Supabase RLS](https://supabase.com/docs/guides/database/postgres/row-level-security), [Storage 접근 제어](https://supabase.com/docs/guides/storage/security/access-control). 서버 비밀키 사용 경로에도 소유·역할 검사를 둔다.

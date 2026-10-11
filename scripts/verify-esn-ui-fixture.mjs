@@ -1,4 +1,4 @@
-// Synthetic loopback UI fixture. Only explicit admin pages and UI static assets
+// Synthetic loopback UI fixture. Only explicit admin/quote pages and UI static assets
 // are proxied. ALL APIs stay local; Cookie/Authorization/Set-Cookie never forward.
 import http from 'node:http'
 import { randomUUID } from 'node:crypto'
@@ -7,16 +7,23 @@ const port = Number(process.env.EMS_FIXTURE_PORT ?? 3013)
 const upstreamUrl = new URL(process.env.EMS_FIXTURE_UPSTREAM ?? 'http://127.0.0.1:3002')
 if (!Number.isInteger(port) || port < 1024 || port > 65535 || upstreamUrl.protocol !== 'http:' || upstreamUrl.hostname !== '127.0.0.1' || upstreamUrl.username || upstreamUrl.password || upstreamUrl.pathname !== '/' || upstreamUrl.search || upstreamUrl.hash || Number(upstreamUrl.port || 80) === port) throw new Error('Fixture requires distinct loopback HTTP ports.')
 const upstream = upstreamUrl.origin
-const adminPages = new Set(['/admin', '/admin/customers', '/admin/enquiries', '/admin/quotes', '/admin/schedule', '/admin/settings', '/admin/jobs', '/admin/orders', '/admin/inventory', '/admin/reports'])
+const adminPages = new Set(['/admin', '/admin/customers', '/admin/enquiries', '/admin/quotes', '/admin/schedule', '/admin/settings', '/admin/jobs', '/admin/orders', '/admin/inventory', '/admin/reports', '/quote/start'])
 const publicAssets = new Set(['/favicon.ico', '/images/lk-group-logo.png'])
+function optimizedPublicLogo(url) {
+  const query = url.searchParams
+  return url.pathname === '/_next/image' && query.size === 3 &&
+    query.getAll('url').length === 1 && query.get('url') === '/images/lk-group-logo.png' &&
+    query.getAll('w').length === 1 && ['96', '128', '256'].includes(query.get('w')) &&
+    query.getAll('q').length === 1 && query.get('q') === '75'
+}
 const authStages = new Set(['signed_out', 'password_change', 'email_verify', 'mfa_enroll', 'mfa_verify', 'ready'])
 const navigationHeaders = ['accept', 'rsc', 'next-router-state-tree', 'next-router-prefetch', 'next-router-segment-prefetch', 'next-url', 'purpose']
-let customers, records, links, audits, attempts, flags, signedOut, otherSessionCount, authStage, staffRole, emailVerification, requests, enquiries, bookingDetails
+let customers, records, links, audits, attempts, flags, signedOut, otherSessionCount, authStage, staffRole, emailVerification, requests, enquiries, bookingDetails, consentAttempts, quoteWorkspaces, newQuoteAttempts
 const sleep = ms => new Promise(resolve => setTimeout(resolve, Math.max(0, Math.min(30000, Number(ms) || 0))))
 function session() { return { authenticated: !signedOut && authStage !== 'signed_out', stage: signedOut ? 'signed_out' : authStage, email: 'synthetic-admin@example.invalid', emailVerification, factors: [{ id: 'synthetic-factor', friendlyName: 'Synthetic authenticator' }] } }
 function syntheticBooking(record) {
   const now = new Date().toISOString(), signature = { name: 'Synthetic Signer', strokes: [[{ x: .1, y: .2 }, { x: .3, y: .5 }, { x: .5, y: .3 }, { x: .7, y: .6 }]] }
-  const snapshot = { mode: 'demo', version: 'demo-v1', preferredDate: '2026-10-12', price: { currency: 'AUD', totalCents: 125000, label: 'SYNTHETIC sample only' }, terms: ['Synthetic nonbinding demonstration only.'], photos: record.photos.map(photo => ({ photoId: photo.id })), payload: { contact: { name: record.name, email: record.email, phone: record.phone, siteAddress: record.address, suburb: 'Synthetic suburb', postcode: '0000', details: 'Synthetic fixture project' }, service: { intent: 'refresh', surfaces: ['doors'], doorCount: 4, drawerCount: 2, material: 'Synthetic material', colourPreference: 'Synthetic colour' } } }
+  const snapshot = { mode: 'demo', version: 'kcp-demo-v2', draftId: record.sourceId, draftRevision: 1, preferredDate: '2026-10-12', price: { currency: 'AUD', totalCents: 125000, label: 'SYNTHETIC sample only' }, terms: ['Synthetic nonbinding demonstration only.'], photos: record.photos.map(photo => ({ photoId: photo.id, contentHash: 'a'.repeat(64), processingVersion: 'quote-photo-jpeg-v1' })), payload: { contact: { name: record.name, email: record.email, phone: record.phone, siteAddress: record.address, suburb: 'Synthetic suburb', postcode: '0000', details: 'Synthetic fixture project', consent: true }, service: { serviceId: 'cabinet-painting', intent: 'full-repainting', surfaces: ['doors'], doorCount: 4, drawerCount: 2, material: 'Synthetic material', colourPreference: 'Synthetic colour' } } }
   return { submission: { id: record.sourceId, reference: record.reference, snapshot, snapshotHash: 'synthetic-snapshot-hash', signature, submittedAt: now, emailStatus: 'provider_accepted', calendarStatus: 'synced' }, booking: { id: record.sourceId, revision: 1, status: 'requested', syncStatus: 'pending', confirmedProposalId: null, pendingProposalId: null, confirmedAt: null }, proposals: [] }
 }
 function operationsDashboard() {
@@ -34,6 +41,18 @@ function syntheticPdf() {
   return Buffer.from(pdf)
 }
 function binary(res, bytes, type) { res.writeHead(200, { 'Content-Type': type, 'Cache-Control': 'private, no-store', 'X-ESN-Fixture': 'synthetic' }); res.end(bytes) }
+function customerDetail() { return [...bookingDetails.values()][0] }
+function customerSubmission() {
+  const { submission } = customerDetail()
+  return { id: submission.id, reference: submission.reference, submittedAt: submission.submittedAt, preferredDate: submission.snapshot.preferredDate, emailStatus: submission.emailStatus, calendarStatus: submission.calendarStatus, error: null }
+}
+function addCustomerProposal() {
+  const detail = customerDetail(), revision = detail.proposals.length + 1
+  const segments = [{ id: randomUUID(), startAt: '2026-10-19T22:00:00.000Z', endAt: '2026-10-20T00:00:00.000Z' }]
+  const proposal = { id: randomUUID(), revision, snapshotHash: `synthetic-proposal-${revision}-hash`, segments, notes: `Synthetic customer proposal ${revision}`, createdAt: new Date().toISOString(), signature: null, consentedAt: null, emailStatus: 'pending', emailError: null, confirmedAt: null }
+  proposal.snapshot = { mode: 'demo', version: 'booking-demo-v1', submissionId: detail.submission.id, reference: detail.submission.reference, submission: structuredClone(detail.submission.snapshot), proposalId: proposal.id, proposalRevision: revision, resource: 'demo-single-resource', segments, notes: proposal.notes }
+  detail.proposals.push(proposal); detail.booking.revision++; detail.booking.pendingProposalId = proposal.id
+}
 
 const actor = '00000000-0000-4000-8000-000000000001'
 function customer(name, index = 0) {
@@ -48,10 +67,10 @@ function reset() {
   })
   links = new Map(); audits = new Map(); attempts = new Map(); signedOut = false; otherSessionCount = 2
   for (const c of customers) audits.set(c.id, [{ id: randomUUID(), action: 'create', sourceType: null, sourceId: null, reason: 'Synthetic fixture customer creation', actorUserId: actor, createdAt: c.createdAt, revision: 1 }])
-  authStage = 'ready'; staffRole = 'admin'; emailVerification = undefined; requests = []
+  authStage = 'ready'; staffRole = 'admin'; emailVerification = undefined; requests = []; consentAttempts = []; quoteWorkspaces = new Map(); newQuoteAttempts = []
   bookingDetails = new Map(records.filter(record => record.sourceType === 'submission').map(record => [record.sourceId, syntheticBooking(record)]))
   enquiries = [{ id: records[1].sourceId, reference: records[1].reference, source: 'gmail', serviceId: 'cabinet-painting', projectIntent: 'refresh', targetSurfaces: ['doors'], suburb: 'Synthetic suburb', postcode: '0000', doorCount: 4, drawerCount: 2, notes: 'Synthetic enquiry only', name: records[1].name, email: records[1].email, phone: records[1].phone, siteAddress: records[1].address, preferredDate: null, acknowledgement: true, senderReviewRequired: true, attachmentCount: 0, status: 'submitted', revision: 1, createdAt: new Date().toISOString(), startAt: null, endAt: null, scheduleNotes: null, calendarStatus: 'pending', calendarError: null, gmail: { threadId: 'synthetic-thread', messages: [{ messageId: 'synthetic-message', receivedAt: new Date().toISOString(), senderName: records[1].name, senderEmail: records[1].email, subject: 'Synthetic cabinet enquiry', bodyText: 'Synthetic imported message. No company Gmail was accessed.', bodyStatus: 'available', attachmentCount: 0 }], historyTruncated: false } }]
-  flags = { connected: false, failures: {}, apiDelays: {}, responseDelays: {}, loginNextStage: 'email_verify', customersUnavailable: false, failNextCreate: false, loseNextCreateResponse: false, failNextList: false, failNextDetail: false, conflictNextLink: false, failNextLink: false, sessionCleanupFail: false, delays: {}, detailDelayMs: 0 }
+  flags = { connected: false, failures: {}, apiDelays: {}, responseDelays: {}, customerAccessStatus: 0, loginNextStage: 'email_verify', customersUnavailable: false, failNextCreate: false, loseNextCreateResponse: false, failNextList: false, failNextDetail: false, conflictNextLink: false, failNextLink: false, sessionCleanupFail: false, delays: {}, detailDelayMs: 0 }
 }
 reset()
 function json(res, value, status = 200) {
@@ -71,12 +90,62 @@ function page(rows, url, key) {
 }
 async function handleApi(req, res, url) {
   const path = url.pathname
+  if (path === '/api/quote/booking/consent' && req.method === 'POST') { req.fixtureConsent = await body(req); consentAttempts.push(structuredClone(req.fixtureConsent)) }
+  if (path === '/api/quote/draft/session/new' && req.method === 'POST') { req.fixtureNewQuote = await body(req); newQuoteAttempts.push(structuredClone(req.fixtureNewQuote)) }
   await sleep(flags.apiDelays[path])
   const injected = flags.failures[path]
   if (injected) {
     const status = Number(typeof injected === 'object' ? injected.status : injected)
     if (typeof injected === 'object' && injected.once) delete flags.failures[path]
     return json(res, { error: `Synthetic HTTP ${status} failure. No company request occurred.` }, status >= 400 && status <= 599 ? status : 503)
+  }
+  if (path.startsWith('/api/quote/')) {
+    if ([401, 403].includes(flags.customerAccessStatus)) return json(res, { error: 'Synthetic customer access is unavailable.' }, flags.customerAccessStatus)
+    const selector = url.searchParams.get('quote')
+    if (url.searchParams.has('quote')) {
+      if (url.searchParams.getAll('quote').length !== 1 || !quoteWorkspaces.has(selector)) return json(res, { error: 'Synthetic quote workspace is unavailable.' }, 401)
+      const workspace = quoteWorkspaces.get(selector)
+      if (path === '/api/quote/draft/session' && req.method === 'POST') return json(res, { ready: true })
+      if (path === '/api/quote/draft' && req.method === 'GET') return json(res, { draft: workspace.draft })
+      if (path === '/api/quote/draft' && req.method === 'PUT') {
+        const value = await body(req)
+        if (value.expectedRevision !== (workspace.draft?.revision ?? 0)) return json(res, { error: 'Synthetic draft revision changed.' }, 409)
+        workspace.draft = { id: workspace.draft?.id ?? randomUUID(), revision: value.expectedRevision + 1, savedAt: new Date().toISOString(), payload: value.payload }
+        return json(res, { draft: workspace.draft })
+      }
+      if (path === '/api/quote/demo' && req.method === 'GET') return json(res, { enabled: true, recipientEmail: 'lnkgroupsydney@gmail.com', submission: null })
+      if (path === '/api/quote/submission' && req.method === 'GET') return json(res, { submission: null })
+      if (path === '/api/quote/photos' && req.method === 'GET' && workspace.draft) return json(res, { photos: [], draftRevision: workspace.draft.revision, submitted: false })
+      return json(res, { error: 'Synthetic new quote endpoint is unavailable. Nothing was forwarded.' }, 503)
+    }
+    const detail = customerDetail()
+    if (path === '/api/quote/draft/session/new' && req.method === 'POST') {
+      const { nextId } = req.fixtureNewQuote
+      if (typeof nextId !== 'string' || !/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/.test(nextId)) return json(res, { error: 'Synthetic quote identifier is invalid.' }, 400)
+      if (!quoteWorkspaces.has(nextId)) quoteWorkspaces.set(nextId, { draft: null })
+      return json(res, { ready: true, href: `/quote/start?service=cabinet-painting&quote=${nextId}` })
+    }
+    if (path === '/api/quote/draft/session' && req.method === 'POST') return json(res, { ready: true })
+    if (path === '/api/quote/draft' && req.method === 'GET') return json(res, { draft: { id: detail.submission.id, revision: 1, savedAt: detail.submission.submittedAt, payload: detail.submission.snapshot.payload } })
+    if (path === '/api/quote/demo' && req.method === 'GET') return json(res, { enabled: true, recipientEmail: detail.submission.snapshot.payload.contact.email, submission: customerSubmission() })
+    if (path === '/api/quote/submission' && req.method === 'GET') return json(res, { submission: customerSubmission() })
+    if (path === '/api/quote/booking' && req.method === 'GET') return json(res, { detail })
+    if (path === '/api/quote/booking/consent' && req.method === 'POST') {
+      const value = req.fixtureConsent, key = `customer-consent:${value.idempotencyKey}`, signature = JSON.stringify(value), prior = attempts.get(key)
+      if (prior) return json(res, prior.signature === signature ? prior.result : { error: 'Synthetic consent key conflict.' }, prior.signature === signature ? 200 : 409)
+      const proposal = detail.proposals.find(item => item.id === value.proposalId)
+      if (!proposal || proposal.id !== detail.booking.pendingProposalId || proposal.snapshotHash !== value.snapshotHash) return json(res, { error: 'Synthetic proposal changed. Review the latest version.' }, 409)
+      if (!value.signature?.acknowledged || !value.signature.name || !Array.isArray(value.signature.strokes)) return json(res, { error: 'Synthetic consent requires a signature.' }, 400)
+      proposal.signature = structuredClone(value.signature); proposal.consentedAt = new Date().toISOString(); proposal.emailStatus = 'pending'; detail.booking.revision++
+      const result = { detail: structuredClone(detail) }; attempts.set(key, { signature, result }); return json(res, result)
+    }
+    const photoRoute = path.match(/^\/api\/quote\/photos\/([^/]+)\/content$/)
+    if (photoRoute && req.method === 'GET') {
+      if (!detail.submission.snapshot.photos?.some(photo => photo.photoId === photoRoute[1])) return json(res, { error: 'Synthetic private photo not found.' }, 404)
+      return binary(res, Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Wl6N70AAAAASUVORK5CYII=', 'base64'), 'image/png')
+    }
+    if (/^\/api\/quote\/booking\/documents\/(quote|agreement)$/.test(path) && req.method === 'GET') return binary(res, syntheticPdf(), 'application/pdf')
+    return json(res, { error: 'Synthetic customer endpoint is unavailable. Nothing was forwarded.' }, 503)
   }
   if (path === '/api/admin-auth/session' && req.method === 'GET') return json(res, session())
   if (path === '/api/admin-auth/login' && req.method === 'POST') { await body(req); signedOut = false; authStage = authStages.has(flags.loginNextStage) ? flags.loginNextStage : 'email_verify'; return json(res, session()) }
@@ -197,6 +266,20 @@ const server = http.createServer(async (req, res) => {
       if ('signedOut' in value) { signedOut = Boolean(value.signedOut); authStage = signedOut ? 'signed_out' : 'ready' }
       if (authStages.has(value.authStage)) { authStage = value.authStage; signedOut = authStage === 'signed_out' }
       if (['owner', 'admin'].includes(value.staffRole)) staffRole = value.staffRole
+      if ('customerPhotoCount' in value) {
+        const count = Math.max(0, Math.min(2, Number(value.customerPhotoCount) || 0))
+        customerDetail().submission.snapshot.photos = Array.from({ length: count }, (_, index) => ({ photoId: randomUUID(), contentHash: String(index + 1).repeat(64), processingVersion: 'quote-photo-jpeg-v1' }))
+      }
+      if (value.customerLegacyV1) { customerDetail().submission.snapshot.version = 'kcp-demo-v1'; delete customerDetail().submission.snapshot.photos }
+      if (value.newCustomerProposal) addCustomerProposal()
+      if (value.customerEmailAccepted) {
+        const detail = customerDetail(), proposal = detail.proposals.find(item => item.id === detail.booking.pendingProposalId)
+        if (proposal) proposal.emailStatus = 'provider_accepted'
+      }
+      if (value.confirmCustomerProposal) {
+        const detail = customerDetail(), proposal = detail.proposals.find(item => item.id === detail.booking.pendingProposalId)
+        if (proposal?.signature) { proposal.confirmedAt = new Date().toISOString(); Object.assign(detail.booking, { revision: detail.booking.revision + 1, status: 'confirmed', syncStatus: 'synced', confirmedProposalId: proposal.id, confirmedAt: proposal.confirmedAt }) }
+      }
       if (value.signPendingProposals) for (const detail of bookingDetails.values()) {
         const proposal = detail.proposals.find(item => item.id === detail.booking.pendingProposalId)
         if (proposal) { proposal.signature = structuredClone(detail.submission.signature); proposal.consentedAt = new Date().toISOString(); proposal.emailStatus = 'provider_accepted' }
@@ -204,9 +287,9 @@ const server = http.createServer(async (req, res) => {
       if ('otherSessionCount' in value) otherSessionCount = Math.max(0, Math.min(50, Number(value.otherSessionCount)))
       return json(res, { synthetic: true, flags, signedOut, authStage, staffRole, otherSessionCount })
     }
-    if (url.pathname === '/__fixture/state') return json(res, { synthetic: true, flags, signedOut, authStage, staffRole, otherSessionCount, customers, records, enquiries, bookings: [...bookingDetails.values()], requests, links: [...links], audits: [...audits], attemptCount: attempts.size })
+    if (url.pathname === '/__fixture/state') return json(res, { synthetic: true, flags, signedOut, authStage, staffRole, otherSessionCount, customers, records, enquiries, bookings: [...bookingDetails.values()], requests, consentAttempts, newQuoteAttempts, quoteWorkspaces: [...quoteWorkspaces], links: [...links], audits: [...audits], attemptCount: attempts.size })
     if (url.pathname.startsWith('/api/')) { res.fixtureApiPath = url.pathname; requests.push({ path: url.pathname, method: req.method, at: Date.now() }); return await handleApi(req, res, url) }
-    if (!['GET', 'HEAD'].includes(req.method) || !(adminPages.has(url.pathname) || url.pathname.startsWith('/_next/static/') || publicAssets.has(url.pathname))) return json(res, { error: 'Synthetic fixture only proxies approved admin pages and explicit UI static assets.' }, 404)
+    if (!['GET', 'HEAD'].includes(req.method) || !(adminPages.has(url.pathname) || url.pathname.startsWith('/_next/static/') || publicAssets.has(url.pathname) || optimizedPublicLogo(url))) return json(res, { error: 'Synthetic fixture only proxies approved admin/quote pages and explicit UI static assets.' }, 404)
     const forwarded = {}
     for (const name of navigationHeaders) if (typeof req.headers[name] === 'string') forwarded[name] = req.headers[name]
     if (forwarded['next-url']) {

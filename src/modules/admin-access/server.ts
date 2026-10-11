@@ -1,4 +1,4 @@
-export { staffAuthEnabled, requireStaffAdmin } from './infrastructure/staff-auth.ts'
+export { staffAuthEnabled, requireStaffAdmin, requireStaffRequest } from './infrastructure/staff-auth.ts'
 export {
   staffSessionGet, staffOperationsSessionGet, staffLoginPost, staffLogoutPost,
   staffPasswordPost, staffMfaEnrollPost, staffMfaVerifyPost,

@@ -4,8 +4,7 @@ import { createServerClient, parseCookieHeader, serializeCookieHeader, type Cook
 import { authorizeAdmin } from '../application/authorize-admin.ts'
 import { AdminAccessError } from '../domain/errors.ts'
 import type { AdminMembership, AdminPermission, VerifiedAdminSession } from '../domain/contracts.ts'
-import { assertLocalPreviewRequest } from '../domain/local-preview.ts'
-import { localPreviewContext } from '../request.ts'
+import { staffRequestTransport } from '../request.ts'
 import { emailVerificationEnabled, parseEmailVerification, staffEmailAddress, staffEmailHash, type EmailVerificationState } from './email-verification.ts'
 
 export const STAFF_COOKIE = 'lk-staff-auth'
@@ -16,7 +15,7 @@ export const staffSessionHash = (id: string) => createHash('sha256').update(`sta
 
 export function requireStaffRequest(req: Request) {
   if (!staffAuthEnabled() || process.env.OPERATIONS_STORE !== 'supabase') throw new AdminAccessError('ACCESS_UNAVAILABLE')
-  assertLocalPreviewRequest(localPreviewContext(req))
+  return staffRequestTransport(req)
 }
 
 function configuration() {
@@ -36,12 +35,12 @@ export function staffServiceClient() {
 }
 
 export function staffRequestClient(req: Request) {
-  requireStaffRequest(req)
+  const transport = requireStaffRequest(req)
   const { url, key } = configuration()
   const jar = new Map(parseCookieHeader(req.headers.get('cookie') ?? '').map(item => [item.name, item.value]))
   const changed = new Map<string, { name: string; value: string; options: CookieOptions }>()
   const client = createServerClient(url, key, {
-    cookieOptions: { name: STAFF_COOKIE, path: '/', httpOnly: true, sameSite: 'lax', secure: false },
+    cookieOptions: { name: STAFF_COOKIE, path: '/', httpOnly: true, sameSite: 'lax', secure: transport.secure },
     global: { fetch: privateFetch },
     cookies: {
       getAll: () => [...jar].map(([name, value]) => ({ name, value })),
@@ -55,7 +54,7 @@ export function staffRequestClient(req: Request) {
     finish(response: Response) {
       response.headers.set('cache-control', 'private, no-store')
       response.headers.set('vary', 'Cookie')
-      for (const item of changed.values()) response.headers.append('set-cookie', serializeCookieHeader(item.name, item.value, { ...item.options, path: '/', httpOnly: true, sameSite: 'lax', secure: false }))
+      for (const item of changed.values()) response.headers.append('set-cookie', serializeCookieHeader(item.name, item.value, { ...item.options, domain: undefined, path: '/', httpOnly: true, sameSite: 'lax', secure: transport.secure }))
       return response
     },
   }

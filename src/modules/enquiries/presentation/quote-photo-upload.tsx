@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { PHOTO_NOTICE_VERSION, QUOTE_PHOTO_LIMITS, type QuotePhoto, type QuotePhotoList, type QuotePhotoManifestEntry } from "../domain/quote-photos";
+import { quoteApiPath } from "./quote-workspace";
 import "./quote-photo-upload.css";
 
 type LocalPhoto = {
@@ -17,7 +18,7 @@ function failureMessage(failure: unknown) {
   return failure instanceof Error && !(failure instanceof TypeError) && failure.name !== "TimeoutError" ? failure.message : "The photo could not be confirmed as saved. Refresh the list or retry the same file.";
 }
 async function photoRequest(path: string, init: RequestInit = {}) {
-  const response = await fetch(path, { ...init, credentials: "same-origin", cache: "no-store", signal: AbortSignal.timeout(60_000) });
+  const response = await fetch(quoteApiPath(path), { ...init, credentials: "same-origin", cache: "no-store", signal: AbortSignal.timeout(60_000) });
   const body: unknown = await response.json().catch(() => null);
   if (!response.ok) throw new PhotoRequestError(response.status, record(body) && typeof body.error === "string" ? body.error : "Photo storage is unavailable. Please retry.", record(body) && typeof body.code === "string" ? body.code : undefined);
   if (!record(body)) throw new Error("Invalid photo response.");
@@ -212,7 +213,7 @@ export function QuotePhotoUpload({ draftRevision, demoEnabled, onRevision, onCon
     <p role="status" aria-live="polite">{savedCount} {savedCount === 1 ? "photo" : "photos"} saved privately{busy ? " · Please wait while the current operation finishes." : ""}</p>
     <ul className="quote-photo-list">
       {photos.filter(photo => !linkedLocalIds.has(photo.id)).map((photo, index) => <li key={photo.id}>
-        {photo.status === "attached" && <Image unoptimized src={`/api/quote/photos/${encodeURIComponent(photo.id)}/content`} width={240} height={180} alt={`Saved service photo ${index + 1}`} className="quote-photo-thumbnail" />}
+        {photo.status === "attached" && <Image unoptimized src={quoteApiPath(`/api/quote/photos/${encodeURIComponent(photo.id)}/content`)} width={240} height={180} alt={`Saved service photo ${index + 1}`} className="quote-photo-thumbnail" />}
         <strong>Photo {index + 1}</strong><span>{stateLabel(photo)}</span><span className="enquiry-hint">Reference: {photo.id}</span>
         {photo.status !== "attached" && photo.status !== "delete_pending" && <p className="enquiry-hint">After a refresh, an unfinished photo must be removed and selected again. The original file is not kept by this page.</p>}
         <button type="button" className="enquiry-button enquiry-button-secondary" disabled={busy || submitted || photo.status === "processing" || photo.status === "delete_pending"} onClick={() => void remove(photo.id)}>Remove photo {index + 1}</button>

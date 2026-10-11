@@ -1,6 +1,7 @@
 "use client";
 
 import { ArrowRight, CalendarDays, ClipboardList, FileText, Layers3, UsersRound } from "lucide-react";
+import { LiveQuoteRequestsPanel } from "@/modules/quotes/client";
 import { CustomersConsole } from "@/modules/customers/client";
 import { SessionSecurity, useStaffAdmin } from "@/modules/admin-access/client";
 import { OperationsView } from "@/modules/operations/client";
@@ -10,7 +11,7 @@ import type { AdminPageId } from "./admin-navigation";
 const shortcuts = [
   { label: "Client records", description: "Search clients and connect their enquiry history.", href: "/admin/customers", Icon: UsersRound },
   { label: "Incoming enquiries", description: "Read conversations and review proposed schedules.", href: "/admin/enquiries", Icon: ClipboardList },
-  { label: "Signed submissions", description: "Open demo quotes, signed documents and photos.", href: "/admin/quotes", Icon: FileText },
+  { label: "Quote requests", description: "Review saved customer requests and previous documents.", href: "/admin/quotes", Icon: FileText },
   { label: "Booking review", description: "Review dates, confirmations and calendar changes.", href: "/admin/schedule", Icon: CalendarDays },
 ];
 export function AdminOverview() {
@@ -31,7 +32,8 @@ export function AdminSection({ view }: { view: Exclude<AdminPageId, "overview"> 
   const { onAccessLost } = useStaffAdmin();
   if (view === "customers") return <CustomersConsole onSignedOut={onAccessLost} embedded />;
   if (view === "settings") return <div className="admin-settings"><section id="company-connections" aria-labelledby="company-connections-title"><h2 id="company-connections-title" className="admin-section-title">Company connections</h2><OperationsView view="settings" /></section><section aria-labelledby="admin-security-title"><h2 id="admin-security-title" className="admin-section-title">Session security</h2><SessionSecurity onAccessLost={onAccessLost} embedded /></section></div>;
-  if (view === "enquiries" || view === "quotes" || view === "schedule") return <OperationsView view={view} />;
+  if (view === "quotes") return <><LiveQuoteRequestsPanel onAccessLost={onAccessLost} /><details><summary>Previous signed demonstrations</summary><OperationsView view="quotes" /></details></>;
+  if (view === "enquiries" || view === "schedule") return <OperationsView view={view} />;
   const preparation = preparations[view];
   return <section className="admin-card admin-preparation"><span className="admin-status">Planned</span><Layers3 size={44} strokeWidth={1.4} aria-hidden="true" /><h2>{preparation.title}</h2><p>{preparation.body}</p><WorkspaceLink href={preparation.href} className="admin-primary-link">{preparation.link}<ArrowRight size={17} aria-hidden="true" /></WorkspaceLink></section>;
 }

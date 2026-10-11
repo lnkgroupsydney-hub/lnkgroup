@@ -3,6 +3,7 @@ import { AppError } from '../domain/validation.ts'
 import { getDb, localEnabled } from './local-db.ts'
 import { localPreviewRequestAllowed, localPreviewSessionActive, requireLocalPreviewRequest } from './preview-access.ts'
 import { staffAuthEnabled } from '../../admin-access/server.ts'
+import { configuredStaffOrigin } from '../../admin-access/index.ts'
 
 export const OWNER_EMAIL = 'Lnkgroupsydney@gmail.com'
 const SESSION_COOKIE = 'lk_ops_session'
@@ -68,7 +69,11 @@ export function requireLegacyAccess(): void {
 }
 export function localLoginAvailable(): boolean { return !staffAuthEnabled() && localEnabled() && !!process.env.LOCAL_OWNER_PASSWORD }
 export function googleConfigured(): boolean {
-  return localEnabled() && !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET && /^[0-9a-fA-F]{64}$/.test(process.env.GOOGLE_TOKEN_ENCRYPTION_KEY || ''))
+  let accessConfigured = localEnabled()
+  if (staffAuthEnabled() && process.env.OPERATIONS_STORE === 'supabase' && process.env.APP_BASE_URL?.startsWith('https:')) {
+    try { configuredStaffOrigin(process.env.APP_BASE_URL); accessConfigured = true } catch { return false }
+  }
+  return accessConfigured && !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET && /^[0-9a-fA-F]{64}$/.test(process.env.GOOGLE_TOKEN_ENCRYPTION_KEY || ''))
 }
 
 export function verifyLocalPassword(password: unknown): boolean {

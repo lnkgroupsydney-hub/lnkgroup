@@ -37,6 +37,7 @@ globalThis.fetch=async(input,init)=>{
 }
 const draft=await import('./infrastructure/quote-draft-api.ts')
 const api=await import('./infrastructure/demo-api.ts')
+const photoApi=await import('./infrastructure/quote-photo-api.ts')
 const {encrypt}=await import('../operations/infrastructure/auth.ts')
 const {readCalendarOccupancy}=await import('../operations/availability.ts')
 const {demoAvailability,sydneyToday,monthRange}=await import('./infrastructure/demo-availability.ts')
@@ -113,6 +114,39 @@ test('demo handlers require explicit loopback enablement, private session and sa
   process.env.QUOTE_DEMO_ENABLED='false'
   assert.deepEqual(await (await api.demoGet(req('demo','GET',cookie))).json(),{enabled:false,recipientEmail:null,submission:null})
   assert.equal((await api.availabilityGet(req(`availability?month=${chosenMonth}`,'GET',cookie))).status,404)
+})
+
+test('a new selected quote cannot read or change the original submitted photo evidence or reuse its review token',async()=>{
+  const originalCookie=await fixture(),reserved=await reservePhoto(originalCookie),attached=await attachPhoto(originalCookie,reserved.photo.id)
+  const checked=await review(originalCookie,attached.draftRevision)
+  assert.equal(checked.status,200,await checked.clone().text())
+  const proof=await checked.json() as {snapshot:DemoSnapshot;reviewToken:string}
+  const submitted=await submit(originalCookie,proof.reviewToken)
+  assert.equal(submitted.status,202,await submitted.clone().text())
+  const originalSubmission=(await db.query('select * from public.lk_quote_submissions')).rows[0]
+  const originalDraft=(await db.query('select * from public.lk_quote_drafts')).rows[0]
+  const originalPhotos=(await db.query('select * from public.lk_quote_photos')).rows
+  const nextId=randomUUID(),started=await draft.draftNewSessionPost(req('draft/session/new','POST',originalCookie,{nextId}))
+  assert.equal(started.status,200,await started.clone().text())
+  const selectedCookie=started.headers.get('set-cookie')!.split(';')[0],cookies=`${originalCookie}; ${selectedCookie}`
+  const selected=(path:string,method='GET',body?:unknown)=>req(`${path}${path.includes('?')?'&':'?'}quote=${nextId}`,method,cookies,body)
+  const empty=await api.demoGet(selected('demo'))
+  assert.equal(empty.status,200);assert.equal((await empty.json()).submission,null)
+  assert.equal((await api.submissionGet(selected('submission'))).status,200)
+  const fresh=await draft.draftPut(selected('draft','PUT',{expectedRevision:0,payload:{...payload,contact:{...payload.contact,name:'Separate quote'}}}))
+  assert.equal(fresh.status,200,await fresh.clone().text())
+  const freshPhotos=await photoApi.photosGet(selected('photos'))
+  assert.equal(freshPhotos.status,200,await freshPhotos.clone().text())
+  assert.deepEqual((await freshPhotos.json()).photos,[])
+  const crossToken=await api.submitPost(selected('submit','POST',{reviewToken:proof.reviewToken,idempotencyKey:randomUUID(),signature}),task=>scheduled.push(task))
+  assert.equal(crossToken.status,403)
+  const defaultDemo=await api.demoGet(req('demo','GET',cookies))
+  assert.equal((await defaultDemo.json()).submission.id,originalSubmission.id)
+  assert.equal((await api.demoGet(req(`demo?quote=${nextId}`,'GET',originalCookie))).status,401)
+  assert.equal((await api.demoGet(req(`demo?quote=${nextId}&quote=${nextId}`,'GET',cookies))).status,400)
+  assert.deepEqual((await db.query('select * from public.lk_quote_submissions')).rows,[originalSubmission])
+  assert.deepEqual((await db.query('select * from public.lk_quote_drafts where id=$1',[originalDraft.id])).rows[0],originalDraft)
+  assert.deepEqual((await db.query('select * from public.lk_quote_photos')).rows,originalPhotos)
 })
 
 test('foreign origins and non-company demo recipients cannot review or send',async()=>{

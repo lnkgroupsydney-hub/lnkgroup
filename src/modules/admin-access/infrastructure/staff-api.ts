@@ -16,10 +16,6 @@ function authRoute(handler: (req: Request, context: StaffRequestContext) => Prom
     let context: StaffRequestContext | undefined
     try {
       context = staffRequestClient(req)
-      if (req.method !== 'GET' && req.method !== 'HEAD') {
-        const origin = new URL(process.env.APP_BASE_URL!).origin
-        if (req.headers.get('origin') !== origin || req.headers.get('sec-fetch-site') === 'cross-site') throw new InputError(403, 'Same-origin request required.')
-      }
       return context.finish(await handler(req, context))
     } catch (error) {
       const known = error instanceof AdminAccessError || error instanceof InputError
