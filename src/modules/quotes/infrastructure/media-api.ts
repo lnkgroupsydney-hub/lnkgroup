@@ -11,8 +11,8 @@ import { quoteMediaStore } from './media-store.ts'
 import { quotePhotoObjects } from './photo-objects.ts'
 import { runQuoteAnalysis } from './analysis-runner.ts'
 interface Access {
-  readOwner(req: Request): QuoteRequestOwner
-  writeOwner(req: Request): QuoteRequestOwner
+  readOwner(req: Request): QuoteRequestOwner | Promise<QuoteRequestOwner>
+  writeOwner(req: Request): QuoteRequestOwner | Promise<QuoteRequestOwner>
   staff(req: Request): Promise<QuoteRequestActor>
   input(req: Request): Promise<unknown>
 }
@@ -22,7 +22,7 @@ function record(value: unknown): Record<string, unknown> {
   return value as Record<string, unknown>
 }
 export function createQuoteMediaApi(deps: { access: Access; store: QuoteRequestStore; objects: PhotoObjectPort; run(jobId: string): Promise<void>; aiReady(): boolean }) {
-  const ownerArgs = (owner: QuoteRequestOwner) => ({ companyId:'lk-group', ownerHash:owner.hash, expiresAt:owner.expiresAt })
+  const ownerArgs = (owner: QuoteRequestOwner) => ({ companyId:'lk-group', ownerHash:owner.hash, expiresAt:owner.expiresAt, ...(owner.expectedRequestId ? { expectedRequestId: owner.expectedRequestId } : {}), ...(owner.customer ? { customerAccess: owner.customer } : {}) })
   const safe = (handler: (req: Request, id?: string, photoId?: string) => Promise<Response>) => async (req: Request, id?: string, photoId?: string) => {
     try { return await handler(req, id, photoId) }
     catch (error) {
@@ -44,9 +44,9 @@ export function createQuoteMediaApi(deps: { access: Access; store: QuoteRequestS
     return new Response(new Uint8Array(bytes),{headers:{'content-type':'image/jpeg','content-length':String(bytes.length),'cache-control':'private, no-store',vary:'Cookie','x-content-type-options':'nosniff','content-disposition':'inline; filename="cabinet-photo.jpg"'}})
   }
   return {
-    workspace: safe(async req => json(await workspace(ownerArgs(deps.access.readOwner(req))))),
+    workspace: safe(async req => json(await workspace(ownerArgs(await deps.access.readOwner(req))))),
     begin: safe(async req => {
-      const owner = deps.access.writeOwner(req), input=record(await deps.access.input(req)), command=validateReviewRequest(input)
+      const owner = await deps.access.writeOwner(req), input=record(await deps.access.input(req)), command=validateReviewRequest(input)
       if (!LIVE_PHOTO_ROLES.includes(input.role as typeof LIVE_PHOTO_ROLES[number]) || !['image/jpeg','image/png','image/webp'].includes(String(input.mimeType))) throw new QuoteRequestError(400,'Choose a photo role and a JPEG, PNG or static WebP image.')
       if (!Number.isSafeInteger(input.sizeBytes) || Number(input.sizeBytes)<1 || Number(input.sizeBytes)>LIVE_PHOTO_LIMITS.maxInputBytes) throw new QuoteRequestError(413,'Each photo must be no larger than 10 MB.')
       if (typeof input.sourceHash!=='string' || !/^[a-f0-9]{64}$/.test(input.sourceHash)) throw new QuoteRequestError(400,'Choose the original file again.')
@@ -55,7 +55,7 @@ export function createQuoteMediaApi(deps: { access: Access; store: QuoteRequestS
       return json({photo:publicPhoto(photo),upload})
     }),
     finalize: safe(async (req,id) => {
-      const args=ownerArgs(deps.access.writeOwner(req)),command=validateReviewRequest(await deps.access.input(req)),photoId=requestId(id)
+      const args=ownerArgs(await deps.access.writeOwner(req)),command=validateReviewRequest(await deps.access.input(req)),photoId=requestId(id)
       const photo=await deps.store.command<InternalPhoto>('photo_lookup',{...args,photoId})
       if (photo.state==='deleted') throw new QuoteRequestError(409,'This photo has been removed.')
       const info=await deps.objects.normalize(photo)
@@ -65,15 +65,15 @@ export function createQuoteMediaApi(deps: { access: Access; store: QuoteRequestS
       return json(publicWorkspace(result))
     }),
     remove: safe(async (req,id) => {
-      const args=ownerArgs(deps.access.writeOwner(req)),command=validateReviewRequest(await deps.access.input(req))
+      const args=ownerArgs(await deps.access.writeOwner(req)),command=validateReviewRequest(await deps.access.input(req))
       return json(publicWorkspace(await deps.store.command<InternalPhotoWorkspace>('photo_remove',{...args,...command,photoId:requestId(id)})))
     }),
     reopen: safe(async req => {
-      const args=ownerArgs(deps.access.writeOwner(req)),command=validateReviewRequest(await deps.access.input(req))
+      const args=ownerArgs(await deps.access.writeOwner(req)),command=validateReviewRequest(await deps.access.input(req))
       return json(publicWorkspace(await deps.store.command<InternalPhotoWorkspace>('reopen',{...args,...command})))
     }),
     start: safe(async req => {
-      const args=ownerArgs(deps.access.writeOwner(req)), input=record(await deps.access.input(req)),command=validateReviewRequest(input)
+      const args=ownerArgs(await deps.access.writeOwner(req)), input=record(await deps.access.input(req)),command=validateReviewRequest(input)
       if (!deps.aiReady()) throw new QuoteRequestError(503,'Photo AI analysis is not configured yet. Your photos remain saved.')
       if (input.aiConsentVersion!==AI_CONSENT_VERSION || input.aiConsent!==true) throw new QuoteRequestError(400,'Confirm permission to send your photos to OpenAI for cabinet analysis.')
       const coverage=record(input.coverage)
@@ -96,14 +96,14 @@ export function createQuoteMediaApi(deps: { access: Access; store: QuoteRequestS
       return json(publicWorkspace(result))
     }),
     process: safe(async (req,id) => {
-      const args=ownerArgs(deps.access.writeOwner(req)),jobId=requestId(id)
+      const args=ownerArgs(await deps.access.writeOwner(req)),jobId=requestId(id)
       const before=await deps.store.command<InternalPhotoWorkspace>('workspace',args)
       if (!before.jobs.some(job=>job.id===jobId)) throw new QuoteRequestError(404,'Analysis request not found.')
       // Await the durable leased job; never detach a promise after returning HTTP.
       await deps.run(jobId)
       return json(await workspace(args))
     }),
-    content: safe(async (req,id) => content(await deps.store.command<InternalPhoto>('photo_lookup',{...ownerArgs(deps.access.readOwner(req)),photoId:requestId(id)}))),
+    content: safe(async (req,id) => content(await deps.store.command<InternalPhoto>('photo_lookup',{...ownerArgs(await deps.access.readOwner(req)),photoId:requestId(id)}))),
     staffWorkspace: safe(async (req,id) => json(await workspace(await staffArgs(req,id),true))),
     staffContent: safe(async (req,id,photoId) => content(await deps.store.command<InternalPhoto>('staff_photo',{...await staffArgs(req,id),photoId:requestId(photoId)}))),
   }
