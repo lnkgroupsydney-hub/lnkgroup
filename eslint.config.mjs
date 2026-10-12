@@ -4,7 +4,7 @@ import nextTypeScript from "eslint-config-next/typescript";
 
 const publicModuleImports = {
   // Explicit public client/server entries keep Node adapters out of UI bundles.
-  group: ["@/modules/*/**", "!@/modules/enquiries/client", "!@/modules/enquiries/domain", "!@/modules/quotes/client", "!@/modules/quotes/server", "!@/modules/bookings/client", "!@/modules/operations/client", "!@/modules/admin-access/client", "!@/modules/admin-access/server", "!@/modules/customers/client", "!@/modules/customers/server", "!@/modules/admin-dashboard/client", "!@/modules/admin-dashboard/server"],
+  group: ["@/modules/*/**", "!@/modules/enquiries/client", "!@/modules/enquiries/domain", "!@/modules/quotes/client", "!@/modules/quotes/server", "!@/modules/bookings/client", "!@/modules/bookings/server", "!@/modules/operations/client", "!@/modules/admin-access/client", "!@/modules/admin-access/server", "!@/modules/customers/client", "!@/modules/customers/server", "!@/modules/admin-dashboard/client", "!@/modules/admin-dashboard/server"],
   message: "Import through a declared public index, client or server entry; use relative imports inside the same module.",
 };
 

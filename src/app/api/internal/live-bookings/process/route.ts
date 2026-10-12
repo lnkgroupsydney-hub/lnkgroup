@@ -1,5 +1,5 @@
 import { timingSafeEqual } from 'node:crypto'
-import { processLiveBookingDeliveryBatch } from '@/modules/quotes/server'
+import { processLiveBookingMaintenance } from '@/modules/bookings/server'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -15,7 +15,7 @@ export async function GET(request: Request) {
   const headers = { 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' }
   if (!authenticated) return Response.json({ error: 'Unauthorized' }, { status: 401, headers })
   try {
-    const result = await processLiveBookingDeliveryBatch()
+    const result = await processLiveBookingMaintenance()
     return Response.json(result, { status: result.storageErrors ? 503 : 200, headers })
   } catch { return Response.json({ error: 'Saved booking delivery could not finish.' }, { status: 503, headers }) }
 }
