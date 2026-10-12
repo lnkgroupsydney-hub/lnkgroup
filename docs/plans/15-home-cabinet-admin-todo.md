@@ -1,5 +1,7 @@
 # 메인 → Cabinet → 회사 관리 웹 제작 TODO
 
+**2026-10-13 최신 Git 통합:** EMS 예약 검토·확정 작업 커밋 `acf2faa`를 `main`에 병합했다(`3bddc59`). 병합 트리는 검증한 작업 브랜치와 동일하며 회사 `origin`에 main과 `codex/ems-confirmed-booking-calendar-20261013`을 push했다. 후속 문서 커밋은 이 통합 기록만 갱신한다.
+
 **2026-10-13 최신 구현 — EMS 회사 제안·확정 예약:** [43번 계획](43-ems-confirmed-booking-calendar.md)의 최종 금액·여러 작업 구간·별도 인증 고객 확인·DB 원자 점유·Google 독립 검증·고객 날짜 차단·고정 안내/대사를 새 `codex/ems-confirmed-booking-calendar-20261013`에 구현했다. 전체 최종 **678/678**, 실제 PostgreSQL 17의 별도 세션 경합 **8/8**, lint·타입·빌드가 통과했다. 회사 신규 migration·익명 차단·원본 보존·Production READY를 확인했다. 회사 Chrome에서 **A$2,900 + GST A$290 = A$3,190**, **20–21일 종일 +23일 09–13시** 초안을 저장하고, 시작일 다음 날인 21일의 임시 busy 충돌과 발행 비활성화를 확인했다. 회사 Chrome의 **제안 발행 → 고객 OTP 복구/전체 금액·기간 확인 → EMS 확정**과 실제 Google 두 구간/DB/고정 PDF hash 일치를 추가 확인했다. **Gmail 실제 3통·확정 PDF 2페이지·고객 복구/320·393px·고객 B의 20/21/23일 선택 차단·22일 저장·오래된 날짜 저장/제출 409 인수까지 완료**했다. 예정 시각 자동 cron 실행과 확정 Google event의 실제 변경 주입은 미실행이며, 확인용 가상 예약의 20·21·23일 점유는 유지했다. [검증 기록](../verification/2026-10-13-ems-confirmed-booking-calendar.md). 이번 배포와 Git 커밋·병합·push는 구분한다.
 
 - [x] 운영 요청/데모 확정 경계·확정 구간 읽기 기반 분석, 43번 순차 계획 작성.

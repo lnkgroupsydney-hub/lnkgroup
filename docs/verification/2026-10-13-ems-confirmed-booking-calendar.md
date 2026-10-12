@@ -7,7 +7,7 @@
 ## 구현과 배포
 
 - 계획: [43번 회사 예약 검토·확정](../plans/43-ems-confirmed-booking-calendar.md).
-- 브랜치: `codex/ems-confirmed-booking-calendar-20261013`, 시작 기준 회사 `main@7f801b6`. 이번 기능의 커밋·main 병합·push는 아직 수행하지 않았다.
+- 브랜치: `codex/ems-confirmed-booking-calendar-20261013`, 시작 기준 회사 `main@7f801b6`. 후속 사용자 요청으로 구현 커밋 `acf2faa`를 main에 충돌 없이 병합했다(`3bddc59`). 병합 직후 트리는 검증한 작업 브랜치와 동일하며 회사 `origin`에 main과 작업 브랜치를 함께 push했다. 이 후속 Git 통합 기록은 문서만 갱신하고 기존 자동 검사·회사 환경 인수 결과를 재사용한다.
 - 회사 초안/충돌 인수 배포 `https://lnkgroup-bftv4uvif-lnkgroupsydney-8702.vercel.app` READY. 후속 UI 회귀 보완의 최종 Production 배포는 `dpl_8FsJRdbxZx76fSwm7nL3t3LxFdgm`, `https://lnkgroup-4pwuuxlic-lnkgroupsydney-8702.vercel.app`, READY. 운영 주소는 `https://www.lnkgroupsydney.com.au`다. 배포 성공과 Git 통합은 별도 상태다.
 - 운영 대상은 `lnkgroupsydney@gmail.com` 기본 Calendar 단일 자원이다. 기존 시험 Calendar와 transparent 예약 요청 표식은 보존한다.
 - EMS 견적 상세와 운영 예약 화면에서 공급가·GST·총액·범위·조정 사유·종일/시간별 여러 구간을 저장한다. 금액은 정수 cents로 계산하고 종일 종료는 exclusive end, 화면의 마지막 작업일은 포함으로 표시한다.

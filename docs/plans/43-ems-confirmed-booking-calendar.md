@@ -2,6 +2,8 @@
 
 2026-10-13 · Australia/Sydney · 조사 기준 `main = origin/main = 7f801b6`
 
+**Git 통합 완료:** 작업 브랜치 구현 커밋 `acf2faa` → main 병합 `3bddc59`. 병합 트리는 검증한 작업 브랜치와 동일하고 회사 `origin`에 두 브랜치를 push했다. 후속 문서 갱신은 이 실행 기록만 추가하며 코드·DB·Calendar를 변경하지 않는다.
+
 상태: **코드·전체 최종 678개 검사·실제 PostgreSQL 별도 세션 경합 8개 통과, 회사 DB/Production 적용과 EMS 초안·후속 작업일 충돌 확인 완료.** `codex/ems-confirmed-booking-calendar-20261013`에서 구현했다. 회사 Chrome 제안 발행·고객 재인증/전체 일정 확인·EMS 확정과 Google 두 실제 구간/DB/고정 PDF hash 대조까지 완료했다. Gmail 실제 3통·확정 PDF 2페이지·고객 복구/320·393px까지 확인했다. 고객 B의 실제 20/21/23일 차단·22일 저장과 blocked 날짜 PUT/stale submit 409까지 완료했다. 예정 시각 cron 실행과 확정 event의 실제 변경 주입은 미실행이며, 확인용 가상 예약의 20·21·23일 점유는 유지했다. 완료 범위와 남은 실검증은 [10월 13일 검증 기록](../verification/2026-10-13-ems-confirmed-booking-calendar.md)을 따른다.
 
 [42번 예약 요청](42-live-estimate-booking-request-calendar.md)의 다음 단계다. [전체 흐름](41-domain-live-quote-booking-plan.md)·[TODO](15-home-cabinet-admin-todo.md)·[기존 수동 기간/확정 규칙](33-admin-booking-confirmation-day-plan.md)을 함께 따른다.
