@@ -2,12 +2,14 @@
 
 2026-10-12 · Australia/Sydney · 착수 기준 `main = origin/main = 31e7387` · 작업 `codex/domain-customer-quote-auth-20261012`
 
-상태: **1~2단계 구현·회사 설정/DB·배포·자동 검증 및 회사 Chrome 실제 인수 완료. OTP/직원 로그인·동일 ID 이전·www 저장/5장 AI·EMS/DB 대조·고객 로그아웃/직원 세션 유지·별도 고객 세션 재인증/동일 사진·금액 복구 확인. 실제 다른 물리 기기·미가입 신규 이메일/signup은 미검증. 3단계 이후는 미구현.** 아래 최초 조사 결과는 당시 상태로 보존한다.
+상태: **1~2단계 인수 완료. 3~7단계 중 예상본 승인·Google 날짜 차단/희망일 선택·예약 요청 확인 서명·EMS 저장·PDF 메일·Google 확정 대기 일정은 [42번 구현](42-live-estimate-booking-request-calendar.md)으로 완료했다. 회사 현장 가격 조정·실제 기간/자원·정식 약관·재동의·최종 확정과 배달/반송 webhook은 후속이다.** 실제 다른 물리 기기·미가입 신규 이메일/signup은 미검증이며 아래 최초 조사 결과는 당시 상태로 보존한다.
 
 [전체 운영 계획](37-live-quote-ems-booking-implementation.md) · [AI 예상 견적](40-ai-quantity-provisional-estimates.md) · [TODO](15-home-cabinet-admin-todo.md)
 
 ## 0. 후속 구현·검증 상태 — 2026-10-12
 
+- **예약 요청 연동 인수:** `main@418e03d`에서 분기한 `codex/live-quote-booking-calendar-20261012`에 [42번 범위](42-live-estimate-booking-request-calendar.md)를 구현하고 회사 DB/Production에 적용했다. 회사 Chrome에서 기존 사진 5장·A$3,135 예상본 승인 → 예약일 차단 → 날짜 변경 시 서명 무효화 → 확인 서명·제출 → EMS 동일 원본·Gmail PDF 수신·Google 기본 Calendar 일정 1개를 확인했다. 전체 612/612, 관련 54/54 및 lint·타입·빌드 통과. 회사 기간 확인 전 요청은 날짜를 점유하지 않는다. 제출 직후 처리와 일 1회 백업 cron은 연결했으며 예약 시각의 자동 cron 실행은 미검증이다. [실행 기록](../verification/2026-10-12-live-booking-request-calendar.md).
+- **Calendar 통일:** 같은 계정의 기본 Calendar와 `L&K Integration`은 서로 다른 ID다. 새 운영 날짜 조회/기록을 `LIVE_QUOTE_CALENDAR_ID=lnkgroupsydney@gmail.com` 기본 Calendar로 통일했고 기존 시험 일정·연결은 보존했다. 아래 1~2단계 시점의 운영 전환 대기 기록은 당시 결과다.
 - `main@31e7387`에서 새 `codex/domain-customer-quote-auth-20261012`를 만들고 1~2단계를 구현했다. 회사 브라우저 인수와 CLI 배포 후 사용자 요청으로 `92f76a8`을 커밋하고 `main`에 병합했다(`6dd42ea`). 회사 `origin`만 push 대상으로 사용한다.
 - www 기준 origin을 반영해 `GET /api/quote/requests` **200**을 확인했다. 회사 발신 설정은 `COMPANY_EMAIL_FROM=quotes@lnkgroupsydney.com.au`, Reply-To는 `lnkgroupsydney@gmail.com`이다. 기존 시험 발신/회사 수신 제한과 직원 발신을 분리했다.
 - 사용자 저장으로 회사 Supabase custom SMTP를 연결하고 Site URL을 새 www, 고객 OTP를 8자리/900초와 코드 템플릿으로 설정했다. Google OAuth callback도 새 www의 `/api/google/callback`으로 수정·저장했다. 설정 완료와 실제 수신·로그인 성공은 별도 판정한다.
@@ -51,7 +53,7 @@
 
 ## 3. 순차 구현 단위와 인수 기준
 
-아래 항목은 합의한 요구사항·완료 기준이다. 1~2단계는 후속 승인으로 구현/설정했으며 최신 실제 인수 상태를 각 단위 앞과 0절에 기록한다. 3단계 이후는 구현 전 명세다.
+아래 항목은 합의한 요구사항·완료 기준이다. 1~2단계와 3~7단계의 예약 요청 부분을 구현했으며 최신 인수는 0절·42번 계획을 따른다. 3~7단계의 회사 최종 조정·정식 계약/확정 등 남은 범위를 전체 완료로 해석하지 않는다.
 
 ### 1단계 — 새 주소에서 저장·직원 로그인·메일 기반 정상화
 

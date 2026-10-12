@@ -7,6 +7,8 @@ import { mergeSelectedAddress, type AddressKind, type AddressSelection } from '@
 import type { LiveQuoteRequest } from '../index';
 import { LiveRequestDetails } from './request-details';
 import { LivePhotoWorkspace } from './live-photo-workspace';
+import { BookingFlowPanel } from './booking-flow-panel';
+import type { PublicAnalysisJob } from '../domain/photo-workspace';
 import { CustomerAccessPanel } from './customer-access-panel';
 import { LegacyQuoteRecovery } from './legacy-quote-recovery';
 import { liveRequest, parseLiveRequest, LiveRequestError, intentLabels, surfaceLabels, withWritingSessionLock } from './request-client';
@@ -35,6 +37,7 @@ export function LiveQuoteForm({ previousDemoAvailable = false, legacyRecoveryMod
   const [step, setStep] = useState(0), [ready, setReady] = useState(false), [busy, setBusy] = useState(false);
   const [error, setError] = useState(''), [notice, setNotice] = useState(''), [conflict, setConflict] = useState(false), [expired, setExpired] = useState(false);
   const [pending, setPending] = useState<Pending | null>(null);
+  const [bookingBusy, setBookingBusy] = useState(false), [bookingReadOnly, setBookingReadOnly] = useState(false), [latestAnalysis, setLatestAnalysis] = useState<PublicAnalysisJob | null>(null);
   const [authBusy, setAuthBusy] = useState(false), [photoBusy, setPhotoBusy] = useState(false), [verifiedEmail, setVerifiedEmail] = useState<string | null>(null);
   const initial = useRef<Promise<LiveQuoteRequest | null> | null>(null), alive = useRef(false), changing = useRef(false);
   const generation = useRef(0);
@@ -104,13 +107,13 @@ export function LiveQuoteForm({ previousDemoAvailable = false, legacyRecoveryMod
     if (!saved || pending || changing.current || conflict || expired) return;
     void send({ path: '/api/quote/requests/review', method: 'POST', body: JSON.stringify({ expectedRevision: saved.revision, idempotencyKey: crypto.randomUUID() }), nextStep: 2 });
   }
-  const locked = legacyRecoveryMode || !ready || busy || Boolean(pending) || conflict || expired;
+  const locked = bookingReadOnly || legacyRecoveryMode || !ready || busy || Boolean(pending) || conflict || expired;
   const hasUnsavedChanges = JSON.stringify(values) !== JSON.stringify(saved ? valuesOf(saved) : EMPTY);
   function restoreCustomerRequest(request: LiveQuoteRequest) {
-    generation.current++; setError(''); setNotice('Your saved quote has been restored through your verified email.'); setPhotoBusy(false); adopt(request);
+    generation.current++; setError(''); setNotice('Your saved quote has been restored through your verified email.'); setPhotoBusy(false); setBookingBusy(false); setBookingReadOnly(false); setLatestAnalysis(null); adopt(request);
   }
   function clearPrivateAccess() {
-    generation.current++; setSaved(null); setValues(EMPTY); setStep(0); setPending(null); setConflict(false); setExpired(true); setReady(true); setPhotoBusy(false);
+    generation.current++; setBookingBusy(false); setBookingReadOnly(false); setLatestAnalysis(null); setSaved(null); setValues(EMPTY); setStep(0); setPending(null); setConflict(false); setExpired(true); setReady(true); setPhotoBusy(false);
   }
   function customerSignedOut() {
     clearPrivateAccess(); setExpired(false); setReady(false); setVerifiedEmail(null); setError(''); void restore();
@@ -122,7 +125,7 @@ export function LiveQuoteForm({ previousDemoAvailable = false, legacyRecoveryMod
       <p className="lq-kicker">Kitchen Cabinet Painting</p><h1 id="live-quote-title">Tell us about your cabinets</h1>
       <p>Save your details, upload cabinet photos and receive an AI assessment of the visible condition and proposed work.</p>
       <p className="lq-notice">Cabinet painting starts from <strong>A$1,650 incl GST</strong> (A$1,500 + GST). Upload your photos for a saved estimate and work details. Estimates may change after an on-site inspection. Saving or analysing does not confirm a contract or booking.</p>
-      {legacyRecoveryMode ? <LegacyQuoteRecovery request={saved} companyBaseUrl={companyBaseUrl} /> : <CustomerAccessPanel request={saved} disabled={busy || photoBusy || Boolean(pending)} hasUnsavedChanges={hasUnsavedChanges} onRestored={restoreCustomerRequest} onPrivateAccessLost={clearPrivateAccess} onSignedOut={customerSignedOut} onIdentityChange={setVerifiedEmail} onBusyChange={setAuthBusy} />}
+      {legacyRecoveryMode ? <LegacyQuoteRecovery request={saved} companyBaseUrl={companyBaseUrl} /> : <CustomerAccessPanel request={saved} disabled={busy || photoBusy || bookingBusy || Boolean(pending)} hasUnsavedChanges={hasUnsavedChanges} onRestored={restoreCustomerRequest} onPrivateAccessLost={clearPrivateAccess} onSignedOut={customerSignedOut} onIdentityChange={setVerifiedEmail} onBusyChange={setAuthBusy} />}
       <ol className="lq-progress" aria-label="Request progress">{['Your details', 'Service details', 'Photos and analysis'].map((label, index) => <li key={label} aria-current={step === index ? 'step' : undefined}>{index + 1}. {label}</li>)}</ol>
       {!ready && !error && <p role="status">Opening your private request…</p>}
       {error && <div className="lq-error" ref={errorBox} tabIndex={-1} role="alert"><p>{error}</p>
@@ -134,7 +137,7 @@ export function LiveQuoteForm({ previousDemoAvailable = false, legacyRecoveryMod
       <p className="lq-status" role="status" aria-live="polite">{notice}</p>
       {expired && !error && <p className="lq-notice">Your private access has ended. Verify your email above to reopen a linked quote.</p>}
       {hasUnsavedChanges && !locked && <button type="button" className="secondary" disabled={authBusy || photoBusy} onClick={() => { setValues(saved ? valuesOf(saved) : EMPTY); setNotice('Unsaved form changes discarded. Saved company records have not changed.'); }}>Discard unsaved form changes</button>}
-      {legacyRecoveryMode ? saved && <LiveRequestDetails request={saved} /> : step < 2 ? <form onSubmit={save}><fieldset disabled={locked || authBusy} className="lq-fields">
+      {legacyRecoveryMode ? saved && <LiveRequestDetails request={saved} /> : step < 2 ? <form onSubmit={save}><fieldset disabled={locked || authBusy || bookingBusy} className="lq-fields">
         <h2 ref={heading} tabIndex={-1}>{step === 0 ? '1. Your details' : '2. Service details'}</h2>
         {step === 0 ? <>
           <p>Fields marked * are required. This browser can continue an unlinked saved request for up to 24 hours. {verifiedEmail ? `Verified email: ${verifiedEmail}. Link this specific saved quote above to keep access.` : 'Verify the email of your saved quote above to reopen it later.'}</p>
@@ -165,9 +168,10 @@ export function LiveQuoteForm({ previousDemoAvailable = false, legacyRecoveryMod
       </fieldset></form> : saved && !expired ? <div>
         <h2 ref={heading} tabIndex={-1}>{saved.status === 'review_requested' ? 'Company review requested' : '3. Photos and analysis'}</h2>
         <LiveRequestDetails request={saved} />
-        <LivePhotoWorkspace key={saved.id} request={saved} disabled={locked || authBusy} onBusyChange={setPhotoBusy} onSaved={value => { if (value.id === saved.id) { setSaved(value); setValues(valuesOf(value)); } }} onAccessLost={() => { clearPrivateAccess(); setError('Your writing access has ended. Private photos and analysis have been cleared from this screen. Verify your email above to reopen a linked quote.'); }} />
+        <LivePhotoWorkspace key={`${saved.id}:${verifiedEmail ?? 'guest'}`} request={saved} readOnly={bookingReadOnly} onAnalysisChange={setLatestAnalysis} disabled={locked || authBusy || bookingBusy} onBusyChange={setPhotoBusy} onSaved={value => { if (value.id === saved.id) { setSaved(value); setValues(valuesOf(value)); } }} onAccessLost={() => { clearPrivateAccess(); setError('Your writing access has ended. Private photos and analysis have been cleared from this screen. Verify your email above to reopen a linked quote.'); }} />
         <p className="lq-notice">To keep this quote and its photos for later, use “Verify email and keep this quote” above. Email verification does not approve the estimate or book a date.</p>
-        {saved.status === 'draft' ? <><p>You can correct your saved details before requesting another analysis, or ask the company to review this request.</p><div className="lq-actions"><button type="button" className="secondary" disabled={locked || authBusy || photoBusy} onClick={() => go(0)}>Edit contact details</button><button type="button" className="secondary" disabled={locked || authBusy || photoBusy} onClick={() => go(1)}>Edit service details</button><button type="button" disabled={locked || authBusy || photoBusy || !saved.payload.service} onClick={requestReview}>{busy ? 'Sending…' : 'Request company review'}</button></div></> : <p className="lq-notice">Your saved information and any photo estimate are awaiting company review. They do not confirm a signed contract or booking. Reopen this request above to add photos or correct the saved details.</p>}
+        <BookingFlowPanel key={`${saved.id}:${verifiedEmail ?? 'guest'}`} request={saved} latest={latestAnalysis} verifiedEmail={verifiedEmail} disabled={busy || authBusy || photoBusy || conflict || expired || Boolean(pending)} onBusyChange={setBookingBusy} onReadOnlyChange={setBookingReadOnly} onAccessLost={() => { clearPrivateAccess(); setError('Your verified request access ended. Verify your email above to restore the saved request.'); }} />
+        {bookingReadOnly ? <p className="lq-notice">This submitted request is read only. Its saved receipt appears above.</p> : saved.status === 'draft' ? <><p>You can correct your saved details before requesting another analysis, or ask the company to review this request.</p><div className="lq-actions"><button type="button" className="secondary" disabled={locked || authBusy || photoBusy || bookingBusy} onClick={() => go(0)}>Edit contact details</button><button type="button" className="secondary" disabled={locked || authBusy || photoBusy || bookingBusy} onClick={() => go(1)}>Edit service details</button><button type="button" disabled={locked || authBusy || photoBusy || bookingBusy || !saved.payload.service} onClick={requestReview}>{busy ? 'Sending…' : 'Request company review'}</button></div></> : <p className="lq-notice">Your saved information and any photo estimate are awaiting company review. They do not confirm a signed contract or booking. Reopen this request above to add photos or correct the saved details.</p>}
       </div> : null}
       {previousDemoAvailable && <details className="lq-previous"><summary>Previous demonstration requests</summary><p><a href="/quote/start?service=cabinet-painting&mode=demo">Open the earlier demonstration workspace</a>. Its saved photos and documents remain separate.</p></details>}
     </section>

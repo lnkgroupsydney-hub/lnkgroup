@@ -28,7 +28,7 @@ function releaseCapture(canvas: HTMLCanvasElement | null, source: number | "keyb
   canvas.releasePointerCapture(source);
 }
 
-export function SignaturePad({ strokes, onChange, disabled }: { strokes: SignaturePoint[][]; onChange: (value: SignaturePoint[][]) => void; disabled: boolean }) {
+export function SignaturePad({ strokes, onChange, disabled, label = 'Draw your demonstration signature *' }: { strokes: SignaturePoint[][]; onChange: (value: SignaturePoint[][]) => void; disabled: boolean; label?: string }) {
   const signatureId = useId();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const inputRef = useRef(createSignatureInput());
@@ -87,7 +87,7 @@ export function SignaturePad({ strokes, onChange, disabled }: { strokes: Signatu
   }
 
   return <div className="demo-signature">
-    <p id={`${signatureId}-label`}><strong>Draw your demonstration signature *</strong></p>
+    <p id={`${signatureId}-label`}><strong>{label}</strong></p>
     <p id={`${signatureId}-help`} className="enquiry-hint">Use your mouse or finger. Keyboard: focus the pad, use arrows to position the pen, press Space to start, arrows to draw, then Enter to finish a stroke.</p>
     <canvas ref={canvasRef} width={800} height={240} tabIndex={disabled ? -1 : 0} aria-labelledby={`${signatureId}-label`} aria-describedby={`${signatureId}-help`} aria-disabled={disabled} onKeyDown={keyboard}
       onPointerDown={event => {

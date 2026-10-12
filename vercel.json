@@ -1,0 +1,6 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "crons": [
+    { "path": "/api/internal/live-bookings/process", "schedule": "0 3 * * *" }
+  ]
+}
