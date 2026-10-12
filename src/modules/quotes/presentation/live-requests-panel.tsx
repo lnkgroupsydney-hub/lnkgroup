@@ -1,6 +1,8 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
+import { LiveCompanyBookingEditor } from '@/modules/bookings/client';
+import { useWorkspaceNavigation } from '@/shared/ui/admin-workspace-state';
 import type { LiveQuoteRequestPage, LiveQuoteRequestDetail, LiveQuoteAudit } from '../index';
 import { LiveRequestDetails } from './request-details';
 import { StaffPhotoWorkspace } from './staff-photo-workspace';
@@ -41,6 +43,7 @@ function parseAudit(value: unknown): LiveQuoteAudit {
   return value as unknown as LiveQuoteAudit;
 }
 export function LiveQuoteRequestsPanel({ onAccessLost }: { onAccessLost: () => void }) {
+  const navigate = useWorkspaceNavigation();
   const [list, setList] = useState<LiveQuoteRequestPage | null>(null), [detail, setDetail] = useState<LiveQuoteRequestDetail | null>(null);
   const [search, setSearch] = useState(''), [query, setQuery] = useState(''), [listError, setListError] = useState(''), [detailError, setDetailError] = useState('');
   const [listBusy, setListBusy] = useState(true), [detailBusy, setDetailBusy] = useState(false), [blocked, setBlocked] = useState(false);
@@ -92,11 +95,11 @@ export function LiveQuoteRequestsPanel({ onAccessLost }: { onAccessLost: () => v
     {list && <>
       <p>{list.total} matching {list.total === 1 ? 'request' : 'requests'} · Page {list.page}</p>
       {!list.requests.length && <p>No saved requests match this search.</p>}
-      <ul className="lq-admin-list">{list.requests.map(request => <li key={request.id}><div><strong>{request.payload.contact.name} · {request.reference}</strong><span>{request.status === 'review_requested' ? 'Review requested' : 'Details saved'} · {request.payload.service ? 'Service details saved' : 'Contact only'}</span><span>{request.payload.contact.email} · {displayTime(request.savedAt)} (Sydney)</span></div><button type="button" className="secondary" onClick={() => void loadDetail(request.id)}>View request<span className="sr-only"> {request.reference}</span></button></li>)}</ul>
+      <ul className="lq-admin-list">{list.requests.map(request => <li key={request.id}><div><strong>{request.payload.contact.name} · {request.reference}</strong><span>{request.status === 'review_requested' ? 'Review requested' : 'Details saved'} · {request.payload.service ? 'Service details saved' : 'Contact only'}</span><span>{request.payload.contact.email} · {displayTime(request.savedAt)} (Sydney)</span></div><button type="button" className="secondary" onClick={() => navigate(() => void loadDetail(request.id))}>View request<span className="sr-only"> {request.reference}</span></button></li>)}</ul>
       <div className="lq-actions"><button type="button" className="secondary" disabled={listBusy || list.page <= 1} onClick={() => void loadList(query, list.page - 1)}>Previous page</button><button type="button" className="secondary" disabled={listBusy || list.page * list.pageSize >= list.total} onClick={() => void loadList(query, list.page + 1)}>Next page</button></div>
     </>}
     {detailBusy && <p role="status">Loading request details…</p>}
     {detailError && <div className="lq-error" role="alert"><p>{detailError}</p><button type="button" disabled={detailBusy} onClick={() => { if (selected.current) void loadDetail(selected.current); }}>Retry request details</button></div>}
-    {detail && <section className="lq-admin-detail" aria-labelledby="live-request-detail-title"><h3 ref={detailTitle} tabIndex={-1} id="live-request-detail-title">{detail.request.reference}</h3><LiveRequestDetails request={detail.request} /><p className="lq-notice">{detail.request.customerId ? 'A client record is linked.' : 'No client record has been linked automatically.'} Photo-based estimates are subject to scope confirmation and an on-site inspection. No contract or booking is confirmed by an AI assessment.</p><StaffBookingDetails key={detail.request.id} requestId={detail.request.id} onAccessLost={() => fail(new LiveRequestError(403, 'Company access ended.'), setDetailError)} /><StaffPhotoWorkspace key={detail.request.id} requestId={detail.request.id} onAccessLost={() => fail(new LiveRequestError(403, 'Company access ended.'), setDetailError)} /><h4>Saved history</h4><ol className="lq-audit">{detail.audit.map(item => <li key={item.id}>{item.action === 'request_review' ? 'Company review requested' : 'Details saved'} · Revision {item.revision} · {displayTime(item.createdAt)} (Sydney) · Customer writing session</li>)}</ol></section>}
+    {detail && <section className="lq-admin-detail" aria-labelledby="live-request-detail-title"><h3 ref={detailTitle} tabIndex={-1} id="live-request-detail-title">{detail.request.reference}</h3><LiveRequestDetails request={detail.request} /><p className="lq-notice">{detail.request.customerId ? 'A client record is linked.' : 'No client record has been linked automatically.'} Photo-based estimates are subject to scope confirmation and an on-site inspection. No contract or booking is confirmed by an AI assessment.</p><StaffBookingDetails key={detail.request.id} requestId={detail.request.id} onAccessLost={() => fail(new LiveRequestError(403, 'Company access ended.'), setDetailError)} /><StaffPhotoWorkspace key={detail.request.id} requestId={detail.request.id} onAccessLost={() => fail(new LiveRequestError(403, 'Company access ended.'), setDetailError)} /><LiveCompanyBookingEditor key={`company:${detail.request.id}`} requestId={detail.request.id} onAccessLost={() => fail(new LiveRequestError(403, 'Company access ended.'), setDetailError)} /><h4>Saved history</h4><ol className="lq-audit">{detail.audit.map(item => <li key={item.id}>{item.action === 'request_review' ? 'Company review requested' : 'Details saved'} · Revision {item.revision} · {displayTime(item.createdAt)} (Sydney) · Customer writing session</li>)}</ol></section>}
   </section>;
 }

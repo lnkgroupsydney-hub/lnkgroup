@@ -1,5 +1,7 @@
 # L&K Group 웹 서비스 구축 계획
 
+**2026-10-13 최신 구현 — EMS 회사 제안·확정 예약:** [43번 계획](docs/plans/43-ems-confirmed-booking-calendar.md)에 따라 회사 최종 금액·여러 실제 작업 기간·별도 고객 확인·DB 원자 점유·Google 확정 일정/독립 검증·고객 날짜 차단·고정 PDF/메일·변경 대사를 구현했다. 전체 최종 **678/678**, 실제 PostgreSQL 17 별도 세션 경합 **8/8**, lint·타입·빌드 통과. 회사 Supabase 적용·익명 접근 차단·원본 보존과 Production READY를 확인했다. 회사 Chrome에서 **A$3,190 GST 포함 / 10월 20–21일 종일 +23일 09–13시** 초안을 저장하고, 시작일 다음 날의 Google 충돌과 발행 차단을 확인했다. 회사 Chrome에서 **발행 → 고객 OTP 복구/전체 금액·기간 별도 확인 → EMS 확정**까지 실행하고 실제 Google 두 구간·DB 점유·원본/PDF hash를 대조했다. **Gmail 실제 3통·확정 PDF 2페이지·고객 복구/320·393px·고객 B의 20/21/23일 선택 차단·22일 저장·오래된 날짜 저장/제출 409 인수까지 완료**했다. 예정 시각 자동 cron 실행과 확정 Google event의 실제 변경 주입은 미실행이며, 확인용 가상 예약의 20·21·23일 점유는 유지했다. 브랜치는 `codex/ems-confirmed-booking-calendar-20261013`이며 이번 배포와 Git 통합은 구분한다. 일일 백업 cron은 실시간 동기화가 아니다. [검증 기록](docs/verification/2026-10-13-ems-confirmed-booking-calendar.md).
+
 **2026-10-12 최신 구현 — 예상 견적 승인·예약 요청·회사 Calendar:** [42번 계획](docs/plans/42-live-estimate-booking-request-calendar.md)에 따라 숫자 예상본 승인 → Google 예약일 차단/희망일 선택 → 예약 요청 확인 서명·제출 → EMS 저장·고정 PDF·회사 메일 → 회사 기본 Calendar의 확정 대기 일정까지 구현·배포했다. 새 운영 흐름은 `lnkgroupsydney@gmail.com` 기본 Calendar로 통일하며 기존 시험 캘린더 자료는 보존한다. 회사 Chrome에서 **A$3,135 / 10월 20일 / REQUEST-070EEB13C91F**의 동일 저장본·Gmail 실제 PDF 수신·Google 일정 1개와 날짜 변경 시 재서명·새로고침 복구를 확인했다. 전체 **612/612개**, 관련 **54/54개**, lint·타입·빌드 통과. 제출 직후 처리와 하루 한 번의 백업 cron을 설정했으며 예약 시각의 cron 자동 실행은 아직 미검증이다. **회사 실제 기간·최종 가격/약관·재동의·확정 예약은 후속**이다. 작업 브랜치 `codex/live-quote-booking-calendar-20261012`의 회사 Vercel 배포와 Git 커밋/병합은 구분한다. [검증 기록](docs/verification/2026-10-12-live-booking-request-calendar.md).
 
 **2026-10-12 최신 Git 통합:** 예약 요청 연동 작업 브랜치 커밋 `9e7f728`을 `main`에 충돌 없이 병합했다(`ce5c565`). 병합 트리는 검증한 작업 브랜치와 동일하다. 회사 원격은 `origin` (`lnkgroupsydney-hub/lnkgroup`)이며 개인 원격은 사용하지 않는다. 앞선 고객 인증/복구 통합 이력은 `92f76a8` → `6dd42ea`다.
@@ -142,6 +144,9 @@ npm run dev -- --port 3002
 | [38 사진 AI 예상 견적](docs/plans/38-ai-photo-estimate-and-ems-plan.md) | 5개 촬영 범주·AI 관찰·EMS 저장·운영 분석 실행과 남은 인수 |
 | [39 Sydney 초기 가격 v1](docs/plans/39-sydney-cabinet-pricing-v1.md) | 기존 단가와 v1 검증 기록 |
 | [40 AI 수량 추정 가견적](docs/plans/40-ai-quantity-provisional-estimates.md) | 현행 AI 추정 수량·기준 사진 범위·잠정 금액·현장 조정·v2 계약 |
+| [41 회사 도메인·운영 Quote 흐름](docs/plans/41-domain-live-quote-booking-plan.md) | 회사 도메인·인증/복구부터 운영 예약까지의 연결 순서 |
+| [42 실제 예약 요청·Calendar](docs/plans/42-live-estimate-booking-request-calendar.md) | 예상본 승인·희망일·예약 요청 확인 서명·고정 발송·확정 대기 일정 |
+| [43 EMS 확정 예약·Calendar](docs/plans/43-ems-confirmed-booking-calendar.md) | 회사 금액/실제 기간·별도 고객 확인·원자 점유·확정 Google 일정·고객 차단·대사 |
 
 클라이언트 전달본은 [Word 구현계획서](deliverables/LK_Group_Client_Implementation_Plan_KO.docx)이며, 편집 가능한 원문은 [클라이언트 제안서 Markdown](docs/client-proposal.md)이다. 기술 기준은 위 개발 문서가 원본이며, 클라이언트 문서를 변경할 때 관련 개발 문서도 함께 갱신한다. 문서 자체의 확인 결과는 [검증 기록](docs/document-validation.md)에 정리했다.
 
