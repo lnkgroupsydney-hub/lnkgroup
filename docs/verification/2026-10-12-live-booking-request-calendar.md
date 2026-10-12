@@ -5,6 +5,7 @@
 ## 구현·배포
 
 - 브랜치: `codex/live-quote-booking-calendar-20261012`, 기준 `main@418e03d`. 이번 기능은 작업 폴더에서 회사 Vercel에 배포했으며 Git 병합/푸시와 구분한다.
+- 후속 Git 요청으로 기능 커밋 `9e7f728`을 만들고 `main`에 `ce5c565`로 병합했다. 충돌이 없으며 병합 결과가 검증한 작업 브랜치와 동일함을 `git diff --exit-code`로 확인했다. 이 기록 수정은 문서만 변경하며 검증된 코드에는 영향이 없다.
 - 회사 프로젝트: `prj_GVXTidyYCj4zapcEkRpZWOsaXHq6`, 팀 `team_wxpVLa8lqL0xuCzFcAyIXJnv`.
 - 최초 기능 인수 배포 `dpl_CsmaREhzouhMQXYM7ryDtw68zQtW` READY. EMS 목록의 부정확한 “In progress” 설명을 “Details saved”와 상세 상태 안내로 수정한 최종 배포 `dpl_GdtvDY3CL48orKGaZs1pWNhg8A5L` READY.
 - 주소: `https://www.lnkgroupsydney.com.au/quote/start?service=cabinet-painting`.

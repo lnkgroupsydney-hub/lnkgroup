@@ -2,7 +2,7 @@
 
 **2026-10-12 최신 구현 — 예약 요청 연동 인수 완료:** [42번 계획](42-live-estimate-booking-request-calendar.md)의 예상본 승인 → 회사 기본 Google Calendar 날짜 차단/선택 → 예약 요청 확인 서명·제출 → EMS·고정 PDF·회사 메일·확정 대기 일정을 구현하고 회사 DB/배포에 적용했다. 회사 Chrome에서 **REQUEST-070EEB13C91F / A$3,135 / 10월 20일**의 Gmail 실제 PDF 수신·Calendar 1개·EMS/DB 일치, 날짜 변경 시 재서명·새로고침 복구를 확인했다. 전체 **612/612개**, 관련 **54/54개**, lint·타입·빌드 통과. 일 1회 백업 cron 등록/인증 호출까지 확인했으며 예약 시각 자동 호출은 미검증이다. **회사 실제 기간·최종 가격/약관·재동의·확정 예약은 후속**이다. [검증 기록](../verification/2026-10-12-live-booking-request-calendar.md). 작업 브랜치의 배포와 Git 병합/푸시는 구분한다.
 
-**2026-10-12 Git 통합:** 작업 브랜치 커밋 `92f76a8`을 `main`에 충돌 없이 병합했다(`6dd42ea`). 병합 결과는 검증한 작업 브랜치와 동일하다. 회사 원격은 `origin` (`lnkgroupsydney-hub/lnkgroup`)이며 개인 원격은 사용하지 않는다.
+**2026-10-12 최신 Git 통합:** 예약 요청 연동 작업 브랜치 커밋 `9e7f728`을 `main`에 충돌 없이 병합했다(`ce5c565`). 병합 트리는 검증한 작업 브랜치와 동일하다. 회사 원격은 `origin` (`lnkgroupsydney-hub/lnkgroup`)이며 개인 원격은 사용하지 않는다. 앞선 고객 인증/복구 통합 이력은 `92f76a8` → `6dd42ea`다.
 
 **2026-10-12 최신 구현 — 1~2단계 구현·회사 브라우저 인수 완료:** [41번 구현계획](41-domain-live-quote-booking-plan.md)의 도메인/직원 메일 호환·고객 이메일 인증/복구를 `codex/domain-customer-quote-auth-20261012`에 구현했다. www 기준 origin·회사 발신/Reply-To·Supabase SMTP/Site URL/8자리·15분 OTP·Google callback을 설정했고 새 도메인 API는 200이다. 자동 검사 **558/558개**·lint·타입·빌드, 회사 SQL 적용과 기존 자료 보존/익명 차단 및 Vercel READY를 확인했다. 회사 OTP/직원 로그인·이전 요청 이전·저장/5장 업로드·AI **15문/6서랍 A$3,135 GST 포함**·고객/EMS/DB 대조·고객 로그아웃/직원 세션 유지·새 고객 세션 재인증/동일 저장본 복구까지 확인했다. 해당 Vercel 배포는 작업 브랜치 검증 당시 CLI로 수행했다. **실제 다른 물리 기기·미가입 신규 이메일/signup은 미검증**이다. [인수 기록](../verification/2026-10-12-domain-customer-quote-auth.md).
 

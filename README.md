@@ -2,7 +2,7 @@
 
 **2026-10-12 최신 구현 — 예상 견적 승인·예약 요청·회사 Calendar:** [42번 계획](docs/plans/42-live-estimate-booking-request-calendar.md)에 따라 숫자 예상본 승인 → Google 예약일 차단/희망일 선택 → 예약 요청 확인 서명·제출 → EMS 저장·고정 PDF·회사 메일 → 회사 기본 Calendar의 확정 대기 일정까지 구현·배포했다. 새 운영 흐름은 `lnkgroupsydney@gmail.com` 기본 Calendar로 통일하며 기존 시험 캘린더 자료는 보존한다. 회사 Chrome에서 **A$3,135 / 10월 20일 / REQUEST-070EEB13C91F**의 동일 저장본·Gmail 실제 PDF 수신·Google 일정 1개와 날짜 변경 시 재서명·새로고침 복구를 확인했다. 전체 **612/612개**, 관련 **54/54개**, lint·타입·빌드 통과. 제출 직후 처리와 하루 한 번의 백업 cron을 설정했으며 예약 시각의 cron 자동 실행은 아직 미검증이다. **회사 실제 기간·최종 가격/약관·재동의·확정 예약은 후속**이다. 작업 브랜치 `codex/live-quote-booking-calendar-20261012`의 회사 Vercel 배포와 Git 커밋/병합은 구분한다. [검증 기록](docs/verification/2026-10-12-live-booking-request-calendar.md).
 
-**2026-10-12 Git 통합:** 작업 브랜치 커밋 `92f76a8`을 `main`에 충돌 없이 병합했다(`6dd42ea`). 병합 결과는 검증한 작업 브랜치와 동일하다. 회사 원격은 `origin` (`lnkgroupsydney-hub/lnkgroup`)이며 개인 원격은 사용하지 않는다.
+**2026-10-12 최신 Git 통합:** 예약 요청 연동 작업 브랜치 커밋 `9e7f728`을 `main`에 충돌 없이 병합했다(`ce5c565`). 병합 트리는 검증한 작업 브랜치와 동일하다. 회사 원격은 `origin` (`lnkgroupsydney-hub/lnkgroup`)이며 개인 원격은 사용하지 않는다. 앞선 고객 인증/복구 통합 이력은 `92f76a8` → `6dd42ea`다.
 
 **2026-10-12 최신 구현 — 회사 도메인·고객 이메일 인증/견적 복구:** [41번 계획](docs/plans/41-domain-live-quote-booking-plan.md)의 1~2단계를 `main@31e7387`에서 분기한 `codex/domain-customer-quote-auth-20261012`에 구현했다. Production 기준 주소를 **https://www.lnkgroupsydney.com.au**로 전환해 견적 API 200을 확인했고, 회사 발신 주소 `quotes@lnkgroupsydney.com.au`와 Reply-To 회사 Gmail, Supabase custom SMTP·8자리/15분 OTP·Site URL, Google callback을 설정했다. 고객/직원 세션 분리, 요청별 이메일 인증·견적/사진 복구·로그아웃·이전 주소의 일회용 이전 경로와 다중 탭 요청 ID 검사를 추가했다.
 
