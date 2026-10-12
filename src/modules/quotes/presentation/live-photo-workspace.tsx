@@ -10,16 +10,16 @@ import { SavedPhotoAnalysis } from './saved-photo-analysis';
 
 type Mutation = { path: string; method: string; body: string; process?: boolean };
 type UploadAttempt = { file: File; role: LivePhotoRole; body: string; photoId?: string; signedUrl?: string; finalizeBody?: string };
-export function LivePhotoWorkspace({ request, onSaved, onAccessLost, onBusyChange, disabled = false }: { request: LiveQuoteRequest; onSaved: (request: LiveQuoteRequest) => void; onAccessLost: () => void; onBusyChange?: (busy: boolean) => void; disabled?: boolean }) {
+export function LivePhotoWorkspace({ request, onSaved, onAccessLost, onBusyChange, onAnalysisChange, readOnly = false, disabled = false }: { request: LiveQuoteRequest; onSaved: (request: LiveQuoteRequest) => void; onAccessLost: () => void; onBusyChange?: (busy: boolean) => void; onAnalysisChange?: (latest: PhotoWorkspace['latest']) => void; readOnly?: boolean; disabled?: boolean }) {
   const [workspace, setWorkspace] = useState<PhotoWorkspace | null>(null), [error, setError] = useState(''), [notice, setNotice] = useState('');
   const [busy, setBusy] = useState(false), [conflict, setConflict] = useState(false), [pending, setPending] = useState<Mutation | null>(null), [uploadPending, setUploadPending] = useState<UploadAttempt | null>(null);
   const [role, setRole] = useState<LivePhotoRole>('overview'), [file, setFile] = useState<File | null>(null), [consent, setConsent] = useState(false), [upperNone, setUpperNone] = useState(false), [noDamage, setNoDamage] = useState(false);
-  const alive = useRef(true), active = useRef(false), generation = useRef(0), requestRef = useRef(request), callbacks = useRef({ onSaved, onAccessLost, onBusyChange });
+  const alive = useRef(true), active = useRef(false), generation = useRef(0), requestRef = useRef(request), callbacks = useRef({ onSaved, onAccessLost, onBusyChange, onAnalysisChange });
   const fileInput = useRef<HTMLInputElement>(null), errorBox = useRef<HTMLDivElement>(null);
-  useEffect(() => { requestRef.current = request; callbacks.current = { onSaved, onAccessLost, onBusyChange }; }, [request, onSaved, onAccessLost, onBusyChange]);
+  useEffect(() => { requestRef.current = request; callbacks.current = { onSaved, onAccessLost, onBusyChange, onAnalysisChange }; }, [request, onSaved, onAccessLost, onBusyChange, onAnalysisChange]);
   const accept = useCallback((value: PhotoWorkspace) => {
     if (!alive.current) return;
-    setWorkspace(value); callbacks.current.onSaved(value.request);
+    setWorkspace(value); callbacks.current.onSaved(value.request); callbacks.current.onAnalysisChange?.(value.latest);
   }, []);
   const fail = useCallback((cause: unknown) => {
     if (!alive.current) return;
@@ -53,7 +53,7 @@ export function LivePhotoWorkspace({ request, onSaved, onAccessLost, onBusyChang
     return () => clearInterval(timer);
   }, [processing, reload]);
   useEffect(() => { if (error) errorBox.current?.focus(); }, [error]);
-  const locked = disabled || busy || conflict || Boolean(pending) || Boolean(uploadPending) || processing;
+  const locked = readOnly || disabled || busy || conflict || Boolean(pending) || Boolean(uploadPending) || processing;
   async function mutate(attempt: Mutation) {
     if (active.current) return;
     active.current = true; setBusy(true); setError(''); setNotice(''); setPending(attempt);
@@ -134,14 +134,14 @@ export function LivePhotoWorkspace({ request, onSaved, onAccessLost, onBusyChang
       <ul className="lq-photo-grid">{photos.map(photo => <li key={photo.id}>
         {photo.state === 'ready' && photo.contentUrl ? <a href={photo.contentUrl} target="_blank" rel="noreferrer"><Image unoptimized src={photo.contentUrl} alt={`${photoRoleLabels[photo.role]} uploaded for this request`} width={320} height={240} /></a> : <p>Upload awaiting validation</p>}
         <strong>{photoRoleLabels[photo.role]}</strong><span>{photo.state === 'ready' ? 'Privately saved' : 'Upload not complete'}</span>
-        {workspace.request.status === 'draft' && <button className="secondary" type="button" disabled={locked} onClick={() => command(`/api/quote/requests/photos/${photo.id}`, 'DELETE')}>Remove<span className="sr-only"> {photoRoleLabels[photo.role]} photo</span></button>}
+        {!readOnly && workspace.request.status === 'draft' && <button className="secondary" type="button" disabled={locked} onClick={() => command(`/api/quote/requests/photos/${photo.id}`, 'DELETE')}>Remove<span className="sr-only"> {photoRoleLabels[photo.role]} photo</span></button>}
       </li>)}</ul>
-      {workspace.request.status === 'draft' ? <>
+      {readOnly ? <p className="lq-notice">These photos and the estimate belong to a submitted reservation request. The saved submission is read only.</p> : workspace.request.status === 'draft' ? <>
         <fieldset className="lq-fields" disabled={locked}><legend>Add a photo</legend><div className="lq-grid"><label>What does this photo show?<select name="live-photo-role" value={role} onChange={event => setRole(event.target.value as LivePhotoRole)}>{Object.entries(photoRoleLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label><label>Photo file<input ref={fileInput} name="live-photo-file" type="file" accept="image/jpeg,image/png,image/webp" onChange={event => { setFile(event.target.files?.[0] ?? null); setError(''); }} /></label></div><div className="lq-actions"><button type="button" disabled={!file || photos.length >= 8} onClick={() => void startUpload()}>Upload and save photo</button></div></fieldset>
         <fieldset className="lq-fields" disabled={locked}><legend>Analysis details</legend><label className="lq-option"><input name="live-photo-upper-none" type="checkbox" checked={upperNone} onChange={event => setUpperNone(event.target.checked)} />There are no upper cabinets in this project.</label><label className="lq-option"><input name="live-photo-no-damage" type="checkbox" checked={noDamage} onChange={event => setNoDamage(event.target.checked)} />I have not noticed any damage. I have included a representative surface photo.</label><label className="lq-option"><input name="live-photo-ai-consent" type="checkbox" checked={consent} onChange={event => setConsent(event.target.checked)} />I agree to sending these photos and saved service details to OpenAI for AI cabinet analysis, and saving the result in L&amp;K Group’s company system. Contact details and the site address are excluded. AI observations may need correction or an on-site check.</label><div className="lq-actions"><button type="button" disabled={!consent || !canRequestPhotoAnalysis(workspace)} onClick={analyse}>{latest && ['failed', 'uncertain'].includes(latest.status) && !latest.stale ? 'Request another analysis (may incur a new AI call)' : 'Analyse saved photos'}</button></div></fieldset>
       </> : <div className="lq-notice"><p>This request was sent for company review. Reopen it to add photos or change service details. Previous review history is retained.</p><button type="button" disabled={locked} onClick={() => command('/api/quote/requests/reopen', 'POST')}>Reopen request for photos</button></div>}
       {latest && <SavedPhotoAnalysis job={latest} />}
-      {latest?.status === 'queued' && <button type="button" disabled={busy} onClick={() => void mutate({ path: `/api/quote/requests/analysis/${latest.id}/process`, method: 'POST', body: '{}', process: false })}>Continue saved analysis</button>}
+      {!readOnly && latest?.status === 'queued' && <button type="button" disabled={busy} onClick={() => void mutate({ path: `/api/quote/requests/analysis/${latest.id}/process`, method: 'POST', body: '{}', process: false })}>Continue saved analysis</button>}
       {workspace.jobs.length > 1 && <details><summary>Previous analyses ({workspace.jobs.length - 1})</summary>{workspace.jobs.filter(job => job.id !== latest?.id).map(job => <SavedPhotoAnalysis key={job.id} job={job} />)}</details>}
     </>}
   </section>;
