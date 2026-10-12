@@ -1,5 +1,7 @@
 # 메인 → Cabinet → 회사 관리 웹 제작 TODO
 
+**2026-10-12 Git 통합:** 작업 브랜치 커밋 `92f76a8`을 `main`에 충돌 없이 병합했다(`6dd42ea`). 병합 결과는 검증한 작업 브랜치와 동일하다. 회사 원격은 `origin` (`lnkgroupsydney-hub/lnkgroup`)이며 개인 원격은 사용하지 않는다.
+
 **2026-10-12 최신 구현 — 1~2단계 구현·회사 브라우저 인수 완료:** [41번 구현계획](41-domain-live-quote-booking-plan.md)의 도메인/직원 메일 호환·고객 이메일 인증/복구를 `codex/domain-customer-quote-auth-20261012`에 구현했다. www 기준 origin·회사 발신/Reply-To·Supabase SMTP/Site URL/8자리·15분 OTP·Google callback을 설정했고 새 도메인 API는 200이다. 자동 검사 **558/558개**·lint·타입·빌드, 회사 SQL 적용과 기존 자료 보존/익명 차단 및 Vercel READY를 확인했다. 회사 OTP/직원 로그인·이전 요청 이전·저장/5장 업로드·AI **15문/6서랍 A$3,135 GST 포함**·고객/EMS/DB 대조·고객 로그아웃/직원 세션 유지·새 고객 세션 재인증/동일 저장본 복구까지 확인했다. 해당 Vercel 배포는 작업 브랜치 검증 당시 CLI로 수행했다. **실제 다른 물리 기기·미가입 신규 이메일/signup은 미검증**이다. [인수 기록](../verification/2026-10-12-domain-customer-quote-auth.md).
 
 - [x] 회사 main/origin 동기화, Vercel 도메인/HTTPS/redirect, Resend verified·SPF/DKIM·DMARC 확인.

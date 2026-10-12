@@ -1,5 +1,7 @@
 # L&K Group 웹 서비스 구축 계획
 
+**2026-10-12 Git 통합:** 작업 브랜치 커밋 `92f76a8`을 `main`에 충돌 없이 병합했다(`6dd42ea`). 병합 결과는 검증한 작업 브랜치와 동일하다. 회사 원격은 `origin` (`lnkgroupsydney-hub/lnkgroup`)이며 개인 원격은 사용하지 않는다.
+
 **2026-10-12 최신 구현 — 회사 도메인·고객 이메일 인증/견적 복구:** [41번 계획](docs/plans/41-domain-live-quote-booking-plan.md)의 1~2단계를 `main@31e7387`에서 분기한 `codex/domain-customer-quote-auth-20261012`에 구현했다. Production 기준 주소를 **https://www.lnkgroupsydney.com.au**로 전환해 견적 API 200을 확인했고, 회사 발신 주소 `quotes@lnkgroupsydney.com.au`와 Reply-To 회사 Gmail, Supabase custom SMTP·8자리/15분 OTP·Site URL, Google callback을 설정했다. 고객/직원 세션 분리, 요청별 이메일 인증·견적/사진 복구·로그아웃·이전 주소의 일회용 이전 경로와 다중 탭 요청 ID 검사를 추가했다.
 
 자동 검사 **558/558개**, lint·타입·빌드가 통과했다. 회사 SQL `20261012085406` 적용 후 기존 요청 12건·사진 29건·분석 15건의 내용 hash 보존과 신규 세 테이블의 익명 접근 차단을 확인했다. Vercel `dpl_FSteedNuKs7tnRBSEga5VGKaPFon`는 READY이며 작업 브랜치 검증 당시 CLI로 배포했다. **1~2단계 회사 Chrome 인수 완료:** 회사 발신 OTP 배달/인증·EMS 직원 로그인·이전 요청 동일 ID 이전·www 저장/5장 업로드 → AI **15문/6서랍, A$3,135 GST 포함** → 고객/EMS/DB 대조 → 고객 로그아웃/직원 로그인 유지 → 두 번째 OTP의 새 고객 세션으로 사진·동일 분석/금액 복구·새로고침 보존을 확인했다. 목록에는 인증하여 연결한 요청만 표시됐다. **실제 다른 물리 기기와 미가입 신규 이메일/signup은 미검증**이며 별도 고객 세션으로 복구를 확인한 결과다. 예상 견적 승인·예약/서명·live PDF/고객 발송·Google 확정(3단계 이후)은 미구현이다. [인수 기록](docs/verification/2026-10-12-domain-customer-quote-auth.md). 아래 날짜별 설명은 당시 결과다.

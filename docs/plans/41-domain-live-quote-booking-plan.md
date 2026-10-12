@@ -8,7 +8,7 @@
 
 ## 0. 후속 구현·검증 상태 — 2026-10-12
 
-- `main@31e7387`에서 새 `codex/domain-customer-quote-auth-20261012`를 만들고 1~2단계를 구현했다. 회사 브라우저 인수와 CLI 배포를 먼저 완료했으며 Git 통합은 후속 사용자 요청에 따라 진행한다.
+- `main@31e7387`에서 새 `codex/domain-customer-quote-auth-20261012`를 만들고 1~2단계를 구현했다. 회사 브라우저 인수와 CLI 배포 후 사용자 요청으로 `92f76a8`을 커밋하고 `main`에 병합했다(`6dd42ea`). 회사 `origin`만 push 대상으로 사용한다.
 - www 기준 origin을 반영해 `GET /api/quote/requests` **200**을 확인했다. 회사 발신 설정은 `COMPANY_EMAIL_FROM=quotes@lnkgroupsydney.com.au`, Reply-To는 `lnkgroupsydney@gmail.com`이다. 기존 시험 발신/회사 수신 제한과 직원 발신을 분리했다.
 - 사용자 저장으로 회사 Supabase custom SMTP를 연결하고 Site URL을 새 www, 고객 OTP를 8자리/900초와 코드 템플릿으로 설정했다. Google OAuth callback도 새 www의 `/api/google/callback`으로 수정·저장했다. 설정 완료와 실제 수신·로그인 성공은 별도 판정한다.
 - 최종 점검에서 Vercel에 누락된 회사 Google client ID/secret을 Production Secret으로 추가했다. EMS의 누락 설정 성공 오표시도 수정했다. 최종 배포의 회사 Chrome에서 기존 소유 캘린더·Gmail 라벨 조회가 성공했으며 시험 대상 `L&K Integration`/`L&K Integration Test`는 보존했다. 운영 Calendar 대상 전환·이벤트 생성은 후속이다.

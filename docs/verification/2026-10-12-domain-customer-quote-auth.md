@@ -11,6 +11,12 @@
 - 1차 Production: `dpl_9q1g86n9H55Avh5Md4BL7FHYpZRi` READY. 작업 폴더 배포이며 main 병합/push를 의미하지 않는다.
 - 최종 Production: **`dpl_FSteedNuKs7tnRBSEga5VGKaPFon` READY**, `https://lnkgroup-bzrc4mgx1-lnkgroupsydney-8702.vercel.app`. Google 설정 및 누락 상태 표시 수정을 포함한다. www 요청/고객 API 200, 기존 인증 세션의 revision 7·사진 5장·동일 분석/금액 복원을 재확인했다.
 
+## Git 통합 — 후속 사용자 요청
+
+- 기능 커밋 `92f76a8`, `main` 병합 `6dd42ea`. 병합 충돌 없음, 기능 브랜치와 병합 결과 tree 동일.
+- 회사 `origin` (`lnkgroupsydney-hub/lnkgroup`)을 동기화 대상으로 확인했다. 개인 `legacy-origin`은 사용하지 않는다.
+- 최종 558개 검사 및 lint·타입·빌드 후 실행 코드는 바뀌지 않았다. 병합 기록 문서만 추가했으며 비밀키·쿠키·원본 QA 사진·검증 로그는 커밋에 포함하지 않았다.
+
 ## 회사 설정과 오류 해결
 
 - `APP_BASE_URL`을 www로 전환해 기존 견적 API의 origin 403을 해결했다. 잘못된 origin은 계속 거절한다.

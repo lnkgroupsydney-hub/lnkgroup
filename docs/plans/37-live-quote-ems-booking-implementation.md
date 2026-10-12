@@ -1,5 +1,7 @@
 # 실제 고객 Quote → EMS → 예약 운영 전환 계획
 
+**2026-10-12 Git 통합:** 작업 브랜치 커밋 `92f76a8`을 `main`에 충돌 없이 병합했다(`6dd42ea`). 병합 결과는 검증한 작업 브랜치와 동일하다. 회사 원격은 `origin` (`lnkgroupsydney-hub/lnkgroup`)이며 개인 원격은 사용하지 않는다.
+
 **2026-10-12 최신 구현 — 41번 1~2단계 인수 완료:** `codex/domain-customer-quote-auth-20261012`에서 www origin·회사 발신/SMTP·고객 OTP/요청별 복구·이전 주소 일회용 이전을 구현/설정했다. 자동 검사 **558/558개**·lint·타입·빌드, 회사 SQL 적용·기존 요청 12건/사진 29건/분석 15건 hash 보존·신규 세 테이블 익명 차단과 Vercel READY를 확인했다. 회사 Chrome에서 OTP 배달/인증·직원 로그인·기존 요청 동일 ID 이전·www 저장/5장 업로드 → AI **15문/6서랍 A$3,135 GST 포함** → 고객/EMS/DB 대조 → 고객 로그아웃/직원 로그인 유지 → 새 고객 세션 재인증/동일 사진·분석/금액 복구·새로고침 보존까지 확인했다. **실제 다른 물리 기기·미가입 신규 이메일/signup은 미검증**이며 별도 고객 세션 복구와 구분한다. 해당 Vercel 배포는 작업 브랜치 검증 당시 CLI로 수행했으며 Git 통합과 별도로 기록한다. 이후 예상본 승인 → 날짜·약관·서명 → live PDF/고객 메일 → 회사 Google 확정은 미구현이다. [41번 계획](41-domain-live-quote-booking-plan.md)·[인수 기록](../verification/2026-10-12-domain-customer-quote-auth.md)을 따른다.
 
 **2026-10-11 최신 RQ-04b:** [40번 AI 수량 추정 가견적](40-ai-quantity-provisional-estimates.md)을 회사 Vercel/Supabase에 적용했다. 고객 입력 수량이 없어도 추정 문·서랍으로 예상 도장비를 표시하고 정확한 수량·최종 가격은 현장 확인 후 조정한다. 사진 5장씩 3세트의 숫자 결과와 고객/EMS/DB 일치, 전체 524개 검사 및 lint·타입·빌드를 확인했다. 서로 다른 사진을 합산하지 않은 `primary_view` 도장비이며 실제 동일 현장의 실측 정확도·RQ-04c 최종 견적 수정/발행은 후속이다. [검증 기록](../verification/2026-10-11-ai-quantity-provisional-estimates.md). 아래 v1 완료 상태는 당시 기록이다.
