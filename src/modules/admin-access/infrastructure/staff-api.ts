@@ -90,8 +90,13 @@ export const staffSessionsRevokeOthersPost = authRoute(async (req, context) => {
 export const staffOperationsSessionGet = authRoute(async (_req, context) => {
   const identity = await verifyStaffIdentity(context), status = staffStatus(identity)
   if (status.stage !== 'ready' || !identity) return Response.json({ authenticated: false, mode: null, localLoginAvailable: false, googleConfigured: false })
+  const missingConfiguration = [
+    !process.env.GOOGLE_CLIENT_ID?.trim() && 'GOOGLE_CLIENT_ID',
+    !process.env.GOOGLE_CLIENT_SECRET?.trim() && 'GOOGLE_CLIENT_SECRET',
+    !/^[a-f0-9]{64}$/i.test(process.env.GOOGLE_TOKEN_ENCRYPTION_KEY ?? '') && 'GOOGLE_TOKEN_ENCRYPTION_KEY',
+  ].filter((value): value is string => typeof value === 'string')
   return Response.json({ authenticated: true, mode: 'staff', ownerEmail: identity.user.email, staffRole: identity.membership.role,
-    storage: 'supabase', localLoginAvailable: false, googleConfigured: !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET && process.env.GOOGLE_TOKEN_ENCRYPTION_KEY), missingConfiguration: [] })
+    storage: 'supabase', localLoginAvailable: false, googleConfigured: missingConfiguration.length === 0, missingConfiguration })
 })
 
 export const staffLoginPost = authRoute(async (req, context) => {

@@ -11,7 +11,7 @@ export interface LiveQuoteAudit {
 }
 export interface LiveQuoteRequestPage { requests: LiveQuoteRequest[]; total: number; page: number; pageSize: number }
 export interface LiveQuoteRequestDetail { request: LiveQuoteRequest; audit: LiveQuoteAudit[] }
-export interface QuoteRequestOwner { hash: string; expiresAt: string }
+export interface QuoteRequestOwner { hash: string; expiresAt: string; expectedRequestId?: string; customer?: { companyId: string; sessionId: string; authUserId: string; email: string; requestId: string } }
 export interface QuoteRequestActor { userId: string; sessionId: string; companyId: string }
 export interface SaveQuoteRequestInput { expectedRevision: number; idempotencyKey: string; payload: QuoteDraftInput; storageConsent: true }
 export interface ReviewQuoteRequestInput { expectedRevision: number; idempotencyKey: string }

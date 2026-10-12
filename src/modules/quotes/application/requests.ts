@@ -1,7 +1,7 @@
 import { LIVE_STORAGE_CONSENT_VERSION, type LiveQuoteRequest, type QuoteRequestActor, type QuoteRequestOwner, type ReviewQuoteRequestInput, type SaveQuoteRequestInput, QuoteRequestError } from '../domain/contracts.ts'
 export interface QuoteRequestStore { command<T>(command: string, args: Record<string, unknown>): Promise<T> }
 export function quoteRequests(store: QuoteRequestStore) {
-  const ownerArgs = (owner: QuoteRequestOwner) => ({ companyId: 'lk-group', ownerHash: owner.hash, expiresAt: owner.expiresAt })
+  const ownerArgs = (owner: QuoteRequestOwner) => ({ companyId: 'lk-group', ownerHash: owner.hash, expiresAt: owner.expiresAt, ...(owner.expectedRequestId ? { expectedRequestId: owner.expectedRequestId } : {}), ...(owner.customer ? { customerAccess: owner.customer } : {}) })
   return {
     read: (owner: QuoteRequestOwner) => store.command<LiveQuoteRequest | null>('read', ownerArgs(owner)),
     save: (owner: QuoteRequestOwner, input: SaveQuoteRequestInput) => store.command<LiveQuoteRequest>('save', { ...ownerArgs(owner), ...input, consentVersion: LIVE_STORAGE_CONSENT_VERSION }),

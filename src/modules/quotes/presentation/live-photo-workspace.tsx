@@ -10,13 +10,13 @@ import { SavedPhotoAnalysis } from './saved-photo-analysis';
 
 type Mutation = { path: string; method: string; body: string; process?: boolean };
 type UploadAttempt = { file: File; role: LivePhotoRole; body: string; photoId?: string; signedUrl?: string; finalizeBody?: string };
-export function LivePhotoWorkspace({ request, onSaved, onAccessLost, disabled = false }: { request: LiveQuoteRequest; onSaved: (request: LiveQuoteRequest) => void; onAccessLost: () => void; disabled?: boolean }) {
+export function LivePhotoWorkspace({ request, onSaved, onAccessLost, onBusyChange, disabled = false }: { request: LiveQuoteRequest; onSaved: (request: LiveQuoteRequest) => void; onAccessLost: () => void; onBusyChange?: (busy: boolean) => void; disabled?: boolean }) {
   const [workspace, setWorkspace] = useState<PhotoWorkspace | null>(null), [error, setError] = useState(''), [notice, setNotice] = useState('');
   const [busy, setBusy] = useState(false), [conflict, setConflict] = useState(false), [pending, setPending] = useState<Mutation | null>(null), [uploadPending, setUploadPending] = useState<UploadAttempt | null>(null);
   const [role, setRole] = useState<LivePhotoRole>('overview'), [file, setFile] = useState<File | null>(null), [consent, setConsent] = useState(false), [upperNone, setUpperNone] = useState(false), [noDamage, setNoDamage] = useState(false);
-  const alive = useRef(true), active = useRef(false), generation = useRef(0), requestRef = useRef(request), callbacks = useRef({ onSaved, onAccessLost });
+  const alive = useRef(true), active = useRef(false), generation = useRef(0), requestRef = useRef(request), callbacks = useRef({ onSaved, onAccessLost, onBusyChange });
   const fileInput = useRef<HTMLInputElement>(null), errorBox = useRef<HTMLDivElement>(null);
-  useEffect(() => { requestRef.current = request; callbacks.current = { onSaved, onAccessLost }; }, [request, onSaved, onAccessLost]);
+  useEffect(() => { requestRef.current = request; callbacks.current = { onSaved, onAccessLost, onBusyChange }; }, [request, onSaved, onAccessLost, onBusyChange]);
   const accept = useCallback((value: PhotoWorkspace) => {
     if (!alive.current) return;
     setWorkspace(value); callbacks.current.onSaved(value.request);
@@ -32,7 +32,7 @@ export function LivePhotoWorkspace({ request, onSaved, onAccessLost, disabled = 
   const reload = useCallback(async () => {
     const version = ++generation.current;
     try {
-      const body = await liveRequest('/api/quote/requests/analysis');
+      const body = await liveRequest('/api/quote/requests/analysis', { headers: { 'x-lk-quote-request-id': requestRef.current.id } });
       const value = parsePhotoWorkspace(body, requestRef.current.id);
       if (alive.current && version === generation.current) { accept(value); setConflict(false); }
     } catch (cause) { if (version === generation.current) fail(cause); }
@@ -44,6 +44,9 @@ export function LivePhotoWorkspace({ request, onSaved, onAccessLost, disabled = 
     return () => { cancelled = true; alive.current = false; };
   }, [reload, request.id, request.revision]);
   const processing = Boolean(workspace?.latest && !workspace.latest.stale && ['queued', 'running'].includes(workspace.latest.status));
+  const blocksAccessChange = busy || Boolean(pending) || Boolean(uploadPending) || processing;
+  useEffect(() => { callbacks.current.onBusyChange?.(blocksAccessChange); }, [blocksAccessChange]);
+  useEffect(() => () => { callbacks.current.onBusyChange?.(false); }, []);
   useEffect(() => {
     if (!processing) return;
     const timer = setInterval(() => { if (!active.current) void reload(); }, 4000);
@@ -55,12 +58,12 @@ export function LivePhotoWorkspace({ request, onSaved, onAccessLost, disabled = 
     if (active.current) return;
     active.current = true; setBusy(true); setError(''); setNotice(''); setPending(attempt);
     try {
-      let value = parsePhotoWorkspace(await liveRequest(attempt.path, { method: attempt.method, headers: { 'content-type': 'application/json' }, body: attempt.body }), requestRef.current.id);
+      let value = parsePhotoWorkspace(await liveRequest(attempt.path, { method: attempt.method, headers: { 'content-type': 'application/json', 'x-lk-quote-request-id': requestRef.current.id }, body: attempt.body }), requestRef.current.id);
       accept(value); if (!alive.current) return;
       setPending(null);
       if (attempt.process && value.latest?.status === 'queued') {
         setNotice('Analysing your photos. This saved analysis can be restored after a refresh.');
-        value = parsePhotoWorkspace(await liveRequest(`/api/quote/requests/analysis/${value.latest.id}/process`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}', signal: AbortSignal.timeout(180_000) }), requestRef.current.id);
+        value = parsePhotoWorkspace(await liveRequest(`/api/quote/requests/analysis/${value.latest.id}/process`, { method: 'POST', headers: { 'content-type': 'application/json', 'x-lk-quote-request-id': requestRef.current.id }, body: '{}', signal: AbortSignal.timeout(180_000) }), requestRef.current.id);
         accept(value);
       }
       if (alive.current) setNotice(attempt.process ? 'The analysis status has been saved in the company system.' : 'Saved in the company system.');
@@ -74,7 +77,7 @@ export function LivePhotoWorkspace({ request, onSaved, onAccessLost, disabled = 
     active.current = true; setBusy(true); setError(''); setNotice('Uploading your photo privately…'); setUploadPending(attempt);
     try {
       if (!attempt.photoId || !attempt.signedUrl) {
-        const body = await liveRequest('/api/quote/requests/photos', { method: 'POST', headers: { 'content-type': 'application/json' }, body: attempt.body });
+        const body = await liveRequest('/api/quote/requests/photos', { method: 'POST', headers: { 'content-type': 'application/json', 'x-lk-quote-request-id': requestRef.current.id }, body: attempt.body });
         if (!isRecord(body.photo) || typeof body.photo.id !== 'string' || !isRecord(body.upload) || typeof body.upload.signedUrl !== 'string') throw new Error('Private photo upload could not be prepared. Retry the same upload.');
         const url = new URL(body.upload.signedUrl);
         if (url.protocol !== 'https:') throw new Error('A secure private photo upload was not provided.');
@@ -87,7 +90,7 @@ export function LivePhotoWorkspace({ request, onSaved, onAccessLost, disabled = 
         attempt = { ...attempt, finalizeBody: JSON.stringify({ expectedRevision: requestRef.current.revision, idempotencyKey: crypto.randomUUID() }) };
         if (alive.current) setUploadPending(attempt);
       }
-      const body = await liveRequest(`/api/quote/requests/photos/${attempt.photoId}/finalize`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: attempt.finalizeBody });
+      const body = await liveRequest(`/api/quote/requests/photos/${attempt.photoId}/finalize`, { method: 'POST', headers: { 'content-type': 'application/json', 'x-lk-quote-request-id': requestRef.current.id }, body: attempt.finalizeBody });
       accept(parsePhotoWorkspace(body, requestRef.current.id));
       if (!alive.current) return;
       setUploadPending(null); setFile(null); if (fileInput.current) fileInput.current.value = ''; setNotice('Photo checked and saved privately. The company can view the same photo.');

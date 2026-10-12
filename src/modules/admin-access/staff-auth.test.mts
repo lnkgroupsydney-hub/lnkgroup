@@ -41,7 +41,7 @@ globalThis.fetch=async(input,init)=>{
   assert.equal(url.pathname,'/emails'); assert.equal(req.method,'POST')
   const message=await req.json() as {to:string[];text:string;subject:string}
   assert.deepEqual(message.to,['lnkgroupsydney@gmail.com'])
-  assert.equal(message.subject,'L&K Group ESN sign-in code')
+  assert.equal(message.subject,'L&K Group EMS sign-in code')
   assert.equal(req.headers.get('idempotency-key'),`lk-staff-email:${emailState?.challengeId}`)
   emailCode=message.text.match(/code is: (\d{6})/)?.[1]??''
   assert.match(emailCode,/^\d{6}$/);emailRequests++
@@ -565,4 +565,20 @@ test('staff HTTPS rejects duplicate or malformed Forwarded extension parameters 
  }
  assert.equal(requests.length,0);
  assert.equal(parseSingleForwarded('host=lnkgroup.vercel.app;sig="bad\u0000value"'),null);
+})
+
+
+test('staff integration discovery lists missing OAuth settings consistently without exposing secret values',async()=>{
+ configureDeployed()
+ const req=deployedRequest('/api/operations/session')
+ const initial=await staffOperationsSessionGet(req);assert.equal(initial.status,200)
+ const configured=await initial.json();assert.equal(configured.googleConfigured,true);assert.deepEqual(configured.missingConfiguration,[])
+ for(const name of ['GOOGLE_CLIENT_ID','GOOGLE_CLIENT_SECRET','GOOGLE_TOKEN_ENCRYPTION_KEY'] as const){
+  const saved=process.env[name];delete process.env[name]
+  try{const response=await staffOperationsSessionGet(req);assert.equal(response.status,200);const value=await response.json();assert.equal(value.authenticated,true);assert.equal(value.googleConfigured,false);assert.deepEqual(value.missingConfiguration,[name]);assert.ok(!JSON.stringify(value).includes('synthetic-google-secret'))}finally{process.env[name]=saved}
+ }
+ process.env.GOOGLE_TOKEN_ENCRYPTION_KEY='invalid-non-hex-key'
+ const invalid=await(await staffOperationsSessionGet(req)).json();assert.equal(invalid.googleConfigured,false);assert.deepEqual(invalid.missingConfiguration,['GOOGLE_TOKEN_ENCRYPTION_KEY'])
+ process.env.GOOGLE_TOKEN_ENCRYPTION_KEY='44'.repeat(32);process.env.GOOGLE_CLIENT_ID='   '
+ const blank=await(await staffOperationsSessionGet(req)).json();assert.equal(blank.googleConfigured,false);assert.deepEqual(blank.missingConfiguration,['GOOGLE_CLIENT_ID'])
 })

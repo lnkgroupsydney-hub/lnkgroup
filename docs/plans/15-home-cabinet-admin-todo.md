@@ -1,5 +1,27 @@
 # 메인 → Cabinet → 회사 관리 웹 제작 TODO
 
+**2026-10-12 최신 구현 — 1~2단계 구현·회사 브라우저 인수 완료:** [41번 구현계획](41-domain-live-quote-booking-plan.md)의 도메인/직원 메일 호환·고객 이메일 인증/복구를 `codex/domain-customer-quote-auth-20261012`에 구현했다. www 기준 origin·회사 발신/Reply-To·Supabase SMTP/Site URL/8자리·15분 OTP·Google callback을 설정했고 새 도메인 API는 200이다. 자동 검사 **558/558개**·lint·타입·빌드, 회사 SQL 적용과 기존 자료 보존/익명 차단 및 Vercel READY를 확인했다. 회사 OTP/직원 로그인·이전 요청 이전·저장/5장 업로드·AI **15문/6서랍 A$3,135 GST 포함**·고객/EMS/DB 대조·고객 로그아웃/직원 세션 유지·새 고객 세션 재인증/동일 저장본 복구까지 확인했다. 해당 Vercel 배포는 작업 브랜치 검증 당시 CLI로 수행했다. **실제 다른 물리 기기·미가입 신규 이메일/signup은 미검증**이다. [인수 기록](../verification/2026-10-12-domain-customer-quote-auth.md).
+
+- [x] 회사 main/origin 동기화, Vercel 도메인/HTTPS/redirect, Resend verified·SPF/DKIM·DMARC 확인.
+- [x] 최초 조사 당시 새 도메인 API 403·이전 origin/데모 발신·직원 시험 주소 제한 확인. 후속 전환으로 새 API 200 확인.
+- [x] 기존 예약·서명·문서의 데모 의존성과 운영 테이블 scaffold 분석, 순차 계획 갱신.
+- [x] 1단계 코드/설정: www 기준 origin·직원 회사 발신 호환·OAuth/Auth 설정·이전 주소의 일회용 이전 경로 구현. 새 API 200 확인.
+- [x] 2단계 코드/DB: 고객 이메일 OTP·요청별 접근 관계·연결된 견적/사진 복구·로그아웃·직원 세션 분리·다중 탭 요청 ID 검증 구현/자동 검사.
+- [x] 회사 SQL `20261012085406` 적용, 기존 요청 12건/사진 29건/분석 15건 내용 hash 보존과 신규 세 테이블 익명 접근 차단 확인.
+- [x] 자동 검사 558/558개, lint·타입·빌드 통과 및 Vercel `dpl_FSteedNuKs7tnRBSEga5VGKaPFon` READY 확인.
+- [x] 회사 발신 고객 OTP 메일 delivered·사용자 코드 인증, 새 회사 도메인의 EMS 직원 로그인/코드 수신 확인.
+- [x] 이전 Vercel 요청 `895f8919-7e19-4506-972d-944285b0185a`를 일회용 이전 + OTP로 새 www에 동일 ID 복구.
+- [x] 복구 요청의 www 서비스 저장 revision 2 및 필수 사진 5장 업로드 revision 7을 회사 Chrome에서 확인.
+- [x] AI job `cee10c05-a7c7-4f8a-9fa9-ae62b19bb6e9` 성공: revision 7/사진 5장·15문/6서랍·소계 A$2,850 + GST A$285 = A$3,135. 회사 Chrome 고객/EMS/DB 동일 사진·분석·금액 대조.
+- [x] 고객 로그아웃의 DB 회수 확인·직원 EMS 로그인 유지·두 번째 OTP로 별도 고객 세션 인증·연결된 요청만 표시·사진 5장/동일 분석·금액 복구·새로고침 보존.
+- [ ] 추가 환경 인수: 실제 다른 물리 기기·미가입 신규 이메일/signup. 이번 별도 고객 세션 복구 결과와 구분.
+- [ ] 3단계: AI 예상본 승인 버전 고정·EMS 현장 가격 수정/최종본·고객 재동의.
+- [ ] 4단계: 운영 Calendar/자원 연결·예약 날짜 차단·서버 재검사.
+- [ ] 5단계: 회사 승인 약관·최종 확인·서명/멱등 제출·EMS 동일 원본.
+- [ ] 6단계: live PDF·회사 도메인 고객 발송·배달/반송 webhook·클라우드 batch/복구.
+- [ ] 7단계: Google 확정 대기 → 회사 기간/충돌 확인 → 필요한 재동의 → Google 검증 후 확정.
+- [ ] 회사 Chrome 새 도메인에서 사진 5장부터 고객 인증·서명/PDF 수신·EMS/Google까지 통합 인수.
+
 **2026-10-11 최신 개정 — AI 수량 추정 가견적 운영 완료:** 고객 수량을 비워 두어도 AI가 문·서랍 앞판을 추정하고 예상 도장 금액을 계산한다. 정확한 수량·상태·최종 가격은 현장에서 확인해 조정한다. 기존 단가와 GST는 유지하며, 같은 사진의 미선택 표면이나 다른 현장의 손상은 보수비에 합산하지 않는다. [40번 현행 명세](40-ai-quantity-provisional-estimates.md)가 아래 v1의 고객 수량 일치 조건을 대체한다. 기존 기록은 보존한다.
 
 전체 **524/524**·lint·타입·빌드, 회사 Supabase 적용, Vercel `dpl_FgjBEwxhuz17b5A4pUVWq4FAMUK7` READY를 확인했다. 5장씩 3세트의 실제 AI 추정 결과는 **14문/6서랍 A$2,970 · 21문/6서랍 A$4,125 · 12문/4서랍 A$2,420 (GST 포함)**이며 회사 Chrome EMS와 DB의 저장값이 일치한다. 모두 기준 전면 범위의 잠정 도장비이고 미산정 손상·미촬영 범위는 별도다. 현장 최종견적 편집·발행(RQ-04c), 재동의·정식 예약은 후속이다. [실행 증거](../verification/2026-10-11-ai-quantity-provisional-estimates.md). 후속 사용자 요청으로 운영 수정·AI 수량 견적을 `main`에 병합했다(`425959b`). 회사 원격은 `origin` = `lnkgroupsydney-hub/lnkgroup`이며 이번 통합의 push 대상이다. 아래 이전 시점의 미병합 설명은 당시 기록이다.

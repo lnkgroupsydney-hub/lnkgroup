@@ -427,12 +427,12 @@ function OperationsContent({view}: {view?: OperationsViewName}) {
 
 function SetupPanel({ session, callbackUrl }: { session: OperationsSession; callbackUrl: string }) {
   return <section className="operations-panel"><h2>{session.mode === "staff" ? "Company integration setup" : "Local setup"}</h2>
-    <p>Configure these values in the server environment, then restart the local app. This page never asks for a Google client secret or access token.</p>
-    {(session.missingConfiguration?.length ?? 0) > 0 ? <p>Missing configuration: <code>{session.missingConfiguration?.join(", ")}</code></p> : <p>Required server settings are present. Google account consent and calendar/label selection are still separate steps.</p>}
+    <p>Configure these values in the server environment, then restart or redeploy the app. This page never asks for a Google client secret or access token.</p>
+    {!Array.isArray(session.missingConfiguration) ? <p>Configuration status could not be confirmed. Refresh this page or check the server settings.</p> : session.missingConfiguration.length > 0 ? <p>Missing configuration: <code>{session.missingConfiguration.join(", ")}</code></p> : session.googleConfigured ? <p>Required server settings are present. Google account consent and calendar/label selection are still separate steps.</p> : <p>Google configuration is not ready. Check the server settings before connecting.</p>}
     <ol>
       {session.mode !== "staff" && <li>Enable local owner access with <code>LOCAL_OPERATIONS_ENABLED=true</code> and set <code>LOCAL_OWNER_PASSWORD</code>.</li>}
       <li>In <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener noreferrer">Google Cloud Credentials</a>, configure OAuth consent and create a web client for the company integration.</li>
-      <li>Set <code>GOOGLE_CLIENT_ID</code>, <code>GOOGLE_CLIENT_SECRET</code>, <code>GOOGLE_TOKEN_ENCRYPTION_KEY</code> (64 hexadecimal characters), and <code>APP_BASE_URL</code> to this app&apos;s exact local origin.</li>
+      <li>Set <code>GOOGLE_CLIENT_ID</code>, <code>GOOGLE_CLIENT_SECRET</code>, <code>GOOGLE_TOKEN_ENCRYPTION_KEY</code> (64 hexadecimal characters), and <code>APP_BASE_URL</code> to this app&apos;s exact origin (including HTTPS for the company site).</li>
       <li>Add this authorised redirect URI to the Google OAuth client: <code className="operations-uri">{callbackUrl}</code>.</li>
       <li>Sign in above, connect <strong>{session.ownerEmail}</strong>, then select a company-owned calendar and the Gmail enquiry label.</li>
     </ol>

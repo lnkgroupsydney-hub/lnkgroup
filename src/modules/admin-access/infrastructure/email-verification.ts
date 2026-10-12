@@ -1,5 +1,6 @@
 import { createHash, createHmac, randomInt, randomUUID } from 'node:crypto'
 import { AdminAccessError } from '../domain/errors.ts'
+import { staffMailSender } from '../../../shared/email/company-sender.ts'
 
 const INITIAL_ADMIN_EMAIL = 'lnkgroupsydney@gmail.com'
 export type EmailVerificationState = {
@@ -40,14 +41,18 @@ export function newStaffEmailCode() {
 
 export async function sendStaffEmailCode(input: { email: string; challengeId: string; code: string }) {
   const email = staffEmailAddress(input.email)
-  const key = process.env.RESEND_API_KEY, from = process.env.RESEND_FROM_EMAIL
-  // Existing approved company sender only; no new sending domain or recipients.
-  if (!key || !from || !/^(?:onboarding@resend\.dev|[^<>\r\n]{1,100}<onboarding@resend\.dev>)$/i.test(from)) throw new AdminAccessError('ACCESS_UNAVAILABLE')
+  const key = process.env.RESEND_API_KEY
+  if (!key) throw new AdminAccessError('ACCESS_UNAVAILABLE')
+  let sender: ReturnType<typeof staffMailSender>
+  try {
+    sender = staffMailSender({ companyFrom: process.env.COMPANY_EMAIL_FROM,
+      companyReplyTo: process.env.COMPANY_EMAIL_REPLY_TO, legacyDemoFrom: process.env.RESEND_FROM_EMAIL })
+  } catch { throw new AdminAccessError('ACCESS_UNAVAILABLE') }
   const response = await fetch('https://api.resend.com/emails', {
     method: 'POST', cache: 'no-store', signal: AbortSignal.timeout(15_000),
     headers: { authorization: `Bearer ${key}`, 'content-type': 'application/json', 'idempotency-key': `lk-staff-email:${input.challengeId}` },
-    body: JSON.stringify({ from, to: [email], subject: 'L&K Group ESN sign-in code',
-      text: `Your L&K Group ESN verification code is: ${input.code}\n\nEnter this code in the administrator sign-in screen. It expires in 10 minutes and can be used once. Only the newest code works.\n\nIf you did not request this code, you can ignore this message. Never share the code with anyone.` }),
+    body: JSON.stringify({ from: sender.from, ...(sender.replyTo ? { reply_to: sender.replyTo } : {}), to: [email], subject: 'L&K Group EMS sign-in code',
+      text: `Your L&K Group EMS verification code is: ${input.code}\n\nEnter this code in the administrator sign-in screen. It expires in 10 minutes and can be used once. Only the newest code works.\n\nIf you did not request this code, you can ignore this message. Never share the code with anyone.` }),
   })
   if (!response.ok) throw new AdminAccessError('ACCESS_UNAVAILABLE')
   const result: unknown = await response.json()
