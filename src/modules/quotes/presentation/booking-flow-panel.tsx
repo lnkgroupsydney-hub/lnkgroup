@@ -5,21 +5,23 @@ import { LiveCustomerCompanyProposal } from '@/modules/bookings/client';
 import { SignaturePad, type SignaturePoint } from '../../../shared/ui/signature-pad';
 import type { LiveQuoteRequest } from '../domain/contracts';
 import type { PublicAnalysisJob } from '../domain/photo-workspace';
-import { validateBookingSignature, type LiveBookingAvailability, type LiveBookingReview, type LiveBookingState, type LiveBookingSubmission } from '../domain/booking-flow';
+import { BOOKING_SIMPLE_ACK_VERSION, validateBookingSignature, type LiveBookingAvailability, type LiveBookingReview, type LiveBookingState, type LiveBookingSubmission } from '../domain/booking-flow';
 import { parseCustomerAccess } from './customer-access-client';
+import { bookingFlowGuidance, shouldRefreshBookingAvailability } from './booking-flow-guidance';
 import { displayTime, LiveRequestError } from './request-client';
-import { BookingResponseLifetime, bookingRequest, bookingDateLabel, bookingMonthDates, shiftBookingMonth, sydneyToday, parseBookingState, parseBookingReview, parseBookingAvailability, bookingEmailLabels, bookingCalendarLabels, pendingBookingAttemptAfterRead } from './booking-flow-client';
+import { BookingResponseLifetime, bookingRequest, bookingDateLabel, bookingMonthDates, shiftBookingMonth, sydneyToday, parseBookingState, parseBookingReview, parseBookingAvailability, bookingEmailLabels, bookingCalendarLabels, pendingBookingAttemptAfterRead, bookingPreparationAttempt, bookingPreparationNext, bookingTimeValid, type BookingAttempt } from './booking-flow-client';
 
 const MONEY = new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD' });
-type Attempt = { path: string; method: string; body: string; review?: { approvalId: string; selectionRevision: number } };
+type Attempt = BookingAttempt;
 
 export function BookingSubmissionSummary({ submission, staff = false }: { submission: LiveBookingSubmission; staff?: boolean }) {
+  const simpleBooking = submission.snapshot.version === BOOKING_SIMPLE_ACK_VERSION;
   return <div className="lq-booking-receipt">
-    <h3>Reservation request received</h3>
-    <p className="lq-notice"><strong>Company confirmation required.</strong> This request does not reserve a date or confirm a booking. The company will review the complete work duration, scope and final price.</p>
+    <h3>{simpleBooking ? 'Signed booking request saved' : 'Request received · Company booking confirmation'}</h3>
+    <p className="lq-notice">{simpleBooking ? 'Your original take-off date and time, photo-based estimate and signature are saved. Check the company booking status below for the confirmed booking and installation details.' : <><strong>Company confirmation required.</strong> This request does not reserve a date or confirm a booking. This earlier request keeps its original separate company proposal and customer confirmation process.</>}</p>
     <dl className="lq-details">
       <div><dt>Receipt reference</dt><dd>{submission.reference}</dd></div>
-      <div><dt>Preferred start date</dt><dd>{bookingDateLabel(submission.preferredDate)} (Sydney)</dd></div>
+      <div><dt>{submission.snapshot.version === BOOKING_SIMPLE_ACK_VERSION ? 'Take-off date and time' : 'Preferred start date'}</dt><dd>{bookingDateLabel(submission.preferredDate)}{submission.preferredTime ? ` · ${submission.preferredTime}` : ' · Time not recorded in this earlier request'} (Sydney)</dd></div>
       <div><dt>Provisional painting amount</dt><dd>{MONEY.format(submission.snapshot.pricing.total! / 100)} incl GST</dd></div>
       <div><dt>Submitted</dt><dd>{displayTime(submission.submittedAt)} (Sydney)</dd></div>
       <div><dt>Acknowledged by</dt><dd>{submission.signature.name} · {submission.signature.method === 'typed' ? 'Typed signature' : 'Drawn signature'}</dd></div>
@@ -38,12 +40,12 @@ export function BookingSubmissionSummary({ submission, staff = false }: { submis
 export function BookingFlowPanel({ request, latest, verifiedEmail, disabled = false, onBusyChange, onReadOnlyChange, onAccessLost }: { request: LiveQuoteRequest; latest: PublicAnalysisJob | null; verifiedEmail: string | null; disabled?: boolean; onBusyChange: (busy: boolean) => void; onReadOnlyChange: (readOnly: boolean) => void; onAccessLost: () => void }) {
   const [state, setState] = useState<LiveBookingState | null>(null), [review, setReview] = useState<LiveBookingReview | null>(null);
   const [month, setMonth] = useState(() => sydneyToday().slice(0, 7)), [availability, setAvailability] = useState<LiveBookingAvailability | null>(null), [availabilityExpired, setAvailabilityExpired] = useState(false);
-  const [date, setDate] = useState(''), [strokes, setStrokes] = useState<SignaturePoint[][]>([]), [name, setName] = useState(''), [method, setMethod] = useState<'drawn' | 'typed'>('drawn'), [acknowledged, setAcknowledged] = useState(false);
+  const [date, setDate] = useState(''), [time, setTime] = useState(''), [strokes, setStrokes] = useState<SignaturePoint[][]>([]), [name, setName] = useState(''), [method, setMethod] = useState<'drawn' | 'typed'>('drawn'), [acknowledged, setAcknowledged] = useState(false);
   const [needsLink, setNeedsLink] = useState(false);
   const linkChecked = useRef(false);
   const [busy, setBusy] = useState(false), [calendarBusy, setCalendarBusy] = useState(false), [loaded, setLoaded] = useState(false), [error, setError] = useState(''), [calendarError, setCalendarError] = useState(''), [notice, setNotice] = useState(''), [pending, setPending] = useState<Attempt | null>(null);
   const lifetime = useRef(new BookingResponseLifetime()), running = useRef(false), alive = useRef(false), reads = useRef<AbortController | null>(null), calendarReads = useRef<AbortController | null>(null), callbacks = useRef({ onBusyChange, onReadOnlyChange, onAccessLost });
-  const errorBox = useRef<HTMLDivElement>(null), calendar = useRef<HTMLDivElement>(null);
+  const errorBox = useRef<HTMLDivElement>(null), calendar = useRef<HTMLDivElement>(null), calendarHeading = useRef<HTMLHeadingElement>(null), signHeading = useRef<HTMLLegendElement>(null);
   const requestRef = useRef(request), monthRef = useRef(month);
   useEffect(() => { callbacks.current = { onBusyChange, onReadOnlyChange, onAccessLost }; requestRef.current = request; monthRef.current = month; }, [request, month, onBusyChange, onReadOnlyChange, onAccessLost]);
   const verified = verifiedEmail?.toLowerCase() === request.payload.contact.email.toLowerCase();
@@ -53,7 +55,11 @@ export function BookingFlowPanel({ request, latest, verifiedEmail, disabled = fa
     setState(value); setLoaded(true); callbacks.current.onReadOnlyChange(!value.canEdit);
     setPending(current => pendingBookingAttemptAfterRead(current, value));
     if (value.submission) { setReview(null); setStrokes([]); setName(''); setAcknowledged(false); }
-    else if (value.approval?.stale) { setReview(null); setStrokes([]); setName(''); setAcknowledged(false); setDate(''); }
+    else if (value.approval?.stale) { setReview(null); setStrokes([]); setName(''); setAcknowledged(false); }
+    else {
+      if (value.approval?.preferredDate) { setDate(value.approval.preferredDate); setTime(value.approval.preferredTime ?? ''); }
+      if (value.approval?.preferredDate && monthRef.current !== value.approval.preferredDate.slice(0, 7)) setMonth(value.approval.preferredDate.slice(0, 7));
+    }
   }, []);
   const fail = useCallback((cause: unknown) => {
     if (cause instanceof DOMException && cause.name === 'AbortError') return;
@@ -90,7 +96,7 @@ export function BookingFlowPanel({ request, latest, verifiedEmail, disabled = fa
   const savedApproval = state?.approval;
   const approval = savedApproval && (savedApproval.inputRevision !== request.revision || (latest && savedApproval.analysisId !== latest.id)) ? { ...savedApproval, stale: true } : savedApproval;
   const submission = state?.submission;
-  const showCalendar = Boolean(approval && !approval.stale && !submission);
+  const showCalendar = Boolean(eligible && verified && loaded && !needsLink && !submission);
   const loadMonth = useCallback(async (selectedMonth: string) => {
     calendarReads.current?.abort(); const controller = new AbortController(); calendarReads.current = controller;
     setAvailability(null); setAvailabilityExpired(false); setCalendarBusy(true); setCalendarError('');
@@ -103,24 +109,41 @@ export function BookingFlowPanel({ request, latest, verifiedEmail, disabled = fa
   useEffect(() => { let cancelled = false; void Promise.resolve().then(() => { if (!cancelled && showCalendar) return loadMonth(month); }); return () => { cancelled = true; calendarReads.current?.abort(); }; }, [showCalendar, month, loadMonth]);
   useEffect(() => {
     if (!availability) return;
-    const timer = setTimeout(() => { setAvailabilityExpired(true); clearSignature(); }, Math.max(0, Date.parse(availability.expiresAt) - Date.now()));
+    const timer = setTimeout(() => { setAvailabilityExpired(true); }, Math.max(0, Date.parse(availability.expiresAt) - Date.now()));
     return () => clearTimeout(timer);
-  }, [availability, clearSignature]);
-  useEffect(() => { if (!review) return; const timer = setTimeout(() => { clearSignature(); setNotice('Your review expired. Check the preferred date again before signing.'); }, Math.max(0, Date.parse(review.expiresAt) - Date.now())); return () => clearTimeout(timer); }, [review, clearSignature]);
+  }, [availability]);
+  useEffect(() => {
+    let cancelled = false;
+    void Promise.resolve().then(() => {
+      if (!cancelled && shouldRefreshBookingAvailability({ expired: availabilityExpired, showCalendar, disabled, busy, calendarBusy, pending: Boolean(pending), reviewing: Boolean(review), calendarError })) return loadMonth(month);
+    });
+    return () => { cancelled = true; };
+  }, [availabilityExpired, showCalendar, disabled, busy, calendarBusy, pending, review, calendarError, loadMonth, month]);
+  useEffect(() => { if (review) requestAnimationFrame(() => { signHeading.current?.focus(); signHeading.current?.scrollIntoView({ block: 'start' }); }); }, [review]);
+  useEffect(() => { if (!review) return; const timer = setTimeout(() => { clearSignature(); setNotice('Your signing session expired. Check your date and time, then continue to sign again.'); }, Math.max(0, Date.parse(review.expiresAt) - Date.now())); return () => clearTimeout(timer); }, [review, clearSignature]);
   const processing = Boolean(submission && (['pending','sending','retrying'].includes(submission.emailStatus) || ['pending','syncing','retrying'].includes(submission.calendarStatus)));
   useEffect(() => { if (!processing) return; const timer = setInterval(() => { if (!running.current) void reload(); }, 5000); return () => clearInterval(timer); }, [processing, reload]);
   async function perform(attempt: Attempt) {
     if (running.current || disabled || !verified || needsLink) return;
-    reads.current?.abort(); const version = lifetime.current.begin(); running.current = true; setBusy(true); setPending(attempt); setError(''); setNotice('');
+    reads.current?.abort(); const version = lifetime.current.begin(); running.current = true; setBusy(true); setError(''); setNotice('');
+    let current: Attempt | null = attempt;
     try {
-      const body = await bookingRequest(attempt.path, requestRef.current.id, { method: attempt.method, headers: { 'content-type': 'application/json' }, body: attempt.body, signal: AbortSignal.timeout(60_000) });
-      if (!lifetime.current.accepts(version)) return;
-      if (attempt.review) { setReview(parseBookingReview(body, requestRef.current.id, attempt.review.approvalId, attempt.review.selectionRevision)); setNotice('Review the saved acknowledgment and sign below.'); }
-      else { apply(parseBookingState(body, requestRef.current.id)); clearSignature(); }
+      while (current) {
+        setPending(current);
+        const body = await bookingRequest(current.path, requestRef.current.id, { method: current.method, headers: { 'content-type': 'application/json' }, body: current.body, signal: AbortSignal.timeout(60_000) });
+        if (!lifetime.current.accepts(version)) return;
+        if (current.review) {
+          setReview(parseBookingReview(body, requestRef.current.id, current.review.approvalId, current.review.selectionRevision, current.review.selection));
+          setNotice('Your date, time and estimate are saved. Sign and submit below.'); current = null;
+        } else {
+          const saved = parseBookingState(body, requestRef.current.id); apply(saved); clearSignature();
+          current = bookingPreparationNext(current, saved, crypto.randomUUID());
+        }
+      }
       setPending(null);
     } catch (cause) {
       if (!lifetime.current.accepts(version)) return;
-      if (cause instanceof LiveRequestError && cause.status < 500) { setPending(null); if ([409,422].includes(cause.status)) { clearSignature(); setAvailability(null); setDate(''); setNotice('The estimate or availability changed. Reload the saved status before continuing.'); } }
+      if (cause instanceof LiveRequestError && cause.status < 500) { setPending(null); if ([409,422].includes(cause.status)) { clearSignature(); setAvailability(null); setNotice('The estimate or availability changed. Refresh the calendar and check the saved status.'); } }
       fail(cause);
     } finally { running.current = false; if (lifetime.current.accepts(version)) setBusy(false); }
   }
@@ -128,12 +151,22 @@ export function BookingFlowPanel({ request, latest, verifiedEmail, disabled = fa
     if (pending || busy || disabled) return;
     void perform({ path: `/api/quote/requests/booking/${path}`, method, body: JSON.stringify(payload), review: reviewBinding });
   }
-  function approve() {
-    if (!verified || needsLink) { setNotice('Verify email and keep this quote above before approving its estimate.'); document.querySelector<HTMLInputElement>('input[name="customer-email"]')?.focus(); return; }
-    if (!latest || !eligible || !loaded) return;
-    setDate(''); clearSignature(); command('approve', 'POST', { analysisId: latest.id, expectedRevision: request.revision, idempotencyKey: crypto.randomUUID() });
+  function focusRecovery(target: 'photos' | 'email' | 'status' | 'calendar') {
+    if (target === 'calendar') { void loadMonth(month); calendarHeading.current?.focus(); return; }
+    if (target === 'status') { void reload(); return; }
+    const element = target === 'email' ? document.querySelector<HTMLElement>('button[data-quote-email-binding]') ?? document.querySelector<HTMLElement>('input[data-quote-email-binding]') ?? document.querySelector<HTMLElement>('[data-quote-access-heading]') : document.querySelector<HTMLElement>('#live-photos-title');
+    element?.focus(); element?.scrollIntoView({ block: 'start' });
   }
-  function selectDate(value: string) { if (busy || pending || disabled) return; clearSignature(); setDate(value); setError(''); command('date', 'PUT', { approvalId: approval!.id, preferredDate: value, availabilityRevision: availability!.revision, idempotencyKey: crypto.randomUUID() }); }
+  function selectDate(value: string) { if (busy || pending || disabled) return; clearSignature(); setDate(value); setError(''); }
+  function continueToSign() {
+    if (!verified || needsLink) { focusRecovery('email'); return; }
+    if (!latest || !eligible || !state || !availability || availabilityExpired || calendarBusy || pending || busy || disabled) return;
+    try {
+      if (!availability.days.some(day => day.date === date && day.selectable)) throw new Error('Choose an available take-off date.');
+      clearSignature();
+      void perform(bookingPreparationAttempt(state, latest.id, request.revision, { date, time, availabilityRevision: availability.revision }, crypto.randomUUID()));
+    } catch (cause) { fail(cause); }
+  }
   function submit() {
     if (!review || !acknowledged) return;
     try { const signature = validateBookingSignature({ name, method, strokes: method === 'typed' ? [] : strokes, acknowledged }); command('submit','POST',{ reviewProof: review.reviewProof, signature, idempotencyKey: crypto.randomUUID() }); }
@@ -159,30 +192,35 @@ export function BookingFlowPanel({ request, latest, verifiedEmail, disabled = fa
     buttons[target]?.focus();
   }
   const locked = disabled || busy || Boolean(pending), days = bookingMonthDates(month), firstMonth = availability?.minMonth ?? sydneyToday().slice(0,7), lastMonth = availability?.maxMonth ?? shiftBookingMonth(sydneyToday().slice(0,7), 3);
-  const selectedIsCurrent = Boolean(approval && !approval.stale && approval.preferredDate && approval.preferredDate === date);
+  const selectedIsCurrent = Boolean(date && bookingTimeValid(time) && availability?.days.some(day => day.date === date && day.selectable));
+  const guidance = bookingFlowGuidance({ latest, verified, needsLink, loaded, approved: Boolean(approval && !approval.stale), submitted: Boolean(submission), calendarError, calendarBusy, availabilityExpired });
   return <section className="lq-booking" aria-labelledby="live-booking-title">
-    <h3 id="live-booking-title">Estimate approval and reservation request</h3>
+    <h3 id="live-booking-title">Choose date and time → Sign → Submit</h3>
+    <p className="lq-notice" role="status">{guidance.message}</p>
+    {guidance.target && <button type="button" className="secondary" disabled={locked || calendarBusy} onClick={() => focusRecovery(guidance.target!)}>{guidance.target === 'email' ? 'Go to email verification for this quote' : guidance.target === 'photos' ? 'Go to photos and estimate' : guidance.target === 'calendar' ? 'Refresh availability' : 'Check saved request status'}</button>}
     {error && <div className="lq-error" ref={errorBox} tabIndex={-1} role="alert"><p>{error}</p>{!pending && <button type="button" className="secondary" disabled={busy} onClick={() => void reload()}>Check saved request status</button>}</div>}
     {pending && <div className="lq-notice" role="status"><p>This request result is not confirmed. A successful status check keeps your original request available to retry. Retry it before editing.</p><div className="lq-actions"><button type="button" disabled={busy} onClick={() => void perform(pending)}>Retry same request</button><button type="button" className="secondary" disabled={busy} onClick={() => void reload()}>Check saved request status</button></div></div>}
     <p role="status" aria-live="polite">{busy ? 'Checking and saving your request…' : notice}</p>
-    {submission ? <><BookingSubmissionSummary submission={submission} /><div className="lq-actions"><button type="button" className="secondary" disabled={busy || !submission.receiptReady} onClick={() => void download()}>Download saved receipt PDF</button><button type="button" className="secondary" disabled={busy} onClick={() => void reload()}>Refresh receipt status</button>{submission.emailStatus !== 'provider_accepted' || submission.calendarStatus !== 'synced' ? <button type="button" disabled={locked || ['manual_review','outcome_unknown'].includes(submission.emailStatus) || ['manual_review','conflict'].includes(submission.calendarStatus)} onClick={() => command('retry','POST',{})}>Retry pending receipt delivery</button> : null}</div><p>These submitted details, photos, estimate and acknowledgment are saved as an immutable receipt.</p><LiveCustomerCompanyProposal key={request.id} requestId={request.id} onAccessLost={onAccessLost} /></> : <>
-      <p className="lq-notice">Approve the provisional estimate to request a preferred start date. <strong>Company confirmation required.</strong> A request does not reserve the date or confirm a contract.</p>
-      {approval?.stale && <p role="status">Your saved estimate changed. Review the current photos and estimate, then approve it again.</p>}
-      {!approval || approval.stale ? <><p>{eligible ? 'Review your saved AI estimate and exclusions above before continuing.' : 'Save a current numeric AI provisional estimate from your cabinet photos before approving.'}</p><button type="button" disabled={locked || !eligible || (verified && !loaded)} onClick={approve}>Approve estimate and choose date</button>{(!verified || needsLink) && <p>Verify email and keep this quote above to continue.</p>}</> : <>
-        <p>Approved provisional painting estimate: <strong>{MONEY.format(approval.snapshot.pricing.total! / 100)} incl GST</strong>. Exact quantities and final scope remain subject to site confirmation.</p>
-        <h4>Choose a preferred start date</h4><p>Booked days are unavailable. Requestable days are preferences only; the company must check the complete duration.</p>
+    {submission ? <><BookingSubmissionSummary submission={submission} /><div className="lq-actions"><button type="button" className="secondary" disabled={busy || !submission.receiptReady} onClick={() => void download()}>Download saved receipt PDF</button><button type="button" className="secondary" disabled={busy} onClick={() => void reload()}>Refresh receipt status</button>{submission.emailStatus !== 'provider_accepted' || !['synced','not_required'].includes(submission.calendarStatus) ? <button type="button" disabled={locked || ['manual_review','outcome_unknown'].includes(submission.emailStatus) || ['manual_review','conflict'].includes(submission.calendarStatus)} onClick={() => command('retry','POST',{})}>Retry pending receipt delivery</button> : null}</div><p>These submitted details, photos, estimate and acknowledgment are saved as an immutable receipt.</p><LiveCustomerCompanyProposal key={request.id} requestId={request.id} onAccessLost={onAccessLost} /></> : <>
+      <p className="lq-notice">Choose your preferred take-off visit, sign and submit once. The company will choose the installation visit and send your booking confirmation. No date is held until company confirmation.</p>
+      {approval?.stale && <p role="status">Your estimate changed. Continuing to sign uses the current saved photos and estimate.</p>}
+      {!showCalendar && <p>{eligible ? 'Verify the email saved on this quote above to choose your date and time.' : 'Save a current numeric AI estimate from your cabinet photos before choosing a date.'}</p>}
+      {showCalendar && <>
+        <p>Photo-based painting estimate: <strong>{MONEY.format(latest!.pricing!.total! / 100)} incl GST</strong>. Additional damage found on site may increase the price; any extra work and cost will be discussed before proceeding.</p>
+        <h4 ref={calendarHeading} tabIndex={-1}>1. Choose your take-off date and time</h4><p>Booked days are unavailable. Times are in Sydney local time; the company checks the full visit durations before confirmation.</p>
         <div className="lq-calendar-nav"><button type="button" className="secondary" aria-label="Previous month" disabled={locked || calendarBusy || month <= firstMonth} onClick={() => { clearSignature(); setMonth(shiftBookingMonth(month,-1)); }}>←</button><h5>{new Intl.DateTimeFormat('en-AU',{timeZone:'UTC',month:'long',year:'numeric'}).format(new Date(`${month}-01T12:00:00Z`))}</h5><button type="button" className="secondary" aria-label="Next month" disabled={locked || calendarBusy || month >= lastMonth} onClick={() => { clearSignature(); setMonth(shiftBookingMonth(month,1)); }}>→</button></div>
-        {calendarBusy && <p role="status">Checking company availability…</p>}{calendarError && <p className="lq-error" role="alert">{calendarError} Dates remain disabled until a complete check succeeds.</p>}{availabilityExpired && <p role="status">Availability expired. Refresh before choosing or signing.</p>}
+        {calendarBusy && <p role="status">Checking company availability…</p>}{calendarError && <p className="lq-error" role="alert">{calendarError} Dates remain disabled until a complete check succeeds.</p>}{availabilityExpired && <p role="status">This calendar check expired. It refreshes automatically while idle, or use Refresh availability. Your saved preferred date remains unchanged.</p>}
         <div className="lq-calendar" ref={calendar} role="group" aria-label="Preferred start date in Sydney; use arrow keys to move between requestable dates">
           {['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(day => <span className="lq-weekday" key={day} aria-hidden="true">{day}</span>)}
           {Array.from({length:(new Date(`${month}-01T12:00:00Z`).getUTCDay()+6)%7},(_,i) => <span key={`space-${i}`} />)}
-          {days.map((value,i) => { const day = availability?.days[i], selectable = Boolean(day?.selectable && !availabilityExpired && !calendarBusy && !locked); return <button type="button" key={value} disabled={!selectable} aria-pressed={approval.preferredDate === value} aria-label={`${bookingDateLabel(value)}, ${day?.reason === 'busy' ? 'unavailable: booked' : selectable ? 'available to request only' : 'unavailable'}`} onKeyDown={calendarKeyboard} onClick={() => selectDate(value)}>{i+1}{day?.reason === 'busy' && <span>Booked</span>}</button>; })}
+          {days.map((value,i) => { const day = availability?.days[i], selectable = Boolean(day?.selectable && !availabilityExpired && !calendarBusy && !locked); return <button type="button" key={value} disabled={!selectable} aria-pressed={date === value} aria-label={`${bookingDateLabel(value)}, ${day?.reason === 'busy' ? 'unavailable: booked' : selectable ? 'available to request only' : 'unavailable'}`} onKeyDown={calendarKeyboard} onClick={() => selectDate(value)}>{i+1}{day?.reason === 'busy' && <span>Booked</span>}</button>; })}
         </div>
-        <div className="lq-actions"><button type="button" className="secondary" disabled={locked || calendarBusy} onClick={() => { clearSignature(); void loadMonth(month); }}>Refresh availability</button></div>
-        {approval.preferredDate && <p role="status">Saved preferred start date: <strong>{bookingDateLabel(approval.preferredDate)}</strong> (Sydney). No date is held.</p>}
+        <div className="lq-actions"><button type="button" className="secondary" disabled={locked || calendarBusy} onClick={() => { void loadMonth(month); }}>Refresh availability</button></div>
+        <label>Take-off time (Sydney) *<input name="booking-preferred-time" type="time" required value={time} disabled={locked} onChange={event => { clearSignature(); setTime(event.target.value); }} /></label>
+        {date && <p role="status">Selected take-off: <strong>{bookingDateLabel(date)}{time ? ` · ${time}` : ' · Choose a time'}</strong> (Sydney). No date is held.</p>}
         {availability && !availability.days.some(day => day.selectable) && <p>No dates are available to request in this month.</p>}
-        {!review && <button type="button" disabled={locked || calendarBusy || !selectedIsCurrent || !availability || availabilityExpired} onClick={() => command('review','POST',{approvalId:approval.id,selectionRevision:approval.selectionRevision},{approvalId:approval.id,selectionRevision:approval.selectionRevision})}>Review acknowledgment and sign</button>}
-        {review && <fieldset className="lq-fields lq-booking-sign" disabled={locked || availabilityExpired}><legend>Nonbinding reservation request acknowledgment</legend><p>{review.snapshot.acknowledgment.text}</p><p>Preferred start date: <strong>{bookingDateLabel(review.snapshot.preferredDate!)}</strong>. Provisional painting amount: <strong>{MONEY.format(review.snapshot.pricing.total! / 100)} incl GST</strong>.</p><label>Your full name *<input name="booking-signature-name" autoComplete="name" required maxLength={120} value={name} onChange={event => setName(event.target.value)} /></label><fieldset><legend>Signature method</legend><label className="lq-option"><input type="radio" name="booking-signature-method" checked={method === 'drawn'} onChange={() => { setMethod('drawn'); setStrokes([]); }} />Draw signature</label><label className="lq-option"><input type="radio" name="booking-signature-method" checked={method === 'typed'} onChange={() => { setMethod('typed'); setStrokes([]); }} />Use my typed full name as my signature</label></fieldset>{method === 'drawn' && <SignaturePad label="Draw your acknowledgment signature *" strokes={strokes} onChange={setStrokes} disabled={locked || availabilityExpired} />}<label className="lq-option"><input name="booking-acknowledged" type="checkbox" checked={acknowledged} onChange={event => setAcknowledged(event.target.checked)} />I acknowledge the summary above and understand company confirmation is required. *</label><button type="button" disabled={!acknowledged || !name.trim() || (method === 'drawn' && !strokes.length)} onClick={submit}>Submit reservation request</button></fieldset>}
+        {!review && <button type="button" disabled={locked || calendarBusy || !selectedIsCurrent || !availability || availabilityExpired} onClick={continueToSign}>Continue to sign</button>}
+        {review && <fieldset className="lq-fields lq-booking-sign" disabled={locked}><legend ref={signHeading} tabIndex={-1}>2. Sign your booking request</legend><p>{review.snapshot.acknowledgment.text}</p><p>Take-off date and time: <strong>{bookingDateLabel(review.snapshot.preferredDate!)} · {review.snapshot.preferredTime}</strong> (Sydney). Provisional painting amount: <strong>{MONEY.format(review.snapshot.pricing.total! / 100)} incl GST</strong>.</p><label>Your full name *<input name="booking-signature-name" autoComplete="name" required maxLength={120} value={name} onChange={event => setName(event.target.value)} /></label><fieldset><legend>Signature method</legend><label className="lq-option"><input type="radio" name="booking-signature-method" checked={method === 'drawn'} onChange={() => { setMethod('drawn'); setStrokes([]); }} />Draw signature</label><label className="lq-option"><input type="radio" name="booking-signature-method" checked={method === 'typed'} onChange={() => { setMethod('typed'); setStrokes([]); }} />Use my typed full name as my signature</label></fieldset>{method === 'drawn' && <SignaturePad label="Draw your acknowledgment signature *" strokes={strokes} onChange={setStrokes} disabled={locked} />}<label className="lq-option"><input name="booking-acknowledged" type="checkbox" checked={acknowledged} onChange={event => setAcknowledged(event.target.checked)} />I acknowledge this estimate, my take-off date and time, and the company assigning the installation visit. *</label><button type="button" disabled={!acknowledged || !name.trim() || (method === 'drawn' && !strokes.length)} onClick={submit}>3. Submit booking request</button></fieldset>}
       </>}
     </>}
   </section>;

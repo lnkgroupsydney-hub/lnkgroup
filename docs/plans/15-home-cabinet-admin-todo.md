@@ -1,5 +1,15 @@
 # 메인 → Cabinet → 회사 관리 웹 제작 TODO
 
+**2026-10-13 테스트 자료 정리:** 사용자 확인으로 운영 견적 15건·데모 초안 8건·문의 8건과 연결 기록, 비공개 사진 파일 46개·Google 시험 일정 13개를 삭제했다. 이미 취소된 연결 일정 1개도 확인했고 등록 고객/EMS 견적·문의와 관련 날짜 점유는 0건이다. 회사 연결·직원 Auth·bucket/RLS 설정은 보존하고 기존 시험 메일 4개의 수집 ID만 남겼다. 아래 “시험 점유 유지/10월 29일 보존”은 삭제 전 당시 결과이며 현재 보관 상태는 [정리 검증 기록](../verification/2026-10-13-demo-data-cleanup.md)을 따른다.
+
+- [x] 사용자 지정 시험 고객·견적·사진·서명·예약·Google 일정 삭제와 회사 설정 보존 대조.
+- [x] Gmail 재수집 방지 ID 및 기존 권한 유지, 실제 reader 4건 skip·본문 조회 0건·새 후보 0건 대조; 전체 검사 723/723 통과.
+- [x] 삭제된 견적의 이전 브라우저 세션에서 `Reopen quote form` 복구, 작성 쿠키 보존·활성 인증 거절·직원 로그인 유지 구현; 회사 Production 배포·빈 폼/Reload·EMS 로그인 대조. 최종 전체 728/728·lint·타입·빌드 통과.
+
+**2026-10-13 현재 구현 — 예약 절차 단순화:** [45번 현행 계획](45-simple-take-off-install-booking.md). 신규 고객은 **take-off 날짜·시간 선택 → 서명 → 제출**, EMS는 **견적·안내 확인 + take-off 종료·install 시작/종료 입력 → Booking confirm 한 번**으로 진행한다. 원본 사진 예상 가격·고객 take-off 시작을 고정하고 두 방문의 DB 점유·Google 독립 검증 뒤 고객 확인 메일을 자동 처리한다. 새 요청의 재서명·제안 발행/수락 왕복·Calendar 대기 이벤트를 없애며 기존 v1 서명은 보존한다. SB-01~05 코드·회귀 및 전체 **720/720**·check 통과. SB-06 회사 DB·원본 보존·공개 실행 차단·최종 Production READY와 회사 Chrome EMS 단일 확정/Google/Gmail 대조 완료. 정상 고객 API의 제출·복구·11/3·5일 차단/4일 허용·동일 확정 PDF까지 확인했다. [실제 기록/제한](../verification/2026-10-13-simple-take-off-install-booking.md)에 신규 고객 전체 키보드/모바일 미인수와 시험 점유 유지를 구분한다. 회사 검증 당시에는 commit/main merge/push를 수행하지 않았다. 후속 통합은 최신 Git 기록을 따른다.
+
+**2026-10-13 최신 구현 — 고객 날짜 선택·EMS 문의 연결:** [44번 계획](44-quote-customer-date-first-recovery.md). 고객 예상본 승인 → 희망일 → 서명 제출 → EMS 검토/회사 전체 기간 확인 → 확정 일정/메일 순서를 유지한다. 상태만 바뀐 AI 분석 stale 오류·달력 안내/유휴 재조회·안전한 새 견적 진입을 수정하고, EMS Enquiries에 실제 운영 견적 조회를 연결했다. 전체 **691/691**, Enquiries 추가 관리자 **13/13**·lint·타입·빌드 통과. 사용자 제출 **10월 29일 / REQUEST-C214E9F473D7**의 DB·PDF·메일 접수·Google 확정 대기를 확인했으며 회사 확정과 구분한다. 코드·회사 적용·브라우저 인수 수준은 44번 체크리스트와 [검증 기록](../verification/2026-10-13-quote-customer-date-first-recovery.md)을 따른다. 현재 작업 브랜치는 아직 main에 통합하지 않았다.
+
 **2026-10-13 최신 Git 통합:** EMS 예약 검토·확정 작업 커밋 `acf2faa`를 `main`에 병합했다(`3bddc59`). 병합 트리는 검증한 작업 브랜치와 동일하며 회사 `origin`에 main과 `codex/ems-confirmed-booking-calendar-20261013`을 push했다. 후속 문서 커밋은 이 통합 기록만 갱신한다.
 
 **2026-10-13 최신 구현 — EMS 회사 제안·확정 예약:** [43번 계획](43-ems-confirmed-booking-calendar.md)의 최종 금액·여러 작업 구간·별도 인증 고객 확인·DB 원자 점유·Google 독립 검증·고객 날짜 차단·고정 안내/대사를 새 `codex/ems-confirmed-booking-calendar-20261013`에 구현했다. 전체 최종 **678/678**, 실제 PostgreSQL 17의 별도 세션 경합 **8/8**, lint·타입·빌드가 통과했다. 회사 신규 migration·익명 차단·원본 보존·Production READY를 확인했다. 회사 Chrome에서 **A$2,900 + GST A$290 = A$3,190**, **20–21일 종일 +23일 09–13시** 초안을 저장하고, 시작일 다음 날인 21일의 임시 busy 충돌과 발행 비활성화를 확인했다. 회사 Chrome의 **제안 발행 → 고객 OTP 복구/전체 금액·기간 확인 → EMS 확정**과 실제 Google 두 구간/DB/고정 PDF hash 일치를 추가 확인했다. **Gmail 실제 3통·확정 PDF 2페이지·고객 복구/320·393px·고객 B의 20/21/23일 선택 차단·22일 저장·오래된 날짜 저장/제출 409 인수까지 완료**했다. 예정 시각 자동 cron 실행과 확정 Google event의 실제 변경 주입은 미실행이며, 확인용 가상 예약의 20·21·23일 점유는 유지했다. [검증 기록](../verification/2026-10-13-ems-confirmed-booking-calendar.md). 이번 배포와 Git 커밋·병합·push는 구분한다.

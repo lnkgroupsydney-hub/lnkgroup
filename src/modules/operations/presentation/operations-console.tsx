@@ -5,7 +5,7 @@ import Link from "next/link";
 import type { ChangeRequest, Enquiry, GoogleConnectionState, OperationsDashboard } from "../domain/contracts";
 import { summarizeSyncError, summarizeSyncResult } from "../domain/sync-result";
 import { BookingOperationsPanel } from "@/modules/bookings/client";
-import { useWorkspaceDraft, useUnsavedChanges, useWorkspaceNavigation } from "@/shared/ui/admin-workspace-state";
+import { WorkspaceLink, useWorkspaceDraft, useUnsavedChanges, useWorkspaceNavigation } from "@/shared/ui/admin-workspace-state";
 import { PrivateRequestFailure, PrivateRequestLifetime, StalePrivateRequest } from "./request-lifetime";
 import "./operations-console.css";
 
@@ -302,7 +302,7 @@ function OperationsContent({view}: {view?: OperationsViewName}) {
     {!view && <header className="operations-header"><Link href="/" aria-label="L&K Group home">L&K Group</Link><span>Private operations · preview</span>{session?.authenticated && <button type="button" onClick={logout} disabled={Boolean(busy)}>Sign out</button>}</header>}
     <div className="operations-shell" id="operations-content" tabIndex={-1}>
       {!view && <h1>Enquiries and company calendar</h1>}
-      <p className="operations-intro">{session?.authenticated ? <>Company account: <strong>{session.ownerEmail}</strong>. {session.storage === "supabase" ? "Requests are stored privately in the company Supabase database." : "Requests are stored locally on this device."} Signed company-only demonstrations can be reviewed and scheduled below. Real prices, contracts and operational bookings are not enabled.</> : "Sign in to review company enquiries and schedules. This local preview uses owner access; individual staff accounts and MFA are not enabled yet."}</p>
+      <p className="operations-intro">{session?.authenticated ? <>Company account: <strong>{session.ownerEmail}</strong>. {session.storage === "supabase" ? "Requests are stored privately in the company Supabase database." : "Requests are stored locally on this device."} This panel contains Gmail enquiries and previous company-only demonstrations. Demonstration documents and schedules do not confirm operational bookings. Saved website estimates and signed reservation requests are in {view === "enquiries" ? <>the website requests section above or </> : null}<WorkspaceLink href="/admin/quotes">Quotes</WorkspaceLink>; review and confirm their complete work periods in <WorkspaceLink href="/admin/schedule">Schedule</WorkspaceLink>.</> : "Sign in through the company administrator workspace to review Gmail enquiries and previous demonstrations. Local owner access remains available for the local preview when configured."}</p>
       {error && <div className="operations-error" role="alert">{error}</div>}
       {notice && <div className="operations-notice" role="status">{notice}</div>}
       {loading && <p role="status">Loading operations status…</p>}
@@ -374,8 +374,8 @@ function OperationsContent({view}: {view?: OperationsViewName}) {
             {isSignedDemo ? <p className="operations-notice">This change belongs to a signed demonstration. Review it in <a href={view ? "/admin/schedule#signed-demo-requests" : "#signed-demo-requests"}>Signed demo requests</a>, create a revised proposal and obtain a new customer signature.</p> : <div className="operations-actions"><button type="button" onClick={() => reviewChange(change, "approve")} disabled={Boolean(busy) || change.kind === "invalid"}>{change.kind === "delete" ? "Remove provisional time" : "Approve change"}</button><button type="button" className="operations-button-secondary" onClick={() => reviewChange(change, "reject")} disabled={Boolean(busy)}>{change.kind === "delete" ? "Restore calendar event" : "Reject change"}</button></div>}
           </li>;})}</ul>}
         </section>}
-        {(!view || view === "enquiries") && <section className="operations-panel"><div className="bookings-header"><h2>Enquiries ({dashboard.enquiries.length})</h2><button type="button" className="operations-button-secondary" disabled={Boolean(busy)} onClick={() => void loadDashboard().catch(cause => reportError(cause, "Refresh failed."))}>Refresh enquiries</button></div>
-          {dashboard.enquiries.length === 0 ? <p>No requests have been stored or imported yet.</p> : <div className="operations-enquiries">
+        {(!view || view === "enquiries") && <section className="operations-panel"><div className="bookings-header"><h2>Gmail and other web enquiries ({dashboard.enquiries.length})</h2><button type="button" className="operations-button-secondary" disabled={Boolean(busy)} onClick={() => void loadDashboard().catch(cause => reportError(cause, "Refresh failed."))}>Refresh Gmail and other enquiries</button></div>
+          {dashboard.enquiries.length === 0 ? <p>No Gmail or other web enquiries have been stored or imported in this panel yet. Website quote and reservation requests are listed separately.</p> : <div className="operations-enquiries">
             <ul className="operations-list operations-inbox">{dashboard.enquiries.map((enquiry) => <li key={enquiry.id}>
               <button type="button" className={selectedId === enquiry.id ? "selected" : ""} onClick={() => { if (selectedId !== enquiry.id) navigate(() => selectEnquiry(enquiry)); }} aria-pressed={selectedId === enquiry.id}>
                 <strong>{enquiry.reference}</strong><span>{enquiry.source === "gmail" ? "Gmail" : "Web"} · {enquiry.status} · {timeLabel(enquiry.createdAt)}</span><span>{formatUnknown(enquiry.name)} · {formatUnknown(enquiry.email)}</span>

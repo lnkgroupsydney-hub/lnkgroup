@@ -129,15 +129,25 @@ export function createCustomerAuthApi(deps: CustomerAuthApiDependencies) {
    const res = json({ request }); cookie(res, SESSION, s, address, Math.max(1, Math.floor((s.expiresAt - deps.now()) / 1000))); return res
   }),
   logout: safe(async req => {
-   const address = writable(req)
+   const address = writable(req), values = await input(req)
+   if (values.preserveWritingSession !== undefined && typeof values.preserveWritingSession !== 'boolean') throw new QuoteRequestError(400, 'Invalid customer access recovery request.')
+   const preserveWritingSession = values.preserveWritingSession === true
+   if (preserveWritingSession) {
+    // A stale email cookie can hide an unrelated guest quote. Recover that
+    // capability without rotating it, only after customer access is invalid.
+    let active: CustomerQuoteSession | null = null
+    try { active = await session(req) } catch (error) { if (!(error instanceof QuoteRequestError && error.status === 401)) throw error }
+    if (active) throw new QuoteRequestError(409, 'Your email access is still active. Use the normal sign-out option.')
+   }
    // Expired sessions can always clear their cookies; live local sessions are revoked.
    let s: CustomerQuoteSession | null = null
    try { s = stored<CustomerQuoteSession>(req, SESSION, address) } catch (error) { if (!(error instanceof QuoteRequestError && error.status === 401)) throw error }
    if (s && s.expiresAt > deps.now()) {
     try { await deps.store.command('logout', args(s)) } catch (error) { if (!(error instanceof QuoteRequestError && error.status === 401)) throw error }
    }
-   const res = json({ signedOut: true }); cookie(res, SESSION, null, address, 0); cookie(res, CHALLENGE, null, address, 0)
-   res.headers.append('set-cookie', `lk_quote_request=; Path=${PATH}; HttpOnly; SameSite=Lax; Max-Age=0${address.protocol === 'https:' ? '; Secure' : ''}`); return res
+   const res = json({ signedOut: true, writingSessionPreserved: preserveWritingSession }); cookie(res, SESSION, null, address, 0); cookie(res, CHALLENGE, null, address, 0)
+   if (!preserveWritingSession) res.headers.append('set-cookie', `lk_quote_request=; Path=${PATH}; HttpOnly; SameSite=Lax; Max-Age=0${address.protocol === 'https:' ? '; Secure' : ''}`)
+   return res
   }),
   handoff: safe(async req => {
    writable(req, true)

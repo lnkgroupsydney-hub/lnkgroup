@@ -28,6 +28,14 @@ export function parseCustomerChallenge(value: unknown): CustomerCodeChallenge {
 export const EMPTY_CUSTOMER_ACCESS: CustomerAccessState = { customer: null, requests: [], currentRequestId: null };
 export const CUSTOMER_ACCESS_CHANNEL = 'lk-live-quote-access';
 export const CUSTOMER_ACCESS_CHANGED = 'access-changed';
+/** Do not rotate away the only guest cookie for an unlinked saved quote. */
+export function canStartAnotherQuote(request: { id: string; email: string } | null, access: CustomerAccessState, hasUnsavedChanges: boolean) {
+  return Boolean(request && !hasUnsavedChanges && access.customer && access.customer.email.toLowerCase() === request.email.toLowerCase() && access.currentRequestId === request.id && access.requests.some(item => item.id === request.id));
+}
+/** Recovery clears expired customer access only; the existing writing cookie must survive. */
+export function canRecoverExpiredCustomerAccess(request: { id: string } | null, access: CustomerAccessState, hasUnsavedChanges: boolean, accessExpired: boolean) {
+  return accessExpired && !request && !hasUnsavedChanges && !access.customer && !access.currentRequestId && access.requests.length === 0;
+}
 export function consumeQuoteHandoff(location: Pick<Location, 'hash' | 'pathname' | 'search'>, replace: (url: string) => void): string | null {
   if (!location.hash.startsWith('#restore=')) return null;
   const value = location.hash.slice('#restore='.length);

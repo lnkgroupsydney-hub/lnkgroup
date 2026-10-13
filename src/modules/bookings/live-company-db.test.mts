@@ -66,3 +66,58 @@ test('bounded reconciliation batch includes upcoming confirmed/review holds and 
  await rpc('reconcile_result',{bookingId:state.booking!.id,ok:false,error:'Busy changed'});await rpc('reconcile_result',{bookingId:state.booking!.id,ok:true})
  const batch=await rpc<{states:LiveCompanyBookingState[]}>('reconcile_batch',{});assert.equal(batch.states[0].booking!.status,'review_required');assert.ok((await db.query<{last_calendar_check_at:string}>('select last_calendar_check_at from public.lk_live_company_bookings where id=$1',[state.booking!.id])).rows[0].last_calendar_check_at)
 })
+
+const simpleInputs={expectedRevision:0,takeOffEndLocal:'2030-01-01T10:00',installStartLocal:'2030-01-08T09:00',installEndLocal:'2030-01-08T11:00',companyNote:'The price is based on photos. Additional site damage and cost will be discussed before work.'}
+async function simplePrepared(f:Awaited<ReturnType<typeof seedCompanyFixture>>,overrides:Record<string,unknown>={}) {
+ const args={...f.staffArgs,...simpleInputs,idempotencyKey:randomUUID(),...overrides}
+ const prepared=await rpc<{hash:string;segments:unknown[];amountExGst:number;gst:number;total:number}>('staff_prepare_request',args)
+ return {args,prepared}
+}
+test('one v2 staff confirmation derives fixed photo pricing and take-off start and creates only the confirmation outbox with original signature evidence',async()=>{
+ const f=await seedCompanyFixture(db,{simple:true}),{args,prepared}=await simplePrepared(f)
+ assert.equal(prepared.amountExGst,150000);assert.equal(prepared.gst,15000);assert.equal(prepared.total,165000)
+ assert.equal((await rpc('staff_state',f.staffArgs)).proposal,null)
+ const state=await rpc('staff_confirm_request',{...args,calendarCheck:companyProof(prepared.hash)})
+ assert.equal(state.acceptance,null);assert.equal(state.booking!.confirmationBasis,'signed_request');assert.equal(state.booking!.signedSubmissionId,f.submissionId);assert.equal(state.booking!.status,'confirming')
+ assert.deepEqual(state.proposal!.segments.map(s=>({purpose:s.purpose,start:s.startLocal,end:s.endLocal})),[{purpose:'take_off',start:'2030-01-01T09:00',end:'2030-01-01T10:00'},{purpose:'install',start:'2030-01-08T09:00',end:'2030-01-08T11:00'}])
+ assert.equal(state.proposal!.total,165000);assert.equal(state.proposal!.companyNote,simpleInputs.companyNote);assert.deepEqual(state.submission.snapshot,f.snapshot)
+ const kinds=(await db.query<{kind:string}>('select kind from public.lk_live_company_outbox where request_id=$1',[f.requestId])).rows.map(x=>x.kind);assert.deepEqual(kinds,['confirmation'])
+ const count=(await db.query<{n:number}>('select count(*)::integer n from public.lk_live_company_acceptances')).rows[0].n;assert.equal(count,0)
+ const claim=await rpc<LiveCompanyWorkerClaim>('worker_claim',{requestId:f.requestId,leaseToken:randomUUID()});assert.equal(claim.acceptance,null);assert.equal(claim.submission.id,f.submissionId)
+})
+test('v2 fixed amount/start cannot be overridden and its original v1 publish/accept routes are unavailable',async()=>{
+ const f=await seedCompanyFixture(db,{simple:true})
+ for(const forged of [{amountExGst:1},{takeOffStartLocal:'2030-01-02T09:00'},{proposal},{segments:periods}])await assert.rejects(simplePrepared(f,forged),failure('LK400'))
+ for(const cmd of ['staff_draft','staff_publish','staff_confirm'])await assert.rejects(rpc(cmd,{...f.staffArgs,expectedRevision:0,idempotencyKey:randomUUID(),proposal,calendarTarget:companyTarget}),failure('LK409'))
+ for(const cmd of ['customer_review','customer_accept'])await assert.rejects(rpc(cmd,{...f.customerArgs,idempotencyKey:randomUUID()}),failure('LK409'))
+ const original=await seedCompanyFixture(db,{email:'legacy@example.invalid'});await assert.rejects(simplePrepared(original),failure('LK409'));assert.equal((await draft(original)).proposal!.status,'draft')
+})
+test('single confirmation rejects time ordering, invalid DST, stale Google proofs, wrong target, stale revision and revoked staff without allocating records',async()=>{
+ const f=await seedCompanyFixture(db,{simple:true})
+ for(const patch of [{takeOffEndLocal:'2030-01-01T08:00'},{installStartLocal:'2030-01-01T09:30'},{installEndLocal:'2030-01-08T08:00'},{installStartLocal:'2030-04-07T02:30',installEndLocal:'2030-04-07T04:00'},{expectedRevision:1}])await assert.rejects(simplePrepared(f,patch),failure(patch.expectedRevision?'LK409':'LK400'))
+ const {args,prepared}=await simplePrepared(f)
+ for(const proof of [undefined,companyProof('a'.repeat(64)),{...companyProof(prepared.hash),conflicts:[{}]},{...companyProof(prepared.hash),checkedAt:new Date(Date.now()-180000).toISOString()},{...companyProof(prepared.hash),calendarId:'other'}])await assert.rejects(rpc('staff_confirm_request',{...args,calendarCheck:proof}),failure('LK409'))
+ await db.exec('reset role');await db.query('delete from auth.sessions where id=$1',[f.staffSessionId]);await db.exec('set role service_role')
+ await assert.rejects(simplePrepared(f),failure('LK403'))
+ assert.equal((await db.query<{n:number}>('select count(*)::integer n from public.lk_live_company_bookings')).rows[0].n,0)
+})
+test('a later install conflict atomically rolls back take-off, immutable proposal, outbox and receipt; adjacent intervals remain valid',async()=>{
+ const a=await seedCompanyFixture(db,{simple:true}),one=await simplePrepared(a);await rpc('staff_confirm_request',{...one.args,calendarCheck:companyProof(one.prepared.hash)})
+ const b=await seedCompanyFixture(db,{simple:true,email:'next@example.invalid',preferredDate:'2030-01-02'}),next=await simplePrepared(b,{takeOffEndLocal:'2030-01-02T10:00'})
+ await assert.rejects(rpc('staff_confirm_request',{...next.args,calendarCheck:companyProof(next.prepared.hash)}),failure('LK409'))
+ for(const table of ['lk_live_company_proposals','lk_live_company_bookings','lk_live_company_outbox','lk_live_company_command_receipts'])assert.equal((await db.query<{n:number}>(`select count(*)::integer n from public.${table} where request_id=$1`,[b.requestId])).rows[0].n,0)
+ assert.equal((await db.query<{n:number}>('select count(*)::integer n from public.lk_live_booking_confirmed_segments where submission_id=$1',[b.submissionId])).rows[0].n,0)
+ const adjacent=await simplePrepared(b,{takeOffEndLocal:'2030-01-02T10:00',installStartLocal:'2030-01-08T11:00',installEndLocal:'2030-01-08T12:00'})
+ assert.equal((await rpc('staff_confirm_request',{...adjacent.args,calendarCheck:companyProof(adjacent.prepared.hash)})).booking!.events.length,2)
+})
+test('single confirmation response-loss replay keeps one booking and original evidence without a new Calendar proof and rejects changed retry payloads',async()=>{
+ const f=await seedCompanyFixture(db,{simple:true}),{args,prepared}=await simplePrepared(f),first=await rpc('staff_confirm_request',{...args,calendarCheck:companyProof(prepared.hash)})
+ const again=await rpc('staff_confirm_request',args);assert.equal(again.booking!.id,first.booking!.id);assert.equal(again.proposal!.hash,first.proposal!.hash)
+ await assert.rejects(rpc('staff_confirm_request',{...args,companyNote:'Different instruction'}),failure('LK409'))
+ await assert.rejects(rpc('staff_confirm_request',{...args,idempotencyKey:randomUUID()}),failure('LK409'))
+ assert.equal((await db.query<{n:number}>('select count(*)::integer n from public.lk_live_company_bookings')).rows[0].n,1)
+})
+test('v2 helpers and retained v1 implementation remain inaccessible to public customer roles',async()=>{
+ for(const role of ['anon','authenticated']){await db.exec(`set role ${role}`);await assert.rejects(db.query('select public.lk_live_booking_simple_ack()'),failure('42501'));await assert.rejects(db.query("select public.lk_live_booking_sydney_instant('2030-01-01T09:00')"),failure('42501'));await assert.rejects(db.query("select lk_private.lk_live_company_booking_command_v1('staff_list','{}')"),failure('42501'))}
+ await db.exec('set role service_role')
+})

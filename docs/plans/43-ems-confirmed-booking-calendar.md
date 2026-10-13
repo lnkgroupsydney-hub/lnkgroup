@@ -1,5 +1,7 @@
 # EMS 회사 예약 검토·확정과 Google Calendar 작업 기간 연동
 
+**2026-10-13 후속 개정:** 신규 요청의 현재 진행은 [45번 날짜·시간·서명 1회/EMS 단일 확정](45-simple-take-off-install-booking.md)을 따른다. 이 문서의 별도 회사 제안·두 번째 고객 수락·최초 Calendar 대기 일정은 기존 v1 서명 경로와 당시 검증 기록에 해당한다. 새 v2는 원본 가견적과 고객 take-off 시작을 유지하고 회사가 install 기간을 정해 한 번 확정한다.
+
 2026-10-13 · Australia/Sydney · 조사 기준 `main = origin/main = 7f801b6`
 
 **Git 통합 완료:** 작업 브랜치 구현 커밋 `acf2faa` → main 병합 `3bddc59`. 병합 트리는 검증한 작업 브랜치와 동일하고 회사 `origin`에 두 브랜치를 push했다. 후속 문서 갱신은 이 실행 기록만 추가하며 코드·DB·Calendar를 변경하지 않는다.
@@ -9,6 +11,8 @@
 [42번 예약 요청](42-live-estimate-booking-request-calendar.md)의 다음 단계다. [전체 흐름](41-domain-live-quote-booking-plan.md)·[TODO](15-home-cabinet-admin-todo.md)·[기존 수동 기간/확정 규칙](33-admin-booking-confirmation-day-plan.md)을 함께 따른다.
 
 ## 1. 목표와 고객 확인
+
+이 단계의 시작 조건은 **고객의 예상 금액 승인 → 희망일 선택 → 예약 요청 서명·제출**이다. 고객에게 EMS 선행 확정을 요구하지 않는다. 고객 날짜 선택 복구와 수동 예상 견적 검토/예약 제출 구분은 [44번 후속 수정](44-quote-customer-date-first-recovery.md)을 따른다.
 
 **EMS 요청 열기 → 사진/AI 예상본 확인 → 회사 최종 금액·범위·실제 작업 구간 입력 → 충돌 검사 → 회사 제안 발행 → 인증 고객의 해당 버전 확인 → 회사 확정 → DB 기간 점유 → Google 확정 일정 저장·독립 조회 → 고객/EMS 확정 표시·통지 → 다른 고객 날짜 선택 차단.**
 

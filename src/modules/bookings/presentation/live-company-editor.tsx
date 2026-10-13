@@ -1,9 +1,10 @@
 'use client';
 
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
+import { COMPANY_BOOKING_SITE_DAMAGE_NOTE } from '../domain/live-contracts';
 import { useUnsavedChanges, useWorkspaceDraft } from '@/shared/ui/admin-workspace-state';
 import type { LiveCompanyBookingState, LiveCompanyCalendarCheck } from '../domain/live-contracts';
-import { companyBookingRequest, companyDraftAfterRead, companyMoney, companyTime, companyProcessingRetryable, currentAcceptance, dollarsToCents, parseCompanyCheck, periodPayload, shiftDay, type CompanyPeriodInput } from './live-booking-client';
+import { companyBookingRequest, companyDraftAfterRead, companyMoney, companyTime, companyProcessingRetryable, currentAcceptance, dollarsToCents, parseCompanyCheck, periodPayload, shiftDay, signedRequestConfirmationPayload, usesSignedRequestBooking, type SignedRequestScheduleInput, type CompanyPeriodInput } from './live-booking-client';
 import { useCompanyBookingState } from './live-booking-state';
 import { LiveConfirmationSummary, LiveProposalSummary } from './live-proposal-summary';
 import { LiveCompanyBookingDocuments } from './live-booking-documents';
@@ -68,7 +69,50 @@ function CompanyEditorForm({state,manager}:{state:LiveCompanyBookingState;manage
     {state.proposals.length>1&&<details><summary>Preserved company proposal history ({state.proposals.length} versions)</summary>{state.proposals.filter(item=>item.id!==proposal?.id).map(item=><LiveProposalSummary key={item.id} proposal={item} originalTotal={state.submission.snapshot.pricing.total!}/>)}</details>}
   </>;
 }
+type SignedScheduleDraft = SignedRequestScheduleInput & { revision: number; dirty: boolean };
+function signedDraftFor(state: LiveCompanyBookingState): SignedScheduleDraft {
+  const segments = state.proposal?.confirmationBasis === 'signed_request' ? state.proposal.segments : [];
+  return { revision: state.revision, takeOffEndLocal: segments[0]?.endLocal ?? '', installStartLocal: segments[1]?.startLocal ?? '', installEndLocal: segments[1]?.endLocal ?? '', companyNote: state.proposal?.companyNote ?? COMPANY_BOOKING_SITE_DAMAGE_NOTE, dirty: false };
+}
+function SignedRequestEditor({state,manager}:{state:LiveCompanyBookingState;manager:Manager}) {
+  const [initialDraft] = useState(() => signedDraftFor(state));
+  const [storedDraft,setDraft] = useWorkspaceDraft<SignedScheduleDraft>(`live-booking.${state.requestId}.signed-request-draft`, initialDraft);
+  const draft = storedDraft.revision < state.revision ? companyDraftAfterRead(storedDraft, signedDraftFor(state), Boolean(manager.attempt)) : storedDraft;
+  const [error,setError] = useState(''), id = useId(), errorBox = useRef<HTMLDivElement>(null);
+  const busy = manager.busy || Boolean(manager.attempt), readonly = busy || Boolean(state.booking) || state.canWrite === false, stale = draft.revision !== state.revision;
+  useUnsavedChanges(`live-booking.${state.requestId}.signed-request-guard`, { dirty: draft.dirty || Boolean(manager.attempt), busy, onDiscard: () => setDraft(signedDraftFor(state)) });
+  useEffect(() => { if(error) errorBox.current?.focus(); }, [error]);
+  function edit(update: Partial<SignedScheduleDraft>) { setDraft({ ...draft, ...update, dirty: true }); setError(''); }
+  async function confirm() {
+    if (readonly) return;
+    try {
+      if (stale) throw new Error('The saved booking changed. Refresh the current version before confirming. Your entries are preserved.');
+      const payload = signedRequestConfirmationPayload(state, { takeOffEndLocal: draft.takeOffEndLocal, installStartLocal: draft.installStartLocal, installEndLocal: draft.installEndLocal, companyNote: draft.companyNote }, crypto.randomUUID());
+      setError('');
+      const saved = await manager.command('confirm-request', payload);
+      if (saved) setDraft(signedDraftFor(saved));
+    } catch (cause) { setError(cause instanceof Error ? cause.message : 'Check the take-off and installation visits.'); }
+  }
+  const start = `${state.submission.preferredDate}T${state.submission.preferredTime}`;
+  return <>
+    <dl className="live-company-details"><div><dt>Photo-based estimate</dt><dd>{companyMoney(state.submission.snapshot.pricing.total!)} including GST · Saved with the customer’s signature</dd></div><div><dt>Take-off start · Customer selected</dt><dd>{state.submission.preferredDate} · {state.submission.preferredTime} (Sydney)</dd></div><div><dt>Customer acknowledgment</dt><dd>{state.submission.signature.name} · {companyTime(state.submission.submittedAt)} (Sydney)</dd></div></dl>
+    <p className="live-company-notice">{COMPANY_BOOKING_SITE_DAMAGE_NOTE}</p>
+    <LiveConfirmationSummary state={state} staff />
+    {state.proposal && <LiveProposalSummary proposal={state.proposal} originalTotal={state.submission.snapshot.pricing.total!} />}
+    {state.booking ? <p className="live-company-notice">These visits and the signed estimate are saved. Their exact periods stay occupied while calendar verification or company review is pending.</p> : <>
+      <p>Review the customer’s saved photos and estimate, enter both visit durations and confirm once. All periods are checked for conflicts on confirmation. The customer does not need to sign again.</p>
+      {stale && <div className="live-company-notice" role="status"><p>The booking revision changed. Your entered visits are preserved.</p><button type="button" className="secondary" disabled={busy} onClick={() => setDraft(current => ({ ...current, revision: state.revision, dirty: true }))}>Keep entries against current saved version</button><button type="button" className="secondary" disabled={busy} onClick={() => setDraft(signedDraftFor(state))}>Load saved visits</button></div>}
+      <fieldset disabled={readonly}><legend>Take-off visit · Australia/Sydney</legend><label htmlFor={`${id}-takeoff-start`}>Customer selected start<input id={`${id}-takeoff-start`} type="datetime-local" value={start} readOnly /></label><label htmlFor={`${id}-takeoff-end`}>Take-off end date and time *<input id={`${id}-takeoff-end`} type="datetime-local" required min={start} value={draft.takeOffEndLocal} onChange={event => edit({ takeOffEndLocal: event.target.value })} /></label></fieldset>
+      <fieldset disabled={readonly}><legend>Installation visit · Australia/Sydney</legend><label htmlFor={`${id}-install-start`}>Installation start date and time *<input id={`${id}-install-start`} type="datetime-local" required min={draft.takeOffEndLocal || start} value={draft.installStartLocal} onChange={event => edit({ installStartLocal: event.target.value })} /></label><label htmlFor={`${id}-install-end`}>Installation end date and time *<input id={`${id}-install-end`} type="datetime-local" required min={draft.installStartLocal || undefined} value={draft.installEndLocal} onChange={event => edit({ installEndLocal: event.target.value })} /></label></fieldset>
+      <label htmlFor={`${id}-note`}>Customer guidance and site inspection notice<textarea id={`${id}-note`} rows={3} maxLength={3000} value={draft.companyNote} disabled={readonly} onChange={event => edit({ companyNote: event.target.value })} /></label>
+      <p>Booking confirmation sends the customer’s confirmation email and automatically saves the take-off and installation visits to the company Google Calendar. The signed photo-based price and customer-selected start remain unchanged.</p>
+      <button type="button" disabled={readonly || stale || !draft.takeOffEndLocal || !draft.installStartLocal || !draft.installEndLocal} onClick={() => void confirm()}>{manager.busy ? 'Checking and confirming booking…' : 'Booking confirm'}</button>
+    </>}
+    {error && <div className="live-company-error" role="alert" ref={errorBox} tabIndex={-1}>{error}</div>}
+    <div className="live-company-actions">{companyProcessingRetryable(state) && <button type="button" className="secondary" disabled={busy || state.canWrite === false} onClick={() => void manager.command('retry', {})}>Retry pending booking processing</button>}{state.booking && <button type="button" className="secondary" disabled={busy || state.canWrite === false} onClick={() => void manager.command('reconcile', {})}>Recheck confirmed Google visits</button>}</div>
+  </>;
+}
 export function LiveCompanyBookingEditor({requestId,onAccessLost}:{requestId:string;onAccessLost:()=>void}) {
   const manager=useCompanyBookingState(requestId,true,onAccessLost);
-  return <section className="live-company-booking" aria-label="Company booking review and confirmation"><h3>Company booking review and confirmation</h3><p>Review the original cabinet photos and AI estimate alongside this company proposal. The original customer request and signature remain saved separately.</p>{!manager.loaded&&!manager.error&&<p role="status">Loading the saved company booking…</p>}{manager.error&&<p className="live-company-error" role="alert">{manager.error}</p>}{manager.notice&&<p role="status">{manager.notice}</p>}{manager.busy&&<p role="status">Checking and saving company booking status…</p>}{manager.attempt&&<div className="live-company-notice" role="status"><p>The command outcome is not confirmed. Keep the current entries and retry the same command; checking status does not issue a new command.</p><button type="button" disabled={manager.busy} onClick={()=>void manager.retry()}>Retry same company command</button></div>}<div className="live-company-actions"><button type="button" className="secondary" disabled={manager.busy||manager.refreshing} onClick={()=>void manager.refresh()}>{manager.refreshing?'Refreshing saved company status…':'Refresh company booking status'}</button></div>{manager.state?<><CompanyEditorForm key={requestId} state={manager.state} manager={manager}/><LiveCompanyBookingDocuments key={`documents:${requestId}`} state={manager.state} staff onAccessLost={onAccessLost}/></>:manager.loaded&&<p>Company booking review becomes available after the customer submits the original signed reservation request.</p>}</section>;
+  return <section className="live-company-booking" aria-label="Company booking review and confirmation"><h3>Company booking review and confirmation</h3><p>Review the original cabinet photos, AI estimate and signed take-off request. The original customer request and signature remain saved separately.</p>{!manager.loaded&&!manager.error&&<p role="status">Loading the saved company booking…</p>}{manager.error&&<p className="live-company-error" role="alert">{manager.error}</p>}{manager.notice&&<p role="status">{manager.notice}</p>}{manager.busy&&<p role="status">Checking and saving company booking status…</p>}{manager.attempt&&<div className="live-company-notice" role="status"><p>The command outcome is not confirmed. Keep the current entries and retry the same command; checking status does not issue a new command.</p><button type="button" disabled={manager.busy} onClick={()=>void manager.retry()}>Retry same company command</button></div>}<div className="live-company-actions"><button type="button" className="secondary" disabled={manager.busy||manager.refreshing} onClick={()=>void manager.refresh()}>{manager.refreshing?'Refreshing saved company status…':'Refresh company booking status'}</button></div>{manager.state?<>{usesSignedRequestBooking(manager.state) ? <SignedRequestEditor key={requestId} state={manager.state} manager={manager}/> : <CompanyEditorForm key={requestId} state={manager.state} manager={manager}/>}<LiveCompanyBookingDocuments key={`documents:${requestId}`} state={manager.state} staff onAccessLost={onAccessLost}/></>:manager.loaded&&<p>Company booking review becomes available after the customer submits the original signed reservation request.</p>}</section>;
 }

@@ -90,6 +90,44 @@ test('logout revokes local customer access, clears guest/customer challenge cook
  assert.equal((await media.workspace(req('GET',auth))).status,401)
 })
 
+test('deleted customer session recovery clears stale email access while preserving an unknown unlinked guest quote',async()=>{
+ const linked=await link(), unlinked=await saved(bob.email)
+ // Fixture owner models the authorized cleanup; the runtime role cannot DELETE sessions.
+ await db.exec('reset role; delete from lk_quote_customer_sessions; set role service_role')
+ const stale=`${linked.auth}; ${unlinked.writing}; lk_staff_session=staff`
+ assert.equal((await guest.read(req('GET',stale))).status,401)
+ const recovered=await customer.logout(req('POST',stale,{preserveWritingSession:true}))
+ assert.equal(recovered.status,200,await recovered.clone().text())
+ assert.deepEqual(await recovered.json(),{signedOut:true,writingSessionPreserved:true})
+ const clear=recovered.headers.getSetCookie().join('\n')
+ assert.match(clear,/lk_quote_customer_auth=;/);assert.match(clear,/lk_quote_customer_challenge=;/)
+ assert.ok(!clear.includes('lk_quote_request='));assert.ok(!clear.includes('lk_staff_session='))
+ const restored=await guest.read(req('GET',unlinked.writing));assert.equal(restored.status,200)
+ assert.equal((await restored.json()).request.id,unlinked.request.id)
+ assert.equal((await db.query<{n:number}>('select count(*)::int n from lk_quote_requests')).rows[0].n,2,'recovery never creates or deletes quotes')
+})
+
+test('expired empty customer recovery reopens a blank writing session without verifying email or writing a quote',async()=>{
+ const {auth}=await link();now+=3600001
+ const recovered=await customer.logout(req('POST',auth,{preserveWritingSession:true}))
+ assert.equal(recovered.status,200,await recovered.clone().text())
+ assert.ok(!recovered.headers.getSetCookie().some(value=>value.startsWith('lk_quote_request=')))
+ const ready=await guest.session(req('POST'));assert.equal(ready.status,200)
+ const read=await guest.read(req('GET',cookies(ready)));assert.equal(read.status,200)
+ assert.equal((await read.json()).request,null)
+ assert.equal((await db.query<{n:number}>('select count(*)::int n from lk_quote_requests')).rows[0].n,1)
+})
+
+test('recovery refuses active customer access, malformed flags and cross-origin requests without clearing cookies',async()=>{
+ const {auth}=await link()
+ for(const [body,status] of [[{preserveWritingSession:true},409],[{preserveWritingSession:'true'},400]] as const){
+  const out=await customer.logout(req('POST',auth,body));assert.equal(out.status,status);assert.equal(out.headers.getSetCookie().length,0)
+ }
+ const evil=new Request(`${base}/api/quote/requests/customer/logout`,{method:'POST',headers:{host:new URL(base).host,origin:'https://attacker.invalid',cookie:auth,'content-type':'application/json'},body:JSON.stringify({preserveWritingSession:true})})
+ assert.equal((await customer.logout(evil)).status,403)
+ assert.equal((await customer.state(req('GET',auth))).status,200)
+})
+
 test('expired token and upstream session revocation fail closed; bound access revocation blocks private photos',async()=>{
  const {auth}=await link();removed=true;assert.equal((await guest.read(req('GET',auth))).status,401);removed=false
  await db.exec('update lk_quote_request_access set revoked_at=now()');assert.equal((await media.workspace(req('GET',auth))).status,404)

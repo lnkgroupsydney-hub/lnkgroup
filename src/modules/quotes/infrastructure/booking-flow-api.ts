@@ -1,8 +1,9 @@
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from 'node:crypto'
+import { sydneyLocalToInstant, AppError } from '../../operations/access.ts'
 import { after } from 'next/server.js'
 import { AdminAccessError } from '../../admin-access/index.ts'
 import { QuoteRequestError, type QuoteRequestActor, type QuoteRequestOwner } from '../domain/contracts.ts'
-import { bookingDate, bookingObject, bookingRevision, bookingUuid, validateBookingSignature, type LiveBookingApproveInput, type LiveBookingDateCheck, type LiveBookingAvailability, type LiveBookingReceipt, type LiveBookingReview, type LiveBookingReviewClaims, type LiveBookingState, type LiveCalendarTarget } from '../domain/booking-flow.ts'
+import { BOOKING_SIMPLE_ACK_VERSION, bookingDate, bookingTime, bookingObject, bookingRevision, bookingUuid, validateBookingSignature, type LiveBookingApproveInput, type LiveBookingDateCheck, type LiveBookingAvailability, type LiveBookingReceipt, type LiveBookingReview, type LiveBookingReviewClaims, type LiveBookingState, type LiveCalendarTarget } from '../domain/booking-flow.ts'
 import type { QuoteRequestStore } from '../application/requests.ts'
 import { liveBookingFlow, verifiedBookingOwnerArgs } from '../application/booking-flow.ts'
 import { quoteRequestAccess } from './api.ts'
@@ -71,7 +72,7 @@ export function createLiveBookingApi(deps: LiveBookingApiDependencies) {
   }
   const safe = (handler: (req: Request, id?: string) => Promise<Response>) => async (req: Request, id?: string) => {
     try { return await handler(req, id) } catch (error) {
-      if (error instanceof QuoteRequestError || error instanceof AdminAccessError) return json({ error: error.message, code: ({ 400: 'validation', 401: 'unauthorized', 403: 'forbidden', 404: 'notfound', 409: 'conflict', 413: 'validation', 415: 'validation', 429: 'rate_limit' } as Record<number, string>)[error.status] ?? 'unavailable' }, error.status)
+      if (error instanceof QuoteRequestError || error instanceof AdminAccessError || error instanceof AppError) return json({ error: error.message, code: ({ 400: 'validation', 401: 'unauthorized', 403: 'forbidden', 404: 'notfound', 409: 'conflict', 413: 'validation', 415: 'validation', 429: 'rate_limit' } as Record<number, string>)[error.status] ?? 'unavailable' }, error.status)
       return json({ error: 'Your private booking request is temporarily unavailable. Saved details are retained; retry shortly.', code: 'unavailable' }, 503)
     }
   }
@@ -81,18 +82,24 @@ export function createLiveBookingApi(deps: LiveBookingApiDependencies) {
     approve: safe(async req => {
       const current = await owner(req, true), row = await input(req); exact(row, ['analysisId', 'expectedRevision', 'idempotencyKey'])
       const value: LiveBookingApproveInput = { analysisId: bookingUuid(row.analysisId), expectedRevision: bookingRevision(row.expectedRevision), idempotencyKey: bookingUuid(row.idempotencyKey) }
-      const replay = await flow.command<LiveBookingState | null>(current, 'replay', { operation: 'approve', ...value })
+      const replay = await flow.command<LiveBookingState | null>(current, 'replay', { operation: 'approve', ...value, acknowledgmentVersion: BOOKING_SIMPLE_ACK_VERSION })
       if (replay) return json({ state: replay })
-      return json({ state: await flow.command<LiveBookingState>(current, 'approve', { ...value, calendarTarget: await deps.calendarTarget() }) })
+      return json({ state: await flow.command<LiveBookingState>(current, 'approve', { ...value, acknowledgmentVersion: BOOKING_SIMPLE_ACK_VERSION, calendarTarget: await deps.calendarTarget() }) })
     }),
     date: safe(async req => {
-      const current = await owner(req, true), row = await input(req); exact(row, ['approvalId', 'preferredDate', 'availabilityRevision', 'idempotencyKey'])
+      const current = await owner(req, true), row = await input(req); exact(row, ['approvalId', 'preferredDate', 'availabilityRevision', 'idempotencyKey', ...(Object.hasOwn(row, 'preferredTime') ? ['preferredTime'] : [])])
       const approvalId = bookingUuid(row.approvalId), preferredDate = bookingDate(row.preferredDate), idempotencyKey = bookingUuid(row.idempotencyKey)
       if (typeof row.availabilityRevision !== 'string' || !row.availabilityRevision || row.availabilityRevision.length > 256) throw new QuoteRequestError(400, 'Refresh the calendar before selecting a date.')
-      const replay = await flow.command<LiveBookingState | null>(current, 'replay', { operation: 'date', approvalId, preferredDate, idempotencyKey, availabilityRevision: row.availabilityRevision })
+      const previous = await flow.state(current)
+      const simple = previous.approval?.snapshot.version === BOOKING_SIMPLE_ACK_VERSION
+      const preferredTime = simple ? bookingTime(row.preferredTime) : undefined
+      if (!simple && Object.hasOwn(row, 'preferredTime') && row.preferredTime !== null) throw new QuoteRequestError(400, 'This existing acknowledgment supports a preferred date only.')
+      const timeArgs = simple ? { preferredTime } : {}
+      const replay = await flow.command<LiveBookingState | null>(current, 'replay', { operation: 'date', approvalId, preferredDate, ...timeArgs, idempotencyKey, availabilityRevision: row.availabilityRevision })
       if (replay) return json({ state: replay })
+      if (simple && Date.parse(sydneyLocalToInstant(`${preferredDate}T${preferredTime}`)) <= deps.now()) throw new QuoteRequestError(409, 'Choose a future Sydney take-off date and time.')
       const dateCheck = await deps.dateCheck(preferredDate, row.availabilityRevision)
-      return json({ state: await flow.command<LiveBookingState>(current, 'date', { approvalId, preferredDate, idempotencyKey, availabilityRevision: row.availabilityRevision, dateCheck }) })
+      return json({ state: await flow.command<LiveBookingState>(current, 'date', { approvalId, preferredDate, ...timeArgs, idempotencyKey, availabilityRevision: row.availabilityRevision, dateCheck }) })
     }),
     review: safe(async req => {
       const current = await owner(req, true), row = await input(req); exact(row, ['approvalId', 'selectionRevision'])

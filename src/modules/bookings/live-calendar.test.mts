@@ -23,6 +23,18 @@ test('all periods create distinct private busy events, independently read and ve
  for(const p of h.events.values()){assert.equal(p.visibility,'private');assert.equal(p.transparency,'opaque');assert.equal(p.status,'confirmed');assert.equal('attendees'in p,false);assert.equal(JSON.stringify(p).includes('verified@example.invalid'),false)}
  assert.ok(h.calls.at(-1)!.includes('/events?'))
 })
+test('single-confirmation appointments retain distinct take-off and installation purposes through independent readback',async()=>{
+ const c=companyClaim();c.proposal.confirmationBasis='signed_request';c.booking!.confirmationBasis='signed_request';c.proposal.segments[0].purpose='take_off';c.proposal.segments[1].purpose='install'
+ const h=harness(c);await ensureLiveCompanyEvents(h.claim,h.callbacks,h.deps)
+ for(const [index,s] of c.proposal.segments.entries()){
+  const event=h.events.get(liveCompanyEventId(c.booking!.id,c.proposal.hash,index))!
+  assert.match(String(event.summary),index===0?/Cabinet take-off/:/Cabinet installation/)
+  assert.equal((event.extendedProperties as {private:Record<string,string>}).private.purpose,s.purpose)
+ }
+ const first=h.events.get(liveCompanyEventId(c.booking!.id,c.proposal.hash,0))!
+ ;(first.extendedProperties as {private:Record<string,string>}).private.purpose='install'
+ await assert.rejects(ensureLiveCompanyEvents(h.claim,h.callbacks,h.deps),review)
+})
 test('lost provider response retries a proven deterministic event without duplicate POST or excluding unrelated events',async()=>{
  const h=harness();h.addOwn(0)
  await ensureLiveCompanyEvents(h.claim,h.callbacks,h.deps);assert.equal(h.writes.length,1);assert.equal(h.records.length,2)

@@ -4,7 +4,7 @@ import { randomUUID } from 'node:crypto'
 import { createLiveBookingApi } from './infrastructure/booking-flow-api.ts'
 import { createQuoteRequestApi } from './infrastructure/api.ts'
 import { QuoteRequestError, type QuoteRequestOwner } from './domain/contracts.ts'
-import { BOOKING_ACKNOWLEDGMENT_TEXT, BOOKING_ACKNOWLEDGMENT_VERSION, validateBookingSignature, type LiveBookingSnapshot, type LiveBookingState, type LiveBookingAvailability } from './domain/booking-flow.ts'
+import { BOOKING_ACKNOWLEDGMENT_TEXT, BOOKING_ACKNOWLEDGMENT_VERSION, BOOKING_SIMPLE_ACK_VERSION, bookingAcknowledgment, validateBookingSignature, type LiveBookingSnapshot, type LiveBookingState, type LiveBookingAvailability } from './domain/booking-flow.ts'
 const base='https://www.lnkgroupsydney.com.au',requestId=randomUUID(),analysisId=randomUUID(),approvalId=randomUUID(),authUserId=randomUUID(),sessionId=randomUUID(),idempotencyKey=randomUUID(),snapshotHash='a'.repeat(64)
 const target={accountSub:'company-sub',calendarId:'lnkgroupsydney@gmail.com'},date=new Date(Date.now()+3*86400000).toISOString().slice(0,10)
 const acknowledgment={version:BOOKING_ACKNOWLEDGMENT_VERSION,text:BOOKING_ACKNOWLEDGMENT_TEXT}
@@ -16,7 +16,7 @@ const store={async command<T>(command:string,args:Record<string,unknown>):Promis
  if(command==='state'||command==='staff_state'||command==='retry')return structuredClone(state) as T
  if(command==='replay')return replay as T
  if(command==='approve')return structuredClone(state) as T
- if(command==='date'){state.approval!.preferredDate=args.preferredDate as string;state.approval!.selectionRevision++;return structuredClone(state) as T}
+ if(command==='date'){state.approval!.preferredDate=args.preferredDate as string;state.approval!.preferredTime=args.preferredTime as string|undefined;state.approval!.selectionRevision++;return structuredClone(state) as T}
  if(command==='review')return {snapshot,snapshotHash,approvalId,selectionRevision:state.approval!.selectionRevision} as T
  if(command==='submit'){
   submittedArgs=args
@@ -72,4 +72,15 @@ test('bounded streamed JSON rejects overlarge or malformed bodies and unsupporte
 })
 test('private receipt pending status and staff authorization are preserved',async()=>{
  assert.equal((await api.receipt(req())).status,409);staffAllowed=false;assert.equal((await api.staff(req(),requestId)).status,403);staffAllowed=true;state.verified=false;const response=await api.staff(req(),requestId);assert.equal(response.status,200);assert.equal((await response.json()).state.verified,false)
+})
+
+test('new v2 date selection requires explicit HH:mm, rejects impossible Sydney time and persists date/time together',async()=>{
+ state.approval!.snapshot={...snapshot,version:BOOKING_SIMPLE_ACK_VERSION,acknowledgment:bookingAcknowledgment()};state.acknowledgment=bookingAcknowledgment()
+ for(const preferredTime of [undefined,null,'9:00','24:00','09:60']){const r=await api.date(req('PUT',{approvalId,preferredDate:date,...(preferredTime===undefined?{}:{preferredTime}),availabilityRevision:'v1',idempotencyKey:randomUUID()}));assert.equal(r.status,400)}
+ const saved=await api.date(req('PUT',{approvalId,preferredDate:date,preferredTime:'09:00',availabilityRevision:'v1',idempotencyKey:randomUUID()}));assert.equal(saved.status,200,await saved.clone().text());assert.equal((await saved.json()).state.approval.preferredTime,'09:00')
+ for(const [preferredDate,preferredTime] of [['2027-04-04','02:30'],['2027-10-03','02:30']])assert.equal((await api.date(req('PUT',{approvalId,preferredDate,preferredTime,availabilityRevision:'v1',idempotencyKey:randomUUID()}))).status,400)
+})
+test('legacy v1 date can still be saved but adding a time cannot change its signed acknowledgment meaning',async()=>{
+ assert.equal((await api.date(req('PUT',{approvalId,preferredDate:date,preferredTime:'09:00',availabilityRevision:'v1',idempotencyKey:randomUUID()}))).status,400)
+ assert.equal((await api.date(req('PUT',{approvalId,preferredDate:date,availabilityRevision:'v1',idempotencyKey:randomUUID()}))).status,200)
 })

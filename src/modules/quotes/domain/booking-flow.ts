@@ -4,6 +4,19 @@ import type { ProvisionalEstimatePricing } from './pricing.ts'
 
 export const BOOKING_ACKNOWLEDGMENT_VERSION = 'live-booking-request-ack-v1'
 export const BOOKING_ACKNOWLEDGMENT_TEXT = 'I acknowledge the provisional photo-based painting estimate and request the preferred start date shown here. Exact quantities, materials, repairs, scope, final price and work duration require company review and site confirmation. This request does not reserve a date, confirm a booking, authorise work, create a contract or require payment. Final terms and any confirmed booking require a separate company proposal and my acceptance.'
+export const BOOKING_SIMPLE_ACK_VERSION = 'live-booking-request-ack-v2'
+export const BOOKING_SIMPLE_ACK_TEXT = 'I acknowledge the provisional photo-based painting estimate and request the take-off date and Sydney time shown here. I agree that the company may assign the installation date and time and notify me in the booking confirmation email. Additional damage found on site may increase the price; any additional work and cost will be discussed before proceeding. No date is held until company confirmation. This request is not a contract, work authorisation or payment obligation.'
+export type BookingAcknowledgmentVersion = typeof BOOKING_ACKNOWLEDGMENT_VERSION | typeof BOOKING_SIMPLE_ACK_VERSION
+export const BOOKING_ACKNOWLEDGMENTS = {
+  [BOOKING_ACKNOWLEDGMENT_VERSION]: BOOKING_ACKNOWLEDGMENT_TEXT,
+  [BOOKING_SIMPLE_ACK_VERSION]: BOOKING_SIMPLE_ACK_TEXT,
+} as const
+export function bookingAcknowledgment(version: BookingAcknowledgmentVersion = BOOKING_SIMPLE_ACK_VERSION) {
+  return { version, text: BOOKING_ACKNOWLEDGMENTS[version] }
+}
+export function isBookingAcknowledgment(version: unknown, text: unknown): boolean {
+  return typeof version === 'string' && Object.hasOwn(BOOKING_ACKNOWLEDGMENTS, version) && BOOKING_ACKNOWLEDGMENTS[version as BookingAcknowledgmentVersion] === text
+}
 export interface LiveCalendarTarget { accountSub: string; calendarId: string }
 export interface LiveBookingAvailability extends LiveCalendarTarget {
   month: string; minMonth: string; maxMonth: string
@@ -13,23 +26,23 @@ export interface LiveBookingAvailability extends LiveCalendarTarget {
 export interface LiveBookingDateCheck extends LiveCalendarTarget { revision: string; checkedAt: string; expiresAt: string }
 export interface LiveBookingPhoto { id: string; role: string; contentHash: string; objectPath?: string; width: number; height: number; storedBytes: number }
 export interface LiveBookingSnapshot {
-  mode: 'live'; kind: 'nonbinding_booking_request'; version: typeof BOOKING_ACKNOWLEDGMENT_VERSION
+  mode: 'live'; kind: 'nonbinding_booking_request'; version: BookingAcknowledgmentVersion
   requestId: string; reference: string; inputRevision: number; analysisId: string
   payload: QuoteDraftInput; verifiedEmail: string; analysis: Record<string, unknown>; inputSnapshot?: Record<string, unknown>
   pricing: ProvisionalEstimatePricing; photos: LiveBookingPhoto[]
-  acknowledgment: { version: typeof BOOKING_ACKNOWLEDGMENT_VERSION; text: typeof BOOKING_ACKNOWLEDGMENT_TEXT }
-  calendarTarget: LiveCalendarTarget; preferredDate?: string
+  acknowledgment: { version: BookingAcknowledgmentVersion; text: string }
+  calendarTarget: LiveCalendarTarget; preferredDate?: string; preferredTime?: string | null
 }
 export interface LiveBookingSignature { name: string; method?: 'typed' | 'drawn'; strokes: { x: number; y: number }[][]; acknowledged: true }
 export interface LiveBookingApproval {
   id: string; version: number; analysisId: string; inputRevision: number; approvedAt: string
   snapshot: LiveBookingSnapshot; snapshotHash: string; stale: boolean
-  preferredDate: string | null; selectionRevision: number; availabilityRevision: string | null
+  preferredDate: string | null; preferredTime?: string | null; selectionRevision: number; availabilityRevision: string | null
 }
 export type LiveEmailStatus = 'pending' | 'sending' | 'provider_accepted' | 'retrying' | 'failed' | 'outcome_unknown' | 'manual_review'
-export type LiveCalendarStatus = 'blocked' | 'pending' | 'syncing' | 'synced' | 'retrying' | 'conflict' | 'manual_review'
+export type LiveCalendarStatus = 'not_required' | 'blocked' | 'pending' | 'syncing' | 'synced' | 'retrying' | 'conflict' | 'manual_review'
 export interface LiveBookingSubmission {
-  id: string; reference: string; requestId: string; approvalId: string; submittedAt: string; preferredDate: string
+  id: string; reference: string; requestId: string; approvalId: string; submittedAt: string; preferredDate: string; preferredTime?: string | null
   snapshot: LiveBookingSnapshot; snapshotHash: string; signedContentHash: string; signature: LiveBookingSignature
   emailStatus: LiveEmailStatus; calendarStatus: LiveCalendarStatus; error: string | null
   receiptReady: boolean; providerMessageId: string | null; calendarEventId: string | null
@@ -37,10 +50,10 @@ export interface LiveBookingSubmission {
 export interface LiveBookingState {
   requestId: string; verified: boolean; canEdit: boolean; approval: LiveBookingApproval | null
   submission: LiveBookingSubmission | null
-  acknowledgment: { version: typeof BOOKING_ACKNOWLEDGMENT_VERSION; text: typeof BOOKING_ACKNOWLEDGMENT_TEXT }
+  acknowledgment: { version: BookingAcknowledgmentVersion; text: string }
 }
 export interface LiveBookingApproveInput { analysisId: string; expectedRevision: number; idempotencyKey: string }
-export interface LiveBookingDateInput { approvalId: string; preferredDate: string; availabilityRevision: string; idempotencyKey: string }
+export interface LiveBookingDateInput { approvalId: string; preferredDate: string; preferredTime?: string | null; availabilityRevision: string; idempotencyKey: string }
 export interface LiveBookingReviewInput { approvalId: string; selectionRevision: number }
 export interface LiveBookingReview { snapshot: LiveBookingSnapshot; snapshotHash: string; reviewProof: string; expiresAt: string; approvalId: string; selectionRevision: number }
 export interface LiveBookingSubmitInput { reviewProof: string; signature: LiveBookingSignature; idempotencyKey: string }
@@ -68,6 +81,10 @@ export function bookingRevision(value: unknown): number {
 }
 export function bookingDate(value: unknown): string {
   if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value) || !Number.isFinite(Date.parse(value)) || new Date(value).toISOString().slice(0, 10) !== value) throw new QuoteRequestError(400, 'Choose a valid preferred start date.')
+  return value
+}
+export function bookingTime(value: unknown): string {
+  if (typeof value !== 'string' || !/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value)) throw new QuoteRequestError(400, 'Choose a valid Sydney take-off time.')
   return value
 }
 export function validateBookingSignature(value: unknown): LiveBookingSignature {
