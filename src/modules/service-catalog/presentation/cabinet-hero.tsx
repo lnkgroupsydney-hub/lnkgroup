@@ -17,24 +17,21 @@ export function CabinetHero() {
             <li aria-hidden="true"><ChevronRight size={14} /></li>
             <li><a href={`${siteRoutes.home}#services`}>Services</a></li>
             <li aria-hidden="true"><ChevronRight size={14} /></li>
-            <li aria-current="page">Kitchen Cabinet Painting</li>
+            <li aria-current="page">{content.serviceName}</li>
           </ol>
         </nav>
         <div className="kcp-hero-copy">
-          <p className="kcp-kicker">Kitchen Cabinet Painting / Sydney</p>
-          <h1 id="cabinet-title">Transform your kitchen. <em>Without replacing your cabinets.</em></h1>
-          <p className="kcp-hero-lead">Explore a new finish for suitable existing cabinets while keeping the kitchen layout you know. L&K Group assesses your surfaces, preparation and scope before work begins.</p>
+          <p className="kcp-kicker">{content.locationLabel}</p>
+          <h1 id="cabinet-title">{content.serviceName}</h1>
+          <p className="kcp-hero-tagline">{content.tagline}</p>
+          <p className="kcp-hero-lead">{content.introduction}</p>
           <div className="kcp-hero-actions">
-            <a href="#cabinet-process" className="kcp-hero-primary">See the process <ArrowDown size={19} aria-hidden="true" /></a>
-            <a href={siteRoutes.cabinetQuote} className="kcp-hero-disabled">Request a quote</a>
-            <a href={`${siteRoutes.home}#contact`} className="kcp-hero-contact">{content.contactLabel} <ArrowUpRight size={17} aria-hidden="true" /></a>
+            <a href={siteRoutes.cabinetQuote} className="kcp-hero-primary">{content.quoteLabel} <ArrowUpRight size={18} aria-hidden="true" /></a>
+            <a href="#cabinet-process" className="kcp-hero-secondary"><span>See the process</span> <ArrowDown size={18} aria-hidden="true" /></a>
           </div>
-          <p id="hero-quote-status" className="kcp-hero-status">{content.quoteStatus}</p>
+          <p id="hero-quote-status" className="kcp-hero-status">{content.heroQuoteStatus}</p>
         </div>
-        <div className="kcp-hero-bottom">
-          <a href="#cabinet-process">Scroll to see the transformation <ArrowDown size={16} aria-hidden="true" /></a>
-          <span>{content.conceptCaption}</span>
-        </div>
+        <p className="kcp-hero-caption">{content.conceptCaption}</p>
       </div>
     </section>
   );

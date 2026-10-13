@@ -5,7 +5,7 @@ import { manrope } from "@/shared/config/fonts";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: `${siteConfig.name} | Home maintenance & painting — Preview`,
+  title: `${siteConfig.name} | Home maintenance & painting`,
   description:
     "L&K Group provides painting, cabinet refreshes, handyman services and home repair products in Sydney.",
   icons: {

@@ -1,10 +1,12 @@
 "use client";
 
+import { ValidatedInput, reportSectionValidity } from "@/shared/ui/validated-input";
+
 import { useEffect, useRef, useState } from "react";
 import { SignaturePad } from "@/shared/ui/signature-pad";
 import { CustomerBookingReview } from "@/modules/bookings/client";
 import { DEMO_PRICE, DEMO_TERMS, CURRENT_DEMO_VERSION, type DemoSignature, type DemoSnapshot, type DemoSubmissionStatus, type SignaturePoint } from "../domain/demo-submission";
-import { validateQuoteDraft, type QuoteDraft } from "../domain/quote-draft";
+import { parseQuoteDraft, type QuoteDraft } from "../domain/quote-draft";
 import type { AvailabilityDay } from "../domain/availability";
 import { validateQuotePhotoManifest, type QuotePhotoManifestEntry } from "../domain/quote-photos";
 import { QuotePhotoSummary } from "./quote-photo-summary";
@@ -49,7 +51,7 @@ function parseAvailability(value: Record<string,unknown>): Availability {
 function manifestKey(photos: QuotePhotoManifestEntry[]) { return JSON.stringify([...photos].sort((left, right) => left.photoId.localeCompare(right.photoId))); }
 function parseReview(value: Record<string,unknown>, draft: QuoteDraft, preferredDate: string, photos: QuotePhotoManifestEntry[]): Review {
   const snapshot = value.snapshot;
-  if (!record(snapshot) || snapshot.mode !== "demo" || snapshot.version !== CURRENT_DEMO_VERSION || snapshot.draftId !== draft.id || snapshot.draftRevision !== draft.revision || snapshot.preferredDate !== preferredDate || typeof value.reviewToken !== "string" || !value.reviewToken || !record(snapshot.price) || snapshot.price.currency !== DEMO_PRICE.currency || snapshot.price.totalCents !== DEMO_PRICE.totalCents || snapshot.price.label !== DEMO_PRICE.label || !Array.isArray(snapshot.terms) || JSON.stringify(snapshot.terms) !== JSON.stringify(DEMO_TERMS) || JSON.stringify(validateQuoteDraft(snapshot.payload)) !== JSON.stringify(draft.payload)) throw new Error("The saved details changed. Return to your service details and review the latest draft before signing.");
+  if (!record(snapshot) || snapshot.mode !== "demo" || snapshot.version !== CURRENT_DEMO_VERSION || snapshot.draftId !== draft.id || snapshot.draftRevision !== draft.revision || snapshot.preferredDate !== preferredDate || typeof value.reviewToken !== "string" || !value.reviewToken || !record(snapshot.price) || snapshot.price.currency !== DEMO_PRICE.currency || snapshot.price.totalCents !== DEMO_PRICE.totalCents || snapshot.price.label !== DEMO_PRICE.label || !Array.isArray(snapshot.terms) || JSON.stringify(snapshot.terms) !== JSON.stringify(DEMO_TERMS) || JSON.stringify(parseQuoteDraft(snapshot.payload)) !== JSON.stringify(draft.payload)) throw new Error("The saved details changed. Return to your service details and review the latest draft before signing.");
   if (manifestKey(validateQuotePhotoManifest(snapshot.photos)) !== manifestKey(photos)) throw new Error("Your saved photos changed. Return to Photos and review the latest list before approving and signing.");
   return { snapshot:snapshot as unknown as DemoSnapshot, reviewToken:value.reviewToken };
 }
@@ -182,9 +184,11 @@ export function DemoQuoteFlow({ draft, photoReferences, recipientEmail, initialS
     } catch (failure) { setAvailabilityStale(true); setError(failureMessage(failure)); }
     finally { setBusy(false); }
   }
+  const signatureField = useRef<HTMLLabelElement>(null);
   async function submit() {
     if (!review || busy) return;
     if (!sendAttempt.current) {
+      if (!reportSectionValidity(signatureField.current)) return;
       const points = strokes.flat();
       if (name.trim().length < 2 || !acknowledged || points.length < 4 || Math.max(Math.max(...points.map(point => point.x))-Math.min(...points.map(point => point.x)), Math.max(...points.map(point => point.y))-Math.min(...points.map(point => point.y))) < .02) { setError("Enter your full name, draw a signature and acknowledge the demonstration terms before submitting."); return; }
       const signature: DemoSignature = {name:name.trim(),strokes,acknowledged:true};
@@ -237,7 +241,7 @@ export function DemoQuoteFlow({ draft, photoReferences, recipientEmail, initialS
     {stage === "review" && review && <>
       <h2>6. Final review and demonstration signature</h2><p>Check this saved summary before signing. Changing the details, photos or preferred date requires a new review and signature.</p>
       <SnapshotSummary snapshot={review.snapshot} />
-      <label>Full name for your signature *<input autoComplete="name" maxLength={120} value={name} disabled={busy || uncertain} onChange={event => setName(event.target.value)} /></label>
+      <label ref={signatureField}>Full name for your signature *<ValidatedInput validation="text" requireLetter required minLength={2} validationLabel="Full name for your signature" autoComplete="name" maxLength={120} value={name} disabled={busy || uncertain} onChange={event => setName(event.target.value)} /></label>
       <SignaturePad strokes={strokes} onChange={setStrokes} disabled={busy || uncertain} />
       <label className="enquiry-confirm"><input type="checkbox" checked={acknowledged} disabled={busy || uncertain} onChange={event => setAcknowledged(event.target.checked)} /> I have reviewed the details and demonstration terms above. My signature acknowledges this demo only. Submitting will email the signed demonstration to {recipientEmail} and request a pending calendar entry.</label>
       {uncertain && <div className="enquiry-notice"><p>Your submission was attempted. Keep these signed details unchanged while its saved status is checked. Retrying uses the same request.</p><button type="button" className="enquiry-button enquiry-button-secondary" disabled={checking || busy} onClick={() => void refreshStatus()}>{checking ? "Checking…" : "Check saved submission"}</button>{statusError && <p role="status">{statusError}</p>}</div>}

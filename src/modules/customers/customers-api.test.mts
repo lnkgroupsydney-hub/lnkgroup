@@ -38,7 +38,9 @@ test('cross-origin, absent Origin, wrong media type and oversized streaming bodi
 test('malformed JSON, arrays and invalid customer data fail safely',async()=>{
  const malformed=new Request(`${base}/api/admin/customers`,{method:'POST',headers:{origin:base,'content-type':'application/json'},body:'{broken'})
  const f=fixture();assert.equal((await f.api.create(malformed)).status,400)
- for(const value of [[],null,{...create(),name:''},{...create(),email:'invalid'},{...create(),name:'bad\u0000name'}]) assert.equal((await fixture().api.create(post(value))).status,400)
+ for(const value of [[],null,{...create(),name:''},{...create(),email:'invalid'},{...create(),name:'bad\u0000name'},{...create(),email:'a..b@example.com'},{...create(),phone:'+64 21 123 4567'},{...create(),name:'12345'},{...create(),address:'<img src=x>'}]) {
+  const invalid=fixture();assert.equal((await invalid.api.create(post(value))).status,400);assert.equal(invalid.calls.length,0)
+ }
  assert.equal(f.calls.length,0)
 })
 test('body actor metadata cannot override verified server actor',async()=>{

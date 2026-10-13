@@ -14,14 +14,14 @@ export function CompanyFooter({ isHomePage = true }: { isHomePage?: boolean }) {
           <div>
             <p className="text-lg font-semibold">{siteConfig.name}</p>
             <p className="mt-2 text-xs leading-6 text-muted">
-              {companyContent.business.name}<br />
+              {siteConfig.name}<br />
               ABN {companyContent.business.abn}<br />
               Painting licence {companyContent.business.paintingLicence}
             </p>
             <p className="mt-2 max-w-sm text-xs leading-5 text-muted">
               {isHomePage
-                ? "Website preview. Company-provided promotional artwork and process photos."
-                : "Website preview. Cabinet concept images are generated and do not show completed L&K projects."}
+                ? "Company-provided artwork and process photos."
+                : "Generated cabinet concepts, not completed L&K projects."}
             </p>
           </div>
           <nav aria-label="Footer navigation" className="flex flex-wrap gap-x-6 gap-y-1">

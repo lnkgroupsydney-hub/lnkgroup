@@ -1,0 +1,1610 @@
+{
+  "upstream": "http://127.0.0.1:3026",
+  "startedAt": "2026-10-13T03:24:39.196Z",
+  "checks": [
+    {
+      "name": "responsive-320",
+      "passed": true,
+      "externalBlocked": [],
+      "apiFixtures": [],
+      "blockedWrites": [],
+      "pageErrors": [],
+      "failedLocalResources": [],
+      "consoleErrors": [],
+      "structure": {
+        "width": 320,
+        "documentWidth": 320,
+        "language": "en-AU",
+        "h1": 1,
+        "headings": [
+          {
+            "level": 1,
+            "text": "Local painting & home care in Sydney."
+          },
+          {
+            "level": 2,
+            "text": "Our services & products"
+          },
+          {
+            "level": 3,
+            "text": "Residential Painting"
+          },
+          {
+            "level": 3,
+            "text": "Kitchen Cabinet Painting"
+          },
+          {
+            "level": 3,
+            "text": "Handyman Services"
+          },
+          {
+            "level": 3,
+            "text": "Paint Touch-up Kits"
+          },
+          {
+            "level": 3,
+            "text": "Kimchi"
+          },
+          {
+            "level": 2,
+            "text": "Local care, with attention to detail."
+          },
+          {
+            "level": 3,
+            "text": "Of painting experience"
+          },
+          {
+            "level": 3,
+            "text": "Care before the colour"
+          },
+          {
+            "level": 3,
+            "text": "A considered cabinet process"
+          },
+          {
+            "level": 2,
+            "text": "Good work starts with preparation."
+          },
+          {
+            "level": 2,
+            "text": "Local to Ermington. Close to your home."
+          },
+          {
+            "level": 3,
+            "text": "Nearby suburbs & wider Sydney"
+          },
+          {
+            "level": 4,
+            "text": "Ermington & surrounds"
+          },
+          {
+            "level": 4,
+            "text": "Ryde & northern suburbs"
+          },
+          {
+            "level": 4,
+            "text": "River suburbs & Inner West"
+          },
+          {
+            "level": 2,
+            "text": "Tell Lisa what you have in mind."
+          }
+        ],
+        "clippedContent": [],
+        "duplicateIds": [],
+        "ids": [
+          "home",
+          "mobile-navigation",
+          "main-content",
+          "home-heading",
+          "services",
+          "services-heading",
+          "residential-painting-heading",
+          "kitchen-cabinet-painting-heading",
+          "handyman-services-heading",
+          "paint-touch-up-kits-heading",
+          "kimchi-heading",
+          "about",
+          "about-heading",
+          "gallery",
+          "work-heading",
+          "service-area",
+          "area-heading",
+          "contact",
+          "contact-heading",
+          "_R_"
+        ],
+        "missingFragments": [],
+        "title": "L&K Group | Painting & Home Care in Ermington, Sydney",
+        "description": "L&K Group offers residential painting, kitchen cabinet painting, handyman services, paint touch-up kits and kimchi. Local to Ermington and nearby Sydney suburbs.",
+        "robots": "noindex, nofollow"
+      },
+      "offerings": [
+        {
+          "name": "Residential Painting",
+          "rect": {
+            "x": 20,
+            "y": 981.203125,
+            "width": 280,
+            "height": 256.875
+          }
+        },
+        {
+          "name": "Kitchen Cabinet Painting",
+          "rect": {
+            "x": 20,
+            "y": 1254.078125,
+            "width": 280,
+            "height": 305.5625
+          }
+        },
+        {
+          "name": "Handyman Services",
+          "rect": {
+            "x": 20,
+            "y": 1575.640625,
+            "width": 280,
+            "height": 256.875
+          }
+        },
+        {
+          "name": "Paint Touch-up Kits",
+          "rect": {
+            "x": 20,
+            "y": 1895.609375,
+            "width": 280,
+            "height": 256.875
+          }
+        },
+        {
+          "name": "Kimchi",
+          "rect": {
+            "x": 20,
+            "y": 2168.484375,
+            "width": 280,
+            "height": 231.28125
+          }
+        }
+      ],
+      "images": [
+        {
+          "alt": "Company-provided photograph of a worker repairing the surface of a cabinet door.",
+          "width": "1080",
+          "height": "2340"
+        },
+        {
+          "alt": "Company-provided photograph of a worker repairing the surface of a cabinet door.",
+          "width": "1080",
+          "height": "2340"
+        },
+        {
+          "alt": "Company-provided photograph of a worker spray-painting a cabinet door in a booth.",
+          "width": "1080",
+          "height": "2340"
+        }
+      ]
+    },
+    {
+      "name": "responsive-393",
+      "passed": true,
+      "externalBlocked": [],
+      "apiFixtures": [],
+      "blockedWrites": [],
+      "pageErrors": [],
+      "failedLocalResources": [],
+      "consoleErrors": [],
+      "structure": {
+        "width": 393,
+        "documentWidth": 393,
+        "language": "en-AU",
+        "h1": 1,
+        "headings": [
+          {
+            "level": 1,
+            "text": "Local painting & home care in Sydney."
+          },
+          {
+            "level": 2,
+            "text": "Our services & products"
+          },
+          {
+            "level": 3,
+            "text": "Residential Painting"
+          },
+          {
+            "level": 3,
+            "text": "Kitchen Cabinet Painting"
+          },
+          {
+            "level": 3,
+            "text": "Handyman Services"
+          },
+          {
+            "level": 3,
+            "text": "Paint Touch-up Kits"
+          },
+          {
+            "level": 3,
+            "text": "Kimchi"
+          },
+          {
+            "level": 2,
+            "text": "Local care, with attention to detail."
+          },
+          {
+            "level": 3,
+            "text": "Of painting experience"
+          },
+          {
+            "level": 3,
+            "text": "Care before the colour"
+          },
+          {
+            "level": 3,
+            "text": "A considered cabinet process"
+          },
+          {
+            "level": 2,
+            "text": "Good work starts with preparation."
+          },
+          {
+            "level": 2,
+            "text": "Local to Ermington. Close to your home."
+          },
+          {
+            "level": 3,
+            "text": "Nearby suburbs & wider Sydney"
+          },
+          {
+            "level": 4,
+            "text": "Ermington & surrounds"
+          },
+          {
+            "level": 4,
+            "text": "Ryde & northern suburbs"
+          },
+          {
+            "level": 4,
+            "text": "River suburbs & Inner West"
+          },
+          {
+            "level": 2,
+            "text": "Tell Lisa what you have in mind."
+          }
+        ],
+        "clippedContent": [],
+        "duplicateIds": [],
+        "ids": [
+          "home",
+          "mobile-navigation",
+          "main-content",
+          "home-heading",
+          "services",
+          "services-heading",
+          "residential-painting-heading",
+          "kitchen-cabinet-painting-heading",
+          "handyman-services-heading",
+          "paint-touch-up-kits-heading",
+          "kimchi-heading",
+          "about",
+          "about-heading",
+          "gallery",
+          "work-heading",
+          "service-area",
+          "area-heading",
+          "contact",
+          "contact-heading",
+          "_R_"
+        ],
+        "missingFragments": [],
+        "title": "L&K Group | Painting & Home Care in Ermington, Sydney",
+        "description": "L&K Group offers residential painting, kitchen cabinet painting, handyman services, paint touch-up kits and kimchi. Local to Ermington and nearby Sydney suburbs.",
+        "robots": "noindex, nofollow"
+      },
+      "offerings": [
+        {
+          "name": "Residential Painting",
+          "rect": {
+            "x": 20,
+            "y": 912.546875,
+            "width": 353,
+            "height": 264.875
+          }
+        },
+        {
+          "name": "Kitchen Cabinet Painting",
+          "rect": {
+            "x": 20,
+            "y": 1193.421875,
+            "width": 353,
+            "height": 291.171875
+          }
+        },
+        {
+          "name": "Handyman Services",
+          "rect": {
+            "x": 20,
+            "y": 1500.59375,
+            "width": 353,
+            "height": 239.28125
+          }
+        },
+        {
+          "name": "Paint Touch-up Kits",
+          "rect": {
+            "x": 20,
+            "y": 1802.96875,
+            "width": 353,
+            "height": 239.28125
+          }
+        },
+        {
+          "name": "Kimchi",
+          "rect": {
+            "x": 20,
+            "y": 2058.25,
+            "width": 353,
+            "height": 239.28125
+          }
+        }
+      ],
+      "images": [
+        {
+          "alt": "Company-provided photograph of a worker repairing the surface of a cabinet door.",
+          "width": "1080",
+          "height": "2340"
+        },
+        {
+          "alt": "Company-provided photograph of a worker repairing the surface of a cabinet door.",
+          "width": "1080",
+          "height": "2340"
+        },
+        {
+          "alt": "Company-provided photograph of a worker spray-painting a cabinet door in a booth.",
+          "width": "1080",
+          "height": "2340"
+        }
+      ]
+    },
+    {
+      "name": "responsive-768",
+      "passed": true,
+      "externalBlocked": [],
+      "apiFixtures": [],
+      "blockedWrites": [],
+      "pageErrors": [],
+      "failedLocalResources": [],
+      "consoleErrors": [],
+      "structure": {
+        "width": 768,
+        "documentWidth": 768,
+        "language": "en-AU",
+        "h1": 1,
+        "headings": [
+          {
+            "level": 1,
+            "text": "Local painting & home care in Sydney."
+          },
+          {
+            "level": 2,
+            "text": "Our services & products"
+          },
+          {
+            "level": 3,
+            "text": "Residential Painting"
+          },
+          {
+            "level": 3,
+            "text": "Kitchen Cabinet Painting"
+          },
+          {
+            "level": 3,
+            "text": "Handyman Services"
+          },
+          {
+            "level": 3,
+            "text": "Paint Touch-up Kits"
+          },
+          {
+            "level": 3,
+            "text": "Kimchi"
+          },
+          {
+            "level": 2,
+            "text": "Local care, with attention to detail."
+          },
+          {
+            "level": 3,
+            "text": "Of painting experience"
+          },
+          {
+            "level": 3,
+            "text": "Care before the colour"
+          },
+          {
+            "level": 3,
+            "text": "A considered cabinet process"
+          },
+          {
+            "level": 2,
+            "text": "Good work starts with preparation."
+          },
+          {
+            "level": 2,
+            "text": "Local to Ermington. Close to your home."
+          },
+          {
+            "level": 3,
+            "text": "Nearby suburbs & wider Sydney"
+          },
+          {
+            "level": 4,
+            "text": "Ermington & surrounds"
+          },
+          {
+            "level": 4,
+            "text": "Ryde & northern suburbs"
+          },
+          {
+            "level": 4,
+            "text": "River suburbs & Inner West"
+          },
+          {
+            "level": 2,
+            "text": "Tell Lisa what you have in mind."
+          }
+        ],
+        "clippedContent": [],
+        "duplicateIds": [],
+        "ids": [
+          "home",
+          "mobile-navigation",
+          "main-content",
+          "home-heading",
+          "services",
+          "services-heading",
+          "residential-painting-heading",
+          "kitchen-cabinet-painting-heading",
+          "handyman-services-heading",
+          "paint-touch-up-kits-heading",
+          "kimchi-heading",
+          "about",
+          "about-heading",
+          "gallery",
+          "work-heading",
+          "service-area",
+          "area-heading",
+          "contact",
+          "contact-heading",
+          "_R_"
+        ],
+        "missingFragments": [],
+        "title": "L&K Group | Painting & Home Care in Ermington, Sydney",
+        "description": "L&K Group offers residential painting, kitchen cabinet painting, handyman services, paint touch-up kits and kimchi. Local to Ermington and nearby Sydney suburbs.",
+        "robots": "noindex, nofollow"
+      },
+      "offerings": [
+        {
+          "name": "Residential Painting",
+          "rect": {
+            "x": 32,
+            "y": 881.75,
+            "width": 344,
+            "height": 297.40625
+          }
+        },
+        {
+          "name": "Kitchen Cabinet Painting",
+          "rect": {
+            "x": 392,
+            "y": 881.75,
+            "width": 344,
+            "height": 297.40625
+          }
+        },
+        {
+          "name": "Handyman Services",
+          "rect": {
+            "x": 32,
+            "y": 1195.15625,
+            "width": 344,
+            "height": 271.109375
+          }
+        },
+        {
+          "name": "Paint Touch-up Kits",
+          "rect": {
+            "x": 32,
+            "y": 1529.359375,
+            "width": 344,
+            "height": 244.390625
+          }
+        },
+        {
+          "name": "Kimchi",
+          "rect": {
+            "x": 392,
+            "y": 1529.359375,
+            "width": 344,
+            "height": 244.390625
+          }
+        }
+      ],
+      "images": [
+        {
+          "alt": "Company-provided photograph of a worker repairing the surface of a cabinet door.",
+          "width": "1080",
+          "height": "2340"
+        },
+        {
+          "alt": "Company-provided photograph of a worker repairing the surface of a cabinet door.",
+          "width": "1080",
+          "height": "2340"
+        },
+        {
+          "alt": "Company-provided photograph of a worker spray-painting a cabinet door in a booth.",
+          "width": "1080",
+          "height": "2340"
+        }
+      ]
+    },
+    {
+      "name": "responsive-1024",
+      "passed": true,
+      "externalBlocked": [],
+      "apiFixtures": [],
+      "blockedWrites": [],
+      "pageErrors": [],
+      "failedLocalResources": [],
+      "consoleErrors": [],
+      "structure": {
+        "width": 1024,
+        "documentWidth": 1024,
+        "language": "en-AU",
+        "h1": 1,
+        "headings": [
+          {
+            "level": 1,
+            "text": "Local painting & home care in Sydney."
+          },
+          {
+            "level": 2,
+            "text": "Our services & products"
+          },
+          {
+            "level": 3,
+            "text": "Residential Painting"
+          },
+          {
+            "level": 3,
+            "text": "Kitchen Cabinet Painting"
+          },
+          {
+            "level": 3,
+            "text": "Handyman Services"
+          },
+          {
+            "level": 3,
+            "text": "Paint Touch-up Kits"
+          },
+          {
+            "level": 3,
+            "text": "Kimchi"
+          },
+          {
+            "level": 2,
+            "text": "Local care, with attention to detail."
+          },
+          {
+            "level": 3,
+            "text": "Of painting experience"
+          },
+          {
+            "level": 3,
+            "text": "Care before the colour"
+          },
+          {
+            "level": 3,
+            "text": "A considered cabinet process"
+          },
+          {
+            "level": 2,
+            "text": "Good work starts with preparation."
+          },
+          {
+            "level": 2,
+            "text": "Local to Ermington. Close to your home."
+          },
+          {
+            "level": 3,
+            "text": "Nearby suburbs & wider Sydney"
+          },
+          {
+            "level": 4,
+            "text": "Ermington & surrounds"
+          },
+          {
+            "level": 4,
+            "text": "Ryde & northern suburbs"
+          },
+          {
+            "level": 4,
+            "text": "River suburbs & Inner West"
+          },
+          {
+            "level": 2,
+            "text": "Tell Lisa what you have in mind."
+          }
+        ],
+        "clippedContent": [],
+        "duplicateIds": [],
+        "ids": [
+          "home",
+          "mobile-navigation",
+          "main-content",
+          "home-heading",
+          "services",
+          "services-heading",
+          "residential-painting-heading",
+          "kitchen-cabinet-painting-heading",
+          "handyman-services-heading",
+          "paint-touch-up-kits-heading",
+          "kimchi-heading",
+          "about",
+          "about-heading",
+          "gallery",
+          "work-heading",
+          "service-area",
+          "area-heading",
+          "contact",
+          "contact-heading",
+          "_R_"
+        ],
+        "missingFragments": [],
+        "title": "L&K Group | Painting & Home Care in Ermington, Sydney",
+        "description": "L&K Group offers residential painting, kitchen cabinet painting, handyman services, paint touch-up kits and kimchi. Local to Ermington and nearby Sydney suburbs.",
+        "robots": "noindex, nofollow"
+      },
+      "offerings": [
+        {
+          "name": "Residential Painting",
+          "rect": {
+            "x": 48,
+            "y": 912.46875,
+            "width": 296,
+            "height": 364.34375
+          }
+        },
+        {
+          "name": "Kitchen Cabinet Painting",
+          "rect": {
+            "x": 364,
+            "y": 912.46875,
+            "width": 296,
+            "height": 364.34375
+          }
+        },
+        {
+          "name": "Handyman Services",
+          "rect": {
+            "x": 680,
+            "y": 912.46875,
+            "width": 296,
+            "height": 364.34375
+          }
+        },
+        {
+          "name": "Paint Touch-up Kits",
+          "rect": {
+            "x": 48,
+            "y": 1339.90625,
+            "width": 454,
+            "height": 256.84375
+          }
+        },
+        {
+          "name": "Kimchi",
+          "rect": {
+            "x": 522,
+            "y": 1339.90625,
+            "width": 454,
+            "height": 256.84375
+          }
+        }
+      ],
+      "images": [
+        {
+          "alt": "Company-provided photograph of a worker repairing the surface of a cabinet door.",
+          "width": "1080",
+          "height": "2340"
+        },
+        {
+          "alt": "Company-provided photograph of a worker repairing the surface of a cabinet door.",
+          "width": "1080",
+          "height": "2340"
+        },
+        {
+          "alt": "Company-provided photograph of a worker spray-painting a cabinet door in a booth.",
+          "width": "1080",
+          "height": "2340"
+        }
+      ]
+    },
+    {
+      "name": "responsive-1440",
+      "passed": true,
+      "externalBlocked": [],
+      "apiFixtures": [],
+      "blockedWrites": [],
+      "pageErrors": [],
+      "failedLocalResources": [],
+      "consoleErrors": [],
+      "structure": {
+        "width": 1440,
+        "documentWidth": 1440,
+        "language": "en-AU",
+        "h1": 1,
+        "headings": [
+          {
+            "level": 1,
+            "text": "Local painting & home care in Sydney."
+          },
+          {
+            "level": 2,
+            "text": "Our services & products"
+          },
+          {
+            "level": 3,
+            "text": "Residential Painting"
+          },
+          {
+            "level": 3,
+            "text": "Kitchen Cabinet Painting"
+          },
+          {
+            "level": 3,
+            "text": "Handyman Services"
+          },
+          {
+            "level": 3,
+            "text": "Paint Touch-up Kits"
+          },
+          {
+            "level": 3,
+            "text": "Kimchi"
+          },
+          {
+            "level": 2,
+            "text": "Local care, with attention to detail."
+          },
+          {
+            "level": 3,
+            "text": "Of painting experience"
+          },
+          {
+            "level": 3,
+            "text": "Care before the colour"
+          },
+          {
+            "level": 3,
+            "text": "A considered cabinet process"
+          },
+          {
+            "level": 2,
+            "text": "Good work starts with preparation."
+          },
+          {
+            "level": 2,
+            "text": "Local to Ermington. Close to your home."
+          },
+          {
+            "level": 3,
+            "text": "Nearby suburbs & wider Sydney"
+          },
+          {
+            "level": 4,
+            "text": "Ermington & surrounds"
+          },
+          {
+            "level": 4,
+            "text": "Ryde & northern suburbs"
+          },
+          {
+            "level": 4,
+            "text": "River suburbs & Inner West"
+          },
+          {
+            "level": 2,
+            "text": "Tell Lisa what you have in mind."
+          }
+        ],
+        "clippedContent": [],
+        "duplicateIds": [],
+        "ids": [
+          "home",
+          "mobile-navigation",
+          "main-content",
+          "home-heading",
+          "services",
+          "services-heading",
+          "residential-painting-heading",
+          "kitchen-cabinet-painting-heading",
+          "handyman-services-heading",
+          "paint-touch-up-kits-heading",
+          "kimchi-heading",
+          "about",
+          "about-heading",
+          "gallery",
+          "work-heading",
+          "service-area",
+          "area-heading",
+          "contact",
+          "contact-heading",
+          "_R_"
+        ],
+        "missingFragments": [],
+        "title": "L&K Group | Painting & Home Care in Ermington, Sydney",
+        "description": "L&K Group offers residential painting, kitchen cabinet painting, handyman services, paint touch-up kits and kimchi. Local to Ermington and nearby Sydney suburbs.",
+        "robots": "noindex, nofollow"
+      },
+      "offerings": [
+        {
+          "name": "Residential Painting",
+          "rect": {
+            "x": 64,
+            "y": 986.484375,
+            "width": 424,
+            "height": 313.96875
+          }
+        },
+        {
+          "name": "Kitchen Cabinet Painting",
+          "rect": {
+            "x": 508,
+            "y": 986.484375,
+            "width": 424,
+            "height": 313.96875
+          }
+        },
+        {
+          "name": "Handyman Services",
+          "rect": {
+            "x": 952,
+            "y": 986.484375,
+            "width": 424,
+            "height": 313.96875
+          }
+        },
+        {
+          "name": "Paint Touch-up Kits",
+          "rect": {
+            "x": 64,
+            "y": 1363.546875,
+            "width": 646,
+            "height": 258.875
+          }
+        },
+        {
+          "name": "Kimchi",
+          "rect": {
+            "x": 730,
+            "y": 1363.546875,
+            "width": 646,
+            "height": 258.875
+          }
+        }
+      ],
+      "images": [
+        {
+          "alt": "Company-provided photograph of a worker repairing the surface of a cabinet door.",
+          "width": "1080",
+          "height": "2340"
+        },
+        {
+          "alt": "Company-provided photograph of a worker repairing the surface of a cabinet door.",
+          "width": "1080",
+          "height": "2340"
+        },
+        {
+          "alt": "Company-provided photograph of a worker spray-painting a cabinet door in a booth.",
+          "width": "1080",
+          "height": "2340"
+        }
+      ]
+    },
+    {
+      "name": "server-html-no-javascript",
+      "passed": true,
+      "externalBlocked": [],
+      "apiFixtures": [],
+      "blockedWrites": [],
+      "pageErrors": [],
+      "failedLocalResources": [],
+      "consoleErrors": [],
+      "structure": {
+        "width": 1440,
+        "documentWidth": 1440,
+        "language": "en-AU",
+        "h1": 1,
+        "headings": [
+          {
+            "level": 1,
+            "text": "Local painting & home care in Sydney."
+          },
+          {
+            "level": 2,
+            "text": "Our services & products"
+          },
+          {
+            "level": 3,
+            "text": "Residential Painting"
+          },
+          {
+            "level": 3,
+            "text": "Kitchen Cabinet Painting"
+          },
+          {
+            "level": 3,
+            "text": "Handyman Services"
+          },
+          {
+            "level": 3,
+            "text": "Paint Touch-up Kits"
+          },
+          {
+            "level": 3,
+            "text": "Kimchi"
+          },
+          {
+            "level": 2,
+            "text": "Local care, with attention to detail."
+          },
+          {
+            "level": 3,
+            "text": "Of painting experience"
+          },
+          {
+            "level": 3,
+            "text": "Care before the colour"
+          },
+          {
+            "level": 3,
+            "text": "A considered cabinet process"
+          },
+          {
+            "level": 2,
+            "text": "Good work starts with preparation."
+          },
+          {
+            "level": 2,
+            "text": "Local to Ermington. Close to your home."
+          },
+          {
+            "level": 3,
+            "text": "Nearby suburbs & wider Sydney"
+          },
+          {
+            "level": 4,
+            "text": "Ermington & surrounds"
+          },
+          {
+            "level": 4,
+            "text": "Ryde & northern suburbs"
+          },
+          {
+            "level": 4,
+            "text": "River suburbs & Inner West"
+          },
+          {
+            "level": 2,
+            "text": "Tell Lisa what you have in mind."
+          }
+        ],
+        "clippedContent": [],
+        "duplicateIds": [],
+        "ids": [
+          "home",
+          "mobile-navigation",
+          "main-content",
+          "home-heading",
+          "services",
+          "services-heading",
+          "residential-painting-heading",
+          "kitchen-cabinet-painting-heading",
+          "handyman-services-heading",
+          "paint-touch-up-kits-heading",
+          "kimchi-heading",
+          "about",
+          "about-heading",
+          "gallery",
+          "work-heading",
+          "service-area",
+          "area-heading",
+          "contact",
+          "contact-heading",
+          "_R_"
+        ],
+        "missingFragments": [],
+        "title": "L&K Group | Painting & Home Care in Ermington, Sydney",
+        "description": "L&K Group offers residential painting, kitchen cabinet painting, handyman services, paint touch-up kits and kimchi. Local to Ermington and nearby Sydney suburbs.",
+        "robots": "noindex, nofollow"
+      },
+      "offerings": [
+        {
+          "name": "Residential Painting",
+          "rect": {
+            "x": 64,
+            "y": 986.484375,
+            "width": 424,
+            "height": 313.96875
+          }
+        },
+        {
+          "name": "Kitchen Cabinet Painting",
+          "rect": {
+            "x": 508,
+            "y": 986.484375,
+            "width": 424,
+            "height": 313.96875
+          }
+        },
+        {
+          "name": "Handyman Services",
+          "rect": {
+            "x": 952,
+            "y": 986.484375,
+            "width": 424,
+            "height": 313.96875
+          }
+        },
+        {
+          "name": "Paint Touch-up Kits",
+          "rect": {
+            "x": 64,
+            "y": 1363.546875,
+            "width": 646,
+            "height": 258.875
+          }
+        },
+        {
+          "name": "Kimchi",
+          "rect": {
+            "x": 730,
+            "y": 1363.546875,
+            "width": 646,
+            "height": 258.875
+          }
+        }
+      ],
+      "serverHtmlBytes": 59070,
+      "contacts": {
+        "phone": "tel:+61404603966",
+        "email": "mailto:Lnkpaintingau@gmail.com"
+      }
+    },
+    {
+      "name": "desktop-keyboard-navigation-and-skip-link",
+      "passed": true,
+      "externalBlocked": [],
+      "apiFixtures": [],
+      "blockedWrites": [],
+      "pageErrors": [],
+      "failedLocalResources": [],
+      "consoleErrors": [],
+      "skipFocus": {
+        "focused": true,
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "outlineColor": "rgb(46, 58, 63)",
+        "shadow": "rgb(250, 248, 243) 0px 0px 0px 6px",
+        "top": 16,
+        "bottom": 69.6875,
+        "viewportHeight": 900
+      },
+      "links": [
+        {
+          "label": "Services",
+          "href": "#services",
+          "activeId": "services",
+          "targetTop": 32.203125
+        },
+        {
+          "label": "About",
+          "href": "#about",
+          "activeId": "about",
+          "targetTop": 31.515625
+        },
+        {
+          "label": "Our work",
+          "href": "#gallery",
+          "activeId": "gallery",
+          "targetTop": 32.421875
+        },
+        {
+          "label": "Service area",
+          "href": "#service-area",
+          "activeId": "service-area",
+          "targetTop": 31.796875
+        },
+        {
+          "label": "Contact",
+          "href": "#contact",
+          "activeId": "contact",
+          "targetTop": 132.15625
+        }
+      ],
+      "navigationFocus": {
+        "focused": true,
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "outlineColor": "rgb(46, 58, 63)",
+        "shadow": "rgb(250, 248, 243) 0px 0px 0px 6px",
+        "top": 24,
+        "bottom": 72,
+        "viewportHeight": 900
+      }
+    },
+    {
+      "name": "mobile-menu-keyboard-escape-and-section-focus",
+      "passed": true,
+      "externalBlocked": [],
+      "apiFixtures": [],
+      "blockedWrites": [],
+      "pageErrors": [],
+      "failedLocalResources": [],
+      "consoleErrors": [],
+      "triggerFocus": {
+        "focused": true,
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "outlineColor": "rgb(46, 58, 63)",
+        "shadow": "rgb(250, 248, 243) 0px 0px 0px 6px",
+        "top": 20,
+        "bottom": 68,
+        "viewportHeight": 852
+      },
+      "linkFocus": {
+        "focused": true,
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "outlineColor": "rgb(46, 58, 63)",
+        "shadow": "rgb(250, 248, 243) 0px 0px 0px 6px",
+        "top": 85,
+        "bottom": 133,
+        "viewportHeight": 852
+      },
+      "links": [
+        {
+          "label": "Services",
+          "href": "#services",
+          "activeId": "services",
+          "targetTop": 32.484375
+        },
+        {
+          "label": "About",
+          "href": "#about",
+          "activeId": "about",
+          "targetTop": 31.625
+        },
+        {
+          "label": "Our work",
+          "href": "#gallery",
+          "activeId": "gallery",
+          "targetTop": 31.640625
+        },
+        {
+          "label": "Service area",
+          "href": "#service-area",
+          "activeId": "service-area",
+          "targetTop": 31.703125
+        },
+        {
+          "label": "Contact",
+          "href": "#contact",
+          "activeId": "contact",
+          "targetTop": 32.28125
+        }
+      ]
+    },
+    {
+      "name": "reduced-motion-and-200-percent-TEXT-320",
+      "passed": true,
+      "externalBlocked": [],
+      "apiFixtures": [],
+      "blockedWrites": [],
+      "pageErrors": [],
+      "failedLocalResources": [],
+      "consoleErrors": [],
+      "enlargement": {
+        "label": "200% TEXT enlargement; native browser zoom not tested",
+        "before": 16,
+        "initial": {
+          "inlineFontSize": "200%",
+          "computedFontSize": "16px",
+          "transition": "1e-05s"
+        },
+        "after": 32
+      },
+      "structure": {
+        "width": 320,
+        "documentWidth": 320,
+        "language": "en-AU",
+        "h1": 1,
+        "headings": [
+          {
+            "level": 1,
+            "text": "Local painting & home care in Sydney."
+          },
+          {
+            "level": 2,
+            "text": "Our services & products"
+          },
+          {
+            "level": 3,
+            "text": "Residential Painting"
+          },
+          {
+            "level": 3,
+            "text": "Kitchen Cabinet Painting"
+          },
+          {
+            "level": 3,
+            "text": "Handyman Services"
+          },
+          {
+            "level": 3,
+            "text": "Paint Touch-up Kits"
+          },
+          {
+            "level": 3,
+            "text": "Kimchi"
+          },
+          {
+            "level": 2,
+            "text": "Local care, with attention to detail."
+          },
+          {
+            "level": 3,
+            "text": "Of painting experience"
+          },
+          {
+            "level": 3,
+            "text": "Care before the colour"
+          },
+          {
+            "level": 3,
+            "text": "A considered cabinet process"
+          },
+          {
+            "level": 2,
+            "text": "Good work starts with preparation."
+          },
+          {
+            "level": 2,
+            "text": "Local to Ermington. Close to your home."
+          },
+          {
+            "level": 3,
+            "text": "Nearby suburbs & wider Sydney"
+          },
+          {
+            "level": 4,
+            "text": "Ermington & surrounds"
+          },
+          {
+            "level": 4,
+            "text": "Ryde & northern suburbs"
+          },
+          {
+            "level": 4,
+            "text": "River suburbs & Inner West"
+          },
+          {
+            "level": 2,
+            "text": "Tell Lisa what you have in mind."
+          }
+        ],
+        "clippedContent": [],
+        "duplicateIds": [],
+        "ids": [
+          "home",
+          "mobile-navigation",
+          "main-content",
+          "home-heading",
+          "services",
+          "services-heading",
+          "residential-painting-heading",
+          "kitchen-cabinet-painting-heading",
+          "handyman-services-heading",
+          "paint-touch-up-kits-heading",
+          "kimchi-heading",
+          "about",
+          "about-heading",
+          "gallery",
+          "work-heading",
+          "service-area",
+          "area-heading",
+          "contact",
+          "contact-heading",
+          "_R_"
+        ],
+        "missingFragments": [],
+        "title": "L&K Group | Painting & Home Care in Ermington, Sydney",
+        "description": "L&K Group offers residential painting, kitchen cabinet painting, handyman services, paint touch-up kits and kimchi. Local to Ermington and nearby Sydney suburbs.",
+        "robots": "noindex, nofollow"
+      },
+      "offerings": [
+        {
+          "name": "Residential Painting",
+          "rect": {
+            "x": 40,
+            "y": 3061.390625,
+            "width": 240,
+            "height": 1151.8125
+          }
+        },
+        {
+          "name": "Kitchen Cabinet Painting",
+          "rect": {
+            "x": 40,
+            "y": 4245.203125,
+            "width": 240,
+            "height": 1188.640625
+          }
+        },
+        {
+          "name": "Handyman Services",
+          "rect": {
+            "x": 40,
+            "y": 5465.84375,
+            "width": 240,
+            "height": 998.25
+          }
+        },
+        {
+          "name": "Paint Touch-up Kits",
+          "rect": {
+            "x": 40,
+            "y": 6590.28125,
+            "width": 240,
+            "height": 1050.25
+          }
+        },
+        {
+          "name": "Kimchi",
+          "rect": {
+            "x": 40,
+            "y": 7672.53125,
+            "width": 240,
+            "height": 895.0625
+          }
+        }
+      ],
+      "motion": {
+        "reducedMotion": true,
+        "scrollBehaviour": "auto",
+        "runningAnimations": 0
+      }
+    },
+    {
+      "name": "reduced-motion-and-200-percent-TEXT-1440",
+      "passed": true,
+      "externalBlocked": [],
+      "apiFixtures": [],
+      "blockedWrites": [],
+      "pageErrors": [],
+      "failedLocalResources": [],
+      "consoleErrors": [],
+      "enlargement": {
+        "label": "200% TEXT enlargement; native browser zoom not tested",
+        "before": 16,
+        "initial": {
+          "inlineFontSize": "200%",
+          "computedFontSize": "16px",
+          "transition": "1e-05s"
+        },
+        "after": 32
+      },
+      "structure": {
+        "width": 1440,
+        "documentWidth": 1440,
+        "language": "en-AU",
+        "h1": 1,
+        "headings": [
+          {
+            "level": 1,
+            "text": "Local painting & home care in Sydney."
+          },
+          {
+            "level": 2,
+            "text": "Our services & products"
+          },
+          {
+            "level": 3,
+            "text": "Residential Painting"
+          },
+          {
+            "level": 3,
+            "text": "Kitchen Cabinet Painting"
+          },
+          {
+            "level": 3,
+            "text": "Handyman Services"
+          },
+          {
+            "level": 3,
+            "text": "Paint Touch-up Kits"
+          },
+          {
+            "level": 3,
+            "text": "Kimchi"
+          },
+          {
+            "level": 2,
+            "text": "Local care, with attention to detail."
+          },
+          {
+            "level": 3,
+            "text": "Of painting experience"
+          },
+          {
+            "level": 3,
+            "text": "Care before the colour"
+          },
+          {
+            "level": 3,
+            "text": "A considered cabinet process"
+          },
+          {
+            "level": 2,
+            "text": "Good work starts with preparation."
+          },
+          {
+            "level": 2,
+            "text": "Local to Ermington. Close to your home."
+          },
+          {
+            "level": 3,
+            "text": "Nearby suburbs & wider Sydney"
+          },
+          {
+            "level": 4,
+            "text": "Ermington & surrounds"
+          },
+          {
+            "level": 4,
+            "text": "Ryde & northern suburbs"
+          },
+          {
+            "level": 4,
+            "text": "River suburbs & Inner West"
+          },
+          {
+            "level": 2,
+            "text": "Tell Lisa what you have in mind."
+          }
+        ],
+        "clippedContent": [],
+        "duplicateIds": [],
+        "ids": [
+          "home",
+          "mobile-navigation",
+          "main-content",
+          "home-heading",
+          "services",
+          "services-heading",
+          "residential-painting-heading",
+          "kitchen-cabinet-painting-heading",
+          "handyman-services-heading",
+          "paint-touch-up-kits-heading",
+          "kimchi-heading",
+          "about",
+          "about-heading",
+          "gallery",
+          "work-heading",
+          "service-area",
+          "area-heading",
+          "contact",
+          "contact-heading",
+          "_R_"
+        ],
+        "missingFragments": [],
+        "title": "L&K Group | Painting & Home Care in Ermington, Sydney",
+        "description": "L&K Group offers residential painting, kitchen cabinet painting, handyman services, paint touch-up kits and kimchi. Local to Ermington and nearby Sydney suburbs.",
+        "robots": "noindex, nofollow"
+      },
+      "offerings": [
+        {
+          "name": "Residential Painting",
+          "rect": {
+            "x": 96,
+            "y": 2027.046875,
+            "width": 389.328125,
+            "height": 939.34375
+          }
+        },
+        {
+          "name": "Kitchen Cabinet Painting",
+          "rect": {
+            "x": 525.328125,
+            "y": 2027.046875,
+            "width": 389.328125,
+            "height": 939.34375
+          }
+        },
+        {
+          "name": "Handyman Services",
+          "rect": {
+            "x": 954.65625,
+            "y": 2027.046875,
+            "width": 389.34375,
+            "height": 939.34375
+          }
+        },
+        {
+          "name": "Paint Touch-up Kits",
+          "rect": {
+            "x": 96,
+            "y": 3092.578125,
+            "width": 604,
+            "height": 552.171875
+          }
+        },
+        {
+          "name": "Kimchi",
+          "rect": {
+            "x": 740,
+            "y": 3092.578125,
+            "width": 604,
+            "height": 552.171875
+          }
+        }
+      ],
+      "motion": {
+        "reducedMotion": true,
+        "scrollBehaviour": "auto",
+        "runningAnimations": 0
+      }
+    },
+    {
+      "name": "cabinet-detail-to-empty-quote-read-only",
+      "passed": true,
+      "externalBlocked": [],
+      "apiFixtures": [
+        {
+          "path": "/api/quote/requests/customer",
+          "method": "GET"
+        },
+        {
+          "path": "/api/quote/requests/session",
+          "method": "POST",
+          "fixture": "synthetic-empty-session-handshake-no-cookie-no-record"
+        },
+        {
+          "path": "/api/quote/requests",
+          "method": "GET"
+        }
+      ],
+      "blockedWrites": [],
+      "pageErrors": [],
+      "failedLocalResources": [],
+      "consoleErrors": [],
+      "quote": {
+        "path": "/quote/start?service=cabinet-painting",
+        "customerName": "",
+        "enabled": true,
+        "fixtureOnly": true
+      }
+    }
+  ],
+  "isolation": "Fresh contexts without stored sessions; service workers blocked; external requests aborted; all backend writes blocked. Quote-entry scenario alone simulates the exact automatic POST session handshake with {ready:true}, without cookies or records, then serves empty customer/request GET fixtures. No backend session/create, save, submission, company session or external service action.",
+  "limitations": [
+    "Headless Chrome does not certify physical-device behaviour.",
+    "200% TEXT enlargement uses root font-size, not native browser zoom.",
+    "Computed keyboard focus cues and element geometry are checked; screenshots still require visual review. No pixel contrast/WCAG certification.",
+    "Coming-soon cards are checked for interactive DOM, DOM event properties and hydrated React handler props; this is not a general audit of arbitrary delegated JavaScript listeners.",
+    "No production deployment, search ranking, real API persistence, mail or Google integration is exercised."
+  ],
+  "finishedAt": "2026-10-13T03:24:49.624Z",
+  "passed": true
+}

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { parseAustralianAddress, mergeSelectedAddress } from './parse.ts';
+import { formatSelectedAddress, parseAustralianAddress, mergeSelectedAddress } from './parse.ts';
 import { createPlacesSearchSession, withAddressTimeout, ADDRESS_UNAVAILABLE } from './session.ts';
 import { isAddressAutocompleteConfigured, loadGoogleAddressPlaces } from './google-places.ts';
 import type { AddressPlacesLibrary, AddressPrediction, AddressSelection, AutocompleteRequest, PlaceAddressComponent } from './types.ts';
@@ -62,6 +62,18 @@ function provider() {
 test('AU components preserve house suffix, state and four-digit postcode', () => {
   assert.deepEqual(parseAustralianAddress(house, 'test-house'), selected());
   assert.equal(parseAustralianAddress(house.map((p) => p.types.includes('postal_code') ? part('postal_code', '0800') : p), 'nt').postcode, '0800');
+});
+
+test('single-field customer addresses keep selected street, unit, locality, state and postcode', () => {
+  assert.equal(formatSelectedAddress(selected()), '12A Example Road, Ermington, NSW 2115');
+  assert.equal(formatSelectedAddress(selected({ siteAddress: 'Unit 5B, 12A Example Road' })), 'Unit 5B, 12A Example Road, Ermington, NSW 2115');
+  assert.equal(formatSelectedAddress(selected({ postcode: '0800', region: 'NT', suburb: 'Darwin' })), '12A Example Road, Darwin, NT 0800');
+});
+
+test('single-field formatting omits missing components without inventing postcode or locality', () => {
+  assert.equal(formatSelectedAddress(selected({ suburb: '', postcode: '' })), '12A Example Road, NSW');
+  assert.equal(formatSelectedAddress(selected({ siteAddress: '', region: '' })), 'Ermington, 2115');
+  assert.equal(formatSelectedAddress(selected({ siteAddress: '', suburb: '', postcode: '', region: '' })), '');
 });
 
 test('AU unit and locality fallbacks are independent of component ordering', () => {

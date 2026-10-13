@@ -4,6 +4,7 @@ import type { CustomerAuthProvider, CustomerQuoteSession, CustomerQuoteState, Cu
 import type { QuoteRequestStore } from '../application/requests.ts'
 import { quoteRequestTransport } from '../domain/transport.ts'
 import { requestId } from '../domain/validation.ts'
+import { isValidEmail } from '../../../shared/validation/input.ts'
 const SESSION = 'lk_quote_customer_auth', CHALLENGE = 'lk_quote_customer_challenge', PATH = '/api/quote/requests'
 interface Challenge { id: string; proof: string; email: string; expiresAt: number }
 export interface CustomerAuthApiDependencies {
@@ -13,7 +14,7 @@ export interface CustomerAuthApiDependencies {
 }
 function json(value: unknown, status = 200) { return Response.json(value, { status, headers: { 'cache-control': 'private, no-store', vary: 'Cookie', 'x-content-type-options': 'nosniff', 'referrer-policy': 'no-referrer' } }) }
 function email(value: unknown) {
- if (typeof value !== 'string' || value.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim())) throw new QuoteRequestError(400, 'Enter a valid email address.')
+ if (!isValidEmail(value)) throw new QuoteRequestError(400, 'Enter a valid email address.')
  return value.trim().toLowerCase()
 }
 const hash = (value: string) => createHash('sha256').update(value).digest('hex')

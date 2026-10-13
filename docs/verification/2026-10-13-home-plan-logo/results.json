@@ -1,0 +1,210 @@
+{
+  "base": "http://127.0.0.1:3024",
+  "apiMode": "read-only fixtures, no saves or submissions",
+  "results": [
+    {
+      "name": "home",
+      "path": "/",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "logo": {
+        "src": "http://127.0.0.1:3024/_next/image?url=%2Fimages%2Flk-group-logo-transparent.png&w=128&q=75",
+        "complete": true,
+        "naturalWidth": 128,
+        "displayWidth": 128,
+        "displayHeight": 128
+      },
+      "imageAccept": "image/jxl,image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "imageContentType": "image/webp",
+      "alpha": {
+        "corners": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "zeroFraction": 0.65081787109375,
+        "lowAlphaFraction": 0.77459716796875,
+        "width": 128,
+        "height": 128,
+        "optimized": true
+      },
+      "favicon": "/images/lk-group-logo-transparent.png",
+      "overflow": false,
+      "pageErrors": [],
+      "passed": true
+    },
+    {
+      "name": "cabinet",
+      "path": "/services/cabinet-painting",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "logo": {
+        "src": "http://127.0.0.1:3024/_next/image?url=%2Fimages%2Flk-group-logo-transparent.png&w=96&q=75",
+        "complete": true,
+        "naturalWidth": 80,
+        "displayWidth": 80,
+        "displayHeight": 80
+      },
+      "imageAccept": "image/jxl,image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "imageContentType": "image/webp",
+      "alpha": {
+        "corners": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "zeroFraction": 0.626953125,
+        "lowAlphaFraction": 0.7532552083333334,
+        "width": 96,
+        "height": 96,
+        "optimized": true
+      },
+      "favicon": "/images/lk-group-logo-transparent.png",
+      "overflow": false,
+      "pageErrors": [],
+      "passed": true
+    },
+    {
+      "name": "quote",
+      "path": "/quote/start?service=cabinet-painting",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "logo": {
+        "src": "http://127.0.0.1:3024/_next/image?url=%2Fimages%2Flk-group-logo-transparent.png&w=48&q=75",
+        "complete": true,
+        "naturalWidth": 48,
+        "displayWidth": 40,
+        "displayHeight": 40
+      },
+      "imageAccept": "image/jxl,image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "imageContentType": "image/webp",
+      "alpha": {
+        "corners": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "zeroFraction": 0.4917534722222222,
+        "lowAlphaFraction": 0.6566840277777778,
+        "width": 48,
+        "height": 48,
+        "optimized": true
+      },
+      "favicon": "/images/lk-group-logo-transparent.png",
+      "overflow": false,
+      "pageErrors": [],
+      "passed": true
+    },
+    {
+      "name": "home",
+      "path": "/",
+      "viewport": {
+        "width": 393,
+        "height": 852
+      },
+      "logo": {
+        "src": "http://127.0.0.1:3024/_next/image?url=%2Fimages%2Flk-group-logo-transparent.png&w=96&q=75",
+        "complete": true,
+        "naturalWidth": 96,
+        "displayWidth": 96,
+        "displayHeight": 96
+      },
+      "imageAccept": "image/jxl,image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "imageContentType": "image/webp",
+      "alpha": {
+        "corners": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "zeroFraction": 0.626953125,
+        "lowAlphaFraction": 0.7532552083333334,
+        "width": 96,
+        "height": 96,
+        "optimized": true
+      },
+      "favicon": "/images/lk-group-logo-transparent.png",
+      "overflow": false,
+      "pageErrors": [],
+      "passed": true
+    },
+    {
+      "name": "cabinet",
+      "path": "/services/cabinet-painting",
+      "viewport": {
+        "width": 393,
+        "height": 852
+      },
+      "logo": {
+        "src": "http://127.0.0.1:3024/_next/image?url=%2Fimages%2Flk-group-logo-transparent.png&w=64&q=75",
+        "complete": true,
+        "naturalWidth": 55,
+        "displayWidth": 56,
+        "displayHeight": 56
+      },
+      "imageAccept": "image/jxl,image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "imageContentType": "image/webp",
+      "alpha": {
+        "corners": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "zeroFraction": 0.5556640625,
+        "lowAlphaFraction": 0.7119140625,
+        "width": 64,
+        "height": 64,
+        "optimized": true
+      },
+      "favicon": "/images/lk-group-logo-transparent.png",
+      "overflow": false,
+      "pageErrors": [],
+      "passed": true
+    },
+    {
+      "name": "quote",
+      "path": "/quote/start?service=cabinet-painting",
+      "viewport": {
+        "width": 393,
+        "height": 852
+      },
+      "logo": {
+        "src": "http://127.0.0.1:3024/_next/image?url=%2Fimages%2Flk-group-logo-transparent.png&w=48&q=75",
+        "complete": true,
+        "naturalWidth": 48,
+        "displayWidth": 40,
+        "displayHeight": 40
+      },
+      "imageAccept": "image/jxl,image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "imageContentType": "image/webp",
+      "alpha": {
+        "corners": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "zeroFraction": 0.4917534722222222,
+        "lowAlphaFraction": 0.6566840277777778,
+        "width": 48,
+        "height": 48,
+        "optimized": true
+      },
+      "favicon": "/images/lk-group-logo-transparent.png",
+      "overflow": false,
+      "pageErrors": [],
+      "passed": true
+    }
+  ]
+}

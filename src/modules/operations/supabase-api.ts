@@ -1,4 +1,5 @@
 import {AppError,validateEnquiry,validateSchedule} from './domain/validation.ts'
+import { isValidText } from '../../shared/validation/input.ts'
 import {safe,json,body,requireOrigin,idFrom} from './server-api.ts'
 import {OWNER_EMAIL,googleConfigured,localLoginAvailable,verifyLocalPassword,clearSessionCookie,clearOauthCookie} from './infrastructure/auth.ts'
 import {operationsCommand as command} from './infrastructure/supabase-client.ts'
@@ -52,7 +53,7 @@ export const schedulePost=safe(async(req)=>{
  if(existing?.payload_json.demoSubmissionId)throw new AppError(409,'A signed demo schedule requires a new booking proposal')
  if(!Number.isInteger(x.expectedRevision)||(x.expectedRevision as number)<1)throw new AppError(400,'Invalid revision')
  const dates=validateSchedule(x.startLocal,x.endLocal)
- if(x.notes!==undefined&&(typeof x.notes!=='string'||x.notes.length>2000||/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/.test(x.notes)))throw new AppError(400,'Invalid notes')
+ if(x.notes!==undefined&&!isValidText(x.notes,{maxLength:2000,multiline:true}))throw new AppError(400,'Invalid notes')
  const row=await command<CloudEnquiryRow>('schedule',{id:idFrom(req,'enquiries'),revision:x.expectedRevision,start:dates.startAt,end:dates.endAt,notes:(x.notes as string||'').trim()})
  return json({enquiry:enquiryFromRow(row)})
 })

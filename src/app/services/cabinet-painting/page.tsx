@@ -4,7 +4,7 @@ import { CabinetPaintingDetail, cabinetPaintingContent } from "@/modules/service
 import { siteConfig } from "@/shared/config/site";
 
 export const metadata: Metadata = {
-  title: `${cabinetPaintingContent.title} | ${siteConfig.name} — Preview`,
+  title: `${cabinetPaintingContent.title} | ${siteConfig.name}`,
   description: cabinetPaintingContent.metadataDescription,
   openGraph: {
     title: `${cabinetPaintingContent.title} | ${siteConfig.name}`,

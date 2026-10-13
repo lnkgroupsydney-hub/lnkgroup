@@ -1,5 +1,7 @@
 "use client";
 
+import { ValidatedInput, reportSectionValidity } from "@/shared/ui/validated-input";
+
 import { useCallback, useEffect, useRef, useState } from "react";
 import { SignaturePad, type SignaturePoint } from "@/shared/ui/signature-pad";
 import { QuotePhotoSummary, quoteApiPath } from "@/modules/enquiries/client";
@@ -31,9 +33,11 @@ function ProposalConsent({ proposal, onSaved, onRefresh, saveConsent }: {proposa
   const attempt = useRef<ConsentAttempt|null>(null);
   const active = useRef(true);
   useEffect(()=>{active.current=true;return()=>{active.current=false;};},[]);
+  const signatureField = useRef<HTMLLabelElement>(null);
   async function consent() {
     if (busy) return;
     if (!attempt.current) {
+      if (!reportSectionValidity(signatureField.current)) return;
       if (name.trim().length < 2 || !acknowledged || !validDrawnSignature(strokes)) {setError("Enter your full name, draw your new signature and confirm the demonstration acknowledgement.");return;}
       attempt.current = {proposalId:proposal.id,snapshotHash:proposal.snapshotHash,idempotencyKey:crypto.randomUUID(),signature:{name:name.trim(),strokes,acknowledged:true}};
     }
@@ -48,7 +52,7 @@ function ProposalConsent({ proposal, onSaved, onRefresh, saveConsent }: {proposa
   return <>
     <ProposalTerms proposal={proposal} />
     {proposal.signature ? <><p className="enquiry-notice" role="status">This work proposal was signed by {proposal.signature.name} on {sydneyTime(proposal.consentedAt)} (Sydney). Company conflict checking and Google verification are separate steps.</p><SignaturePreview name={proposal.signature.name} strokes={proposal.signature.strokes} label={`Saved proposal ${proposal.revision} signature`} /><p>Email: {statusLabel(proposal.emailStatus)}. Provider acceptance is not proof of inbox delivery.</p>{proposal.emailError && <p className="enquiry-error">{proposal.emailError}</p>}<CustomerPdfLinks proposal={proposal} /></> : <>
-      <label>Full name for this new signature *<input autoComplete="name" maxLength={120} value={name} disabled={busy || uncertain} onChange={event=>setName(event.target.value)} /></label>
+      <label ref={signatureField}>Full name for this new signature *<ValidatedInput validation="text" requireLetter required minLength={2} validationLabel="Full name for your signature" autoComplete="name" maxLength={120} value={name} disabled={busy || uncertain} onChange={event=>setName(event.target.value)} /></label>
       <SignaturePad strokes={strokes} onChange={setStrokes} disabled={busy || uncertain} />
       <label className="enquiry-confirm"><input type="checkbox" checked={acknowledged} disabled={busy || uncertain} onChange={event=>setAcknowledged(event.target.checked)} /> I reviewed every proposed work segment, the notes and demonstration terms above. My new signature confirms this demonstration version only. It will be saved and emailed to the company trial address; company confirmation is still required.</label>
       {error && <p className="enquiry-error-box" role="alert">{error}</p>}

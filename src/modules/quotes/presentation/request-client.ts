@@ -1,4 +1,4 @@
-import { validateQuoteDraft } from '../../enquiries/domain.ts';
+import { parseQuoteDraft } from '../../enquiries/domain.ts';
 import type { LiveQuoteRequest } from '../index.ts';
 
 export class LiveRequestError extends Error {
@@ -21,7 +21,7 @@ export function parseLiveRequest(value: unknown): LiveQuoteRequest {
     || (value.status === 'draft' ? value.reviewRequestedAt !== null : typeof value.reviewRequestedAt !== 'string' || !Number.isFinite(Date.parse(value.reviewRequestedAt)))) {
     throw new Error('The server did not confirm your saved request. Keep your entries and retry.');
   }
-  return { ...value, payload: validateQuoteDraft(value.payload) } as LiveQuoteRequest;
+  return { ...value, payload: parseQuoteDraft(value.payload) } as LiveQuoteRequest;
 }
 export async function liveRequest(path: string, init: RequestInit = {}): Promise<Record<string, unknown>> {
   const response = await fetch(path, { ...init, credentials: 'same-origin', cache: 'no-store', signal: init.signal ?? AbortSignal.timeout(25_000) });

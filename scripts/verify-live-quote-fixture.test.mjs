@@ -31,7 +31,7 @@ test('live Quote fixture verifies real save/retry/revision/EMS flow while isolat
     const rsc = await request('/admin/quotes?_rsc=synthetic', { headers: { ...credentials, rsc: '1', 'next-router-state-tree': '%5B%22%22%5D', 'next-url': '/quote/start?service=cabinet-painting' } })
     assert.equal(await rsc.text(), 'synthetic-rsc')
     assert.equal(forwarded[1].headers.rsc, '1'); assert.equal(forwarded[1].headers['next-url'], '/quote/start?service=cabinet-painting')
-    assert.equal((await request('/_next/image?url=%2Fimages%2Flk-group-logo.png&w=128&q=75', { headers: credentials })).status, 200)
+    assert.equal((await request('/_next/image?url=%2Fimages%2Flk-group-logo-circle-transparent.png&w=128&q=75', { headers: credentials })).status, 200)
     for (const item of forwarded) {
       assert.equal(item.headers.cookie, undefined); assert.equal(item.headers.authorization, undefined)
       assert.equal(item.headers['x-company-secret'], undefined)
@@ -89,6 +89,12 @@ test('live Quote fixture verifies real save/retry/revision/EMS flow while isolat
     assert.equal((await request('/api/admin/quote-requests')).status, 403)
     assert.equal((await request(`/api/admin/quote-requests/${saved.id}`)).status, 403)
     assert.equal(forwarded.length, proxyCount, 'Every customer/admin API remains local')
+    await control({ loseNextSaveResponse: true, conflictNextSave: true })
+    assert.equal((await control({ reset: true })).status, 200, 'Reset truncates the local fixture FK graph')
+    assert.equal((await state()).requests.length, 0)
+    assert.equal((await request('/api/admin/quote-requests')).status, 200, 'Reset clears staff access faults')
+    assert.equal((await save(a, values(0, { contact, service: null }))).status, 200, 'Reset clears customer access, conflict and response-loss faults')
+    assert.equal((await state()).requests.length, 1, 'The next scenario starts independently')
   } finally { await fixture.close(); await new Promise(resolve => upstream.close(resolve)) }
 })
 

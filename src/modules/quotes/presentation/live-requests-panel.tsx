@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
+import { ValidatedInput } from '@/shared/ui/validated-input';
 import { LiveCompanyBookingEditor } from '@/modules/bookings/client';
 import { useWorkspaceNavigation } from '@/shared/ui/admin-workspace-state';
 import type { LiveQuoteRequestPage, LiveQuoteRequestDetail, LiveQuoteAudit } from '../index';
@@ -89,7 +90,7 @@ export function LiveQuoteRequestsPanel({ onAccessLost, title = 'Customer quote r
   return <section className="lq-admin admin-card" aria-labelledby="live-requests-title">
     <h2 id="live-requests-title">{title}</h2>
     <p>{description}</p>
-    <form onSubmit={find}><label htmlFor="live-request-search">Find by reference, name, email or address</label><div className="lq-actions"><input id="live-request-search" type="search" maxLength={120} value={search} onChange={e => setSearch(e.target.value)} /><button disabled={listBusy}>Search requests</button><button type="button" className="secondary" disabled={listBusy} onClick={() => { void loadList(query, list?.page ?? 1); if (selected.current) void loadDetail(selected.current); }}>Refresh requests</button></div></form>
+    <form onSubmit={find}><label htmlFor="live-request-search">Find by reference, name, email or address</label><div className="lq-actions"><ValidatedInput validation="text" validationLabel="Request search" id="live-request-search" type="search" maxLength={120} value={search} onChange={e => setSearch(e.target.value)} /><button disabled={listBusy}>Search requests</button><button type="button" className="secondary" disabled={listBusy} onClick={() => { void loadList(query, list?.page ?? 1); if (selected.current) void loadDetail(selected.current); }}>Refresh requests</button></div></form>
     {listBusy && <p role="status">Loading saved requests…</p>}
     {listError && <p className="lq-error" role="alert">{listError}{list ? ' The list below is the last successfully loaded version.' : ''}</p>}
     {list && <>

@@ -226,6 +226,11 @@ test('auth mutations reject foreign origin and malformed or oversized input with
  for(const action of [staffLoginPost,staffLogoutPost,staffPasswordPost,staffMfaEnrollPost,staffMfaVerifyPost])assert.equal((await action(request('/api/admin-auth/action',{body:{},origin:'https://foreign.invalid'}))).status,403)
  assert.equal(requests.length,0)
  assert.equal((await staffLoginPost(request('/api/admin-auth/login',{raw:'[]'}))).status,400)
+ for(const email of ['a@localhost','a..b@example.com','a@-example.com','김@example.com']) {
+  const before=requests.length
+  assert.equal((await staffLoginPost(request('/api/admin-auth/login',{cookie:'',body:{email,password:'synthetic-password'}}))).status,400)
+  assert.equal(requests.length,before,'Invalid credentials must not reach the Auth provider')
+ }
  assert.equal((await staffLoginPost(request('/api/admin-auth/login',{raw:'x'.repeat(4100)}))).status,413)
  assert.equal(requests.length,0)
 })

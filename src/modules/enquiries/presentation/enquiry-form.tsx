@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import type { EnquiryInput } from "@/modules/operations";
 import { mergeSelectedAddress, type AddressKind, type AddressSelection } from "@/shared/address";
 import { AddressAutocompleteInput } from "@/shared/ui/address-autocomplete-input";
+import { ValidatedInput, ValidatedTextarea, getFieldValidationError, reportSectionValidity, type FieldValidationOptions } from "@/shared/ui/validated-input";
 import "./enquiry-form.css";
 
 type FormValues = Omit<EnquiryInput, "serviceId" | "acknowledgement" | "idempotencyKey" | "doorCount" | "drawerCount"> & {
@@ -58,6 +59,7 @@ export function EnquiryForm() {
   const idempotencyRef = useRef<{ fingerprint: string; key: string } | null>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
   const errorRef = useRef<HTMLDivElement>(null);
+  const sectionRef = useRef<HTMLDivElement>(null);
 
   function update<K extends Field>(field: K, value: FormValues[K]) {
     setValues((previous) => ({ ...previous, [field]: value }));
@@ -81,17 +83,28 @@ export function EnquiryForm() {
     if (targetStep === 0) {
       if (!values.projectIntent) next.projectIntent = "Choose what you want to do.";
       if (!values.targetSurfaces.length) next.targetSurfaces = "Choose at least one surface or Not sure yet.";
-      if (!values.suburb.trim()) next.suburb = "Enter your suburb.";
-      if (!/^\d{4}$/.test(values.postcode.trim())) next.postcode = "Enter a four-digit postcode.";
-      for (const field of ["doorCount", "drawerCount"] as const) {
-        if (values[field] && (!/^\d+$/.test(values[field]) || Number(values[field]) > 500)) {
-          next[field] = "Enter a whole number from 0 to 500, or leave blank if unknown.";
-        }
+      const rules: Partial<Record<Field, FieldValidationOptions>> = {
+        suburb: { validationLabel: 'your suburb', required: true, requireLetter: true, maxLength: 100 },
+        postcode: { validation: 'postcode', required: true, maxLength: 4 },
+        doorCount: { validation: 'count', min: 0, max: 500 }, drawerCount: { validation: 'count', min: 0, max: 500 },
+        material: { validationLabel: 'cabinet material', maxLength: 100 }, colourPreference: { validationLabel: 'colour or finish', maxLength: 100 },
+        notes: { validationLabel: 'project notes', maxLength: 3000, multiline: true },
+      };
+      for (const [field, rule] of Object.entries(rules) as [Field, FieldValidationOptions][]) {
+        const message = getFieldValidationError(String(values[field] ?? ''), rule);
+        if (message) next[field] = message;
       }
     }
     if (targetStep === 1) {
-      if (!values.name.trim()) next.name = "Enter your name.";
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email.trim())) next.email = "Enter a valid email address.";
+      const rules: Partial<Record<Field, FieldValidationOptions>> = {
+        name: { validationLabel: 'your name', required: true, requireLetter: true, maxLength: 120 },
+        email: { validation: 'email', required: true, maxLength: 254 }, phone: { validation: 'phone', maxLength: 40 },
+        siteAddress: { validationLabel: 'the site address', requireLetter: true, maxLength: 240 },
+      };
+      for (const [field, rule] of Object.entries(rules) as [Field, FieldValidationOptions][]) {
+        const message = getFieldValidationError(String(values[field] ?? ''), rule);
+        if (message) next[field] = message;
+      }
       if (values.preferredDate && values.preferredDate < new Date().toLocaleDateString("en-CA", { timeZone: "Australia/Sydney" })) {
         next.preferredDate = "Choose today or a future date, or leave it undecided.";
       }
@@ -111,7 +124,8 @@ export function EnquiryForm() {
 
   function goNext() {
     const next = validate(step);
-    if (Object.keys(next).length) { showErrors(next); return; }
+    const fieldsValid = reportSectionValidity(sectionRef.current);
+    if (Object.keys(next).length || !fieldsValid) { showErrors(next); return; }
     setErrors({});
     setStep((previous) => previous + 1);
     window.requestAnimationFrame(() => headingRef.current?.focus());
@@ -132,9 +146,10 @@ export function EnquiryForm() {
     if (Object.keys(projectErrors).length || Object.keys(contactErrors).length) {
       const firstStep = Object.keys(projectErrors).length ? 0 : 1;
       setStep(firstStep);
-      window.requestAnimationFrame(() => showErrors(firstStep === 0 ? projectErrors : contactErrors));
+      window.requestAnimationFrame(() => { showErrors(firstStep === 0 ? projectErrors : contactErrors); reportSectionValidity(sectionRef.current); });
       return;
     }
+    if (!reportSectionValidity(sectionRef.current)) return;
     const payloadWithoutKey = {
       serviceId: "cabinet-painting" as const,
       projectIntent: values.projectIntent,
@@ -181,7 +196,7 @@ export function EnquiryForm() {
 
   const fieldError = (field: Field) => errors[field] ? <span className="enquiry-error" id={`enquiry-${field}-error`}>{errors[field]}</span> : null;
   const fieldProps = (field: Field) => ({ id: `enquiry-${field}`, "aria-invalid": Boolean(errors[field]) as boolean,
-    "aria-describedby": errors[field] ? `enquiry-${field}-error` : undefined });
+    "aria-describedby": errors[field] && ["projectIntent", "targetSurfaces", "preferredDate", "acknowledgement"].includes(field) ? `enquiry-${field}-error` : undefined });
   const addressContext = JSON.stringify([values.siteAddress, values.suburb, values.postcode]);
 
   return (
@@ -207,7 +222,7 @@ export function EnquiryForm() {
                 <li key={label} aria-current={step === index ? "step" : undefined} className={step === index ? "active" : ""}>{index + 1}. {label}</li>
               ))}
             </ol>
-            {step === 0 && <div className="enquiry-step">
+            {step === 0 && <div className="enquiry-step" ref={sectionRef}>
               <h2 ref={headingRef} tabIndex={-1}>Your project</h2>
               <fieldset aria-describedby={errors.projectIntent ? "enquiry-projectIntent-error" : undefined}>
                 <legend>What would you like to do? <span aria-hidden="true">*</span></legend>
@@ -220,29 +235,29 @@ export function EnquiryForm() {
                 {fieldError("targetSurfaces")}
               </fieldset>
               <div className="enquiry-grid">
-                <div className="address-field"><label htmlFor="enquiry-suburb">Suburb <span aria-hidden="true">*</span></label><AddressAutocompleteInput {...fieldProps("suburb")} kind="suburb" addressContext={addressContext} onAddressSelect={selectAddress} autoComplete="address-level2" maxLength={100} value={values.suburb} onChange={(event) => update("suburb", event.target.value)} />{fieldError("suburb")}</div>
-                <div className="address-field"><label htmlFor="enquiry-postcode">Postcode <span aria-hidden="true">*</span></label><AddressAutocompleteInput {...fieldProps("postcode")} kind="postcode" addressContext={addressContext} onAddressSelect={selectAddress} inputMode="numeric" autoComplete="postal-code" maxLength={4} value={values.postcode} onChange={(event) => update("postcode", event.target.value)} />{fieldError("postcode")}</div>
-                <label>Cabinet doors <span className="enquiry-hint">Leave blank if unknown</span><input {...fieldProps("doorCount")} aria-label="Cabinet doors" type="number" min="0" max="500" step="1" value={values.doorCount} onChange={(event) => update("doorCount", event.target.value)} />{fieldError("doorCount")}</label>
-                <label>Drawer fronts <span className="enquiry-hint">Leave blank if unknown</span><input {...fieldProps("drawerCount")} aria-label="Drawer fronts" type="number" min="0" max="500" step="1" value={values.drawerCount} onChange={(event) => update("drawerCount", event.target.value)} />{fieldError("drawerCount")}</label>
-                <label>Material <span className="enquiry-hint">Optional; leave blank if unknown</span><input {...fieldProps("material")} maxLength={100} value={values.material} onChange={(event) => update("material", event.target.value)} /></label>
-                <label>Colour or finish idea <span className="enquiry-hint">Optional</span><input {...fieldProps("colourPreference")} maxLength={100} value={values.colourPreference} onChange={(event) => update("colourPreference", event.target.value)} /></label>
+                <div className="address-field"><label htmlFor="enquiry-suburb">Suburb <span aria-hidden="true">*</span></label><AddressAutocompleteInput {...fieldProps("suburb")} required kind="suburb" addressContext={addressContext} onAddressSelect={selectAddress} autoComplete="address-level2" maxLength={100} value={values.suburb} onChange={(event) => update("suburb", event.target.value)} /></div>
+                <div className="address-field"><label htmlFor="enquiry-postcode">Postcode <span aria-hidden="true">*</span></label><AddressAutocompleteInput {...fieldProps("postcode")} required kind="postcode" addressContext={addressContext} onAddressSelect={selectAddress} inputMode="numeric" autoComplete="postal-code" maxLength={4} value={values.postcode} onChange={(event) => update("postcode", event.target.value)} /></div>
+                <label>Cabinet doors <span className="enquiry-hint">Leave blank if unknown</span><ValidatedInput validationLabel="cabinet doors" validation="count" {...fieldProps("doorCount")} aria-label="Cabinet doors" type="text" inputMode="numeric" min="0" max="500" value={values.doorCount} onChange={(event) => update("doorCount", event.target.value)} /></label>
+                <label>Drawer fronts <span className="enquiry-hint">Leave blank if unknown</span><ValidatedInput validationLabel="drawer fronts" validation="count" {...fieldProps("drawerCount")} aria-label="Drawer fronts" type="text" inputMode="numeric" min="0" max="500" value={values.drawerCount} onChange={(event) => update("drawerCount", event.target.value)} /></label>
+                <label>Material <span className="enquiry-hint">Optional; leave blank if unknown</span><ValidatedInput validationLabel="cabinet material" {...fieldProps("material")} maxLength={100} value={values.material} onChange={(event) => update("material", event.target.value)} /></label>
+                <label>Colour or finish idea <span className="enquiry-hint">Optional</span><ValidatedInput validationLabel="colour or finish" {...fieldProps("colourPreference")} maxLength={100} value={values.colourPreference} onChange={(event) => update("colourPreference", event.target.value)} /></label>
               </div>
               <p className="enquiry-hint">When address suggestions are available, your search text is sent to Google. You can also enter your address manually. The team will confirm service availability.</p>
-              <label>Anything else we should know? <span className="enquiry-hint">Optional</span><textarea {...fieldProps("notes")} rows={4} maxLength={3000} value={values.notes} onChange={(event) => update("notes", event.target.value)} /></label>
+              <label>Anything else we should know? <span className="enquiry-hint">Optional</span><ValidatedTextarea validationLabel="project notes" {...fieldProps("notes")} rows={4} maxLength={3000} value={values.notes} onChange={(event) => update("notes", event.target.value)} /></label>
             </div>}
-            {step === 1 && <div className="enquiry-step">
+            {step === 1 && <div className="enquiry-step" ref={sectionRef}>
               <h2 ref={headingRef} tabIndex={-1}>Contact and preferred date</h2>
               <p>A preferred date is only a request. Scheduling will be reviewed by the team.</p>
               <div className="enquiry-grid">
-                <label>Your name <span aria-hidden="true">*</span><input {...fieldProps("name")} aria-label="Your name" autoComplete="name" maxLength={120} value={values.name} onChange={(event) => update("name", event.target.value)} />{fieldError("name")}</label>
-                <label>Email <span aria-hidden="true">*</span><input {...fieldProps("email")} aria-label="Email" type="email" autoComplete="email" maxLength={254} value={values.email} onChange={(event) => update("email", event.target.value)} />{fieldError("email")}</label>
-                <label>Phone <span className="enquiry-hint">Optional</span><input {...fieldProps("phone")} type="tel" autoComplete="tel" maxLength={40} value={values.phone} onChange={(event) => update("phone", event.target.value)} /></label>
+                <label>Your name <span aria-hidden="true">*</span><ValidatedInput validationLabel="your name" requireLetter required {...fieldProps("name")} aria-label="Your name" autoComplete="name" maxLength={120} value={values.name} onChange={(event) => update("name", event.target.value)} /></label>
+                <label>Email <span aria-hidden="true">*</span><ValidatedInput validationLabel="your email" validation="email" required {...fieldProps("email")} aria-label="Email" type="email" autoComplete="email" maxLength={254} value={values.email} onChange={(event) => update("email", event.target.value)} /></label>
+                <label>Phone <span className="enquiry-hint">Optional</span><ValidatedInput validationLabel="your phone number" validation="phone" {...fieldProps("phone")} type="tel" autoComplete="tel" maxLength={40} value={values.phone} onChange={(event) => update("phone", event.target.value)} /></label>
                 <label>Preferred date <span className="enquiry-hint">Optional</span><input {...fieldProps("preferredDate")} type="date" value={values.preferredDate ?? ""} onInput={(event) => update("preferredDate", event.currentTarget.value || null)} onChange={(event) => update("preferredDate", event.target.value || null)} />{fieldError("preferredDate")}</label>
               </div>
               <div className="address-field"><label htmlFor="enquiry-siteAddress">Site address <span className="enquiry-hint">Optional at this stage</span></label><AddressAutocompleteInput {...fieldProps("siteAddress")} kind="street" addressContext={addressContext} onAddressSelect={selectAddress} autoComplete="street-address" maxLength={240} value={values.siteAddress ?? ""} onChange={(event) => update("siteAddress", event.target.value)} /></div>
               <p className="enquiry-hint">Address search sends what you type to Google when suggestions are available. Check any unit or apartment number. You can also enter your address manually.</p>
             </div>}
-            {step === 2 && <div className="enquiry-step">
+            {step === 2 && <div className="enquiry-step" ref={sectionRef}>
               <h2 ref={headingRef} tabIndex={-1}>Review your request</h2>
               <dl className="enquiry-review">
                 <div><dt>Project</dt><dd>{intents.find(([value]) => value === values.projectIntent)?.[1]}</dd></div>

@@ -8,11 +8,11 @@ const upstreamUrl = new URL(process.env.EMS_FIXTURE_UPSTREAM ?? 'http://127.0.0.
 if (!Number.isInteger(port) || port < 1024 || port > 65535 || upstreamUrl.protocol !== 'http:' || upstreamUrl.hostname !== '127.0.0.1' || upstreamUrl.username || upstreamUrl.password || upstreamUrl.pathname !== '/' || upstreamUrl.search || upstreamUrl.hash || Number(upstreamUrl.port || 80) === port) throw new Error('Fixture requires distinct loopback HTTP ports.')
 const upstream = upstreamUrl.origin
 const adminPages = new Set(['/admin', '/admin/customers', '/admin/enquiries', '/admin/quotes', '/admin/schedule', '/admin/settings', '/admin/jobs', '/admin/orders', '/admin/inventory', '/admin/reports', '/quote/start'])
-const publicAssets = new Set(['/favicon.ico', '/images/lk-group-logo.png'])
+const publicAssets = new Set(['/favicon.ico', '/images/lk-group-logo-circle-transparent.png'])
 function optimizedPublicLogo(url) {
   const query = url.searchParams
   return url.pathname === '/_next/image' && query.size === 3 &&
-    query.getAll('url').length === 1 && query.get('url') === '/images/lk-group-logo.png' &&
+    query.getAll('url').length === 1 && query.get('url') === '/images/lk-group-logo-circle-transparent.png' &&
     query.getAll('w').length === 1 && ['96', '128', '256'].includes(query.get('w')) &&
     query.getAll('q').length === 1 && query.get('q') === '75'
 }

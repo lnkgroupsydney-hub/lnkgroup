@@ -4,6 +4,7 @@ import { createContext, useContext, useCallback, useEffect, useLayoutEffect, use
 import Image from "next/image";
 import type { BookingDetail, BookingProposal, BookingSummary } from "../domain/contracts";
 import { BookingRequestError, bookingRequest as rawBookingRequest, requestMessage, SignaturePreview, statusLabel, sydneyInput, sydneyTime } from "./booking-ui";
+import { ValidatedInput, ValidatedTextarea, reportSectionValidity } from "@/shared/ui/validated-input";
 import { useWorkspaceDraft, useUnsavedChanges, useWorkspaceNavigation } from "@/shared/ui/admin-workspace-state";
 import "./bookings.css";
 
@@ -70,10 +71,12 @@ function ProposalEditor({ detail, disabled, onSaved }: { detail: BookingDetail; 
   const stale = revision !== detail.booking.revision;
   const existing = detail.proposals.find(proposal => proposal.id === detail.booking.pendingProposalId) ?? detail.proposals.find(proposal => proposal.id === detail.booking.confirmedProposalId);
   function reloadVersion() { setRevision(detail.booking.revision); setUncertain(false); setAttempted(null); setError(""); setNotice("Current request version loaded. Your entered segments are preserved; review them before saving."); }
+  const proposalFields = useRef<HTMLElement>(null);
   async function save() {
     if (busy || disabled || (stale && !uncertain)) return;
     let payload = attempted;
     if (!payload) {
+      if (!reportSectionValidity(proposalFields.current)) return;
       if (segments.some(segment => !segment.startLocal || !segment.endLocal || segment.endLocal <= segment.startLocal)) { setError("Enter a start and a later end for every work segment. Times are Sydney local time."); return; }
       payload = {expectedRevision:revision,segments,notes,idempotencyKey:crypto.randomUUID()};
       setAttempted(payload);
@@ -88,13 +91,13 @@ function ProposalEditor({ detail, disabled, onSaved }: { detail: BookingDetail; 
       setError(requestMessage(failure));
     } finally { setBusy(false); }
   }
-  return <section className="operations-schedule"><h4>Create a work proposal</h4><p>Enter each actual work segment manually. No working hours or duration are assumed. Gaps between segments do not occupy the test resource. Every new version requires a new customer signature.</p>
+  return <section ref={proposalFields} className="operations-schedule"><h4>Create a work proposal</h4><p>Enter each actual work segment manually. No working hours or duration are assumed. Gaps between segments do not occupy the test resource. Every new version requires a new customer signature.</p>
     <p className="operations-small">Resource: single company test resource · DEMO ONLY. This is not an approved staffing or working-hours policy.</p>
     {stale && <div className="operations-error" role="alert">This booking changed. Your entered times are preserved. Load its current version before making a new proposal.<button type="button" className="operations-button-secondary" disabled={busy || disabled || uncertain} onClick={reloadVersion}>Load current version</button></div>}
     {error && <p className="operations-error" role="alert">{error}</p>}{notice && <p className="operations-notice" role="status">{notice}</p>}
-    {segments.map((segment,index) => <fieldset className="booking-segment-editor" key={index} disabled={busy || disabled || uncertain}><legend>Work segment {index+1}</legend><div className="operations-grid"><label>Start (Sydney)<input type="datetime-local" value={segment.startLocal} onChange={event => setSegments(current => current.map((item,itemIndex) => itemIndex === index ? {...item,startLocal:event.target.value} : item))} /></label><label>End (Sydney)<input type="datetime-local" value={segment.endLocal} onChange={event => setSegments(current => current.map((item,itemIndex) => itemIndex === index ? {...item,endLocal:event.target.value} : item))} /></label></div><button type="button" className="operations-button-secondary" disabled={segments.length === 1} onClick={() => setSegments(current => current.filter((_,itemIndex) => itemIndex !== index))}>Remove segment {index+1}</button></fieldset>)}
+    {segments.map((segment,index) => <fieldset className="booking-segment-editor" key={index} disabled={busy || disabled || uncertain}><legend>Work segment {index+1}</legend><div className="operations-grid"><label>Start (Sydney)<ValidatedInput validationLabel={`Work segment ${index + 1} start`} required type="datetime-local" value={segment.startLocal} onChange={event => setSegments(current => current.map((item,itemIndex) => itemIndex === index ? {...item,startLocal:event.target.value} : item))} /></label><label>End (Sydney)<ValidatedInput validationLabel={`Work segment ${index + 1} end`} required type="datetime-local" min={segment.startLocal || undefined} value={segment.endLocal} onChange={event => setSegments(current => current.map((item,itemIndex) => itemIndex === index ? {...item,endLocal:event.target.value} : item))} /></label></div><button type="button" className="operations-button-secondary" disabled={segments.length === 1} onClick={() => setSegments(current => current.filter((_,itemIndex) => itemIndex !== index))}>Remove segment {index+1}</button></fieldset>)}
     <div className="booking-actions"><button type="button" className="operations-button-secondary" disabled={busy || disabled || uncertain || segments.length >= 20} onClick={() => setSegments(current => [...current,emptySegment()])}>Add work segment</button>{existing && <button type="button" className="operations-button-secondary" disabled={busy || disabled || uncertain} onClick={() => { setSegments(existing.segments.map(segment => ({startLocal:sydneyInput(segment.startAt),endLocal:sydneyInput(segment.endAt)}))); setNotes(existing.notes); }}>Copy previous proposal times</button>}</div>
-    <label>Notes shown to the customer<textarea rows={3} maxLength={2000} value={notes} disabled={busy || disabled || uncertain} onChange={event => setNotes(event.target.value)} /></label>
+    <label>Notes shown to the customer<ValidatedTextarea validationLabel="Customer notes" rows={3} maxLength={2000} value={notes} disabled={busy || disabled || uncertain} onChange={event => setNotes(event.target.value)} /></label>
     {uncertain && <p className="operations-notice">The save outcome is being checked. Retry keeps exactly the same proposal and request key. Refresh the request before deciding it was not saved.</p>}
     <button type="button" disabled={busy || disabled || (stale && !uncertain)} onClick={() => void save()}>{busy ? "Saving proposal…" : uncertain ? "Retry same proposal" : "Save new proposal for customer review"}</button>
   </section>;

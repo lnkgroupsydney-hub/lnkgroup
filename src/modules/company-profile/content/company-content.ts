@@ -51,9 +51,9 @@ export const companyContent = {
       "Tell us your suburb and the work you have in mind. We aim to reply within 24 hours.",
     phone: "0404 603 966",
     phoneHref: "tel:+61404603966",
-    email: "Lnkpaintingau@gmail.com",
-    emailHref: "mailto:Lnkpaintingau@gmail.com",
-    hours: "7 days a week · 7:00am–9:00pm (Sydney time)",
+    email: "lnkgroupsydney@gmail.com",
+    emailHref: "mailto:lnkgroupsydney@gmail.com",
+    hours: "7 days a week · 7:00am–5:00pm (Sydney time)",
     locality: "Ermington NSW 2115",
     instagram: {
       label: "@lnk_kitchenbath",
@@ -68,11 +68,11 @@ export const companyContent = {
   serviceArea: {
     title: "Serving Ermington, surrounding suburbs & Inner West Sydney",
     introduction:
-      "Our service area covers a 10 km radius around Ermington, plus Inner West Sydney and the suburbs listed below.",
+      "Based in Ermington, serving nearby suburbs and Inner West Sydney.",
     guidance:
-      "The company’s service area includes these suburbs; the list extends beyond the 10 km radius.",
-    radiusLabel: "10 km +",
-    radiusDescription: "around Ermington, plus Inner West Sydney and the listed suburbs",
+      "The suburbs below are part of our service area. Contact Lisa to confirm availability for your property.",
+    radiusLabel: "Local",
+    radiusDescription: "Ermington, nearby suburbs and Inner West Sydney",
     groups: [
       {
         title: "Ermington & surrounds",

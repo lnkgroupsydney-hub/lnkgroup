@@ -1,0 +1,90 @@
+.workspace { min-width: 0; }
+.heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
+.heading > div { min-width: 0; }
+.workspace .heading h3 { margin-top: 0; }
+.workspace .heading p { margin-block: .5rem; max-width: 43rem; }
+.private { display: inline-flex; flex: none; align-items: center; gap: .4rem; padding: .45rem .65rem; border: 1px solid var(--site-border); border-radius: 999px; color: var(--site-muted); font-size: .75rem; white-space: nowrap; }
+.workspace .intro { margin-block: .8rem 1.4rem; color: var(--site-muted); font-size: .9rem; }
+.workspace .notice:empty { display: none; }
+.workspace .notice { font-size: .9rem; }
+.sectionHeading { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: .5rem; }
+.sectionHeading h4 { font-weight: 650; }
+.sectionHeading > span { color: var(--site-muted); font-size: .8rem; }
+.workspace .photoGrid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .75rem; margin-block: .8rem 1.4rem; }
+.workspace .photoGrid li { border-radius: .8rem; padding: .6rem; gap: .5rem; background: var(--site-surface); }
+.workspace .photoGrid img { height: 9rem; border-radius: .4rem; }
+.workspace .photoGrid button { font-size: .8rem; min-height: 44px; padding-block: .4rem; }
+.photoCaption { display: grid; gap: .25rem; }
+.photoCaption strong { font-size: .85rem; }
+.workspace .photoCaption span { display: inline-flex; align-items: center; gap: .2rem; font-size: .75rem; }
+.photoWaiting { display: grid; align-content: center; justify-items: center; gap: .5rem; min-height: 9rem; background: var(--site-background); border-radius: .4rem; color: var(--site-muted); }
+.workspace .uploadFields { gap: .75rem; }
+.workspace .helper { color: var(--site-muted); font-size: .85rem; line-height: 1.5; margin-block: 0; font-weight: 400; }
+.roleGrid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: .6rem; }
+.workspace .roleCard { position: relative; display: flex; min-width: 0; cursor: pointer; }
+.roleCard input { position: absolute; top: .65rem; right: .65rem; margin: 0; width: 1rem; height: 1rem; accent-color: var(--site-action); }
+.roleContent { display: grid; align-content: start; gap: .45rem; width: 100%; min-width: 0; min-height: 12rem; padding: 1.9rem .7rem .75rem; border: 1px solid var(--site-border-strong); border-radius: .8rem; background: var(--site-surface); }
+.roleContent strong { font-size: .85rem; line-height: 1.4; }
+.roleCard input:checked + .roleContent { border-color: var(--site-action); background: var(--site-background); box-shadow: inset 0 0 0 1px var(--site-action); }
+.roleCard input:focus-visible + .roleContent { outline: 3px solid var(--site-action); outline-offset: 3px; }
+.roleCard input:focus-visible { outline: none; }
+.roleCard input:disabled { cursor: not-allowed; }
+.roleCard:has(input:disabled) { cursor: not-allowed; }
+.roleTip { font-size: .75rem; font-weight: 400; line-height: 1.4; color: var(--site-muted); }
+.roleSaved { display: inline-flex; align-items: center; gap: .25rem; font-size: .7rem; font-weight: 500; color: var(--site-foreground); }
+.cabinet { display: block; width: 100%; max-width: 5.5rem; height: 3.8rem; color: var(--site-muted); }
+.highlight { fill: var(--site-action); fill-opacity: .2; stroke: var(--site-action); }
+.uploadBox { display: flex; align-items: flex-start; gap: .75rem; min-width: 0; padding: 1rem; border: 1px dashed var(--site-border-strong); border-radius: .8rem; background: var(--site-background); }
+.uploadBox > svg { flex: none; margin-top: .25rem; color: var(--site-muted); }
+.uploadBox > div { min-width: 0; width: 100%; }
+.workspace .uploadBox p { font-size: .8rem; color: var(--site-muted); margin-block: .25rem .6rem; }
+.workspace .uploadBox input { font-size: .85rem; border-radius: .4rem; }
+.workspace .uploadBox input::file-selector-button { min-height: 32px; border: 1px solid var(--site-border-strong); border-radius: .3rem; margin-right: .6rem; padding: .3rem .6rem; background: var(--site-surface); color: var(--site-foreground); font: inherit; cursor: pointer; }
+.workspace .analysisFields { gap: .85rem; border-top: 1px solid var(--site-border); padding-top: 1.25rem; }
+.workspace .analysisFields legend { padding-top: .5rem; }
+.optionalDetails { padding: .25rem 0; }
+.optionalDetails summary { font-size: .85rem; font-weight: 550; }
+.optionalDetails label { margin-top: .5rem; font-size: .85rem; align-items: flex-start; border-radius: .5rem; }
+.workspace .consent { align-items: flex-start; font-size: .85rem; line-height: 1.6; border-radius: .7rem; padding: 1rem; background: var(--site-background); }
+.consent input { margin-top: .15rem; }
+.workspace button { gap: .5rem; }
+.activity, .progressHeading, .complete, .analysisProblem { display: flex; align-items: flex-start; gap: .8rem; }
+.activity { padding: 1rem; border: 1px solid var(--site-border); border-radius: .7rem; }
+.activity > svg, .complete > svg, .analysisProblem > svg { flex: none; margin-top: .15rem; }
+.workspace .activity p, .workspace .complete p, .workspace .analysisProblem p { margin-block: .25rem 0; font-size: .85rem; color: var(--site-muted); }
+.analysisProgress { padding: clamp(1rem, 3vw, 1.5rem); margin-block: 1.5rem; background: var(--site-background); border: 1px solid var(--site-border-strong); border-radius: 1rem; }
+.progressHeading strong { display: block; font-size: 1.05rem; }
+.workspace .progressHeading p { font-size: .85rem; color: var(--site-muted); margin-block: .35rem 0; }
+.loadingIcon { display: grid; flex: none; place-items: center; width: 3rem; height: 3rem; color: var(--site-action); background: var(--site-surface); border: 1px solid var(--site-border); border-radius: .8rem; }
+.analysisSteps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .75rem; list-style: none; padding: 1rem 0; margin: 1rem 0; border-block: 1px solid var(--site-border); }
+.analysisSteps li { display: flex; align-items: center; gap: .4rem; font-size: .8rem; color: var(--site-muted); }
+.analysisSteps li > svg { flex: none; }
+.analysisSteps li[data-state="done"], .analysisSteps li[data-state="current"] { color: var(--site-foreground); }
+.analysisSteps li[data-state="current"] { font-weight: 650; }
+.stepDot { flex: none; width: .8rem; height: .8rem; border: 1px solid var(--site-border-strong); border-radius: 50%; }
+.complete, .analysisProblem { padding: 1rem; margin-block: 1rem; border: 1px solid var(--site-border-strong); background: var(--site-background); border-radius: .8rem; }
+.analysisProblem > div { min-width: 0; overflow-wrap: anywhere; }
+.analysisProblem button { margin-top: .8rem; }
+.resultDetails { border-top: 1px solid var(--site-border); margin-top: .8rem; }
+.resultDetails summary { font-weight: 550; font-size: .85rem; }
+.spinner { flex: none; animation: photoSpin .8s linear infinite; }
+@keyframes photoSpin { to { transform: rotate(360deg); } }
+@media (hover: hover) and (pointer: fine) {
+  .roleCard:not(:has(input:disabled)):hover .roleContent { border-color: var(--site-action); }
+}
+@media (max-width: 760px) {
+  .heading { flex-wrap: wrap; }
+  .roleGrid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 520px) {
+  .roleGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .roleContent { min-height: 11rem; }
+  .workspace .photoGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .workspace .photoGrid img { height: 7rem; }
+  .analysisSteps { grid-template-columns: 1fr; gap: .75rem; }
+  .uploadBox { padding: .8rem; }
+  .uploadBox > svg { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .spinner { animation: none; }
+}

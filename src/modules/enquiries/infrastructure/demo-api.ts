@@ -1,4 +1,5 @@
 import { createCipheriv, createDecipheriv, createHash, createHmac, randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
+import { isValidText } from '../../../shared/validation/input.ts';
 import { DEMO_PRICE, DEMO_TERMS, DEMO_VERSION, CURRENT_DEMO_VERSION, type DemoSnapshot, type DemoSignature, type DemoSubmissionStatus } from '../domain/demo-submission.ts';
 import type { QuoteDraft } from '../domain/quote-draft.ts';
 import { validateStartDateSubmission } from '../domain/availability.ts';
@@ -85,7 +86,7 @@ function verifyToken(value: unknown, owner: string): ReviewProof {
   return proof;
 }
 export function validateDemoSignature(value: unknown): DemoSignature {
-  if (!record(value) || value.acknowledged !== true || typeof value.name !== 'string' || !value.name.trim() || value.name.length>120 || /[\u0000-\u001f\u007f]/.test(value.name) || !Array.isArray(value.strokes) || value.strokes.length<1 || value.strokes.length>100) throw new QuoteHttpError(400,'Enter your name, draw your signature and acknowledge the demo terms.');
+  if (!record(value) || value.acknowledged !== true || !isValidText(value.name,{maxLength:120,required:true,requireLetter:true}) || !Array.isArray(value.strokes) || value.strokes.length<1 || value.strokes.length>100) throw new QuoteHttpError(400,'Enter your name, draw your signature and acknowledge the demo terms.');
   let count=0,minX=1,maxX=0,minY=1,maxY=0;
   const strokes = value.strokes.map(stroke => {
     if (!Array.isArray(stroke) || !stroke.length) throw new QuoteHttpError(400,'Draw a valid signature.');

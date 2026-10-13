@@ -1,0 +1,554 @@
+{
+  "upstream": "http://127.0.0.1:3019",
+  "startedAt": "2026-10-13T02:41:58.193Z",
+  "checks": [
+    {
+      "name": "viewport-320x568",
+      "passed": true,
+      "externalBlocked": [],
+      "apiFixtures": [],
+      "pageErrors": [],
+      "failedLocalResources": [],
+      "consoleWarnings": [],
+      "structure": {
+        "width": 320,
+        "documentWidth": 320,
+        "h1": 1,
+        "duplicateIds": [],
+        "missingFragments": [],
+        "title": "Kitchen Cabinet Painting | L&K Group",
+        "description": "Refresh suitable cabinet doors, drawer fronts and visible panels with L&K Group around Ermington and Inner West Sydney. Explore the process and request a photo-based provisional estimate.",
+        "robots": "noindex, nofollow"
+      },
+      "pageHeight": 12962,
+      "serviceHeight": 1368.578125
+    },
+    {
+      "name": "viewport-390x844",
+      "passed": true,
+      "externalBlocked": [],
+      "apiFixtures": [],
+      "pageErrors": [],
+      "failedLocalResources": [],
+      "consoleWarnings": [],
+      "structure": {
+        "width": 390,
+        "documentWidth": 390,
+        "h1": 1,
+        "duplicateIds": [],
+        "missingFragments": [],
+        "title": "Kitchen Cabinet Painting | L&K Group",
+        "description": "Refresh suitable cabinet doors, drawer fronts and visible panels with L&K Group around Ermington and Inner West Sydney. Explore the process and request a photo-based provisional estimate.",
+        "robots": "noindex, nofollow"
+      },
+      "pageHeight": 12349,
+      "serviceHeight": 1209.625
+    },
+    {
+      "name": "viewport-768x1024",
+      "passed": true,
+      "externalBlocked": [],
+      "apiFixtures": [],
+      "pageErrors": [],
+      "failedLocalResources": [],
+      "consoleWarnings": [],
+      "structure": {
+        "width": 768,
+        "documentWidth": 768,
+        "h1": 1,
+        "duplicateIds": [],
+        "missingFragments": [],
+        "title": "Kitchen Cabinet Painting | L&K Group",
+        "description": "Refresh suitable cabinet doors, drawer fronts and visible panels with L&K Group around Ermington and Inner West Sydney. Explore the process and request a photo-based provisional estimate.",
+        "robots": "noindex, nofollow"
+      },
+      "pageHeight": 9593,
+      "serviceHeight": 960.75
+    },
+    {
+      "name": "viewport-1280x720",
+      "passed": true,
+      "externalBlocked": [],
+      "apiFixtures": [],
+      "pageErrors": [],
+      "failedLocalResources": [],
+      "consoleWarnings": [],
+      "structure": {
+        "width": 1280,
+        "documentWidth": 1280,
+        "h1": 1,
+        "duplicateIds": [],
+        "missingFragments": [],
+        "title": "Kitchen Cabinet Painting | L&K Group",
+        "description": "Refresh suitable cabinet doors, drawer fronts and visible panels with L&K Group around Ermington and Inner West Sydney. Explore the process and request a photo-based provisional estimate.",
+        "robots": "noindex, nofollow"
+      },
+      "firstStepControls": {
+        "top": 651,
+        "bottom": 696,
+        "height": 45,
+        "viewportHeight": 720
+      },
+      "pageHeight": 11515,
+      "serviceHeight": 780.296875
+    },
+    {
+      "name": "viewport-1440x900",
+      "passed": true,
+      "externalBlocked": [],
+      "apiFixtures": [],
+      "pageErrors": [],
+      "failedLocalResources": [],
+      "consoleWarnings": [],
+      "structure": {
+        "width": 1440,
+        "documentWidth": 1440,
+        "h1": 1,
+        "duplicateIds": [],
+        "missingFragments": [],
+        "title": "Kitchen Cabinet Painting | L&K Group",
+        "description": "Refresh suitable cabinet doors, drawer fronts and visible panels with L&K Group around Ermington and Inner West Sydney. Explore the process and request a photo-based provisional estimate.",
+        "robots": "noindex, nofollow"
+      },
+      "firstStepControls": {
+        "top": 831.46875,
+        "bottom": 876.46875,
+        "height": 45,
+        "viewportHeight": 900
+      },
+      "pageHeight": 13334,
+      "serviceHeight": 804.09375
+    },
+    {
+      "name": "viewport-1023x700",
+      "passed": true,
+      "externalBlocked": [],
+      "apiFixtures": [],
+      "pageErrors": [],
+      "failedLocalResources": [],
+      "consoleWarnings": [],
+      "structure": {
+        "width": 1023,
+        "documentWidth": 1023,
+        "h1": 1,
+        "duplicateIds": [],
+        "missingFragments": [],
+        "title": "Kitchen Cabinet Painting | L&K Group",
+        "description": "Refresh suitable cabinet doors, drawer fronts and visible panels with L&K Group around Ermington and Inner West Sydney. Explore the process and request a photo-based provisional estimate.",
+        "robots": "noindex, nofollow"
+      },
+      "pageHeight": 10337,
+      "serviceHeight": 934.96875
+    },
+    {
+      "name": "viewport-1024x700",
+      "passed": true,
+      "externalBlocked": [],
+      "apiFixtures": [],
+      "pageErrors": [],
+      "failedLocalResources": [],
+      "consoleWarnings": [],
+      "structure": {
+        "width": 1024,
+        "documentWidth": 1024,
+        "h1": 1,
+        "duplicateIds": [],
+        "missingFragments": [],
+        "title": "Kitchen Cabinet Painting | L&K Group",
+        "description": "Refresh suitable cabinet doors, drawer fronts and visible panels with L&K Group around Ermington and Inner West Sydney. Explore the process and request a photo-based provisional estimate.",
+        "robots": "noindex, nofollow"
+      },
+      "firstStepControls": {
+        "top": 631.0625,
+        "bottom": 676.0625,
+        "height": 45,
+        "viewportHeight": 700
+      },
+      "pageHeight": 10996,
+      "serviceHeight": 749.96875
+    },
+    {
+      "name": "viewport-1280x699",
+      "passed": true,
+      "externalBlocked": [],
+      "apiFixtures": [],
+      "pageErrors": [],
+      "failedLocalResources": [],
+      "consoleWarnings": [],
+      "structure": {
+        "width": 1280,
+        "documentWidth": 1280,
+        "h1": 1,
+        "duplicateIds": [],
+        "missingFragments": [],
+        "title": "Kitchen Cabinet Painting | L&K Group",
+        "description": "Refresh suitable cabinet doors, drawer fronts and visible panels with L&K Group around Ermington and Inner West Sydney. Explore the process and request a photo-based provisional estimate.",
+        "robots": "noindex, nofollow"
+      },
+      "pageHeight": 11170,
+      "serviceHeight": 780.296875
+    },
+    {
+      "name": "viewport-1280x700",
+      "passed": true,
+      "externalBlocked": [],
+      "apiFixtures": [],
+      "pageErrors": [],
+      "failedLocalResources": [],
+      "consoleWarnings": [],
+      "structure": {
+        "width": 1280,
+        "documentWidth": 1280,
+        "h1": 1,
+        "duplicateIds": [],
+        "missingFragments": [],
+        "title": "Kitchen Cabinet Painting | L&K Group",
+        "description": "Refresh suitable cabinet doors, drawer fronts and visible panels with L&K Group around Ermington and Inner West Sydney. Explore the process and request a photo-based provisional estimate.",
+        "robots": "noindex, nofollow"
+      },
+      "firstStepControls": {
+        "top": 631,
+        "bottom": 676,
+        "height": 45,
+        "viewportHeight": 700
+      },
+      "pageHeight": 11330,
+      "serviceHeight": 780.296875
+    },
+    {
+      "name": "server-content-home-region-and-kcp-summary",
+      "passed": true,
+      "externalBlocked": [],
+      "apiFixtures": [],
+      "pageErrors": [],
+      "failedLocalResources": [],
+      "consoleWarnings": [],
+      "home": {
+        "width": 1280,
+        "documentWidth": 1280,
+        "h1": 1,
+        "duplicateIds": [],
+        "missingFragments": [],
+        "title": "Sydney Painting, Cabinet Refresh & Handyman | L&K Group",
+        "description": "L&K Group provides painting, kitchen and bathroom cabinet refreshes, handyman services and home repair products around Ermington and Inner West Sydney. Contact Lisa.",
+        "robots": "noindex, nofollow"
+      },
+      "kcp": {
+        "width": 1280,
+        "documentWidth": 1280,
+        "h1": 1,
+        "duplicateIds": [],
+        "missingFragments": [],
+        "title": "Kitchen Cabinet Painting | L&K Group",
+        "description": "Refresh suitable cabinet doors, drawer fronts and visible panels with L&K Group around Ermington and Inner West Sydney. Explore the process and request a photo-based provisional estimate.",
+        "robots": "noindex, nofollow"
+      },
+      "serverHtmlBytes": {
+        "home": 63650,
+        "kcp": 78675
+      }
+    },
+    {
+      "name": "compare-pointer-keyboard-and-quote-navigation",
+      "passed": true,
+      "externalBlocked": [],
+      "apiFixtures": [
+        {
+          "path": "/api/quote/requests/customer",
+          "method": "GET"
+        },
+        {
+          "path": "/api/quote/requests/session",
+          "method": "POST"
+        }
+      ],
+      "pageErrors": [],
+      "failedLocalResources": [],
+      "consoleWarnings": [],
+      "quotePath": "/quote/start?service=cabinet-painting"
+    },
+    {
+      "name": "desktop-steps-hash-fast-scroll-and-crossfade",
+      "passed": false,
+      "externalBlocked": [],
+      "apiFixtures": [],
+      "pageErrors": [],
+      "failedLocalResources": [],
+      "consoleWarnings": [],
+      "firstStepControls": {
+        "top": 731,
+        "bottom": 776,
+        "height": 45,
+        "viewportHeight": 800
+      },
+      "crossfade": [
+        {
+          "canvas": 0,
+          "poster": 1,
+          "canvasReady": false,
+          "posterReady": false
+        },
+        {
+          "canvas": 0,
+          "poster": 1,
+          "canvasReady": false,
+          "posterReady": false
+        },
+        {
+          "canvas": 0,
+          "poster": 1,
+          "canvasReady": true,
+          "posterReady": true
+        },
+        {
+          "canvas": 0.128516,
+          "poster": 0.871484,
+          "canvasReady": true,
+          "posterReady": true
+        },
+        {
+          "canvas": 0.253345,
+          "poster": 0.746655,
+          "canvasReady": true,
+          "posterReady": true
+        },
+        {
+          "canvas": 0.368504,
+          "poster": 0.631496,
+          "canvasReady": true,
+          "posterReady": true
+        },
+        {
+          "canvas": 0.471604,
+          "poster": 0.528396,
+          "canvasReady": true,
+          "posterReady": true
+        },
+        {
+          "canvas": 0.559882,
+          "poster": 0.440118,
+          "canvasReady": true,
+          "posterReady": true
+        },
+        {
+          "canvas": 0.635276,
+          "poster": 0.364724,
+          "canvasReady": true,
+          "posterReady": true
+        },
+        {
+          "canvas": 0.697554,
+          "poster": 0.302446,
+          "canvasReady": true,
+          "posterReady": true
+        },
+        {
+          "canvas": 0.74984,
+          "poster": 0.25016,
+          "canvasReady": true,
+          "posterReady": true
+        },
+        {
+          "canvas": 0.793271,
+          "poster": 0.206729,
+          "canvasReady": true,
+          "posterReady": true
+        },
+        {
+          "canvas": 0.829887,
+          "poster": 0.170113,
+          "canvasReady": true,
+          "posterReady": true
+        },
+        {
+          "canvas": 0.860643,
+          "poster": 0.139357,
+          "canvasReady": true,
+          "posterReady": true
+        },
+        {
+          "canvas": 0.886396,
+          "poster": 0.113604,
+          "canvasReady": true,
+          "posterReady": true
+        },
+        {
+          "canvas": 0.908245,
+          "poster": 0.0917547,
+          "canvasReady": true,
+          "posterReady": true
+        },
+        {
+          "canvas": 0.926558,
+          "poster": 0.0734419,
+          "canvasReady": true,
+          "posterReady": true
+        },
+        {
+          "canvas": 0.942065,
+          "poster": 0.0579355,
+          "canvasReady": true,
+          "posterReady": true
+        },
+        {
+          "canvas": 0.95506,
+          "poster": 0.0449403,
+          "canvasReady": true,
+          "posterReady": true
+        },
+        {
+          "canvas": 0.965883,
+          "poster": 0.0341167,
+          "canvasReady": true,
+          "posterReady": true
+        },
+        {
+          "canvas": 0.974767,
+          "poster": 0.0252331,
+          "canvasReady": true,
+          "posterReady": true
+        },
+        {
+          "canvas": 0.982049,
+          "poster": 0.0179506,
+          "canvasReady": true,
+          "posterReady": true
+        },
+        {
+          "canvas": 0.987867,
+          "poster": 0.0121329,
+          "canvasReady": true,
+          "posterReady": true
+        },
+        {
+          "canvas": 0.992362,
+          "poster": 0.00763835,
+          "canvasReady": true,
+          "posterReady": true
+        },
+        {
+          "canvas": 0.995727,
+          "poster": 0.00427304,
+          "canvasReady": true,
+          "posterReady": true
+        },
+        {
+          "canvas": 0.998053,
+          "poster": 0.00194744,
+          "canvasReady": true,
+          "posterReady": true
+        },
+        {
+          "canvas": 0.999436,
+          "poster": 0.000563543,
+          "canvasReady": true,
+          "posterReady": true
+        },
+        {
+          "canvas": 0.999985,
+          "poster": 0.0000151711,
+          "canvasReady": true,
+          "posterReady": true
+        },
+        {
+          "canvas": 1,
+          "poster": 0,
+          "canvasReady": true,
+          "posterReady": true
+        },
+        {
+          "canvas": 1,
+          "poster": 0,
+          "canvasReady": true,
+          "posterReady": true
+        },
+        {
+          "canvas": 1,
+          "poster": 0,
+          "canvasReady": true,
+          "posterReady": true
+        },
+        {
+          "canvas": 1,
+          "poster": 0,
+          "canvasReady": true,
+          "posterReady": true
+        }
+      ],
+      "error": "AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n\nundefined !== 200\n\n    at open (file:///Users/jimee/Desktop/L&K%20Group/scripts/verify-kcp-landing-ui.mjs:98:12)\n    at runNextTicks (node:internal/process/task_queues:65:5)\n    at process.processImmediate (node:internal/timers:472:9)\n    at async file:///Users/jimee/Desktop/L&K%20Group/scripts/verify-kcp-landing-ui.mjs:304:7\n    at async scenario (file:///Users/jimee/Desktop/L&K%20Group/scripts/verify-kcp-landing-ui.mjs:79:7)\n    at async verifyKcpLanding (file:///Users/jimee/Desktop/L&K%20Group/scripts/verify-kcp-landing-ui.mjs:272:5)\n    at async file:///Users/jimee/Desktop/L&K%20Group/scripts/verify-kcp-landing-ui.mjs:414:20"
+    },
+    {
+      "name": "static-toggle-reduced-motion-and-resize-preserve-reading",
+      "passed": false,
+      "externalBlocked": [],
+      "apiFixtures": [],
+      "pageErrors": [],
+      "failedLocalResources": [],
+      "consoleWarnings": [],
+      "error": "AssertionError [ERR_ASSERTION]: Intentional view toggle keeps focus on reading chapter\n+ actual - expected\n\n+ ''\n- 'cabinet-process-mask'\n\n    at staticReading (file:///Users/jimee/Desktop/L&K%20Group/scripts/verify-kcp-landing-ui.mjs:151:30)\n    at async file:///Users/jimee/Desktop/L&K%20Group/scripts/verify-kcp-landing-ui.mjs:330:9\n    at async scenario (file:///Users/jimee/Desktop/L&K%20Group/scripts/verify-kcp-landing-ui.mjs:79:7)\n    at async verifyKcpLanding (file:///Users/jimee/Desktop/L&K%20Group/scripts/verify-kcp-landing-ui.mjs:323:5)\n    at async file:///Users/jimee/Desktop/L&K%20Group/scripts/verify-kcp-landing-ui.mjs:414:20"
+    },
+    {
+      "name": "reduced-motion-startup-and-text-200-percent-simulation",
+      "passed": true,
+      "externalBlocked": [],
+      "apiFixtures": [],
+      "pageErrors": [],
+      "failedLocalResources": [],
+      "consoleWarnings": [],
+      "enlargement": "Root font-size: 200%; native browser zoom not exercised"
+    },
+    {
+      "name": "webgl-unavailable-initial-hash-preserves-reading",
+      "passed": true,
+      "externalBlocked": [],
+      "apiFixtures": [],
+      "pageErrors": [],
+      "failedLocalResources": [],
+      "consoleWarnings": [],
+      "fallback": {
+        "nearest": "cabinet-process-prepare",
+        "distance": 0.2421875,
+        "focus": "cabinet-process-prepare",
+        "current": "#cabinet-process-prepare",
+        "progress": "38.891006097560975%"
+      },
+      "introBefore": {
+        "scroll": 1157,
+        "focus": "",
+        "top": 480.296875
+      },
+      "introAfter": {
+        "scroll": 1157,
+        "focus": "",
+        "top": 480.296875
+      }
+    },
+    {
+      "name": "webgl-context-loss-preserves-current-reading",
+      "passed": true,
+      "externalBlocked": [],
+      "apiFixtures": [],
+      "pageErrors": [],
+      "failedLocalResources": [],
+      "consoleWarnings": [
+        "THREE.WebGLRenderer: WEBGL_lose_context extension not supported."
+      ],
+      "lossMode": "WEBGL_lose_context extension",
+      "fallback": {
+        "nearest": "cabinet-process-finish",
+        "distance": 0.4140625,
+        "focus": "",
+        "current": "#cabinet-process-finish",
+        "progress": "72.2243394308943%"
+      }
+    }
+  ],
+  "isolation": "Fresh Playwright contexts; external requests aborted; every /api request fulfilled locally; no DB, API save/submit, company, AI, mail or Google calls.",
+  "limitations": [
+    "Headless Chrome is not a physical device.",
+    "200% text enlargement is simulated by root font-size; native browser zoom and actual 200% device/browser zoom are not certified.",
+    "No frame-rate, bundle-size, search-ranking or formal accessibility certification."
+  ],
+  "finishedAt": "2026-10-13T02:42:23.654Z",
+  "passed": false
+}
