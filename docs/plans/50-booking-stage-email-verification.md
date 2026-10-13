@@ -33,4 +33,6 @@ OTP 완료 결과가 예상 request ID와 다르면 해당 견적을 복원하�
 
 로컬 fixture로 초기 단계 이메일 발송 0건, 방문일 bound OTP 1회, 인증 후 현재 ID/분석 유지, 유효 연결 세션 재인증 없음, 이전 요청 목록 자동 열림 없음, 다른 탭/늦은 응답·만료 및 기존 예약 회귀를 확인한다. 실제 회사 DB·인증 메일·Google·AI와 운영 배포는 별도다. 구현 후 실행 결과는 검증 기록에 남긴다.
 
+구현과 로컬 검증 완료: 전체 **749/749**, 관련 최종 **21/21**, lint·타입·build와 공개 브라우저 **18/18** 통과. [검증 기록](../verification/2026-10-13-booking-stage-email-verification.md)에 footer 자동 저장·달력 읽기 중단·pending review 복구의 재현/수정과 실제 제공자 미실행을 구분했다. 새 견적 진입 구조/로그인 유지 API는 제안으로 남는다.
+
 Supabase OTP/세션 문법은 [공식 이메일 인증 문서](https://supabase.com/docs/guides/auth/auth-email-passwordless)를 확인했다. 기존 제공자 API와 DB 계약은 변경하지 않는다.

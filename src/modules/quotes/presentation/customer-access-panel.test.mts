@@ -87,3 +87,8 @@ test('booking code binding fails closed when request, saved email or revision ch
   assert.equal(bookingChallengeMatches({ ...request, payload: { ...request.payload, contact: { ...request.payload.contact, email: 'other@example.test' } } }, binding), false);
   assert.equal(bookingChallengeMatches(request, null), false);
 });
+test('explicit saved-entry selection allows reopening the already selected quote', () => {
+  const html = render(verified, { selectionRequired: true });
+  assert.match(html, /class="secondary">Open saved quote/);
+  assert.doesNotMatch(html, /Currently open/);
+});

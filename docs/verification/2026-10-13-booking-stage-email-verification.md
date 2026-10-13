@@ -27,11 +27,11 @@
 - 고객 접근 패널 관련 **7/7 통과**. 기존 관리/복구 SSR 4개를 보존하며 booking 목적의 단일 인증·연결 세션 생략·요청/이메일/revision/만료 대조를 확인한다.
 - 마지막 달력/pending review 보완 후 관련 고객 접근·예약 클라이언트 **21/21**, 해당 lint·타입·diff 검사를 통과했다.
 - 최신 제품 lint·타입·production build 통과. 마지막 중복 안내 정리의 해당 ESLint 검사도 통과했다.
-- 다른 채팅의 `.next` 빌드 충돌을 피하려고 `/tmp/lk-booking-email-j1rcdge4`에 제품 코드를 복사하고 기존 로컬 설정을 값 복사 없이 참조해 빌드했다. 브라우저는 해당 build의 `127.0.0.1:3005`를 upstream으로 사용한다.
+- 다른 채팅의 `.next` 빌드 충돌을 피하려고 `/tmp/lk-booking-email-j1rcdge4`에 제품 코드를 복사하고 기존 로컬 설정을 값 복사 없이 참조해 빌드했다. 브라우저는 해당 build의 `127.0.0.1:3005`를 upstream으로 사용했다. 최종 같은 build를 [3002 미리보기](http://127.0.0.1:3002/quote/start)에 연결했으며 네 제품 파일의 원본/복사본 일치를 확인했다.
 
 ## 로컬 브라우저
 
-`scripts/verify-quote-journey-ui.mjs`의 기존 11개와 새 인증 회귀 7개, 총 **18/18**을 분리된 통합 작업 폴더의 최신 production build에서 통과했다. 인증/revision 변경의 달력 재조회와 지연된 review 응답의 동일 payload 재시도까지 포함하며 런타임 오류는 0건이다.
+`scripts/verify-quote-journey-ui.mjs`의 기존 11개와 새 인증 회귀 7개, 최종 **18/18 통과**. 마지막 달력/pending date·review 회귀도 좁힌 실행과 전체 실행 모두 통과했다.
 
 - 신규 guest 견적 B의 이메일·ID·revision 바인딩 1회, 인증 응답에 이전 A가 함께 있어도 B/날짜/분석 유지와 A 자동 표시 없음.
 - 유효한 현재 연결 세션은 send/verify 0회, 일반 로그인/미연결 요청은 현재 견적에 바인딩한 코드 1회.
@@ -42,6 +42,10 @@
 - 기존 입력·320px/키보드·사진 분석 상태·응답 유실·409·날짜·서명·제출/새로고침 회귀.
 
 검사는 실제 quote save/read API와 로컬 PGlite를 사용하며 고객 인증/사진/AI/예약 제공자는 합성 fixture로 대체한다. 외부 origin 요청을 차단한다. 기존 A가 선택된 세션과 미연결 guest B를 바로 연결하는 불가능한 owner 조합을 정상 흐름으로 시험하지 않는다.
+
+최종 pageErrors(실행 예외)와 외부 요청은 0건이다. fixture가 제공하지 않는 홈 prefetch의 404와 font preload 경고는 관찰했으며 전체 console 무경고를 완료 기준으로 보고하지 않는다. 인증 전 빈 달력 wrapper의 `:visible` 검사와 정상 상태 읽기 중 즉시 enabled 검사를 화면 구조/완료 시점에 맞게 교정했다.
+
+최신 [데스크톱 인증 카드](2026-10-13-booking-email/quote-booking-email-desktop.png)와 [모바일 코드 입력](2026-10-13-booking-email/quote-booking-email-mobile.png)을 직접 확인했다. 단일 카드·제목/이메일 위계·코드 focus·내부 스크롤·고정 footer를 확인했으며 캡처는 합성 자료다.
 
 ## 새 견적 제안과 제한
 

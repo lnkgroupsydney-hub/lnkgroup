@@ -127,3 +127,98 @@ test('localhost fixture isolates browser cookies from the company 127.0.0.1 host
     await assert.rejects(createLiveQuoteFixture({ hostname }), /Distinct loopback HTTP ports/)
   }
 })
+
+test('real customer fixture links quote A, starts contact-only quote B and preserves A while all auth stays local', async () => {
+  let forwarded = 0
+  const upstream = http.createServer((_req, res) => { forwarded++; res.end('synthetic UI') })
+  upstream.listen(0, '127.0.0.1'); await once(upstream, 'listening')
+  const fixture = await createLiveQuoteFixture({ port: 0, upstream: `http://127.0.0.1:${upstream.address().port}`, customerAuth: true })
+  const jar = new Map()
+  const request = async (path, method = 'GET', body, headers = {}, updateCookies = true) => {
+    const response = await fetch(fixture.base + path, { method,
+      headers: { origin: fixture.base, cookie: [...jar].map(([name, value]) => `${name}=${value}`).join('; '), ...(body === undefined ? {} : { 'content-type': 'application/json' }), ...headers },
+      ...(body === undefined ? {} : { body: JSON.stringify(body) }) })
+    if (updateCookies) for (const cookie of response.headers.getSetCookie()) {
+      const pair = cookie.split(';')[0], split = pair.indexOf('='), name = pair.slice(0, split), value = pair.slice(split + 1)
+      if (/Max-Age=0(?:;|$)/.test(cookie)) jar.delete(name); else jar.set(name, value)
+    }
+    return response
+  }
+  const contact = { name: 'Synthetic returning customer', email: 'returning@example.invalid', phone: '0412 345 678', siteAddress: '1 Synthetic Street', suburb: 'Synthetic suburb', postcode: '2000', details: 'Existing project A', consent: true }
+  const service = { serviceId: 'cabinet-painting', intent: 'full-repainting', surfaces: ['doors'], doorCount: 8, drawerCount: 3, material: 'Existing timber', colourPreference: 'Existing white' }
+  const save = (payload, expectedRevision = 0) => request('/api/quote/requests', 'PUT', { expectedRevision, idempotencyKey: randomUUID(), payload, storageConsent: true })
+  try {
+    assert.equal((await request('/api/quote/requests/customer')).status, 200)
+    assert.equal((await request('/api/quote/requests/session', 'POST')).status, 200)
+    const saved = await save({ contact, service }); assert.equal(saved.status, 200)
+    const a = (await saved.json()).request
+    const before = await (await request(`/api/admin/quote-requests/${a.id}`)).json()
+    // Binding the OTP to the actual saved request proves prefill authorization,
+    // instead of relying on a UI response overlay or matching email alone.
+    const sent = await request('/api/quote/requests/customer/send', 'POST', { email: contact.email, requestId: a.id, expectedRevision: a.revision })
+    assert.equal(sent.status, 200)
+    assert.match(sent.headers.get('set-cookie'), /^lk_quote_customer_challenge=/)
+    const verified = await request('/api/quote/requests/customer/verify', 'POST', { token: '12345678' })
+    assert.equal(verified.status, 200)
+    assert.equal((await verified.json()).currentRequestId, a.id)
+    assert.equal((await (await request('/api/quote/requests')).json()).request.id, a.id)
+    const selected = await request('/api/quote/requests/customer/select', 'POST', { requestId: a.id })
+    assert.equal(selected.status, 200)
+    const authBeforeLogout = jar.get('lk_quote_customer_auth')
+    const fresh = await request('/api/quote/requests/customer/logout', 'POST', { intent: 'start-new' })
+    assert.equal(fresh.status, 200)
+    assert.deepEqual(await fresh.json(), { signedOut: true, writingSessionPreserved: false, contact: { name: contact.name, email: contact.email, phone: contact.phone } })
+    assert.equal(fresh.headers.getSetCookie().length, 3)
+    assert.equal(jar.size, 0, 'Actual response clears both selected and browser capabilities')
+    const revoked = await request('/api/quote/requests/customer', 'GET', undefined, { cookie: `lk_quote_customer_auth=${authBeforeLogout}` }, false)
+    assert.equal(revoked.status, 401)
+    assert.equal((await request('/api/quote/requests/session', 'POST')).status, 200)
+    assert.deepEqual(await (await request('/api/quote/requests')).json(), { request: null })
+    const bContact = { ...contact, siteAddress: '2 New Project Street', suburb: 'New suburb', postcode: '2010', details: '' }
+    const newSave = await save({ contact: bContact, service: null }); assert.equal(newSave.status, 200)
+    const b = (await newSave.json()).request
+    assert.notEqual(b.id, a.id); assert.equal(b.revision, 1); assert.equal(b.payload.service, null)
+    assert.deepEqual(await (await request(`/api/admin/quote-requests/${a.id}`)).json(), before, 'A retains its business payload, revision, status and audit')
+    const state = await (await request('/__fixture/state')).json()
+    assert.equal(state.requests.length, 2); assert.equal(state.customerAuth.providerCalls.send, 1); assert.equal(state.customerAuth.providerCalls.verify, 1)
+    assert.ok(state.customerAuth.commands.complete > 0)
+    assert.equal(JSON.stringify(state.customerAuth).includes(contact.email), false, 'Authentication diagnostics expose counts only')
+    assert.equal(forwarded, 0, 'Customer send/verify/select/logout never reaches the UI upstream')
+    assert.equal((await request('/api/quote/requests/customer/send', 'POST', { email: contact.email })).status, 429, 'The real one-minute cooldown remains active')
+    assert.equal((await request('/__fixture/control', 'POST', { expireCustomerSendCooldown: true })).status, 200)
+    assert.equal((await request('/api/quote/requests/customer/send', 'POST', { email: contact.email })).status, 200, 'Recovery can simulate elapsed cooldown without disabling the real limiter')
+    assert.equal((await request('/api/quote/requests/customer/handoff', 'POST', {})).status, 404, 'Unallowlisted customer API remains local and denied')
+    assert.equal((await request('/__fixture/control', 'POST', { reset: true })).status, 200)
+    const clean = await (await request('/__fixture/state')).json()
+    assert.deepEqual(clean.customerAuth, { enabled: true, providerCalls: { send: 0, verify: 0, identity: 0 }, commands: {} })
+    assert.equal(clean.requests.length, 0)
+    assert.equal((await request('/api/quote/requests/customer', 'GET', undefined, { cookie: `lk_quote_customer_auth=${authBeforeLogout}` }, false)).status, 401, 'Reset removes provider identities and DB customer sessions')
+  } finally { await fixture.close(); await new Promise(resolve => upstream.close(resolve)) }
+})
+
+test('real customer fixture refuses to discard an unlinked browser draft and resumes only its exact request', async () => {
+  const fixture = await createLiveQuoteFixture({ port: 0, customerAuth: true })
+  const request = (path, method = 'GET', cookie = '', body) => fetch(fixture.base + path, { method, headers: { origin: fixture.base, cookie, ...(body === undefined ? {} : { 'content-type': 'application/json' }) }, ...(body === undefined ? {} : { body: JSON.stringify(body) }) })
+  const cookies = response => response.headers.getSetCookie().filter(value => !value.includes('Max-Age=0')).map(value => value.split(';')[0]).join('; ')
+  const contact = { name: 'Synthetic browser customer', email: 'unlinked@example.invalid', phone: '', siteAddress: '1 Browser Street', suburb: 'Synthetic suburb', postcode: '2000', details: '', consent: true }
+  try {
+    const opened = await request('/api/quote/requests/session', 'POST'), writing = cookies(opened)
+    const saved = await request('/api/quote/requests', 'PUT', writing, { expectedRevision: 0, idempotencyKey: randomUUID(), storageConsent: true, payload: { contact, service: null } })
+    assert.equal(saved.status, 200); const a = (await saved.json()).request
+    const sent = await request('/api/quote/requests/customer/send', 'POST', '', { email: 'other@example.invalid' })
+    assert.equal(sent.status, 200)
+    const verified = await request('/api/quote/requests/customer/verify', 'POST', cookies(sent), { token: '12345678' })
+    assert.equal(verified.status, 200); const combined = `${writing}; ${cookies(verified)}`
+    const blocked = await request('/api/quote/requests/customer/logout', 'POST', combined, { intent: 'start-new' })
+    assert.equal(blocked.status, 409); assert.equal(blocked.headers.getSetCookie().length, 0)
+    const guard = await blocked.json()
+    assert.equal(guard.code, 'unlinked_browser_draft'); assert.deepEqual(guard.browserDraft, { id: a.id, reference: a.reference }); assert.equal(JSON.stringify(guard).includes(contact.email), false)
+    const wrong = await request('/api/quote/requests/customer/logout', 'POST', combined, { intent: 'resume-browser-draft', expectedRequestId: randomUUID() })
+    assert.equal(wrong.status, 409); assert.equal(wrong.headers.getSetCookie().length, 0)
+    const resumed = await request('/api/quote/requests/customer/logout', 'POST', combined, { intent: 'resume-browser-draft', expectedRequestId: a.id })
+    assert.equal(resumed.status, 200); assert.deepEqual(await resumed.json(), { signedOut: true, writingSessionPreserved: true, requestId: a.id })
+    assert.equal(resumed.headers.getSetCookie().length, 2, 'Customer cookies clear while browser writing cookie stays intact')
+    assert.equal((await (await request('/api/quote/requests', 'GET', writing)).json()).request.id, a.id)
+    assert.equal((await (await request('/__fixture/state')).json()).requests.length, 1)
+  } finally { await fixture.close() }
+})
