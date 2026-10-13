@@ -99,6 +99,131 @@ test('logout revokes local customer access, clears guest/customer challenge cook
  assert.equal((await media.workspace(req('GET',auth))).status,401)
 })
 
+async function quoteRecords() {
+ const names=tables.filter(name=>!['lk_quote_customer_sessions','lk_quote_customer_challenges','lk_quote_customer_handoffs','lk_rate_buckets'].includes(name))
+ return Object.fromEntries(await Promise.all(names.map(async name=>[name,(await db.query<{row:string}>(`select to_jsonb(t)::text row from public.${name} t order by to_jsonb(t)::text`)).rows.map(value=>value.row)])))
+}
+
+test('start-new returns only verified contact fields and preserves existing quote, photo, analysis, signed booking and receipt rows',async()=>{
+ const {auth,writing,request}=await link()
+ const photoId=randomUUID(),photoHash=createHash('sha256').update(photoId).digest('hex')
+ await db.query("insert into public.lk_live_quote_photos(id,company_id,request_id,role,state,mime_type,source_hash,size_bytes,stored_bytes,staging_path,object_path,content_hash,width,height,ready_at) values($1,'lk-group',$2,'overview','ready','image/jpeg',$3,1000,900,$4,$5,$3,640,480,now())",[photoId,request.id,photoHash,'staging/'+photoId,'private/'+photoId])
+ const analysisId=randomUUID(),approvalId=randomUUID(),submissionId=randomUUID(),signature={name:contact.name,method:'typed',strokes:[],acknowledged:true}
+ // These isolated rows represent already completed work. This test checks the
+ // entry transition's preservation, rather than re-running booking creation.
+ await db.query("insert into lk_quote_analysis_jobs(id,company_id,request_id,input_revision,input_key,input_snapshot,status,model,prompt_version,schema_version,pricing_version,consent_version,attempts,analysis,pricing,usage,completed_at) values($1,'lk-group',$2,1,$3,$4,'succeeded','gpt-6.1-sol','cabinet-v2','cabinet-v2','synthetic-preservation','openai-photo-analysis-v1',1,'{}','{}','{}',now())",[analysisId,request.id,photoHash,{service,photos:[photoId]}])
+ await db.query("insert into lk_live_quote_approvals(id,company_id,request_id,auth_user_id,verified_email,version,analysis_id,input_revision,source_snapshot,snapshot_hash,preferred_date,selection_revision) values($1,'lk-group',$2,$3,$4,1,$5,1,$6,$7,'2026-11-03',1)",[approvalId,request.id,alice.userId,alice.email,analysisId,{payload:request.payload},photoHash])
+ await db.query("insert into lk_live_quote_submissions(id,company_id,request_id,approval_id,reference,auth_user_id,verified_email,preferred_date,selection_revision,snapshot,snapshot_hash,signature,signed_content_hash,email_status,calendar_status,email_idempotency_key) values($1,'lk-group',$2,$3,$4,$5,$6,'2026-11-03',1,$7,$8,$9,$8,'pending','blocked',$10)",[submissionId,request.id,approvalId,'SYNTHETIC-'+submissionId,alice.userId,alice.email,{payload:request.payload},photoHash,signature,'synthetic-'+submissionId])
+ await db.query("insert into lk_live_quote_booking_receipts(company_id,request_id,auth_user_id,idempotency_key,command_hash,result_json) values('lk-group',$1,$2,$3,$4,$5)",[request.id,alice.userId,randomUUID(),photoHash,{submissionId,signature}])
+ await db.exec('reset role')
+ await db.query("insert into lk_live_booking_confirmed_segments(company_id,submission_id,account_sub,calendar_id,start_date,end_date,confirmation_version) values('lk-group',$1,'synthetic-company','synthetic-calendar','2026-11-03','2026-11-04',1)",[submissionId])
+ await db.exec('set role service_role')
+ const before=await quoteRecords()
+ const out=await customer.logout(req('POST',`${auth}; ${writing}; lk_staff_session=staff`,{intent:'start-new'}))
+ assert.equal(out.status,200,await out.clone().text())
+ assert.deepEqual(await out.json(),{signedOut:true,writingSessionPreserved:false,contact:{name:contact.name,email:contact.email,phone:contact.phone}})
+ assert.deepEqual(await quoteRecords(),before)
+ const clear=out.headers.getSetCookie().join('\n')
+ assert.match(clear,/lk_quote_request=;.*Secure/);assert.match(clear,/lk_quote_customer_auth=;/);assert.match(clear,/lk_quote_customer_challenge=;/);assert.ok(!clear.includes('lk_staff_session='))
+ assert.equal((await customer.state(req('GET',auth))).status,401)
+ assert.equal((await guest.read(req('GET',writing))).status,200,'existing quote is not deleted')
+})
+
+test('start-new inspects raw hidden guest draft and blocks without PII, cookie changes, or revocation',async()=>{
+ const a=await link(), b=await saved(bob.email),before=await quoteRecords()
+ const sessionsBefore=(await db.query('select * from lk_quote_customer_sessions')).rows
+ const out=await customer.logout(req('POST',`${a.auth}; ${b.writing}`,{intent:'start-new'}))
+ assert.equal(out.status,409)
+ const value=await out.json()
+ assert.equal(value.code,'unlinked_browser_draft')
+ assert.deepEqual(value.browserDraft,{id:b.request.id,reference:b.request.reference})
+ assert.ok(!JSON.stringify(value).includes(bob.email));assert.ok(!JSON.stringify(value).includes(contact.siteAddress))
+ assert.equal(out.headers.getSetCookie().length,0)
+ assert.deepEqual(await quoteRecords(),before)
+ assert.deepEqual((await db.query('select * from lk_quote_customer_sessions')).rows,sessionsBefore)
+ assert.equal((await customer.state(req('GET',a.auth))).status,200)
+ assert.equal((await guest.read(req('GET',b.writing))).status,200)
+})
+
+test('resume-browser-draft verifies the actual raw browser ID and preserves selected customer and browser records',async()=>{
+ const a=await link(), b=await saved(bob.email),before=await quoteRecords(),combined=`${a.auth}; ${b.writing}`
+ const wrong=await customer.logout(req('POST',combined,{intent:'resume-browser-draft',expectedRequestId:a.request.id}))
+ assert.equal(wrong.status,409);assert.equal(wrong.headers.getSetCookie().length,0)
+ assert.equal((await customer.state(req('GET',a.auth))).status,200)
+ const out=await customer.logout(req('POST',combined,{intent:'resume-browser-draft',expectedRequestId:b.request.id}))
+ assert.equal(out.status,200,await out.clone().text())
+ assert.deepEqual(await out.json(),{signedOut:true,writingSessionPreserved:true,requestId:b.request.id})
+ assert.ok(!out.headers.getSetCookie().some(value=>value.startsWith('lk_quote_request=')))
+ assert.deepEqual(await quoteRecords(),before)
+ const read=await guest.read(req('GET',b.writing));assert.equal(read.status,200);assert.equal((await read.json()).request.id,b.request.id)
+ assert.equal((await customer.state(req('GET',a.auth))).status,401)
+})
+
+test('start-new with an empty writing capability keeps it stable and uses the latest linked contact when no request is selected',async()=>{
+ const old=await link()
+ await db.exec('update lk_rate_buckets set reset_at=0')
+ const latest=await link()
+ await db.query("update lk_quote_requests set saved_at=now()+interval '1 second',payload=jsonb_set(payload,'{contact,name}','\"Latest verified customer\"') where id=$1",[latest.request.id])
+ await db.exec('update lk_rate_buckets set reset_at=0')
+ const verified=await verify(await send(alice.email)),auth=cookies(verified)
+ // Create an origin-bound empty guest cookie without the customer selector.
+ const onlyGuest=createQuoteRequestApi({store:requestsStore,authorize:async()=>{throw new QuoteRequestError(401,'Staff required')},baseUrl:()=>base,sessionKey:()=>secret,enabled:()=>true,now:()=>now})
+ const ready=await onlyGuest.session(req('POST')),writing=cookies(ready)
+ const before=await quoteRecords(),out=await customer.logout(req('POST',`${auth}; ${writing}`,{intent:'start-new'}))
+ assert.equal(out.status,200,await out.clone().text())
+ assert.deepEqual(await out.json(),{signedOut:true,writingSessionPreserved:true,contact:{name:'Latest verified customer',email:alice.email,phone:''}})
+ assert.ok(!out.headers.getSetCookie().some(value=>value.startsWith('lk_quote_request=')))
+ assert.deepEqual(await quoteRecords(),before)
+ const read=await guest.read(req('GET',writing));assert.equal((await read.json()).request,null)
+ assert.notEqual(old.request.id,latest.request.id)
+})
+
+test('start-new never prefills from expired or unverified access and retains an empty guest capability',async()=>{
+ const linked=await link()
+ const onlyGuest=createQuoteRequestApi({store:requestsStore,authorize:async()=>{throw new QuoteRequestError(401,'Staff required')},baseUrl:()=>base,sessionKey:()=>secret,enabled:()=>true,now:()=>now})
+ now+=3600001
+ const writing=cookies(await onlyGuest.session(req('POST')))
+ for(const cookie of [`${linked.auth}; ${writing}`,writing]) {
+  const out=await customer.logout(req('POST',cookie,{intent:'start-new'}))
+  assert.equal(out.status,200,await out.clone().text());assert.deepEqual(await out.json(),{signedOut:true,writingSessionPreserved:true,contact:null})
+  assert.ok(!out.headers.getSetCookie().some(value=>value.startsWith('lk_quote_request=')))
+ }
+ const blocked=await customer.logout(req('POST',linked.writing,{intent:'start-new'}))
+ assert.equal(blocked.status,409);assert.equal((await blocked.json()).code,'unlinked_browser_draft');assert.equal(blocked.headers.getSetCookie().length,0)
+})
+
+test('start-new contact follows the verified selected request rather than a newer linked quote',async()=>{
+ const selected=await link()
+ await db.exec('update lk_rate_buckets set reset_at=0')
+ const latest=await link()
+ await db.query("update lk_quote_requests set saved_at=now()+interval '1 second',payload=jsonb_set(payload,'{contact,name}','\"Newer quote contact\"') where id=$1",[latest.request.id])
+ const selection=await customer.select(req('POST',latest.auth,{requestId:selected.request.id}))
+ assert.equal(selection.status,200)
+ const before=await quoteRecords(),out=await customer.logout(req('POST',`${cookies(selection)}; ${selected.writing}`,{intent:'start-new'}))
+ assert.equal(out.status,200,await out.clone().text())
+ assert.deepEqual(await out.json(),{signedOut:true,writingSessionPreserved:false,contact:{name:contact.name,email:alice.email,phone:''}})
+ assert.deepEqual(await quoteRecords(),before)
+})
+
+test('start-new without linked records can prefill verified email only and cannot read foreign contacts',async()=>{
+ await link()
+ const verified=await verify(await send(bob.email)),auth=cookies(verified)
+ const before=await quoteRecords(),out=await customer.logout(req('POST',auth,{intent:'start-new'}))
+ assert.equal(out.status,200,await out.clone().text())
+ assert.deepEqual(await out.json(),{signedOut:true,writingSessionPreserved:true,contact:{name:'',email:bob.email,phone:''}})
+ assert.deepEqual(await quoteRecords(),before)
+})
+
+test('quote entry intents reject malformed combinations, missing or forged IDs, and cross-origin access without clearing cookies',async()=>{
+ const a=await link(),combined=`${a.auth}; ${a.writing}`
+ for(const [body,status] of [[{intent:'unknown'},400],[{intent:'start-new',preserveWritingSession:false},400],[{intent:'resume-browser-draft',preserveWritingSession:true,expectedRequestId:a.request.id},400],[{intent:'start-new',expectedRequestId:a.request.id},400],[{intent:'resume-browser-draft'},400],[{intent:'resume-browser-draft',expectedRequestId:'bad-id'},400],[{intent:'resume-browser-draft',expectedRequestId:randomUUID()},409]] as const) {
+  const out=await customer.logout(req('POST',combined,body));assert.equal(out.status,status,await out.clone().text());assert.equal(out.headers.getSetCookie().length,0)
+ }
+ const evil=new Request(`${base}/api/quote/requests/customer/logout`,{method:'POST',headers:{host:new URL(base).host,origin:'https://attacker.invalid',cookie:combined,'content-type':'application/json'},body:JSON.stringify({intent:'start-new'})})
+ const out=await customer.logout(evil);assert.equal(out.status,403);assert.equal(out.headers.getSetCookie().length,0)
+ assert.equal((await customer.state(req('GET',a.auth))).status,200)
+})
+
 test('deleted customer session recovery clears stale email access while preserving an unknown unlinked guest quote',async()=>{
  const linked=await link(), unlinked=await saved(bob.email)
  // Fixture owner models the authorized cleanup; the runtime role cannot DELETE sessions.

@@ -1,9 +1,23 @@
 # 메인 → Cabinet → 회사 관리 웹 제작 TODO
 
+**2026-10-13 새 견적과 기존 견적·예약 진입:** [51번 계획](51-quote-entry-and-contact-prefill.md)·[검증 기록](../verification/2026-10-13-quote-entry-contact-prefill.md).
+
+- [x] 첫 화면 두 카드·명시적 기존 선택·권한 있는 연락처 세 항목만 사전 입력·새 ID 생성·기존 업무 자료 보존.
+- [x] fresh baseline·미저장/결과 불명 요청·숨은 guest·다른 탭·첫 저장·사진/date/signature/body/key 복구 경계 보호, 방문일 단일 인증 유지.
+- [x] 전체 767/767·관련 37/37·fixture 4/4·lint·타입·build, 로컬 production 브라우저 40/40과 desktop/mobile 시각 점검 통과. 검증 build를 3002에 연결.
+- [ ] 실제 회사 DB/인증 이메일·외부 제공자·운영 배포 인수. 이번 구현과 별도.
+
 **2026-10-13 최신 Git 통합:** 캐비넷·홈·견적 UI·입력 검증·방문일 단일 인증 변경을 `a93b3b4`에 커밋하고 main에 병합했다(`b747587`). [통합 검증 기록](../verification/2026-10-13-kcp-main-integration.md).
 
 - [x] 전체 749/749·타임라인 8/8·마지막 예약 복구 관련 29/29, 최신 lint·타입·build와 브라우저 49/49 통과.
 - [x] 회사 origin에 작업 브랜치/main atomic push, 원격 SHA와 병합/검증 트리 동일성 확인. 원본 공유 작업 폴더 보존.
+
+**2026-10-13 방문일 단일 이메일 인증:** [50번 계획](50-booking-stage-email-verification.md)과 [검증 기록](../verification/2026-10-13-booking-stage-email-verification.md)을 따른다.
+
+- [x] 방문일 현재 견적에 고정된 단일 OTP, 유효 연결 세션 생략, 인증 후 입력/분석/날짜 유지와 목록 목적 분리.
+- [x] 다른 탭/늦은 응답·관리 복원·접수본·불명확한 예약 재시도 보존, footer 추가 저장과 인증 재조회 달력/pending review 경계 수정.
+- [x] 전체 749/749·최종 관련 21/21·lint·타입·build, 공개 브라우저 18개와 최신 desktop/mobile 시각 점검 통과. 3002 미리보기 최신 build 연결.
+- [x] 새 견적/기존 견적의 시작 화면 진입 구조·연락처만 사전 입력은 후속 51번에서 구현했다. 로그인 유지 정책을 추가하지 않으며 실제 이메일/운영 제공자·배포 인수는 별도다.
 
 **2026-10-13 KCP 주석 디자인 보정:** [47번 후속 항목](47-kcp-landing-ui-ux-content-plan.md)과 [실행 기록](../verification/2026-10-13-kcp-design-polish.md).
 

@@ -12,9 +12,10 @@ import { LivePhotoWorkspace } from './live-photo-workspace';
 import { BookingFlowPanel } from './booking-flow-panel';
 import type { PublicAnalysisJob } from '../domain/photo-workspace';
 import { CustomerAccessPanel } from './customer-access-panel';
+import { CUSTOMER_ACCESS_CHANGED, CUSTOMER_ACCESS_CHANNEL, CUSTOMER_NEW_QUOTE_STARTED, QuoteEntryTransitionError, isPendingFirstSave, pendingFirstSaveMatches, startNewQuote, checkNewQuoteSession, resumeBrowserDraft, readCustomerAccess, type BrowserDraftSummary, type QuoteContactPrefill } from './customer-access-client';
 import { LegacyQuoteRecovery } from './legacy-quote-recovery';
 import { SavedPhotoAnalysis } from './saved-photo-analysis';
-import { liveRequest, parseLiveRequest, LiveRequestError, intentLabels, surfaceLabels, withWritingSessionLock } from './request-client';
+import { liveRequest, parseLiveRequest, LiveRequestError, intentLabels, surfaceLabels, withWritingSessionLock, isRecord } from './request-client';
 import './live-quote.css';
 
 type Values = { name: string; email: string; phone: string; siteAddress: string; suburb: string; postcode: string; details: string; consent: boolean; intent: string; surfaces: string[]; doorCount: string; drawerCount: string; material: string; colourPreference: string };
@@ -57,6 +58,10 @@ async function loadSaved(legacyRecoveryMode = false) {
 }
 
 export function LiveQuoteForm({ legacyRecoveryMode = false, companyBaseUrl = '' }: { legacyRecoveryMode?: boolean; companyBaseUrl?: string }) {
+  const [entry, setEntry] = useState<'choice' | 'new' | 'saved'>(legacyRecoveryMode ? 'new' : 'choice');
+  const [freshBaseline, setFreshBaseline] = useState<Values>(EMPTY);
+  const [newStartConfirmation, setNewStartConfirmation] = useState(false), [entryUncertain, setEntryUncertain] = useState(false), [entryPeerConflict, setEntryPeerConflict] = useState(false), [resumeConfirmation, setResumeConfirmation] = useState(false), [browserDraft, setBrowserDraft] = useState<BrowserDraftSummary | null>(null);
+  const [bookingDirty, setBookingDirty] = useState(false), [bookingInFlight, setBookingInFlight] = useState(false), [photoInFlight, setPhotoInFlight] = useState(false), [photoDirty, setPhotoDirty] = useState(false);
   const [values, setValues] = useState<Values>(EMPTY), [saved, setSaved] = useState<LiveQuoteRequest | null>(null);
   const [step, setStep] = useState(0), [ready, setReady] = useState(false), [busy, setBusy] = useState(false);
   const [error, setError] = useState(''), [notice, setNotice] = useState(''), [conflict, setConflict] = useState(false), [expired, setExpired] = useState(false);
@@ -65,6 +70,9 @@ export function LiveQuoteForm({ legacyRecoveryMode = false, companyBaseUrl = '' 
   const [authBusy, setAuthBusy] = useState(false), [photoBusy, setPhotoBusy] = useState(false), [verifiedEmail, setVerifiedEmail] = useState<string | null>(null);
   const [accessOpen, setAccessOpen] = useState(false), [accessVersion, setAccessVersion] = useState(0), [accessConflict, setAccessConflict] = useState(false);
   const [bookingActions, setBookingActions] = useState<HTMLDivElement | null>(null);
+  const [entryVersion, setEntryVersion] = useState(0), [entryTransitioning, setEntryTransitioning] = useState(false);
+  const [entryTabId] = useState(() => crypto.randomUUID());
+  const sessionBlocked = useRef(false);
   const initial = useRef<Promise<LiveQuoteRequest | null> | null>(null), alive = useRef(false), changing = useRef(false);
   const generation = useRef(0);
   const heading = useRef<HTMLHeadingElement>(null), errorBox = useRef<HTMLDivElement>(null);
@@ -78,10 +86,13 @@ export function LiveQuoteForm({ legacyRecoveryMode = false, companyBaseUrl = '' 
     setReady(true); setConflict(false); setExpired(false); setPending(null);
   }
   useEffect(() => {
-    alive.current = true; initial.current ??= loadSaved(legacyRecoveryMode); const version = generation.current;
+    alive.current = true;
     let cancelled = false;
-    initial.current.then(value => { if (!cancelled && version === generation.current) { adopt(value); if (value) setNotice('Your saved request has been restored. The company can see these saved details.'); } })
-      .catch(cause => { if (!cancelled && version === generation.current) { if (cause instanceof LiveRequestError && [401, 403].includes(cause.status)) { setExpired(true); setReady(true); } setError(cause instanceof Error ? cause.message : 'Could not open your request.'); } });
+    if (legacyRecoveryMode) {
+      initial.current ??= loadSaved(true); const version = generation.current;
+      initial.current.then(value => { if (!cancelled && version === generation.current) adopt(value); })
+        .catch(cause => { if (!cancelled && version === generation.current) setError(cause instanceof Error ? cause.message : 'Could not open your request.'); });
+    } else if (window.location.hash.startsWith('#restore=')) void Promise.resolve().then(() => { if (!cancelled) { setEntry('saved'); setAccessOpen(true); setReady(true); } });
     return () => { cancelled = true; alive.current = false; };
   }, [legacyRecoveryMode]);
   useEffect(() => { if (error) errorBox.current?.focus({ preventScroll: true }); }, [error]);
@@ -93,16 +104,26 @@ export function LiveQuoteForm({ legacyRecoveryMode = false, companyBaseUrl = '' 
     setValues(current => ({ ...current, ...mergeSelectedAddress(current, selection, kind) })); setNotice('Address changes are not saved yet.');
   }
   function go(next: number) { setStep(next); setAccessOpen(false); setNotice(''); }
-  const bookingStageChanged = useCallback((stage: 'date' | 'sign' | 'complete') => { setStep(stage === 'complete' ? 6 : stage === 'sign' ? 5 : 4); setAccessOpen(false); }, []);
+  const bookingStageChanged = useCallback((stage: 'date' | 'sign' | 'complete') => { if (entry !== 'new' || changing.current || sessionBlocked.current) return; setStep(stage === 'complete' ? 6 : stage === 'sign' ? 5 : 4); setAccessOpen(false); }, [entry]);
   const recoverBooking = useCallback((target: 'photos' | 'email') => {
     if (target === 'email' && !saved) { accessReturn.current = journeyPosition.current; setAccessOpen(true); return; }
     setStep(target === 'email' ? 4 : 2); setAccessOpen(false);
     if (target === 'email') requestAnimationFrame(() => document.querySelector<HTMLElement>('#quote-email-access [data-quote-access-heading]')?.focus({ preventScroll: true }));
   }, [saved]);
   const bookingVerified = useCallback(() => { setAccessVersion(current => current + 1); }, []);
-  function openEmailAccess() { accessReturn.current = journeyPosition.current; setAccessOpen(true); }
+  function openEmailAccess() {
+    accessReturn.current = journeyPosition.current; setAccessOpen(true);
+    if (entry !== 'choice') return;
+    setEntry('saved'); setReady(false); const version = ++generation.current;
+    void Promise.all([loadSaved(), readCustomerAccess()]).then(([cached, access]) => {
+      if (!alive.current || version !== generation.current) return;
+      if (cached && !access.requests.some(item => item.id === cached.id)) setBrowserDraft({ id: cached.id, reference: cached.reference });
+      setReady(true);
+    }).catch(cause => { if (alive.current && version === generation.current) { setReady(true); setError(cause instanceof Error ? cause.message : 'Saved quotes could not be checked.'); } });
+  }
+  function closeEmailAccess() { setAccessOpen(false); if (entry === 'saved' && !saved) { setEntry('choice'); setVerifiedEmail(null); } }
   async function restore() {
-    if (changing.current) return; changing.current = true; setBusy(true); setError('');
+    if (changing.current || sessionBlocked.current || pending || photoBusy || bookingBusy) return; changing.current = true; setBusy(true); setError('');
     const version = ++generation.current;
     try {
       const value = await loadSaved(legacyRecoveryMode); if (!alive.current || version !== generation.current) return;
@@ -113,7 +134,7 @@ export function LiveQuoteForm({ legacyRecoveryMode = false, companyBaseUrl = '' 
     finally { changing.current = false; if (alive.current) setBusy(false); }
   }
   async function send(attempt: Pending) {
-    if (changing.current) return; changing.current = true; setBusy(true); setError(''); setNotice(''); setPending(attempt);
+    if (changing.current || sessionBlocked.current || accessConflict || entryUncertain || entryPeerConflict) return; changing.current = true; setBusy(true); setError(''); setNotice(''); setPending(attempt);
     const version = ++generation.current;
     try {
       const body = await liveRequest(attempt.path, { method: attempt.method, headers: { 'content-type': 'application/json', ...(saved ? { 'x-lk-quote-request-id': saved.id } : {}) }, body: attempt.body });
@@ -161,9 +182,76 @@ export function LiveQuoteForm({ legacyRecoveryMode = false, companyBaseUrl = '' 
     if (!saved || pending || changing.current || conflict || expired) return;
     void send({ path: '/api/quote/requests/review', method: 'POST', body: JSON.stringify({ expectedRevision: saved.revision, idempotencyKey: crypto.randomUUID() }), nextStep: 2 });
   }
-  const locked = accessConflict || bookingReadOnly || legacyRecoveryMode || !ready || busy || Boolean(pending) || conflict || expired;
-  const hasUnsavedChanges = JSON.stringify(values) !== JSON.stringify(saved ? valuesOf(saved) : EMPTY);
+  const locked = entryUncertain || accessConflict || bookingReadOnly || legacyRecoveryMode || !ready || busy || Boolean(pending) || conflict || expired;
+  const hasUnsavedChanges = JSON.stringify(values) !== JSON.stringify(saved ? valuesOf(saved) : freshBaseline);
+  function freshQuote(contact: QuoteContactPrefill | null) {
+    const baseline = { ...EMPTY, ...(contact ?? {}) };
+    setFreshBaseline(baseline); setValues(baseline); setSaved(null); setVerifiedEmail(null); setLatestAnalysis(null);
+    setStep(0); setEntry('new'); setAccessOpen(false); setReady(true); setConflict(false); setExpired(false); setPending(null); setAccessConflict(false);
+    setBookingReadOnly(false); setBookingBusy(false); setBookingDirty(false); setPhotoDirty(false); setPhotoBusy(false); setEntryUncertain(false); setEntryPeerConflict(false); setBrowserDraft(null); setNewStartConfirmation(false); setEntryVersion(current => current + 1); sessionBlocked.current = false;
+    setNotice(contact ? 'Your contact details are filled in. Add this project’s address and check permission to save.' : 'Your new quote is separate from your saved quotes and bookings.');
+  }
+  function entryFailure(cause: unknown) {
+    if (cause instanceof QuoteEntryTransitionError && cause.browserDraft) { setBrowserDraft(cause.browserDraft); setEntryUncertain(false); if (!entryPeerConflict) sessionBlocked.current = false; }
+    else { const uncertain = !(cause instanceof LiveRequestError && cause.status < 500); setEntryUncertain(uncertain); if (uncertain) sessionBlocked.current = true; else if (!entryPeerConflict) sessionBlocked.current = false; }
+    setError(cause instanceof Error ? cause.message : 'The session change could not be confirmed. Your entries are still here.');
+  }
+  async function beginNewQuote() {
+    if (changing.current || busy || authBusy || photoBusy || bookingBusy || pending || entryUncertain) return;
+    changing.current = true; sessionBlocked.current = true; setEntryTransitioning(true); const version = ++generation.current; setBusy(true); setError(''); setNewStartConfirmation(false);
+    try {
+      const contact = await startNewQuote();
+      if (!alive.current || version !== generation.current) return;
+      freshQuote(contact);
+      const channel = new BroadcastChannel(CUSTOMER_ACCESS_CHANNEL); channel.postMessage({ type: CUSTOMER_NEW_QUOTE_STARTED, source: entryTabId }); channel.close();
+    } catch (cause) { if (alive.current && version === generation.current) entryFailure(cause); }
+    finally { changing.current = false; if (alive.current) { setBusy(false); setEntryTransitioning(false); if (!entryPeerConflict) setAccessVersion(current => current + 1); } }
+  }
+  function requestNewQuote() {
+    if (busy || authBusy || photoBusy || bookingBusy || pending || entryUncertain) return;
+    if (hasUnsavedChanges || bookingDirty || photoDirty) setNewStartConfirmation(true);
+    else void beginNewQuote();
+  }
+  async function recoverEntry(resume: boolean) {
+    if (changing.current || busy || authBusy || photoInFlight || bookingInFlight || (resume && (!browserDraft || (saved?.id !== browserDraft.id && ((pending && !(!saved && isPendingFirstSave(pending))) || photoBusy || bookingBusy))))) return;
+    changing.current = true; const version = ++generation.current; setBusy(true); setError('');
+    try {
+      if (resume) {
+        const request = await resumeBrowserDraft(browserDraft!.id);
+        if (!alive.current || version !== generation.current) return;
+        if (!saved && pending) {
+          if (!pendingFirstSaveMatches(pending, request)) throw new Error('This draft does not match the original first save. Your original request and entries are kept.');
+          setSaved(request); setEntry('new'); setAccessOpen(false); setEntryUncertain(false); setEntryPeerConflict(false); setAccessConflict(false); setExpired(false); setReady(true); sessionBlocked.current = false;
+        } else if (saved?.id === request.id) { if (request.revision !== saved.revision && !pending && !photoBusy && !bookingBusy) setConflict(true); setEntryUncertain(false); setAccessConflict(false); setExpired(false); setReady(true); setVerifiedEmail(null); setEntryPeerConflict(false); sessionBlocked.current = false; }
+        else { adopt(request); setEntry('new'); setAccessOpen(false); setVerifiedEmail(null); setLatestAnalysis(null); setEntryVersion(current => current + 1); setEntryUncertain(false); setEntryPeerConflict(false); sessionBlocked.current = false; }
+        setBrowserDraft(null); setNotice('You are continuing this browser’s draft.');
+      } else {
+        await checkNewQuoteSession();
+        if (alive.current && version === generation.current) { if (entryPeerConflict) { setEntryUncertain(false); setNotice('Your session was checked. Your previous entries are kept here. Start a new quote explicitly, or open your saved quotes.'); } else freshQuote(null); }
+      }
+    } catch (cause) { if (alive.current && version === generation.current) entryFailure(cause); }
+    finally { changing.current = false; if (alive.current) setBusy(false); }
+  }
+  const writingSessionChanged = useCallback(() => { generation.current++; sessionBlocked.current = true; setAccessConflict(true); setEntryUncertain(true); setEntryPeerConflict(true); setNotice('A new quote was started in another tab. Your entries are still here. Check this browser’s session before continuing.'); }, []);
+  useEffect(() => {
+    const channel = new BroadcastChannel(CUSTOMER_ACCESS_CHANNEL);
+    channel.onmessage = event => {
+      if (event.data === CUSTOMER_NEW_QUOTE_STARTED || (isRecord(event.data) && event.data.type === CUSTOMER_NEW_QUOTE_STARTED && event.data.source !== entryTabId)) { writingSessionChanged(); return; }
+      if (event.data === CUSTOMER_ACCESS_CHANGED && changing.current) writingSessionChanged();
+    };
+    return () => channel.close();
+  }, [entryTabId, writingSessionChanged]);
+  const newStartDialog = <div className="lq-notice" role="group" aria-label="Unsaved changes before a new quote"><p>Your current project has unsaved details. Continue editing, or discard these changes to start a separate quote. Your saved quotes and bookings stay unchanged.</p><div className="lq-actions"><button type="button" onClick={() => setNewStartConfirmation(false)}>Continue editing</button><button type="button" className="secondary" onClick={() => void beginNewQuote()}>Discard changes &amp; start new quote</button></div></div>;
+  const entryRecovery = <>{resumeConfirmation && <div className="lq-notice" role="group" aria-label="Confirm opening another browser draft"><p>Opening this browser’s draft will discard your current unsaved details. Saved records stay unchanged.</p><div className="lq-actions"><button type="button" onClick={() => setResumeConfirmation(false)}>Continue editing</button><button type="button" className="secondary" onClick={() => { setResumeConfirmation(false); void recoverEntry(true); }}>Discard changes &amp; open browser draft</button></div></div>}{browserDraft && <div className="lq-notice" role="status"><p>This browser has an unlinked saved draft: {browserDraft.reference}. Continue it to protect its details and photos.</p><button type="button" disabled={busy || (saved?.id !== browserDraft.id && ((Boolean(pending) && !(!saved && isPendingFirstSave(pending))) || photoBusy || bookingBusy))} onClick={() => { if (saved?.id !== browserDraft.id && !(!saved && isPendingFirstSave(pending)) && (hasUnsavedChanges || bookingDirty || photoDirty)) setResumeConfirmation(true); else void recoverEntry(true); }}>Continue this browser draft</button></div>}{entryUncertain && <div className="lq-notice" role="status"><p>The session change is not confirmed. Your current entries are still here.</p><button type="button" disabled={busy || authBusy || photoInFlight || bookingInFlight} onClick={() => void recoverEntry(false)}>Check quote session</button></div>}</>;
   function restoreCustomerRequest(request: LiveQuoteRequest) {
+    if (changing.current) return;
+    if (saved?.id === request.id && (hasUnsavedChanges || bookingDirty || photoDirty || entryPeerConflict)) {
+      if (request.revision !== saved.revision) { if (!pending && !photoBusy && !bookingBusy) setConflict(true); setError('The saved revision changed. Your current entries and unconfirmed requests are still here. Retry an unconfirmed request before replacing its details.'); }
+      generation.current++; sessionBlocked.current = false; setEntryUncertain(false); setEntryPeerConflict(false); setAccessConflict(false); setAccessVersion(current => current + 1); setAccessOpen(false); setEntry('new'); setNotice('You are continuing this quote with your current entries.'); return;
+    }
+    if (sessionBlocked.current && (hasUnsavedChanges || bookingDirty || photoDirty)) { setError('Keep or explicitly discard your current changes before opening another quote.'); return; }
+    sessionBlocked.current = false; setEntryPeerConflict(false);
+    setEntry('new'); setEntryUncertain(false); setBrowserDraft(null); setBookingDirty(false);
     generation.current++; setAccessConflict(false); setError(''); setNotice('Your saved quote has been restored through your verified email.'); setPhotoBusy(false); setBookingBusy(false); setBookingReadOnly(false); setLatestAnalysis(null); adopt(request);
     if (accessReturn.current?.requestId === request.id) setStep(accessReturn.current.step === 5 ? 4 : accessReturn.current.step);
     setAccessOpen(false);
@@ -172,11 +260,13 @@ export function LiveQuoteForm({ legacyRecoveryMode = false, companyBaseUrl = '' 
     if (!saved || request.id !== saved.id || request.revision !== saved.revision) { setError('This quote changed during email verification. Your current entries are still here.'); return; }
     setAccessConflict(false); setNotice('Email verified. Choose your preferred visit.');
   }
-  function clearPrivateAccess() {
-    generation.current++; setAccessConflict(false); setVerifiedEmail(null); setBookingBusy(false); setBookingReadOnly(false); setLatestAnalysis(null); setSaved(null); setValues(EMPTY); setStep(0); setPending(null); setConflict(false); setExpired(true); setReady(true); setPhotoBusy(false);
+  function clearPrivateAccess(reason?: 'explicit-identity') {
+    if ((sessionBlocked.current || changing.current) && reason !== 'explicit-identity') return;
+    if (reason === 'explicit-identity') { sessionBlocked.current = false; setEntryPeerConflict(false); setEntryUncertain(false); }
+    generation.current++; setAccessConflict(false); setVerifiedEmail(null); setBookingBusy(false); setBookingReadOnly(false); setLatestAnalysis(null); setSaved(null); setValues(EMPTY); setFreshBaseline(EMPTY); setStep(0); setPending(null); setConflict(false); setExpired(true); setReady(true); setPhotoBusy(false);
   }
   function customerSignedOut() {
-    clearPrivateAccess(); setExpired(false); setReady(false); setVerifiedEmail(null); setError(''); void restore();
+    sessionBlocked.current = false; clearPrivateAccess('explicit-identity'); setExpired(false); setReady(false); setVerifiedEmail(null); setError(''); setEntry('choice'); setAccessOpen(false);
   }
   const addressContext = JSON.stringify([values.siteAddress, values.suburb, values.postcode]);
   const estimateReady = Boolean(latestAnalysis && !latestAnalysis.stale && latestAnalysis.status === 'succeeded' && latestAnalysis.pricing?.status === 'provisional_estimate' && latestAnalysis.pricing.total != null);
@@ -184,11 +274,12 @@ export function LiveQuoteForm({ legacyRecoveryMode = false, companyBaseUrl = '' 
   const navigationLocked = interactionLocked || hasUnsavedChanges;
   const stage = STAGES[Math.min(step, 5)];
   const StageIcon = step === 6 ? Check : stage.icon;
+  if (entry === 'choice') return <div className="lq-page lq-journey"><div className="lq-shell"><section className="lq-card lq-entry" aria-labelledby="quote-entry-title"><p className="lq-kicker">Kitchen Cabinet Painting</p><h1 id="quote-entry-title">How can we help with your kitchen?</h1><p>Start a painting quote, or open your saved quotes and booking requests.</p><div className="lq-entry-cards"><button aria-label="Start a new quote" type="button" disabled={busy || entryUncertain} onClick={requestNewQuote}><Paintbrush aria-hidden="true" /><strong>Start a new quote</strong><span>Tell us about a new project. Your saved quotes stay separate.</span><ArrowRight aria-hidden="true" /></button><button aria-label="View quotes & bookings" type="button" disabled={busy || entryUncertain} onClick={openEmailAccess}><CalendarDays aria-hidden="true" /><strong>View quotes &amp; bookings</strong><span>Use your email to open a saved quote or booking request.</span><ArrowRight aria-hidden="true" /></button></div>{newStartConfirmation && newStartDialog}{entryRecovery}{error && <p className="lq-error" role="alert">{error}</p>}{busy && <p role="status">Opening your quote session…</p>}<p className="lq-muted"><ShieldCheck size={16} aria-hidden="true" /> Your details and photos stay private.</p></section></div></div>;
   return <div className="lq-page lq-journey"><div className="lq-shell">
     <section className="lq-card" aria-labelledby="live-quote-title">
       <header className="lq-workspace-header">
         <div><p className="lq-kicker">Kitchen Cabinet Painting</p><h1 id="live-quote-title">Let’s refresh your kitchen.</h1></div>
-        {!legacyRecoveryMode && <button type="button" className="secondary lq-access-toggle" aria-expanded={accessOpen} aria-controls="quote-email-access" disabled={busy || photoBusy || (bookingBusy && !accessConflict) || Boolean(pending)} onClick={() => accessOpen ? setAccessOpen(false) : openEmailAccess()}><Mail size={17} aria-hidden="true" />{accessOpen ? 'Back to quote' : 'Open saved quote'}</button>}
+        {!legacyRecoveryMode && <div className="lq-entry-actions"><button type="button" className="secondary lq-access-toggle" disabled={busy || authBusy || photoBusy || bookingBusy || Boolean(pending) || entryUncertain} onClick={requestNewQuote}>Start a new quote</button><button type="button" className="secondary lq-access-toggle" aria-expanded={accessOpen} aria-controls="quote-email-access" disabled={busy || photoInFlight || (bookingInFlight && !accessConflict) || (Boolean(pending) && !entryPeerConflict)} onClick={() => accessOpen ? closeEmailAccess() : openEmailAccess()}><Mail size={17} aria-hidden="true" />{accessOpen ? 'Back to quote' : 'View quotes & bookings'}</button></div>}
       </header>
       <div className="lq-workspace-layout">
         <aside className="lq-journey-sidebar" aria-label="Quote progress and summary">
@@ -202,15 +293,17 @@ export function LiveQuoteForm({ legacyRecoveryMode = false, companyBaseUrl = '' 
           <div className="lq-stage-scroll" ref={viewport} data-quote-viewport>
             {!ready && !error && <p role="status">Opening your private request…</p>}
             {error && <div className="lq-error" ref={errorBox} tabIndex={-1} role="alert"><p>{error}</p>
-              {pending && <><p>The save could not be confirmed. Retry it before making more changes.</p><button type="button" disabled={busy} onClick={() => void send(pending)}>Retry same save</button></>}
-              {conflict && <><p>Your entries are still here. Copy unsaved changes before loading the saved version.</p><button type="button" disabled={busy} onClick={() => void restore()}>Load latest saved details</button></>}
+              {conflict && <><p>Your entries are still here. Copy unsaved changes before loading the saved version.</p><button type="button" disabled={busy || entryTransitioning || entryUncertain || entryPeerConflict || Boolean(pending) || photoBusy || bookingBusy} onClick={() => void restore()}>Load latest saved details</button></>}
               {expired && <><p>Your private access has ended. Verify your email to reopen a linked quote.</p><button type="button" className="secondary" onClick={openEmailAccess}>Reopen by email</button></>}
               {!ready && !pending && !expired && <button type="button" disabled={busy} onClick={() => void restore()}>Retry opening request</button>}
             </div>}
+            {pending && <div className="lq-notice" role="status"><p>The save could not be confirmed. Keep its original request and retry after access to this quote is confirmed.</p><button type="button" disabled={busy || entryTransitioning || entryUncertain || entryPeerConflict || accessConflict} onClick={() => void send(pending)}>Retry same save</button></div>}
+            {entryRecovery}
+            {newStartConfirmation && newStartDialog}
             {notice && <p className="lq-status" role="status" aria-live="polite">{notice}</p>}
             {accessConflict && !accessOpen && step !== 4 && <p className="lq-notice" role="alert">Another saved quote is active in another tab. Your current entries are still here. Open saved quote to choose which quote to continue.</p>}
             {expired && !error && <div className="lq-notice"><p>Your private access has ended.</p><button type="button" onClick={openEmailAccess}>Reopen by email</button></div>}
-            {!legacyRecoveryMode && <div id="quote-email-access" hidden={!accessOpen && step !== 4}><CustomerAccessPanel mode={accessOpen ? 'manage' : 'booking'} active={accessOpen || step === 4} request={saved} disabled={busy || photoBusy || (bookingBusy && !accessConflict && verifiedEmail !== null) || Boolean(pending)} hasUnsavedChanges={hasUnsavedChanges} onRestored={accessOpen ? restoreCustomerRequest : confirmBookingRequest} onPrivateAccessLost={clearPrivateAccess} onBookingVerified={bookingVerified} onRequestConflict={setAccessConflict} onSignedOut={customerSignedOut} onIdentityChange={setVerifiedEmail} onBusyChange={setAuthBusy} /></div>}
+            {!legacyRecoveryMode && <div id="quote-email-access" hidden={!accessOpen && step !== 4}><CustomerAccessPanel pendingProtected={Boolean(pending) || photoBusy || bookingBusy} key={entryVersion} originTabId={entryTabId} selectionRequired={accessOpen} onStartNew={requestNewQuote} mode={accessOpen ? 'manage' : 'booking'} active={accessOpen || step === 4} request={saved} disabled={busy || photoInFlight || (bookingInFlight && !accessConflict && verifiedEmail !== null) || (Boolean(pending) && !entryPeerConflict)} hasUnsavedChanges={hasUnsavedChanges || (accessOpen && (bookingDirty || photoDirty))} onRestored={accessOpen ? restoreCustomerRequest : confirmBookingRequest} onPrivateAccessLost={clearPrivateAccess} onBookingVerified={bookingVerified} onRequestConflict={setAccessConflict} onSignedOut={customerSignedOut} onIdentityChange={setVerifiedEmail} onBusyChange={setAuthBusy} /></div>}
             <div hidden={accessOpen}>
             {legacyRecoveryMode ? <><LegacyQuoteRecovery request={saved} companyBaseUrl={companyBaseUrl} />{saved && <LiveRequestDetails request={saved} />}</> : <>
               {step < 2 && <form data-quote-step={step} id="quote-details-form" onSubmit={save} noValidate><fieldset disabled={locked || authBusy || bookingBusy} className="lq-fields">
@@ -242,7 +335,7 @@ export function LiveQuoteForm({ legacyRecoveryMode = false, companyBaseUrl = '' 
                 </>}
               </fieldset></form>}
               {saved?.payload.service && !expired && <>
-                <div data-quote-step={2} hidden={step !== 2}><LivePhotoWorkspace key={saved.id} request={saved} readOnly={bookingReadOnly} onAnalysisChange={setLatestAnalysis} disabled={locked || authBusy || bookingBusy || hasUnsavedChanges || step !== 2 || accessOpen} onBusyChange={setPhotoBusy} onSaved={value => { if (value.id === saved.id && value.revision >= saved.revision) { setSaved(value); setValues(current => JSON.stringify(current) === JSON.stringify(valuesOf(saved)) ? valuesOf(value) : current); } }} onAccessLost={() => { clearPrivateAccess(); setError('Your private access has ended. Verify your email to reopen this quote.'); }} /></div>
+                <div data-quote-step={2} hidden={step !== 2}><LivePhotoWorkspace onDirtyChange={setPhotoDirty} sessionBlocked={entryTransitioning || entryUncertain || entryPeerConflict} onInFlightChange={setPhotoInFlight} key={saved.id} request={saved} readOnly={bookingReadOnly} onAnalysisChange={setLatestAnalysis} disabled={locked || authBusy || bookingBusy || hasUnsavedChanges || step !== 2 || accessOpen} onBusyChange={setPhotoBusy} onSaved={value => { if (value.id === saved.id && value.revision >= saved.revision) { setSaved(value); setValues(current => JSON.stringify(current) === JSON.stringify(valuesOf(saved)) ? valuesOf(value) : current); } }} onAccessLost={() => { clearPrivateAccess(); setError('Your private access has ended. Verify your email to reopen this quote.'); }} /></div>
                 <div data-quote-step={3} hidden={step !== 3}>
                   <p className="lq-step-intro">Your photo-based painting estimate. Review the scope before choosing your preferred visit.</p>
                   {estimateReady ? <div className="lq-estimate-hero"><span className="lq-estimate-badge"><Check size={14} aria-hidden="true" />Estimate ready</span><p className="lq-kicker">Estimated painting amount</p><strong>{new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD' }).format(latestAnalysis!.pricing!.total! / 100)}</strong><span>Including GST</span><p>Final quantities, condition and price are confirmed on site. Additional damage may increase the price; extra work and costs will be discussed before proceeding.</p></div> : <div className="lq-help-card"><ClipboardCheck size={25} aria-hidden="true" /><div><strong>We need a little more information</strong><p>{latestAnalysis?.stale ? 'Your details or photos changed. Analyse the current photos for an updated estimate.' : 'Add the requested photos or ask our team to review your project.'}</p></div></div>}
@@ -251,14 +344,14 @@ export function LiveQuoteForm({ legacyRecoveryMode = false, companyBaseUrl = '' 
                   {saved.status === 'review_requested' && <p className="lq-notice">Your estimate review request is with our team. You can request a visit when a current numeric estimate is ready.</p>}
                   <details className="lq-optional-details"><summary>View saved project details</summary><LiveRequestDetails request={saved} /></details>
                 </div>
-                <div data-quote-step={step >= 4 ? step : 4} hidden={step < 4}><BookingFlowPanel key={saved.id} accessVersion={accessVersion} request={saved} latest={latestAnalysis} verifiedEmail={verifiedEmail} view={step === 6 ? 'complete' : step === 5 ? 'sign' : 'date'} active={step >= 4 && !accessOpen} actionContainer={bookingActions} disabled={busy || authBusy || photoBusy || hasUnsavedChanges || conflict || accessConflict || expired || Boolean(pending)} onStageChange={bookingStageChanged} onRecovery={recoverBooking} onBusyChange={setBookingBusy} onReadOnlyChange={setBookingReadOnly} onAccessLost={() => { clearPrivateAccess(); setError('Your verified access has ended. Verify your email to reopen this quote.'); }} /></div>
+                <div data-quote-step={step >= 4 ? step : 4} hidden={step < 4}><BookingFlowPanel onInFlightChange={setBookingInFlight} sessionBlocked={entryTransitioning || entryUncertain || entryPeerConflict} onDirtyChange={setBookingDirty} key={saved.id} accessVersion={accessVersion} request={saved} latest={latestAnalysis} verifiedEmail={verifiedEmail} view={step === 6 ? 'complete' : step === 5 ? 'sign' : 'date'} active={step >= 4 && !accessOpen} actionContainer={bookingActions} disabled={busy || authBusy || photoBusy || hasUnsavedChanges || conflict || accessConflict || expired || Boolean(pending)} onStageChange={bookingStageChanged} onRecovery={recoverBooking} onBusyChange={setBookingBusy} onReadOnlyChange={setBookingReadOnly} onAccessLost={() => { clearPrivateAccess(); setError('Your verified access has ended. Verify your email to reopen this quote.'); }} /></div>
               </>}
             </>}
             </div>
           </div>
           <footer className="lq-stage-actions">
-            {accessOpen ? <><span className="lq-muted"><ShieldCheck size={15} aria-hidden="true" />Email verification keeps access to your saved quote.</span><button key="close-saved-quote-management" type="button" className="secondary" disabled={authBusy} onClick={event => { event.preventDefault(); setAccessOpen(false); }}>Back to quote</button></> : legacyRecoveryMode ? <span className="lq-muted">Reopen your quote on the company website.</span> : step < 4 ? <>
-              <div>{step > 0 && <button type="button" className="secondary" disabled={navigationLocked} data-quote-back onClick={() => go(step - 1)}><ArrowLeft size={17} aria-hidden="true" />Back</button>}{hasUnsavedChanges && (!locked || (accessConflict && !busy && !pending && !conflict && !expired && !bookingReadOnly)) && <button type="button" className="lq-text-button secondary" disabled={authBusy || photoBusy} onClick={() => { setValues(saved ? valuesOf(saved) : EMPTY); if (!saved) setAccessConflict(false); setNotice('Unsaved changes discarded.'); }}>Discard changes</button>}</div>
+            {accessOpen ? <><span className="lq-muted"><ShieldCheck size={15} aria-hidden="true" />Email verification keeps access to your saved quote.</span><button key="close-saved-quote-management" type="button" className="secondary" disabled={authBusy} onClick={event => { event.preventDefault(); closeEmailAccess(); }}>Back to quote</button></> : legacyRecoveryMode ? <span className="lq-muted">Reopen your quote on the company website.</span> : step < 4 ? <>
+              <div>{step > 0 && <button type="button" className="secondary" disabled={navigationLocked} data-quote-back onClick={() => go(step - 1)}><ArrowLeft size={17} aria-hidden="true" />Back</button>}{hasUnsavedChanges && (!locked || (accessConflict && !busy && !pending && !conflict && !expired && !bookingReadOnly)) && <button type="button" className="lq-text-button secondary" disabled={authBusy || photoBusy} onClick={() => { setValues(saved ? valuesOf(saved) : freshBaseline); if (!saved) setAccessConflict(false); setNotice('Unsaved changes discarded.'); }}>Discard changes</button>}</div>
               {step < 2 ? <button data-quote-next type="submit" form="quote-details-form" disabled={interactionLocked}>{busy ? 'Saving…' : 'Save & continue'}<ArrowRight size={17} aria-hidden="true" /></button> : step === 2 ? <button type="button" disabled={navigationLocked} data-quote-next onClick={() => go(3)}>{latestAnalysis?.status === 'succeeded' && !latestAnalysis.stale ? 'Review estimate' : 'Request team review'}<ArrowRight size={17} aria-hidden="true" /></button> : <button type="button" disabled={navigationLocked || !estimateReady} data-quote-next onClick={() => go(4)}>Choose a visit<ArrowRight size={17} aria-hidden="true" /></button>}
             </> : <><button type="button" className="secondary" disabled={busy || authBusy || photoBusy || bookingBusy} onClick={() => step === 6 ? openEmailAccess() : step === 5 ? bookingStageChanged('date') : go(3)}>{step === 6 ? <Mail size={17} aria-hidden="true" /> : <ArrowLeft size={17} aria-hidden="true" />}{step === 6 ? 'Manage saved quote' : step === 5 ? 'Change visit' : 'Back to estimate'}</button><div className="lq-booking-action-slot" ref={setBookingActions} /></>}
           </footer>

@@ -131,9 +131,43 @@ export function createCustomerAuthApi(deps: CustomerAuthApiDependencies) {
   }),
   logout: safe(async req => {
    const address = writable(req), values = await input(req)
+   if (values.intent !== undefined && values.intent !== 'start-new' && values.intent !== 'resume-browser-draft') throw new QuoteRequestError(400, 'Choose a valid quote entry option.')
+   if (values.intent !== undefined && values.preserveWritingSession !== undefined) throw new QuoteRequestError(400, 'Choose one quote entry option.')
+   if (values.intent !== 'resume-browser-draft' && values.expectedRequestId !== undefined) throw new QuoteRequestError(400, 'A saved request is only required when resuming this browser draft.')
    if (values.preserveWritingSession !== undefined && typeof values.preserveWritingSession !== 'boolean') throw new QuoteRequestError(400, 'Invalid customer access recovery request.')
-   const preserveWritingSession = values.preserveWritingSession === true
-   if (preserveWritingSession) {
+   let preserveWritingSession = values.preserveWritingSession === true
+   let contact: { name: string; email: string; phone: string } | null = null
+   let resumedRequestId: string | null = null
+   if (values.intent !== undefined) {
+    // Inspect the raw browser capability: the selected customer request can
+    // otherwise conceal a separate, unlinked browser draft.
+    const rawGuest = deps.guestOwner(req)
+    const browserDraft = rawGuest ? await deps.requests.command<LiveQuoteRequest | null>('read', { companyId: 'lk-group', ownerHash: rawGuest.hash, expiresAt: rawGuest.expiresAt }) : null
+    if (values.intent === 'resume-browser-draft') {
+     const expected = requestId(values.expectedRequestId)
+     if (!browserDraft || browserDraft.id !== expected) throw new QuoteRequestError(409, 'This browser draft changed. Reload before continuing it.')
+     preserveWritingSession = true
+     resumedRequestId = browserDraft.id
+    } else {
+     let active: CustomerQuoteSession | null = null
+     try { active = await session(req) } catch (error) { if (!(error instanceof QuoteRequestError && error.status === 401)) throw error }
+     const verified = await state(active)
+     if (browserDraft && !verified.requests.some(item => item.id === browserDraft.id)) {
+      return json({ error: 'This browser has a saved quote that is not linked to your verified email. Continue it before starting another quote.', code: 'unlinked_browser_draft', browserDraft: { id: browserDraft.id, reference: browserDraft.reference } }, 409)
+     }
+     preserveWritingSession = !browserDraft
+     if (active) {
+      const selectedId = verified.currentRequestId ?? verified.requests[0]?.id
+      if (selectedId) {
+       const owner = await deps.store.command<QuoteRequestOwner>('resolve', { ...args(active), requestId: selectedId })
+       const selected = await deps.requests.command<LiveQuoteRequest>('read', { companyId: 'lk-group', ownerHash: owner.hash, expiresAt: owner.expiresAt, customerAccess: { ...args(active), requestId: selectedId } })
+       if (!selected || selected.id !== selectedId) throw new QuoteRequestError(409, 'Your saved quote changed. Reload before starting another quote.')
+       // Only verified, request-specific access can provide these three fields.
+       contact = { name: selected.payload.contact.name, email: selected.payload.contact.email, phone: selected.payload.contact.phone }
+      } else contact = { name: '', email: active.email, phone: '' }
+     }
+    }
+   } else if (preserveWritingSession) {
     // A stale email cookie can hide an unrelated guest quote. Recover that
     // capability without rotating it, only after customer access is invalid.
     let active: CustomerQuoteSession | null = null
@@ -146,7 +180,7 @@ export function createCustomerAuthApi(deps: CustomerAuthApiDependencies) {
    if (s && s.expiresAt > deps.now()) {
     try { await deps.store.command('logout', args(s)) } catch (error) { if (!(error instanceof QuoteRequestError && error.status === 401)) throw error }
    }
-   const res = json({ signedOut: true, writingSessionPreserved: preserveWritingSession }); cookie(res, SESSION, null, address, 0); cookie(res, CHALLENGE, null, address, 0)
+   const res = json({ signedOut: true, writingSessionPreserved: preserveWritingSession, ...(values.intent === 'start-new' ? { contact } : {}), ...(resumedRequestId ? { requestId: resumedRequestId } : {}) }); cookie(res, SESSION, null, address, 0); cookie(res, CHALLENGE, null, address, 0)
    if (!preserveWritingSession) res.headers.append('set-cookie', `lk_quote_request=; Path=${PATH}; HttpOnly; SameSite=Lax; Max-Age=0${address.protocol === 'https:' ? '; Secure' : ''}`)
    return res
   }),

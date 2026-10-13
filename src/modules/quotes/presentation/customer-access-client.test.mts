@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { CustomerAccessLifetime, consumeQuoteHandoff, parseCustomerAccess, parseCustomerChallenge, readCurrentCustomerRequest } from './customer-access-client.ts';
+import { parseQuoteContactPrefill, startNewQuote, checkNewQuoteSession, resumeBrowserDraft, QuoteEntryTransitionError, isPendingFirstSave, pendingFirstSaveMatches } from './customer-access-client.ts';
 const id = 'b65b5359-f90d-45be-b4b9-c249aa7f6daf';
 const summary = { id, reference: 'RQ-1234567890ABCDEF1234567890ABCDEF', status: 'draft', savedAt: '2026-10-12T00:00:00Z', revision: 2 };
 const state = { customer: { email: 'fixture@example.test', expiresAt: '2026-10-12T01:00:00Z' }, requests: [summary], currentRequestId: id };
@@ -97,4 +98,66 @@ test('explicit expired-access recovery preserves writing capability and invalida
     if (originalNavigator) Object.defineProperty(globalThis, 'navigator', originalNavigator);
     else Reflect.deleteProperty(globalThis, 'navigator');
   }
+});
+
+test('fresh contact prefill whitelists three validated fields and rejects invalid legacy contact', () => {
+  const contact = { name: 'Fixture Customer', email: 'fixture@example.test', phone: '0491 570 159' };
+  assert.deepEqual(parseQuoteContactPrefill({ ...contact, siteAddress: 'Old site', consent: true, service: { doors: 7 }, token: 'private' }), contact);
+  assert.deepEqual(parseQuoteContactPrefill({ name: '', email: contact.email, phone: '' }), { name: '', email: contact.email, phone: '' });
+  for (const value of [null, {}, { ...contact, name: '123' }, { ...contact, email: 'bad@@example.test' }, { ...contact, phone: '+1 202 555 0123' }]) assert.equal(parseQuoteContactPrefill(value), null);
+});
+
+async function transitionFixture(run: (calls: Array<{ url: string; init?: RequestInit }>, locks: () => number) => Promise<void>, reply: (url: string, init?: RequestInit) => Response) {
+  const oldFetch = globalThis.fetch, oldNavigator = Object.getOwnPropertyDescriptor(globalThis, 'navigator');
+  const calls: Array<{ url: string; init?: RequestInit }> = []; let lockCount = 0, held = false;
+  Object.defineProperty(globalThis, 'navigator', { configurable: true, value: { locks: { request: async (_name: string, _options: unknown, action: () => Promise<unknown>) => { assert.equal(held, false, 'No nested writing-session lock'); lockCount++; held = true; try { return await action(); } finally { held = false; } } } } });
+  globalThis.fetch = async (url, init) => { assert.equal(held, true); calls.push({ url: String(url), init }); return reply(String(url), init); };
+  try { await run(calls, () => lockCount); } finally { globalThis.fetch = oldFetch; if (oldNavigator) Object.defineProperty(globalThis, 'navigator', oldNavigator); else Reflect.deleteProperty(globalThis, 'navigator'); }
+}
+test('starting a new quote holds one lock through logout, session and confirmed null read', async () => {
+  const contact = { name: 'Fixture', email: 'fixture@example.test', phone: '' };
+  await transitionFixture(async (calls, locks) => {
+    assert.deepEqual(await startNewQuote(), contact); assert.equal(locks(), 1);
+    assert.deepEqual(calls.map(call => call.url), ['/api/quote/requests/customer/logout', '/api/quote/requests/session', '/api/quote/requests']);
+    assert.deepEqual(JSON.parse(String(calls[0].init?.body)), { intent: 'start-new' });
+    for (const call of calls) { assert.equal(call.init?.credentials, 'same-origin'); assert.equal(call.init?.cache, 'no-store'); }
+  }, url => Response.json(url.endsWith('/logout') ? { signedOut: true, writingSessionPreserved: false, contact: { ...contact, siteAddress: 'Old site' } } : url.endsWith('/session') ? { ready: true } : { request: null }));
+});
+test('an unlinked draft guard stops the new transition before session rotation', async () => {
+  await transitionFixture(async (calls) => {
+    await assert.rejects(startNewQuote(), cause => cause instanceof QuoteEntryTransitionError && cause.status === 409 && cause.browserDraft?.id === id);
+    assert.equal(calls.length, 1);
+  }, () => Response.json({ error: 'Keep the draft.', code: 'unlinked_browser_draft', browserDraft: { id, reference: summary.reference } }, { status: 409 }));
+});
+const savedRequest = { ...summary, mode: 'live', companyId: 'lk-group', createdAt: summary.savedAt, consentVersion: 'quote-storage-review-v1', customerId: null, reviewRequestedAt: null, payload: { contact: { name: 'Fixture', email: 'fixture@example.test', phone: '', siteAddress: 'Fixture street', suburb: 'Sydney', postcode: '2000', details: '', consent: true }, service: null } };
+test('a non-null final read is a conflict, never a successful new request or prefill', async () => {
+  await transitionFixture(async calls => {
+    await assert.rejects(startNewQuote(), cause => cause instanceof QuoteEntryTransitionError && cause.browserDraft?.id === id);
+    assert.equal(calls.length, 3);
+  }, url => Response.json(url.endsWith('/logout') ? { signedOut: true, writingSessionPreserved: true, contact: null } : url.endsWith('/session') ? { ready: true } : { request: savedRequest }));
+});
+test('uncertain transition recovery checks a session without repeating logout', async () => {
+  await transitionFixture(async (calls, locks) => {
+    await checkNewQuoteSession(); assert.equal(locks(), 1);
+    assert.deepEqual(calls.map(call => call.url), ['/api/quote/requests/session', '/api/quote/requests']);
+  }, url => Response.json(url.endsWith('/session') ? { ready: true } : { request: null }));
+});
+test('browser draft resume verifies the exact request and preserves the writing session in one lock', async () => {
+  await transitionFixture(async (calls, locks) => {
+    assert.equal((await resumeBrowserDraft(id)).id, id); assert.equal(locks(), 1);
+    assert.deepEqual(JSON.parse(String(calls[0].init?.body)), { intent: 'resume-browser-draft', expectedRequestId: id });
+    assert.equal(new Headers(calls[1].init?.headers).get('x-lk-quote-request-id'), id);
+  }, url => Response.json(url.endsWith('/logout') ? { signedOut: true, writingSessionPreserved: true, requestId: id } : { request: savedRequest }));
+});
+test('a first-save association requires the original exact contact payload, revision and immutable command', () => {
+  const attempt = { path: '/api/quote/requests', method: 'PUT', body: JSON.stringify({ expectedRevision: 0, idempotencyKey: id, storageConsent: true, payload: savedRequest.payload }) };
+  const created = { ...savedRequest, revision: 1 } as Parameters<typeof pendingFirstSaveMatches>[1];
+  assert.equal(isPendingFirstSave(attempt), true); assert.equal(pendingFirstSaveMatches(attempt, created), true);
+  assert.equal(pendingFirstSaveMatches(attempt, { ...created, revision: 2 }), false);
+  assert.equal(pendingFirstSaveMatches(attempt, { ...created, payload: { ...created.payload, contact: { ...created.payload.contact, siteAddress: 'Another site' } } }), false);
+  assert.equal(isPendingFirstSave({ ...attempt, body: JSON.stringify({ expectedRevision: 1, payload: created.payload }) }), false);
+  assert.equal(isPendingFirstSave({ ...attempt, path: '/api/quote/requests/review' }), false);
+  assert.equal(isPendingFirstSave({ ...attempt, body: JSON.stringify({ expectedRevision: 0, storageConsent: true, payload: created.payload }) }), false);
+  assert.equal(isPendingFirstSave({ ...attempt, body: 'invalid-json' }), false);
+  assert.equal(pendingFirstSaveMatches(attempt, { ...created, status: 'review_requested' }), false);
 });

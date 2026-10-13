@@ -1,4 +1,7 @@
-import { isRecord, liveRequest, parseLiveRequest, withWritingSessionLock } from './request-client.ts';
+import { isRecord, liveRequest, parseLiveRequest, withWritingSessionLock, LiveRequestError } from './request-client.ts';
+import { isValidAustralianPhone, isValidEmail, isValidText } from '../../../shared/validation/input.ts';
+import { validateQuoteDraft, type QuoteDraftInput } from '../../enquiries/domain.ts';
+import type { LiveQuoteRequest } from '../domain/contracts.ts';
 
 export interface CustomerQuoteSummary {
   id: string; reference: string; status: 'draft' | 'review_requested'; savedAt: string; revision: number;
@@ -28,6 +31,78 @@ export function parseCustomerChallenge(value: unknown): CustomerCodeChallenge {
 export const EMPTY_CUSTOMER_ACCESS: CustomerAccessState = { customer: null, requests: [], currentRequestId: null };
 export const CUSTOMER_ACCESS_CHANNEL = 'lk-live-quote-access';
 export const CUSTOMER_ACCESS_CHANGED = 'access-changed';
+export const CUSTOMER_NEW_QUOTE_STARTED = 'new-quote-started';
+export type QuoteContactPrefill = { name: string; email: string; phone: string };
+export type BrowserDraftSummary = { id: string; reference: string };
+export class QuoteEntryTransitionError extends LiveRequestError {
+  readonly browserDraft: BrowserDraftSummary | null;
+  constructor(status: number, message: string, browserDraft: BrowserDraftSummary | null = null) { super(status, message); this.browserDraft = browserDraft; }
+}
+export function parseQuoteContactPrefill(value: unknown): QuoteContactPrefill | null {
+  if (!isRecord(value) || !isValidText(value.name, { maxLength: 120, requireLetter: true }) || !isValidEmail(value.email) || typeof value.phone !== 'string' || value.phone.length > 40 || !isValidAustralianPhone(value.phone)) return null;
+  return { name: value.name, email: value.email, phone: value.phone };
+}
+type PendingSave = { path: string; method: string; body: string };
+function firstSavePayload(attempt: PendingSave | null): QuoteDraftInput | null {
+  if (!attempt || attempt.path !== '/api/quote/requests' || attempt.method !== 'PUT') return null;
+  try {
+    const body: unknown = JSON.parse(attempt.body);
+    if (!isRecord(body) || body.expectedRevision !== 0 || body.storageConsent !== true || typeof body.idempotencyKey !== 'string' || !uuid.test(body.idempotencyKey)) return null;
+    const payload = validateQuoteDraft(body.payload);
+    return payload.service === null ? payload : null;
+  } catch { return null; }
+}
+export function isPendingFirstSave(attempt: PendingSave | null) { return firstSavePayload(attempt) !== null; }
+/** Associate only an unchanged first revision; preserve its original replay body/key. */
+export function pendingFirstSaveMatches(attempt: PendingSave | null, request: LiveQuoteRequest) {
+  const payload = firstSavePayload(attempt);
+  if (!payload || request.revision !== 1 || request.status !== 'draft') return false;
+  try { return JSON.stringify(payload) === JSON.stringify(validateQuoteDraft(request.payload)); }
+  catch { return false; }
+}
+async function entryLogout(body: Record<string, unknown>) {
+  const response = await fetch('/api/quote/requests/customer/logout', { method: 'POST', credentials: 'same-origin', cache: 'no-store', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body), signal: AbortSignal.timeout(25_000) });
+  const result: unknown = await response.json();
+  if (!response.ok) {
+    const draft = isRecord(result) && result.code === 'unlinked_browser_draft' && isRecord(result.browserDraft) && typeof result.browserDraft.id === 'string' && uuid.test(result.browserDraft.id) && typeof result.browserDraft.reference === 'string' && /^RQ-[A-F0-9]{32}$/.test(result.browserDraft.reference) ? { id: result.browserDraft.id, reference: result.browserDraft.reference } : null;
+    throw new QuoteEntryTransitionError(response.status, isRecord(result) && typeof result.error === 'string' ? result.error : 'The quote session could not be changed. Your entries are still here.', draft);
+  }
+  if (!isRecord(result) || result.signedOut !== true || typeof result.writingSessionPreserved !== 'boolean') throw new Error('The quote session change could not be confirmed. Your entries are still here.');
+  return result;
+}
+/** One lock covers every cookie transition and the final empty-session check. */
+export async function startNewQuote() {
+  return withWritingSessionLock(navigator.locks, async () => {
+    const result = await entryLogout({ intent: 'start-new' });
+    const session = await liveRequest('/api/quote/requests/session', { method: 'POST' });
+    if (session.ready !== true) throw new Error('The new quote session could not be confirmed. Your entries are still here.');
+    await requireEmptyQuoteSession();
+    return parseQuoteContactPrefill(result.contact);
+  });
+}
+async function requireEmptyQuoteSession() {
+  const current = await liveRequest('/api/quote/requests');
+  if (current.request !== null) {
+    const request = parseLiveRequest(current.request);
+    throw new QuoteEntryTransitionError(409, 'A saved quote is still active. Your current entries are unchanged. Open your saved quotes or continue this browser’s draft.', { id: request.id, reference: request.reference });
+  }
+}
+/** Reconcile an uncertain transition without issuing another logout. */
+export async function checkNewQuoteSession() {
+  return withWritingSessionLock(navigator.locks, async () => {
+    const session = await liveRequest('/api/quote/requests/session', { method: 'POST' });
+    if (session.ready !== true) throw new Error('The quote session could not be confirmed. Your entries are still here.');
+    await requireEmptyQuoteSession();
+  });
+}
+export async function resumeBrowserDraft(expectedRequestId: string) {
+  if (!uuid.test(expectedRequestId)) throw new Error('This browser’s draft could not be identified.');
+  return withWritingSessionLock(navigator.locks, async () => {
+    const result = await entryLogout({ intent: 'resume-browser-draft', expectedRequestId });
+    if (result.writingSessionPreserved !== true || result.requestId !== expectedRequestId) throw new Error('Access to this browser’s draft could not be confirmed. Your entries are still here.');
+    return readCurrentCustomerRequest(expectedRequestId);
+  });
+}
 /** Do not rotate away the only guest cookie for an unlinked saved quote. */
 export function canStartAnotherQuote(request: { id: string; email: string } | null, access: CustomerAccessState, hasUnsavedChanges: boolean) {
   return Boolean(request && !hasUnsavedChanges && access.customer && access.customer.email.toLowerCase() === request.email.toLowerCase() && access.currentRequestId === request.id && access.requests.some(item => item.id === request.id));

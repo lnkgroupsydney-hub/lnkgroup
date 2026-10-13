@@ -2,7 +2,7 @@
 
 import { ValidatedInput, reportSectionValidity } from "@/shared/ui/validated-input";
 
-import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { createPortal } from 'react-dom';
 import { ArrowRight, CalendarDays, CheckCircle2, ClipboardCheck } from 'lucide-react';
 import { LiveCustomerCompanyProposal } from '@/modules/bookings/client';
@@ -42,40 +42,58 @@ export function BookingSubmissionSummary({ submission, staff = false }: { submis
   </div>;
 }
 
-export function BookingFlowPanel({ request, latest, verifiedEmail, accessVersion = 0, disabled = false, view = 'date', active = true, actionContainer, onStageChange, onRecovery, onBusyChange, onReadOnlyChange, onAccessLost }: { request: LiveQuoteRequest; latest: PublicAnalysisJob | null; verifiedEmail: string | null; accessVersion?: number; disabled?: boolean; view?: 'date' | 'sign' | 'complete'; active?: boolean; actionContainer?: HTMLElement | null; onStageChange?: (stage: 'date' | 'sign' | 'complete') => void; onRecovery?: (target: 'photos' | 'email') => void; onBusyChange: (busy: boolean) => void; onReadOnlyChange: (readOnly: boolean) => void; onAccessLost: () => void }) {
+export function BookingFlowPanel({ request, latest, verifiedEmail, accessVersion = 0, sessionBlocked = false, disabled = false, view = 'date', active = true, actionContainer, onStageChange, onRecovery, onBusyChange, onReadOnlyChange, onDirtyChange, onInFlightChange, onAccessLost }: { request: LiveQuoteRequest; latest: PublicAnalysisJob | null; verifiedEmail: string | null; accessVersion?: number; sessionBlocked?: boolean; disabled?: boolean; view?: 'date' | 'sign' | 'complete'; active?: boolean; actionContainer?: HTMLElement | null; onStageChange?: (stage: 'date' | 'sign' | 'complete') => void; onRecovery?: (target: 'photos' | 'email') => void; onBusyChange: (busy: boolean) => void; onReadOnlyChange: (readOnly: boolean) => void; onDirtyChange?: (dirty: boolean) => void; onInFlightChange?: (busy: boolean) => void; onAccessLost: () => void }) {
   const [state, setState] = useState<LiveBookingState | null>(null), [review, setReview] = useState<LiveBookingReview | null>(null);
   const [month, setMonth] = useState(() => sydneyToday().slice(0, 7)), [availability, setAvailability] = useState<LiveBookingAvailability | null>(null), [availabilityExpired, setAvailabilityExpired] = useState(false);
   const [date, setDate] = useState(''), [time, setTime] = useState(''), [strokes, setStrokes] = useState<SignaturePoint[][]>([]), [name, setName] = useState(''), [method, setMethod] = useState<'drawn' | 'typed'>('drawn'), [acknowledged, setAcknowledged] = useState(false);
   const [needsLink, setNeedsLink] = useState(false);
   const linkChecked = useRef(false);
   const [busy, setBusy] = useState(false), [calendarBusy, setCalendarBusy] = useState(false), [loaded, setLoaded] = useState(false), [error, setError] = useState(''), [calendarError, setCalendarError] = useState(''), [notice, setNotice] = useState(''), [pending, setPending] = useState<Attempt | null>(null);
-  const lifetime = useRef(new BookingResponseLifetime()), running = useRef(false), alive = useRef(false), reads = useRef<AbortController | null>(null), calendarReads = useRef<AbortController | null>(null), callbacks = useRef({ onBusyChange, onReadOnlyChange, onAccessLost, onStageChange, onRecovery });
+  const lifetime = useRef(new BookingResponseLifetime()), running = useRef(false), alive = useRef(false), reads = useRef<AbortController | null>(null), calendarReads = useRef<AbortController | null>(null), callbacks = useRef({ onBusyChange, onReadOnlyChange, onAccessLost, onStageChange, onRecovery, onInFlightChange });
   const receivedSubmission = useRef<string | null>(null);
-  const visibility = useRef({ active, view });
-  useEffect(() => { visibility.current = { active, view }; }, [active, view]);
+  const recoveryBinding = useRef<{ requestId: string; revision: number; analysisId: string | null; email: string } | null>(null);
+  const lastBinding = useRef<{ requestId: string; revision: number; analysisId: string | null; email: string } | null>(null);
+  const recoveryEditing = useRef<{ approval: LiveBookingState['approval']; review: LiveBookingReview | null; allowed: boolean } | null>(null);
+  const serverApproval = useRef<LiveBookingState['approval']>(null);
+  const hasAcceptedState = useRef(false);
+  const localVisit = useRef({ date, time, review });
+  useLayoutEffect(() => { localVisit.current = { date, time, review }; }, [date, time, review]);
+  const visibility = useRef({ active, view, sessionBlocked });
+  useLayoutEffect(() => { visibility.current = { active, view, sessionBlocked }; }, [active, view, sessionBlocked]);
   const errorBox = useRef<HTMLDivElement>(null), calendar = useRef<HTMLDivElement>(null), calendarHeading = useRef<HTMLHeadingElement>(null), signHeading = useRef<HTMLLegendElement>(null);
   const requestRef = useRef(request), monthRef = useRef(month);
-  useEffect(() => { callbacks.current = { onBusyChange, onReadOnlyChange, onAccessLost, onStageChange, onRecovery }; requestRef.current = request; monthRef.current = month; }, [request, month, onBusyChange, onReadOnlyChange, onAccessLost, onStageChange, onRecovery]);
+  useEffect(() => { callbacks.current = { onBusyChange, onReadOnlyChange, onAccessLost, onStageChange, onRecovery, onInFlightChange }; requestRef.current = request; monthRef.current = month; }, [request, month, onBusyChange, onReadOnlyChange, onAccessLost, onStageChange, onRecovery, onInFlightChange]);
   const verified = verifiedEmail?.toLowerCase() === request.payload.contact.email.toLowerCase();
   const eligible = Boolean(latest && !latest.stale && latest.status === 'succeeded' && latest.pricing?.status === 'provisional_estimate' && latest.pricing.total != null);
   const clearSignature = useCallback(() => { setReview(null); setStrokes([]); setName(''); setAcknowledged(false); }, []);
   const apply = useCallback((value: LiveBookingState) => {
+    const editing = recoveryEditing.current;
+    const local = localVisit.current;
+    const previousApproval = editing?.allowed ? editing.approval : serverApproval.current;
+    const heldReview = editing?.allowed ? editing.review : local.review;
+    const unchangedApproval = JSON.stringify(previousApproval) === JSON.stringify(value.approval);
+    const keepLocalVisit = JSON.stringify(serverApproval.current) === JSON.stringify(value.approval) && (local.date !== (serverApproval.current?.preferredDate ?? '') || local.time !== (serverApproval.current?.preferredTime ?? ''));
+    if (((editing?.allowed || hasAcceptedState.current) && !unchangedApproval) || (heldReview && (!value.approval || heldReview.approvalId !== value.approval.id || heldReview.selectionRevision !== value.approval.selectionRevision || heldReview.snapshotHash !== value.approval.snapshotHash || Date.parse(heldReview.expiresAt) <= Date.now()))) { setReview(null); setAcknowledged(false); setNotice('Your saved visit changed or its review expired. Your entries are kept; check your visit and review it again before signing.'); }
+    serverApproval.current = value.approval;
+    hasAcceptedState.current = true;
     setState(value); setLoaded(true); callbacks.current.onReadOnlyChange(!value.canEdit);
     setPending(current => pendingBookingAttemptAfterRead(current, value));
     if (value.submission) { setReview(null); setStrokes([]); setName(''); setAcknowledged(false); if (receivedSubmission.current !== value.submission.id) { receivedSubmission.current = value.submission.id; callbacks.current.onStageChange?.('complete'); } }
     else if (value.approval?.stale) { setReview(null); setStrokes([]); setName(''); setAcknowledged(false); }
     else {
-      if (value.approval?.preferredDate) { setDate(value.approval.preferredDate); setTime(value.approval.preferredTime ?? ''); }
-      if (value.approval?.preferredDate && monthRef.current !== value.approval.preferredDate.slice(0, 7)) setMonth(value.approval.preferredDate.slice(0, 7));
+      if (!editing?.allowed && !keepLocalVisit && value.approval?.preferredDate) { setDate(value.approval.preferredDate); setTime(value.approval.preferredTime ?? ''); }
+      if (!editing?.allowed && !keepLocalVisit && value.approval?.preferredDate && monthRef.current !== value.approval.preferredDate.slice(0, 7)) setMonth(value.approval.preferredDate.slice(0, 7));
     }
+    recoveryEditing.current = null;
   }, []);
   const fail = useCallback((cause: unknown) => {
+    if (visibility.current.sessionBlocked) return;
     if (cause instanceof DOMException && cause.name === 'AbortError') return;
     if (cause instanceof LiveRequestError && [401,403].includes(cause.status)) { setState(null); clearSignature(); setAvailability(null); callbacks.current.onAccessLost(); return; }
     setError(cause instanceof Error ? cause.message : 'The request result could not be confirmed. Check saved status or retry the same request.');
   }, [clearSignature]);
   const reload = useCallback(async () => {
-    if (running.current) return;
+    if (running.current || visibility.current.sessionBlocked) return;
     reads.current?.abort(); const controller = new AbortController(); reads.current = controller;
     const version = lifetime.current.begin();
     setBusy(true);
@@ -92,35 +110,50 @@ export function BookingFlowPanel({ request, latest, verifiedEmail, accessVersion
   }, [apply, fail]);
   useEffect(() => {
     alive.current = true; lifetime.current.reopen(); const current = lifetime.current;
-    return () => { alive.current = false; current.close(); reads.current?.abort(); calendarReads.current?.abort(); callbacks.current.onBusyChange(false); };
+    return () => { alive.current = false; current.close(); reads.current?.abort(); calendarReads.current?.abort(); callbacks.current.onBusyChange(false); callbacks.current.onInFlightChange?.(false); };
   }, []);
   useEffect(() => {
     let cancelled = false;
+    if (visibility.current.sessionBlocked) return;
     lifetime.current.begin(); linkChecked.current = false; reads.current?.abort(); calendarReads.current?.abort();
     void Promise.resolve().then(() => {
       if (cancelled) return;
-      clearSignature(); setLoaded(false); setAvailability(null);
+      if (visibility.current.sessionBlocked) return;
+      const previous = recoveryBinding.current ?? lastBinding.current;
+      const preserve = hasAcceptedState.current && verified && previous && previous.requestId === request.id && previous.revision === request.revision && previous.analysisId === (latest?.id ?? null) && previous.email === verifiedEmail?.toLowerCase();
+      if (preserve) recoveryEditing.current ??= { approval: serverApproval.current, review: localVisit.current.review, allowed: true };
+      if (recoveryEditing.current) recoveryEditing.current.allowed = Boolean(preserve);
+      if (!preserve) { clearSignature(); hasAcceptedState.current = false; }
+      lastBinding.current = verified && verifiedEmail ? { requestId: request.id, revision: request.revision, analysisId: latest?.id ?? null, email: verifiedEmail.toLowerCase() } : null;
+      recoveryBinding.current = null; setLoaded(false); setAvailability(null);
       if (verified) return reload();
       setState(null); setAvailability(null); setLoaded(false); setNeedsLink(false); setBusy(false); callbacks.current.onReadOnlyChange(false);
     });
     return () => { cancelled = true; reads.current?.abort(); };
-  }, [request.revision, latest?.id, latest?.status, verified, accessVersion, clearSignature, reload]);
+  }, [request.id, request.revision, latest?.id, latest?.status, verified, verifiedEmail, accessVersion, clearSignature, reload]);
   useEffect(() => { callbacks.current.onBusyChange(busy || calendarBusy || Boolean(pending)); }, [busy, calendarBusy, pending]);
+  useEffect(() => { callbacks.current.onInFlightChange?.(busy || calendarBusy); }, [busy, calendarBusy]);
   useEffect(() => { if (error && active) errorBox.current?.focus({ preventScroll: true }); }, [error, active]);
   const savedApproval = state?.approval;
   const approval = savedApproval && (savedApproval.inputRevision !== request.revision || (latest && savedApproval.analysisId !== latest.id)) ? { ...savedApproval, stale: true } : savedApproval;
   const submission = state?.submission;
+  const dirty = !submission && (date !== (state?.approval?.preferredDate ?? '') || time !== (state?.approval?.preferredTime ?? '') || Boolean(review || name || strokes.length || acknowledged));
+  useEffect(() => { onDirtyChange?.(dirty); }, [dirty, onDirtyChange]);
+  useLayoutEffect(() => {
+    if (sessionBlocked) { recoveryEditing.current ??= { approval: serverApproval.current, review, allowed: false }; recoveryBinding.current ??= { requestId: request.id, revision: request.revision, analysisId: latest?.id ?? null, email: request.payload.contact.email.toLowerCase() }; lifetime.current.begin(); reads.current?.abort(); calendarReads.current?.abort(); if (!running.current) { setBusy(false); setCalendarBusy(false); } }
+  }, [sessionBlocked, request.id, request.revision, request.payload.contact.email, latest?.id, review]);
   useEffect(() => {
     if (active && submission && receivedSubmission.current !== submission.id) { receivedSubmission.current = submission.id; callbacks.current.onStageChange?.('complete'); }
   }, [active, submission]);
   const showCalendar = Boolean(eligible && verified && loaded && !needsLink && !submission && active);
   const loadMonth = useCallback(async (selectedMonth: string) => {
+    if (visibility.current.sessionBlocked) return;
     calendarReads.current?.abort(); const controller = new AbortController(); calendarReads.current = controller;
     setAvailability(null); setAvailabilityExpired(false); setCalendarBusy(true); setCalendarError('');
     try {
       const value = parseBookingAvailability(await bookingRequest(`/api/quote/requests/booking/availability?month=${selectedMonth}`, requestRef.current.id, { signal: AbortSignal.any([controller.signal, AbortSignal.timeout(25_000)]) }), selectedMonth);
-      if (alive.current && calendarReads.current === controller) setAvailability(value);
-    } catch (cause) { if (alive.current && calendarReads.current === controller && !(cause instanceof DOMException && cause.name === 'AbortError')) { if (cause instanceof LiveRequestError && [401,403].includes(cause.status)) fail(cause); else setCalendarError(cause instanceof Error ? cause.message : 'Availability is unavailable. Refresh to retry.'); } }
+      if (alive.current && calendarReads.current === controller && !controller.signal.aborted && !visibility.current.sessionBlocked) setAvailability(value);
+    } catch (cause) { if (alive.current && calendarReads.current === controller && !controller.signal.aborted && !visibility.current.sessionBlocked && !(cause instanceof DOMException && cause.name === 'AbortError')) { if (cause instanceof LiveRequestError && [401,403].includes(cause.status)) fail(cause); else setCalendarError(cause instanceof Error ? cause.message : 'Availability is unavailable. Refresh to retry.'); } }
     finally { if (alive.current && calendarReads.current === controller) setCalendarBusy(false); }
   }, [fail]);
   useEffect(() => { let cancelled = false; void Promise.resolve().then(() => { if (!cancelled && showCalendar) return loadMonth(month); }); return () => { cancelled = true; calendarReads.current?.abort(); }; }, [showCalendar, month, loadMonth]);
@@ -137,12 +170,12 @@ export function BookingFlowPanel({ request, latest, verifiedEmail, accessVersion
     return () => { cancelled = true; };
   }, [availabilityExpired, showCalendar, disabled, busy, calendarBusy, pending, review, calendarError, loadMonth, month]);
   useEffect(() => { if (review && active && view === 'sign') requestAnimationFrame(() => signHeading.current?.focus({ preventScroll: true })); }, [review, active, view]);
-  useEffect(() => { if (!review) return; const timer = setTimeout(() => { clearSignature(); setNotice('Your signing session expired. Check your date and time, then continue to sign again.'); if (visibility.current.active && visibility.current.view === 'sign') callbacks.current.onStageChange?.('date'); }, Math.max(0, Date.parse(review.expiresAt) - Date.now())); return () => clearTimeout(timer); }, [review, clearSignature]);
+  useEffect(() => { if (!review || sessionBlocked) return; const timer = setTimeout(() => { clearSignature(); setNotice('Your signing session expired. Check your date and time, then continue to sign again.'); if (visibility.current.active && visibility.current.view === 'sign') callbacks.current.onStageChange?.('date'); }, Math.max(0, Date.parse(review.expiresAt) - Date.now())); return () => clearTimeout(timer); }, [review, clearSignature, sessionBlocked]);
   useEffect(() => { if (active && view === 'sign' && loaded && !review && !submission && !busy && !pending) callbacks.current.onStageChange?.('date'); }, [active, view, loaded, review, submission, busy, pending]);
   const processing = Boolean(submission && (['pending','sending','retrying'].includes(submission.emailStatus) || ['pending','syncing','retrying'].includes(submission.calendarStatus)));
   useEffect(() => { if (!processing) return; const timer = setInterval(() => { if (!running.current) void reload(); }, 5000); return () => clearInterval(timer); }, [processing, reload]);
   async function perform(attempt: Attempt) {
-    if (running.current || disabled || !verified || needsLink) return;
+    if (running.current || disabled || sessionBlocked || !verified || needsLink) return;
     reads.current?.abort(); const version = lifetime.current.begin(); running.current = true; setBusy(true); setError(''); setNotice('');
     let current: Attempt | null = attempt;
     try {
@@ -203,7 +236,7 @@ export function BookingFlowPanel({ request, latest, verifiedEmail, accessVersion
       const blob = await response.blob(); if (!lifetime.current.accepts(version)) return;
       const url = URL.createObjectURL(blob), link = document.createElement('a'); link.href = url; link.download = `${submission?.reference ?? 'booking-request'}.pdf`; link.click(); setTimeout(() => URL.revokeObjectURL(url), 10_000);
     } catch (cause) { if (lifetime.current.accepts(version)) fail(cause); }
-    finally { running.current = false; if (lifetime.current.accepts(version)) setBusy(false); }
+    finally { running.current = false; if (alive.current) setBusy(false); }
   }
   function calendarKeyboard(event: KeyboardEvent<HTMLButtonElement>) {
     const delta = event.key === 'ArrowRight' ? 1 : event.key === 'ArrowLeft' ? -1 : event.key === 'ArrowDown' ? 7 : event.key === 'ArrowUp' ? -7 : 0;

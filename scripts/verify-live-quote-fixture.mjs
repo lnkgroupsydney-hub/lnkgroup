@@ -2,11 +2,12 @@
 // Only allowlisted pages/assets may reach the loopback UI upstream. All API,
 // customer cookies, staff cookies, Authorization and control data stay here.
 import http from 'node:http'
-import { randomUUID } from 'node:crypto'
+import { createHash, randomUUID } from 'node:crypto'
 import { readdirSync, readFileSync } from 'node:fs'
 import { pathToFileURL } from 'node:url'
 import { PGlite } from '@electric-sql/pglite'
 import { createQuoteRequestApi } from '../src/modules/quotes/infrastructure/api.ts'
+import { createCustomerAuthApi } from '../src/modules/quotes/infrastructure/customer-auth-api.ts'
 import { QuoteRequestError } from '../src/modules/quotes/domain/contracts.ts'
 
 const pages = new Set(['/quote/start', '/admin', '/admin/quotes'])
@@ -31,7 +32,7 @@ async function send(res, response, delay = 0) {
   const write = () => { if (!res.destroyed) { res.writeHead(response.status, headers); res.end(bytes) } }
   if (delay) setTimeout(write, delay); else write()
 }
-export async function createLiveQuoteFixture({ port = 3014, hostname = '127.0.0.1', upstream = 'http://127.0.0.1:3002' } = {}) {
+export async function createLiveQuoteFixture({ port = 3014, hostname = '127.0.0.1', upstream = 'http://127.0.0.1:3002', customerAuth = false } = {}) {
   const upstreamUrl = new URL(upstream)
   if (!['localhost', '127.0.0.1'].includes(hostname)
     || !Number.isInteger(port) || (port !== 0 && (port < 1024 || port > 65535))
@@ -44,6 +45,9 @@ export async function createLiveQuoteFixture({ port = 3014, hostname = '127.0.0.
     await db.exec(readFileSync(new URL(`../supabase/migrations/${name}`, import.meta.url), 'utf8'))
   }
   await db.exec('set role service_role')
+  // Reset only this private in-memory fixture. Include authentication, media,
+  // booking and receipt tables so one scenario cannot inherit another's access.
+  const tables = (await db.query("select tablename from pg_tables where schemaname='public' and tablename like 'lk_%'")).rows.map(row => row.tablename)
   const actor = { userId: randomUUID(), sessionId: randomUUID(), companyId: 'lk-group' }
   let flags = {}, calls = []
   const resetFlags = () => { flags = { loseNextSaveResponse: false, conflictNextSave: false, customerAccessStatus: 0, staffAccessStatus: 0, responseDelayMs: 0 } }
@@ -54,16 +58,51 @@ export async function createLiveQuoteFixture({ port = 3014, hostname = '127.0.0.
     catch (error) { const status = ({ LK400: 400, LK401: 401, LK403: 403, LK404: 404, LK409: 409, LK429: 429 })[error.code]; throw new QuoteRequestError(status ?? 503, status ? error.message : 'Synthetic SQL unavailable.') }
   } }
   let base
+  const identities = new Map(), providerCalls = { send: 0, verify: 0, identity: 0 }, customerCommands = {}
+  const customerStore = { async command(command, args) {
+    customerCommands[command] = (customerCommands[command] ?? 0) + 1
+    try { return (await db.query('select public.lk_quote_customer_command($1,$2::jsonb) result', [command, JSON.stringify(args)])).rows[0].result }
+    catch (error) { const status = ({ LK400: 400, LK401: 401, LK403: 403, LK404: 404, LK409: 409, LK429: 429 })[error.code]; throw new QuoteRequestError(status ?? 503, status ? error.message : 'Synthetic customer SQL unavailable.') }
+  } }
+  const provider = {
+    async send() { providerCalls.send++ },
+    async verify(email, token) {
+      providerCalls.verify++
+      if (token !== '12345678') throw new QuoteRequestError(401, 'Invalid synthetic verification code.')
+      const hex = createHash('sha256').update(`synthetic-customer:${email}`).digest('hex')
+      const userId = `${hex.slice(0, 8)}-${hex.slice(8, 12)}-4${hex.slice(13, 16)}-a${hex.slice(17, 20)}-${hex.slice(20, 32)}`
+      const identity = { userId, email, authSessionId: randomUUID(), accessToken: randomUUID(), expiresAt: Date.now() + 3500000 }
+      identities.set(identity.accessToken, identity)
+      return identity
+    },
+    async identity(token) {
+      providerCalls.identity++
+      const identity = identities.get(token)
+      if (!identity || identity.expiresAt <= Date.now()) throw new QuoteRequestError(401, 'Synthetic customer access ended.')
+      return identity
+    },
+  }
+  // Circular references are evaluated on requests, after both APIs exist.
+  const customer = customerAuth ? createCustomerAuthApi({ store: customerStore, requests: store, provider,
+    enabled: () => true, baseUrl: () => base, legacyUrl: () => undefined,
+    sessionKey: () => '98'.repeat(32), now: Date.now, guestOwner: (req, legacy) => api.access.guestOwner(req, legacy) }) : null
   const api = createQuoteRequestApi({ store, enabled: () => true, baseUrl: () => base,
     sessionKey: () => '98'.repeat(32), now: Date.now,
+    ...(customer ? { customerOwner: customer.owner } : {}),
     authorize: async () => { if (flags.staffAccessStatus) throw new QuoteRequestError(flags.staffAccessStatus, 'Synthetic staff access ended.'); return actor } })
   async function control(value) {
     if (value.reset) {
       // New media/booking tables also reference requests. This database exists
       // only in this local synthetic fixture; reset its complete FK graph.
-      await db.exec('reset role; truncate public.lk_quote_acceptances,public.lk_quote_versions,public.lk_terms_versions,public.lk_quote_request_access,public.lk_quote_request_audit,public.lk_quote_requests cascade; set role service_role;')
+      await db.exec(`reset role; truncate ${tables.map(name => `public."${name.replaceAll('"', '""')}"`).join(',')} cascade; set role service_role;`)
       calls = []; resetFlags()
+      identities.clear()
+      for (const key of Object.keys(providerCalls)) providerCalls[key] = 0
+      for (const key of Object.keys(customerCommands)) delete customerCommands[key]
     }
+    // Move only the synthetic one-minute send cooldown into the past. Keep the
+    // real rate-limit function and global/hourly buckets active during recovery.
+    if (customerAuth && value.expireCustomerSendCooldown === true) await db.exec("update public.lk_rate_buckets set reset_at=reset_at-61000 where bucket like 'quote-customer-send:%' and bucket <> 'quote-customer-send:global'")
     for (const key of ['loseNextSaveResponse', 'conflictNextSave']) if (key in value) flags[key] = value[key] === true
     for (const key of ['customerAccessStatus', 'staffAccessStatus']) if (key in value) flags[key] = [401, 403].includes(value[key]) ? value[key] : 0
     if ('responseDelayMs' in value) flags.responseDelayMs = Math.min(5000, Math.max(0, Number(value.responseDelayMs) || 0))
@@ -72,7 +111,8 @@ export async function createLiveQuoteFixture({ port = 3014, hostname = '127.0.0.
   async function state() {
     const rows = (await db.query('select public.lk_quote_request_json(r) request from public.lk_quote_requests r order by saved_at,id')).rows
     const auditCount = (await db.query('select count(*)::integer n from public.lk_quote_request_audit')).rows[0].n
-    return json({ synthetic: true, flags, requests: rows.map(row => row.request), auditCount, calls })
+    return json({ synthetic: true, flags, requests: rows.map(row => row.request), auditCount, calls,
+      customerAuth: { enabled: customerAuth, providerCalls, commands: customerCommands } })
   }
   const server = http.createServer(async (req, res) => {
     try {
@@ -89,6 +129,8 @@ export async function createLiveQuoteFixture({ port = 3014, hostname = '127.0.0.
         const request = new Request(url, { method: req.method, headers: req.headers, ...(bytes ? { body: bytes } : {}) })
         let response
         if (url.pathname.startsWith('/api/quote/requests') && flags.customerAccessStatus) response = json({ error: 'Synthetic private writing access ended.' }, flags.customerAccessStatus)
+        else if (customer && url.pathname === '/api/quote/requests/customer' && req.method === 'GET') response = await customer.state(request)
+        else if (customer && /^\/api\/quote\/requests\/customer\/(send|verify|select|logout)$/.test(url.pathname) && req.method === 'POST') response = await customer[url.pathname.split('/').at(-1)](request)
         else if (url.pathname === '/api/quote/requests/session' && req.method === 'POST') response = await api.session(request)
         else if (url.pathname === '/api/quote/requests' && req.method === 'GET') response = await api.read(request)
         else if (url.pathname === '/api/quote/requests' && req.method === 'PUT') {
@@ -134,7 +176,7 @@ export async function createLiveQuoteFixture({ port = 3014, hostname = '127.0.0.
   return { base, server, close: async () => { await new Promise(resolve => server.close(resolve)); await db.close() } }
 }
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  const fixture = await createLiveQuoteFixture({ port: Number(process.env.LIVE_QUOTE_FIXTURE_PORT ?? 3014), hostname: process.env.LIVE_QUOTE_FIXTURE_HOST ?? '127.0.0.1', upstream: process.env.LIVE_QUOTE_FIXTURE_UPSTREAM ?? 'http://127.0.0.1:3002' })
+  const fixture = await createLiveQuoteFixture({ port: Number(process.env.LIVE_QUOTE_FIXTURE_PORT ?? 3014), hostname: process.env.LIVE_QUOTE_FIXTURE_HOST ?? '127.0.0.1', upstream: process.env.LIVE_QUOTE_FIXTURE_UPSTREAM ?? 'http://127.0.0.1:3002', customerAuth: process.env.LIVE_QUOTE_FIXTURE_CUSTOMER_AUTH === 'true' })
   process.stdout.write(`Synthetic live Quote fixture: ${fixture.base}/quote/start?service=cabinet-painting&mode=live\nEMS: ${fixture.base}/admin/quotes\nControls: POST /__fixture/control; GET /__fixture/state\nScenarios: add &scenario=lost-response, stale, or auth-lost; reset flags with control.\n`)
   const stop = async () => { await fixture.close(); process.exit(0) }
   process.once('SIGINT', stop); process.once('SIGTERM', stop)
