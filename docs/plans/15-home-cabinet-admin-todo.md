@@ -1,5 +1,10 @@
 # 메인 → Cabinet → 회사 관리 웹 제작 TODO
 
+**2026-10-13 최신 Git 통합:** 캐비넷·홈·견적 UI·입력 검증·방문일 단일 인증 변경을 `a93b3b4`에 커밋하고 main에 병합했다(`b747587`). [통합 검증 기록](../verification/2026-10-13-kcp-main-integration.md).
+
+- [x] 전체 749/749·타임라인 8/8·마지막 예약 복구 관련 29/29, 최신 lint·타입·build와 브라우저 49/49 통과.
+- [x] 회사 origin에 작업 브랜치/main atomic push, 원격 SHA와 병합/검증 트리 동일성 확인. 원본 공유 작업 폴더 보존.
+
 **2026-10-13 KCP 주석 디자인 보정:** [47번 후속 항목](47-kcp-landing-ui-ux-content-plan.md)과 [실행 기록](../verification/2026-10-13-kcp-design-polish.md).
 
 - [x] Hero 문단/버튼 규격·목차 서체 통일, 작은 흰색 이미지 고지, 카드20px 모서리, Aquanamel 표기, 공정 링크 정렬의6개 주석 반영.

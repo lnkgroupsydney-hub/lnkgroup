@@ -1,0 +1,787 @@
+{
+  "upstream": "http://127.0.0.1:3043",
+  "startedAt": "2026-10-13T06:10:22.684Z",
+  "checks": [
+    {
+      "name": "viewport-320x568",
+      "passed": true,
+      "externalBlocked": [],
+      "apiFixtures": [],
+      "pageErrors": [],
+      "failedLocalResources": [],
+      "consoleWarnings": [],
+      "structure": {
+        "width": 320,
+        "documentWidth": 320,
+        "h1": 1,
+        "duplicateIds": [],
+        "missingFragments": [],
+        "title": "Kitchen Cabinet Painting | L&K Group",
+        "description": "Refresh suitable cabinet doors, drawer fronts and visible panels with L&K Group around Ermington and Inner West Sydney. Explore the process and request a photo-based provisional estimate.",
+        "robots": "noindex, nofollow"
+      },
+      "pageHeight": 13106,
+      "serviceHeight": 1408.578125
+    },
+    {
+      "name": "viewport-390x844",
+      "passed": true,
+      "externalBlocked": [],
+      "apiFixtures": [],
+      "pageErrors": [],
+      "failedLocalResources": [],
+      "consoleWarnings": [],
+      "structure": {
+        "width": 390,
+        "documentWidth": 390,
+        "h1": 1,
+        "duplicateIds": [],
+        "missingFragments": [],
+        "title": "Kitchen Cabinet Painting | L&K Group",
+        "description": "Refresh suitable cabinet doors, drawer fronts and visible panels with L&K Group around Ermington and Inner West Sydney. Explore the process and request a photo-based provisional estimate.",
+        "robots": "noindex, nofollow"
+      },
+      "pageHeight": 12460,
+      "serviceHeight": 1249.625
+    },
+    {
+      "name": "viewport-768x1024",
+      "passed": true,
+      "externalBlocked": [],
+      "apiFixtures": [],
+      "pageErrors": [],
+      "failedLocalResources": [],
+      "consoleWarnings": [],
+      "structure": {
+        "width": 768,
+        "documentWidth": 768,
+        "h1": 1,
+        "duplicateIds": [],
+        "missingFragments": [],
+        "title": "Kitchen Cabinet Painting | L&K Group",
+        "description": "Refresh suitable cabinet doors, drawer fronts and visible panels with L&K Group around Ermington and Inner West Sydney. Explore the process and request a photo-based provisional estimate.",
+        "robots": "noindex, nofollow"
+      },
+      "pageHeight": 9695,
+      "serviceHeight": 1020.296875
+    },
+    {
+      "name": "viewport-1280x720",
+      "passed": true,
+      "externalBlocked": [],
+      "apiFixtures": [],
+      "pageErrors": [],
+      "failedLocalResources": [],
+      "consoleWarnings": [],
+      "structure": {
+        "width": 1280,
+        "documentWidth": 1280,
+        "h1": 1,
+        "duplicateIds": [],
+        "missingFragments": [],
+        "title": "Kitchen Cabinet Painting | L&K Group",
+        "description": "Refresh suitable cabinet doors, drawer fronts and visible panels with L&K Group around Ermington and Inner West Sydney. Explore the process and request a photo-based provisional estimate.",
+        "robots": "noindex, nofollow"
+      },
+      "firstStepControls": {
+        "top": 651.265625,
+        "bottom": 696.265625,
+        "height": 45,
+        "viewportHeight": 720
+      },
+      "pageHeight": 11559,
+      "serviceHeight": 786.6875
+    },
+    {
+      "name": "viewport-1440x900",
+      "passed": true,
+      "externalBlocked": [],
+      "apiFixtures": [],
+      "pageErrors": [],
+      "failedLocalResources": [],
+      "consoleWarnings": [],
+      "structure": {
+        "width": 1440,
+        "documentWidth": 1440,
+        "h1": 1,
+        "duplicateIds": [],
+        "missingFragments": [],
+        "title": "Kitchen Cabinet Painting | L&K Group",
+        "description": "Refresh suitable cabinet doors, drawer fronts and visible panels with L&K Group around Ermington and Inner West Sydney. Explore the process and request a photo-based provisional estimate.",
+        "robots": "noindex, nofollow"
+      },
+      "firstStepControls": {
+        "top": 831.46875,
+        "bottom": 876.46875,
+        "height": 45,
+        "viewportHeight": 900
+      },
+      "pageHeight": 13381,
+      "serviceHeight": 812.09375
+    },
+    {
+      "name": "viewport-1023x700",
+      "passed": true,
+      "externalBlocked": [],
+      "apiFixtures": [],
+      "pageErrors": [],
+      "failedLocalResources": [],
+      "consoleWarnings": [],
+      "structure": {
+        "width": 1023,
+        "documentWidth": 1023,
+        "h1": 1,
+        "duplicateIds": [],
+        "missingFragments": [],
+        "title": "Kitchen Cabinet Painting | L&K Group",
+        "description": "Refresh suitable cabinet doors, drawer fronts and visible panels with L&K Group around Ermington and Inner West Sydney. Explore the process and request a photo-based provisional estimate.",
+        "robots": "noindex, nofollow"
+      },
+      "pageHeight": 10382,
+      "serviceHeight": 952.46875
+    },
+    {
+      "name": "viewport-1024x700",
+      "passed": true,
+      "externalBlocked": [],
+      "apiFixtures": [],
+      "pageErrors": [],
+      "failedLocalResources": [],
+      "consoleWarnings": [],
+      "structure": {
+        "width": 1024,
+        "documentWidth": 1024,
+        "h1": 1,
+        "duplicateIds": [],
+        "missingFragments": [],
+        "title": "Kitchen Cabinet Painting | L&K Group",
+        "description": "Refresh suitable cabinet doors, drawer fronts and visible panels with L&K Group around Ermington and Inner West Sydney. Explore the process and request a photo-based provisional estimate.",
+        "robots": "noindex, nofollow"
+      },
+      "firstStepControls": {
+        "top": 631.15625,
+        "bottom": 676.15625,
+        "height": 45,
+        "viewportHeight": 700
+      },
+      "pageHeight": 11038,
+      "serviceHeight": 764.0625
+    },
+    {
+      "name": "viewport-1280x699",
+      "passed": true,
+      "externalBlocked": [],
+      "apiFixtures": [],
+      "pageErrors": [],
+      "failedLocalResources": [],
+      "consoleWarnings": [],
+      "structure": {
+        "width": 1280,
+        "documentWidth": 1280,
+        "h1": 1,
+        "duplicateIds": [],
+        "missingFragments": [],
+        "title": "Kitchen Cabinet Painting | L&K Group",
+        "description": "Refresh suitable cabinet doors, drawer fronts and visible panels with L&K Group around Ermington and Inner West Sydney. Explore the process and request a photo-based provisional estimate.",
+        "robots": "noindex, nofollow"
+      },
+      "pageHeight": 11226,
+      "serviceHeight": 786.6875
+    },
+    {
+      "name": "viewport-1280x700",
+      "passed": true,
+      "externalBlocked": [],
+      "apiFixtures": [],
+      "pageErrors": [],
+      "failedLocalResources": [],
+      "consoleWarnings": [],
+      "structure": {
+        "width": 1280,
+        "documentWidth": 1280,
+        "h1": 1,
+        "duplicateIds": [],
+        "missingFragments": [],
+        "title": "Kitchen Cabinet Painting | L&K Group",
+        "description": "Refresh suitable cabinet doors, drawer fronts and visible panels with L&K Group around Ermington and Inner West Sydney. Explore the process and request a photo-based provisional estimate.",
+        "robots": "noindex, nofollow"
+      },
+      "firstStepControls": {
+        "top": 631,
+        "bottom": 676,
+        "height": 45,
+        "viewportHeight": 700
+      },
+      "pageHeight": 11385,
+      "serviceHeight": 786.6875
+    },
+    {
+      "name": "server-content-home-region-and-kcp-summary",
+      "passed": true,
+      "externalBlocked": [],
+      "apiFixtures": [],
+      "pageErrors": [],
+      "failedLocalResources": [],
+      "consoleWarnings": [],
+      "home": {
+        "width": 1280,
+        "documentWidth": 1280,
+        "h1": 1,
+        "duplicateIds": [],
+        "missingFragments": [],
+        "title": "L&K Group | Painting & Home Care in Ermington, Sydney",
+        "description": "L&K Group offers residential painting, kitchen cabinet painting, handyman services, paint touch-up kits and kimchi. Local to Ermington and nearby Sydney suburbs.",
+        "robots": "noindex, nofollow"
+      },
+      "homeRegionGroups": [
+        [
+          "Ermington",
+          "Dundas",
+          "Telopea",
+          "Carlingford",
+          "North Rocks"
+        ],
+        [
+          "Epping",
+          "Eastwood",
+          "Macquarie Park",
+          "Ryde",
+          "Lane Cove",
+          "Gladesville"
+        ],
+        [
+          "Silverwater",
+          "Rhodes",
+          "Concord",
+          "Drummoyne",
+          "Auburn",
+          "Lidcombe",
+          "Strathfield",
+          "Five Dock",
+          "Burwood",
+          "Ashfield"
+        ]
+      ],
+      "kcp": {
+        "width": 1280,
+        "documentWidth": 1280,
+        "h1": 1,
+        "duplicateIds": [],
+        "missingFragments": [],
+        "title": "Kitchen Cabinet Painting | L&K Group",
+        "description": "Refresh suitable cabinet doors, drawer fronts and visible panels with L&K Group around Ermington and Inner West Sydney. Explore the process and request a photo-based provisional estimate.",
+        "robots": "noindex, nofollow"
+      },
+      "serverHtmlBytes": {
+        "home": 69527,
+        "kcp": 80380
+      }
+    },
+    {
+      "name": "compare-pointer-keyboard-and-quote-navigation",
+      "passed": true,
+      "externalBlocked": [],
+      "apiFixtures": [
+        {
+          "path": "/api/quote/requests/customer",
+          "method": "GET"
+        },
+        {
+          "path": "/api/quote/requests/session",
+          "method": "POST"
+        }
+      ],
+      "pageErrors": [],
+      "failedLocalResources": [],
+      "consoleWarnings": [],
+      "quotePath": "/quote/start?service=cabinet-painting"
+    },
+    {
+      "name": "desktop-steps-hash-fast-scroll-and-crossfade",
+      "passed": true,
+      "externalBlocked": [],
+      "apiFixtures": [],
+      "pageErrors": [],
+      "failedLocalResources": [],
+      "consoleWarnings": [],
+      "firstStepControls": {
+        "top": 731.265625,
+        "bottom": 776.265625,
+        "height": 45,
+        "viewportHeight": 800
+      },
+      "crossfade": [
+        {
+          "canvas": 0,
+          "poster": 1,
+          "canvasReady": false,
+          "posterReady": false
+        },
+        {
+          "canvas": 0,
+          "poster": 1,
+          "canvasReady": false,
+          "posterReady": false
+        },
+        {
+          "canvas": 0,
+          "poster": 1,
+          "canvasReady": false,
+          "posterReady": false
+        },
+        {
+          "canvas": 0,
+          "poster": 1,
+          "canvasReady": true,
+          "posterReady": true
+        },
+        {
+          "canvas": 0.128378,
+          "poster": 0.871622,
+          "canvasReady": true,
+          "posterReady": true
+        },
+        {
+          "canvas": 0.253214,
+          "poster": 0.746786,
+          "canvasReady": true,
+          "posterReady": true
+        },
+        {
+          "canvas": 0.369043,
+          "poster": 0.630957,
+          "canvasReady": true,
+          "posterReady": true
+        },
+        {
+          "canvas": 0.4715,
+          "poster": 0.5285,
+          "canvasReady": true,
+          "posterReady": true
+        },
+        {
+          "canvas": 0.560283,
+          "poster": 0.439717,
+          "canvasReady": true,
+          "posterReady": true
+        },
+        {
+          "canvas": 0.634792,
+          "poster": 0.365208,
+          "canvasReady": true,
+          "posterReady": true
+        },
+        {
+          "canvas": 0.697492,
+          "poster": 0.302508,
+          "canvasReady": true,
+          "posterReady": true
+        },
+        {
+          "canvas": 0.749789,
+          "poster": 0.250211,
+          "canvasReady": true,
+          "posterReady": true
+        },
+        {
+          "canvas": 0.793228,
+          "poster": 0.206772,
+          "canvasReady": true,
+          "posterReady": true
+        },
+        {
+          "canvas": 0.82985,
+          "poster": 0.17015,
+          "canvasReady": true,
+          "posterReady": true
+        },
+        {
+          "canvas": 0.860613,
+          "poster": 0.139387,
+          "canvasReady": true,
+          "posterReady": true
+        },
+        {
+          "canvas": 0.886512,
+          "poster": 0.113488,
+          "canvasReady": true,
+          "posterReady": true
+        },
+        {
+          "canvas": 0.908224,
+          "poster": 0.0917763,
+          "canvasReady": true,
+          "posterReady": true
+        },
+        {
+          "canvas": 0.926641,
+          "poster": 0.0733589,
+          "canvasReady": true,
+          "posterReady": true
+        },
+        {
+          "canvas": 0.942049,
+          "poster": 0.0579508,
+          "canvasReady": true,
+          "posterReady": true
+        },
+        {
+          "canvas": 0.955118,
+          "poster": 0.0448821,
+          "canvasReady": true,
+          "posterReady": true
+        },
+        {
+          "canvas": 0.965814,
+          "poster": 0.0341862,
+          "canvasReady": true,
+          "posterReady": true
+        },
+        {
+          "canvas": 0.974758,
+          "poster": 0.0252418,
+          "canvasReady": true,
+          "posterReady": true
+        },
+        {
+          "canvas": 0.982042,
+          "poster": 0.0179577,
+          "canvasReady": true,
+          "posterReady": true
+        },
+        {
+          "canvas": 0.987862,
+          "poster": 0.0121385,
+          "canvasReady": true,
+          "posterReady": true
+        },
+        {
+          "canvas": 0.992357,
+          "poster": 0.00764258,
+          "canvasReady": true,
+          "posterReady": true
+        },
+        {
+          "canvas": 0.995724,
+          "poster": 0.00427609,
+          "canvasReady": true,
+          "posterReady": true
+        },
+        {
+          "canvas": 0.998051,
+          "poster": 0.00194942,
+          "canvasReady": true,
+          "posterReady": true
+        },
+        {
+          "canvas": 0.999435,
+          "poster": 0.000564576,
+          "canvasReady": true,
+          "posterReady": true
+        },
+        {
+          "canvas": 0.999985,
+          "poster": 0.0000153355,
+          "canvasReady": true,
+          "posterReady": true
+        },
+        {
+          "canvas": 1,
+          "poster": 0,
+          "canvasReady": true,
+          "posterReady": true
+        },
+        {
+          "canvas": 1,
+          "poster": 0,
+          "canvasReady": true,
+          "posterReady": true
+        },
+        {
+          "canvas": 1,
+          "poster": 0,
+          "canvasReady": true,
+          "posterReady": true
+        },
+        {
+          "canvas": 1,
+          "poster": 0,
+          "canvasReady": true,
+          "posterReady": true
+        }
+      ],
+      "scroll": [
+        {
+          "id": "cabinet-process-existing",
+          "nearest": "cabinet-process-existing",
+          "distance": 0.265625,
+          "focus": "",
+          "current": "#cabinet-process-existing",
+          "progress": "5.555555555555555%"
+        },
+        {
+          "id": "cabinet-process-remove",
+          "nearest": "cabinet-process-remove",
+          "distance": 0.265625,
+          "focus": "",
+          "current": "#cabinet-process-remove",
+          "progress": "16.66216759823848%"
+        },
+        {
+          "id": "cabinet-process-clean",
+          "nearest": "cabinet-process-clean",
+          "distance": 0.265625,
+          "focus": "",
+          "current": "#cabinet-process-clean",
+          "progress": "27.77327870934959%"
+        },
+        {
+          "id": "cabinet-process-prepare",
+          "nearest": "cabinet-process-prepare",
+          "distance": 0.265625,
+          "focus": "",
+          "current": "#cabinet-process-prepare",
+          "progress": "38.884389820460704%"
+        },
+        {
+          "id": "cabinet-process-mask",
+          "nearest": "cabinet-process-mask",
+          "distance": 0.265625,
+          "focus": "",
+          "current": "#cabinet-process-mask",
+          "progress": "49.99550093157181%"
+        },
+        {
+          "id": "cabinet-process-undercoat",
+          "nearest": "cabinet-process-undercoat",
+          "distance": 0.265625,
+          "focus": "",
+          "current": "#cabinet-process-undercoat",
+          "progress": "61.106612042682926%"
+        },
+        {
+          "id": "cabinet-process-finish",
+          "nearest": "cabinet-process-finish",
+          "distance": 0.265625,
+          "focus": "",
+          "current": "#cabinet-process-finish",
+          "progress": "72.21772315379404%"
+        },
+        {
+          "id": "cabinet-process-cure",
+          "nearest": "cabinet-process-cure",
+          "distance": 0.265625,
+          "focus": "",
+          "current": "#cabinet-process-cure",
+          "progress": "83.32883426490515%"
+        },
+        {
+          "id": "cabinet-process-reassemble",
+          "nearest": "cabinet-process-reassemble",
+          "distance": 0.265625,
+          "focus": "",
+          "current": "#cabinet-process-reassemble",
+          "progress": "94.43994537601625%"
+        },
+        {
+          "id": "cabinet-process-complete",
+          "nearest": "cabinet-process-complete",
+          "distance": 0.265625,
+          "focus": "",
+          "current": "#cabinet-process-reassemble",
+          "progress": "100%"
+        },
+        {
+          "id": "cabinet-process-complete",
+          "nearest": "cabinet-process-complete",
+          "distance": 0.265625,
+          "focus": "",
+          "current": "#cabinet-process-reassemble",
+          "progress": "100%"
+        },
+        {
+          "id": "cabinet-process-reassemble",
+          "nearest": "cabinet-process-reassemble",
+          "distance": 0.265625,
+          "focus": "",
+          "current": "#cabinet-process-reassemble",
+          "progress": "94.43994537601625%"
+        },
+        {
+          "id": "cabinet-process-cure",
+          "nearest": "cabinet-process-cure",
+          "distance": 0.265625,
+          "focus": "",
+          "current": "#cabinet-process-cure",
+          "progress": "83.32883426490515%"
+        },
+        {
+          "id": "cabinet-process-finish",
+          "nearest": "cabinet-process-finish",
+          "distance": 0.265625,
+          "focus": "",
+          "current": "#cabinet-process-finish",
+          "progress": "72.21772315379404%"
+        },
+        {
+          "id": "cabinet-process-undercoat",
+          "nearest": "cabinet-process-undercoat",
+          "distance": 0.265625,
+          "focus": "",
+          "current": "#cabinet-process-undercoat",
+          "progress": "61.106612042682926%"
+        },
+        {
+          "id": "cabinet-process-mask",
+          "nearest": "cabinet-process-mask",
+          "distance": 0.265625,
+          "focus": "",
+          "current": "#cabinet-process-mask",
+          "progress": "49.99550093157181%"
+        },
+        {
+          "id": "cabinet-process-prepare",
+          "nearest": "cabinet-process-prepare",
+          "distance": 0.265625,
+          "focus": "",
+          "current": "#cabinet-process-prepare",
+          "progress": "38.884389820460704%"
+        },
+        {
+          "id": "cabinet-process-clean",
+          "nearest": "cabinet-process-clean",
+          "distance": 0.265625,
+          "focus": "",
+          "current": "#cabinet-process-clean",
+          "progress": "27.77327870934959%"
+        },
+        {
+          "id": "cabinet-process-remove",
+          "nearest": "cabinet-process-remove",
+          "distance": 0.265625,
+          "focus": "",
+          "current": "#cabinet-process-remove",
+          "progress": "16.66216759823848%"
+        },
+        {
+          "id": "cabinet-process-existing",
+          "nearest": "cabinet-process-existing",
+          "distance": 0.265625,
+          "focus": "",
+          "current": "#cabinet-process-existing",
+          "progress": "5.555555555555555%"
+        },
+        {
+          "id": "cabinet-process-cure",
+          "nearest": "cabinet-process-cure",
+          "distance": 0.265625,
+          "focus": "",
+          "current": "#cabinet-process-cure",
+          "progress": "83.32883426490515%"
+        },
+        {
+          "id": "cabinet-process-remove",
+          "nearest": "cabinet-process-remove",
+          "distance": 0.265625,
+          "focus": "",
+          "current": "#cabinet-process-remove",
+          "progress": "16.66216759823848%"
+        },
+        {
+          "id": "cabinet-process-cure",
+          "nearest": "cabinet-process-cure",
+          "distance": 0.265625,
+          "focus": "",
+          "current": "#cabinet-process-cure",
+          "progress": "83.32883426490515%"
+        },
+        {
+          "id": "cabinet-process-remove",
+          "nearest": "cabinet-process-remove",
+          "distance": 0.265625,
+          "focus": "",
+          "current": "#cabinet-process-remove",
+          "progress": "16.66216759823848%"
+        }
+      ],
+      "lastStepControls": {
+        "top": 731,
+        "bottom": 776,
+        "height": 45,
+        "viewportHeight": 800
+      }
+    },
+    {
+      "name": "static-toggle-reduced-motion-and-resize-preserve-reading",
+      "passed": true,
+      "externalBlocked": [],
+      "apiFixtures": [],
+      "pageErrors": [],
+      "failedLocalResources": [],
+      "consoleWarnings": []
+    },
+    {
+      "name": "reduced-motion-startup-and-text-200-percent-simulation",
+      "passed": true,
+      "externalBlocked": [],
+      "apiFixtures": [],
+      "pageErrors": [],
+      "failedLocalResources": [],
+      "consoleWarnings": [],
+      "enlargement": "Root font-size: 200%; native browser zoom not exercised"
+    },
+    {
+      "name": "webgl-unavailable-initial-hash-preserves-reading",
+      "passed": true,
+      "externalBlocked": [],
+      "apiFixtures": [],
+      "pageErrors": [],
+      "failedLocalResources": [],
+      "consoleWarnings": [],
+      "fallback": {
+        "nearest": "cabinet-process-prepare",
+        "distance": 0.3671875,
+        "focus": "cabinet-process-prepare",
+        "current": "#cabinet-process-prepare",
+        "progress": "38.89611767854342%"
+      },
+      "introBefore": {
+        "scroll": 1156,
+        "focus": "",
+        "top": 479.6875
+      },
+      "introAfter": {
+        "scroll": 1156,
+        "focus": "",
+        "top": 479.6875
+      }
+    },
+    {
+      "name": "webgl-context-loss-preserves-current-reading",
+      "passed": true,
+      "externalBlocked": [],
+      "apiFixtures": [],
+      "pageErrors": [],
+      "failedLocalResources": [],
+      "consoleWarnings": [
+        "THREE.WebGLRenderer: WEBGL_lose_context extension not supported."
+      ],
+      "lossMode": "WEBGL_lose_context extension",
+      "fallback": {
+        "nearest": "cabinet-process-finish",
+        "distance": 0.1953125,
+        "focus": "",
+        "current": "#cabinet-process-finish",
+        "progress": "72.22606732310228%"
+      }
+    }
+  ],
+  "isolation": "Fresh Playwright contexts; external requests aborted; every /api request fulfilled locally; no DB, API save/submit, company, AI, mail or Google calls.",
+  "limitations": [
+    "Headless Chrome is not a physical device.",
+    "200% text enlargement is simulated by root font-size; native browser zoom and actual 200% device/browser zoom are not certified.",
+    "No frame-rate, bundle-size, search-ranking or formal accessibility certification."
+  ],
+  "finishedAt": "2026-10-13T06:10:53.089Z",
+  "passed": true
+}

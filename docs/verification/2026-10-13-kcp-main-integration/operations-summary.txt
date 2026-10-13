@@ -1,0 +1,30 @@
+(node:48609) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/jimee/.codex/worktrees/kcp-main-integration-20261013/L&K%20Group/src/modules/enquiries/domain/quote-draft.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/jimee/.codex/worktrees/kcp-main-integration-20261013/L&K Group/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ new quote/enquiry/customer writes share checks and retain their existing stored formatting (1.592709ms)
+✔ new malformed contact writes fail while legacy saved quote payloads remain readable (0.302ms)
+✔ stored numeric or markup signer names remain readable while new signatures require a human name (0.180375ms)
+(node:48610) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/jimee/.codex/worktrees/kcp-main-integration-20261013/L&K%20Group/src/shared/validation/input.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/jimee/.codex/worktrees/kcp-main-integration-20261013/L&K Group/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ email checks ASCII mailbox/domain boundaries without changing caller formatting (0.694208ms)
+✔ AU phones accept domestic/service/international equivalents and retain presentation (0.221125ms)
+✔ human single-line fields support Unicode and address punctuation while rejecting controls and markup (0.454333ms)
+✔ postcode strings and numeric limits preserve leading zeros, null and numeric-string boundaries (0.100833ms)
+(node:48611) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/jimee/.codex/worktrees/kcp-main-integration-20261013/L&K%20Group/src/utils/supabase/middleware.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/jimee/.codex/worktrees/kcp-main-integration-20261013/L&K Group/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ HTTPS staff refresh preserves Secure, HttpOnly and the isolated staff cookie (4.758417ms)
+✔ an unapproved alias or forged proxy header does not refresh staff credentials (1.039541ms)
+✔ the explicitly enabled loopback development session remains usable (0.84ms)
+ℹ tests 749
+ℹ suites 0
+ℹ pass 749
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 30173.927958

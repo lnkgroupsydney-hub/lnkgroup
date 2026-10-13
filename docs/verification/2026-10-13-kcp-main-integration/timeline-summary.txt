@@ -1,0 +1,20 @@
+(node:48396) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/jimee/.codex/worktrees/kcp-main-integration-20261013/L&K%20Group/src/shared/ui/kitchen-scene/timeline.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/jimee/.codex/worktrees/kcp-main-integration-20261013/L&K Group/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ chapter centres, click/hash targets and active steps use the same reading point at either chapter height (0.410042ms)
+✔ reading progress remains continuous through unequal content heights and invariant under viewport translation (1.121667ms)
+✔ every timeline output is finite and bounded including untrusted progress (4.670958ms)
+✔ all operations are continuous at chapter and operation boundaries (0.148542ms)
+✔ reverse and fast arbitrary jumps reproduce exactly the same absolute scene (0.383291ms)
+✔ preparation keeps patch/sanding before paint and both finish coats remain ordered (0.051375ms)
+✔ removal and reassembly stay monotonic and completion restores doors/hardware/protection (0.127209ms)
+✔ closeups use a restrained amplitude and broad entry/return intervals (0.312042ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 8
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 61.737708
