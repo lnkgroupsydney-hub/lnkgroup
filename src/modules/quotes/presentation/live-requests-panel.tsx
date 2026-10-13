@@ -42,7 +42,7 @@ function parseAudit(value: unknown): LiveQuoteAudit {
   if (!isRecord(value) || typeof value.id !== 'string' || !['save', 'request_review'].includes(String(value.action)) || value.actorType !== 'guest' || !Number.isSafeInteger(value.revision) || typeof value.createdAt !== 'string' || !Number.isFinite(Date.parse(value.createdAt))) throw new Error('The request history could not be verified.');
   return value as unknown as LiveQuoteAudit;
 }
-export function LiveQuoteRequestsPanel({ onAccessLost }: { onAccessLost: () => void }) {
+export function LiveQuoteRequestsPanel({ onAccessLost, title = 'Customer quote requests', description = 'Contact and service details appear here as soon as the customer saves. Open a request to see its estimate approval, signed reservation request and delivery status.' }: { onAccessLost: () => void; title?: string; description?: string }) {
   const navigate = useWorkspaceNavigation();
   const [list, setList] = useState<LiveQuoteRequestPage | null>(null), [detail, setDetail] = useState<LiveQuoteRequestDetail | null>(null);
   const [search, setSearch] = useState(''), [query, setQuery] = useState(''), [listError, setListError] = useState(''), [detailError, setDetailError] = useState('');
@@ -85,10 +85,10 @@ export function LiveQuoteRequestsPanel({ onAccessLost }: { onAccessLost: () => v
     return () => { cancelled = true; alive.current = false; listAbort.current?.abort(); detailAbort.current?.abort(); };
   }, [loadList]);
   function find(event: FormEvent) { event.preventDefault(); setQuery(search.trim()); void loadList(search.trim()); }
-  if (blocked) return <section className="lq-admin admin-card"><h2>Quote requests</h2><p role="alert">Company access ended. Sign in again to view saved requests.</p></section>;
+  if (blocked) return <section className="lq-admin admin-card"><h2>{title}</h2><p role="alert">Company access ended. Sign in again to view saved requests.</p></section>;
   return <section className="lq-admin admin-card" aria-labelledby="live-requests-title">
-    <h2 id="live-requests-title">Customer quote requests</h2>
-    <p>Contact and service details appear here as soon as the customer saves. Open a request to see its estimate approval, signed reservation request and delivery status.</p>
+    <h2 id="live-requests-title">{title}</h2>
+    <p>{description}</p>
     <form onSubmit={find}><label htmlFor="live-request-search">Find by reference, name, email or address</label><div className="lq-actions"><input id="live-request-search" type="search" maxLength={120} value={search} onChange={e => setSearch(e.target.value)} /><button disabled={listBusy}>Search requests</button><button type="button" className="secondary" disabled={listBusy} onClick={() => { void loadList(query, list?.page ?? 1); if (selected.current) void loadDetail(selected.current); }}>Refresh requests</button></div></form>
     {listBusy && <p role="status">Loading saved requests…</p>}
     {listError && <p className="lq-error" role="alert">{listError}{list ? ' The list below is the last successfully loaded version.' : ''}</p>}

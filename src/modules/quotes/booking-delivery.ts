@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import { staffMailSender, type CompanyMailSender } from '../../shared/email/company-sender.ts'
-import type { LiveBookingDeliveryClaim, LiveBookingSubmission } from './domain/booking-flow.ts'
+import { BOOKING_SIMPLE_ACK_VERSION, type LiveBookingDeliveryClaim, type LiveBookingSubmission } from './domain/booking-flow.ts'
 import { createFrozenBookingReceipt, validFrozenBookingReceipt, validateReceiptSource, type FrozenBookingReceipt } from './infrastructure/booking-receipt.ts'
 import { ensureLivePendingCalendar } from './booking-calendar.ts'
 
@@ -136,6 +136,13 @@ export async function processLiveBookingDelivery(submissionId?: string, injected
   }
   // Provider acceptance means queued by Resend, not customer mailbox delivery. Never send again after acceptance.
   if (!source.providerMessageId) { await fail('calendar', 'manual_review', 'email_acceptance_invalid'); return result }
+  if (source.snapshot.version === BOOKING_SIMPLE_ACK_VERSION) {
+    try {
+      const stored = await deps.command<LiveBookingSubmission>('delivery_request_complete', lease)
+      if (stored.id !== source.id || stored.emailStatus !== 'provider_accepted' || stored.calendarStatus !== 'not_required' || stored.calendarEventId !== null) throw new Error('Receipt completion was not stored')
+    } catch { result.storageErrors++; result.failed++ }
+    return result
+  }
   if (source.calendarStatus === 'synced') return result
   if (!['pending', 'syncing', 'retrying'].includes(source.calendarStatus)) { result.reviewRequired++; return result }
   if (Date.parse(claim.leaseExpiresAt) <= deps.now() + CALENDAR_BUDGET_MS) { await fail('calendar', 'retrying', 'delivery_lease_expiring'); return result }

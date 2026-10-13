@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { COMPANY_BOOKING_ACK_TEXT, COMPANY_BOOKING_ACK_VERSION, type LiveCompanyBookingState, type LiveCompanyProposal } from '../domain/live-contracts.ts';
-import { companyBookingRequest, companyDraftAfterRead, companyPeriodSummary, companyProcessingRetryable, companySegmentLabel, currentAcceptance, dollarsToCents, LiveCompanyRequestError, newerCompanyState, parseCompanyCheck, parseCompanyProposal, parseCompanyReview, parseCompanyState, periodPayload, shiftDay, type CompanyPeriodInput } from './live-booking-client.ts';
+import { COMPANY_BOOKING_SITE_DAMAGE_NOTE, COMPANY_BOOKING_ACK_TEXT, COMPANY_BOOKING_ACK_VERSION, type LiveCompanyBookingState, type LiveCompanyProposal } from '../domain/live-contracts.ts';
+import { companyBookingRequest, companyDraftAfterRead, companyPeriodSummary, companyProcessingRetryable, companySegmentLabel, currentAcceptance, dollarsToCents, LiveCompanyRequestError, newerCompanyState, parseCompanyCheck, parseCompanyProposal, parseCompanyReview, parseCompanyState, periodPayload, shiftDay, type CompanyPeriodInput, signedRequestConfirmationPayload, usesSignedRequestBooking } from './live-booking-client.ts';
 
 const requestId='895f8919-7e19-4506-972d-944285b0185a';
 const proposal={id:'company-proposal',version:1,revision:1,status:'published',hash:'immutable-proposal-hash',amountExGst:150000,gst:15000,total:165000,currency:'AUD',scope:'Cabinet repainting only',adjustmentReason:'Site quantity confirmed',calendarTarget:{calendarId:'lnkgroupsydney@gmail.com',accountEmail:'lnkgroupsydney@gmail.com'},segments:[{kind:'all_day',startDate:'2026-10-20',endDate:'2026-10-22',startAt:'2026-10-19T13:00:00Z',endAt:'2026-10-21T13:00:00Z'}]} as LiveCompanyProposal;
@@ -30,6 +30,7 @@ test('period summary counts civil all-day dates and explicit timed hours without
 test('company recovery rejects another request, mismatched history and forged totals or acknowledgment',()=>{
   assert.equal(parseCompanyState({state},requestId)?.requestId,requestId);assert.equal(parseCompanyState({state:null},requestId),null);
   for(const value of [{...state,requestId:'other'},{...state,proposals:[]},{...state,acknowledgment:{...acknowledgment,text:'payment obligation'}}])assert.throws(()=>parseCompanyState({state:value},requestId));
+  assert.equal(parseCompanyProposal({ ...proposal, confirmationBasis: null, companyNote: null }).companyNote, undefined, 'nullable legacy metadata does not change the original proposal');
   assert.throws(()=>parseCompanyProposal({...proposal,total:165001}));assert.throws(()=>parseCompanyProposal({...proposal,amountExGst:-1}));
 });
 test('customer acknowledgment is tied to the exact published proposal ID and hash',()=>{
@@ -68,4 +69,30 @@ test('reads and writes bind quote identity, private credentials/cache, and prese
   try {await companyBookingRequest('/api/quote/requests/company-booking',requestId);await companyBookingRequest('/api/quote/requests/company-booking/accept',requestId,{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});for(const init of calls){assert.equal(init.cache,'no-store');assert.equal(init.credentials,'same-origin');assert.equal(new Headers(init.headers).get('x-lk-quote-request-id'),requestId);}assert.equal(new Headers(calls[1].headers).get('content-type'),'application/json');
     globalThis.fetch=async()=>new Response(JSON.stringify({error:'The company proposal changed. Review its latest version.'}),{status:409,headers:{'content-type':'application/json'}});await assert.rejects(companyBookingRequest('/api/test',requestId),error=>error instanceof LiveCompanyRequestError&&error.status===409&&error.message.includes('latest version'));
   } finally {globalThis.fetch=original;}
+});
+
+import { BOOKING_SIMPLE_ACK_VERSION, BOOKING_SIMPLE_ACK_TEXT } from '../../quotes/domain/booking-flow.ts';
+const signedSubmission = { id: 'signed-submission', requestId, preferredDate: '2026-10-29', preferredTime: '10:30', snapshot: { version: BOOKING_SIMPLE_ACK_VERSION, acknowledgment: { version: BOOKING_SIMPLE_ACK_VERSION, text: BOOKING_SIMPLE_ACK_TEXT }, preferredDate: '2026-10-29', preferredTime: '10:30', pricing: { total: 165000 } } };
+const signedState = { ...state, submission: signedSubmission, proposal: null, proposals: [] } as unknown as LiveCompanyBookingState;
+const visits = { takeOffEndLocal: '2026-10-29T12:00', installStartLocal: '2026-11-02T09:30', installEndLocal: '2026-11-02T13:00', companyNote: '  Please provide clear cabinet access.  ' };
+test('single signed-request confirmation payload derives no price or customer start and requires both manually entered visit durations', () => {
+  assert.deepEqual(signedRequestConfirmationPayload(signedState, visits, 'one-command-key'), { expectedRevision: 2, idempotencyKey: 'one-command-key', takeOffEndLocal: visits.takeOffEndLocal, installStartLocal: visits.installStartLocal, installEndLocal: visits.installEndLocal, companyNote: 'Please provide clear cabinet access.' });
+  for (const input of [{ ...visits, takeOffEndLocal: '' }, { ...visits, takeOffEndLocal: '2026-10-29T10:30' }, { ...visits, installStartLocal: '2026-10-29T11:30' }, { ...visits, installEndLocal: visits.installStartLocal }, { ...visits, installStartLocal: '2026-02-30T09:30' }, { ...visits, companyNote: 'x'.repeat(3001) }]) assert.throws(() => signedRequestConfirmationPayload(signedState, input, 'key'));
+  assert.equal(signedRequestConfirmationPayload(signedState, { ...visits, companyNote: '   ' }, 'key').companyNote, COMPANY_BOOKING_SITE_DAMAGE_NOTE, 'a dates-only confirmation always includes the standard site damage notice');
+  assert.equal(signedRequestConfirmationPayload(signedState, { ...visits, companyNote: 'x'.repeat(3000) }, 'key').companyNote.length, 3000);
+  assert.throws(() => signedRequestConfirmationPayload({ ...signedState, submission: { ...signedState.submission, preferredTime: null } }, visits, 'key'));
+  assert.throws(() => signedRequestConfirmationPayload({ ...signedState, booking: { status: 'confirmed' } } as LiveCompanyBookingState, visits, 'key'));
+});
+test('v2 booking recovery protects the original estimate, selected time, two purpose-tagged visits and signed submission identity', () => {
+  const signedProposal = { ...proposal, confirmationBasis: 'signed_request', companyNote: 'Keep cabinet access clear.', segments: [ { kind: 'timed', purpose: 'take_off', startDate: '2026-10-29', endDate: '2026-10-30', startLocal: '2026-10-29T10:30', endLocal: '2026-10-29T12:00', startAt: '2026-10-28T23:30:00Z', endAt: '2026-10-29T01:00:00Z' }, { kind: 'timed', purpose: 'install', startDate: '2026-11-02', endDate: '2026-11-03', startLocal: '2026-11-02T09:30', endLocal: '2026-11-02T13:00', startAt: '2026-11-01T22:30:00Z', endAt: '2026-11-02T02:00:00Z' } ] };
+  const booking = { id: 'booking', proposalId: signedProposal.id, proposalHash: signedProposal.hash, confirmationBasis: 'signed_request', signedSubmissionId: signedSubmission.id, status: 'confirming', events: [] };
+  const current = { ...signedState, proposal: signedProposal, proposals: [signedProposal], booking };
+  assert.equal(parseCompanyState({ state: current }, requestId)?.booking?.signedSubmissionId, signedSubmission.id);
+  for (const changed of [{ ...signedProposal, amountExGst: 160000, gst: 16000, total: 176000 }, { ...signedProposal, segments: signedProposal.segments.map((segment, i) => i === 0 ? { ...segment, startLocal: '2026-10-29T11:00' } : segment) }, { ...signedProposal, segments: signedProposal.segments.map(segment => ({ ...segment, purpose: 'install' })) }]) assert.throws(() => parseCompanyState({ state: { ...current, proposal: changed, proposals: [changed] } }, requestId));
+  assert.throws(() => parseCompanyState({ state: { ...current, booking: { ...booking, signedSubmissionId: 'another-submission' } } }, requestId));
+  assert.throws(() => parseCompanyState({ state: { ...signedState, proposal, proposals: [proposal] } }, requestId), 'new signed requests cannot be confused with old company-proposal loops');
+});
+test('only the newly signed v2 wording enables a one-confirmation EMS workflow; legacy signatures retain their original approval path', () => {
+  assert.equal(usesSignedRequestBooking(signedState), true);
+  assert.equal(usesSignedRequestBooking({ ...state, submission: { ...state.submission, snapshot: { version: 'live-booking-request-ack-v1' } } } as LiveCompanyBookingState), false);
 });

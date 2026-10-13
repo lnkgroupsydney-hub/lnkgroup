@@ -61,13 +61,13 @@ export function liveCompanyEventPlan(owned: Owned, segmentIndex: number) {
   if (!s || !/^[A-Z0-9-]{1,80}$/.test(owned.reference) || owned.booking.proposalId !== owned.proposal.id || owned.booking.proposalHash !== owned.proposal.hash) throw review('Saved company booking version is inconsistent.')
   const core = {
     id: liveCompanyEventId(owned.booking.id, owned.proposal.hash, segmentIndex),
-    summary: `Cabinet painting work · ${owned.reference}`,
-    description: 'Company-approved work period. Review customer scope, price and consent in the private EMS. Contractual terms and work authorisation are managed separately.',
+    summary: `${s.purpose === 'take_off' ? 'Cabinet take-off' : s.purpose === 'install' ? 'Cabinet installation' : 'Cabinet painting work'} · ${owned.reference}`,
+    description: owned.booking.confirmationBasis === 'signed_request' ? 'Company-confirmed appointment following the signed customer booking request. Review the original provisional photo estimate and site inspection notice in the private EMS. Contractual terms and work authorisation are managed separately.' : 'Company-approved work period. Review customer scope, price and consent in the private EMS. Contractual terms and work authorisation are managed separately.',
     status: 'confirmed', visibility: 'private', transparency: 'opaque',
     start: s.kind === 'all_day' ? { date: s.startDate } : { dateTime: s.startAt, timeZone: 'Australia/Sydney' },
     end: s.kind === 'all_day' ? { date: s.endDate } : { dateTime: s.endAt, timeZone: 'Australia/Sydney' },
     reminders: { useDefault: false },
-    extendedProperties: { private: { kind: KIND, bookingId: owned.booking.id, proposalId: owned.proposal.id, proposalHash: owned.proposal.hash, confirmationVersion: String(owned.booking.version), segmentIndex: String(segmentIndex) } },
+    extendedProperties: { private: { kind: KIND, bookingId: owned.booking.id, proposalId: owned.proposal.id, proposalHash: owned.proposal.hash, confirmationVersion: String(owned.booking.version), segmentIndex: String(segmentIndex), ...(s.purpose ? { purpose: s.purpose } : {}) } },
   }
   const payloadHash = hash(core)
   return { payload: { ...core, extendedProperties: { private: { ...core.extendedProperties.private, payloadHash } } }, payloadHash }

@@ -32,7 +32,7 @@ async function fixture(owner=ownerHash,customerEmail=email) {
 }
 function check(extra:Record<string,unknown>={}) {return {...target,revision:'availability-v1',checkedAt:new Date().toISOString(),expiresAt:new Date(Date.now()+60000).toISOString(),...extra}}
 function preferred() {return new Date(Date.now()+3*86400000).toISOString().slice(0,10)}
-async function approve(f:Awaited<ReturnType<typeof fixture>>,extra:Record<string,unknown>={}) {return rpc('approve',{...f.args,analysisId:f.analysisId,expectedRevision:f.r.revision,idempotencyKey:randomUUID(),calendarTarget:target,...extra})}
+async function approve(f:Awaited<ReturnType<typeof fixture>>,extra:Record<string,unknown>={}) {return rpc('approve',{...f.args,analysisId:f.analysisId,expectedRevision:f.r.revision,idempotencyKey:randomUUID(),calendarTarget:target,acknowledgmentVersion:'live-booking-request-ack-v1',...extra})}
 async function selected(f:Awaited<ReturnType<typeof fixture>>) {const a=await approve(f);return rpc('date',{...f.args,approvalId:a.approval!.id,preferredDate:preferred(),availabilityRevision:'availability-v1',idempotencyKey:randomUUID(),dateCheck:check()})}
 async function submit(f:Awaited<ReturnType<typeof fixture>>,extra:Record<string,unknown>={}) {const a=await selected(f),review=await rpc<{approvalId:string;selectionRevision:number;snapshotHash:string}>('review',{...f.args,approvalId:a.approval!.id,selectionRevision:a.approval!.selectionRevision});const args={...f.args,...review,reviewExpiresAt:new Date(Date.now()+900000).toISOString(),signature:validateBookingSignature({name:'Synthetic customer',method:'typed',strokes:[],acknowledged:true}),idempotencyKey:randomUUID(),dateCheck:check(),...extra};return {state:await rpc('submit',args),args}}
 beforeEach(async()=>{await db.exec('reset role');await db.exec(`truncate ${tables.map(x=>'public.'+x).join(',')}`);await db.exec('set role service_role');await db.query("insert into public.lk_google_connection(id,account_sub,email,access_cipher,refresh_cipher,expires_at,selected_calendar_id) values(1,$1,$2,'cipher','refresh',9999999999999,'legacy-test-calendar')",[target.accountSub,target.calendarId])})
@@ -127,4 +127,139 @@ test('editing source retains prior approval and recomputation creates a distinct
  const newJobId=randomUUID();await db.query("insert into public.lk_quote_analysis_jobs(id,company_id,request_id,input_revision,input_key,input_snapshot,status,model,prompt_version,schema_version,pricing_version,consent_version,attempts,analysis,pricing,usage,completed_at,created_at) select $2,company_id,request_id,2,$3,input_snapshot,status,model,prompt_version,schema_version,pricing_version,consent_version,1,analysis,pricing,usage,now(),now()+interval '1 second' from public.lk_quote_analysis_jobs where id=$1",[f.analysisId,newJobId,hash(newJobId)])
  const updated=await approve(f,{analysisId:newJobId,expectedRevision:2});assert.equal(updated.approval!.version,2);assert.notEqual(updated.approval!.id,original.approval!.id)
  const prior=(await db.query<{source_snapshot:unknown}>('select source_snapshot from public.lk_live_quote_approvals where id=$1',[original.approval!.id])).rows[0].source_snapshot;assert.deepEqual(prior,firstSnapshot)
+})
+
+async function analysisCurrent(f:Awaited<ReturnType<typeof fixture>>) {
+ return (await db.query<{value:{stale:boolean;inputRevision:number;inputSnapshot:unknown}}>('select public.lk_quote_analysis_json(j,r) value from public.lk_quote_analysis_jobs j join public.lk_quote_requests r on r.company_id=j.company_id and r.id=j.request_id where j.id=$1',[f.analysisId])).rows[0].value
+}
+for(const reopen of [false,true])test(`company review ${reopen?'and reopen ':''}preserves completed AI inputs and allows customer date, review and submission`,async()=>{
+ const f=await fixture(),originalJob=(await db.query('select * from public.lk_quote_analysis_jobs where id=$1',[f.analysisId])).rows[0],oldApproval=await approve(f)
+ await requests('request_review',{...f.args,expectedRevision:1,idempotencyKey:randomUUID()})
+ if(reopen)await media('reopen',{...f.args,expectedRevision:2,idempotencyKey:randomUUID()})
+ const revision=reopen?3:2
+ assert.equal((await rpc('state',f.args)).approval!.stale,true)
+ await assert.rejects(rpc('date',{...f.args,approvalId:oldApproval.approval!.id,preferredDate:preferred(),availabilityRevision:'availability-v1',idempotencyKey:randomUUID(),dateCheck:check()}),failure('LK409'))
+ assert.equal((await analysisCurrent(f)).stale,false)
+ assert.equal((await analysisCurrent(f)).inputRevision,1)
+ const approved=await approve(f,{expectedRevision:revision})
+ assert.equal(approved.approval!.version,2)
+ assert.deepEqual((await db.query<{source_snapshot:unknown}>('select source_snapshot from public.lk_live_quote_approvals where id=$1',[oldApproval.approval!.id])).rows[0].source_snapshot,oldApproval.approval!.snapshot)
+ assert.equal(approved.approval!.stale,false);assert.equal(approved.approval!.inputRevision,revision)
+ const selected=await rpc('date',{...f.args,approvalId:approved.approval!.id,preferredDate:preferred(),availabilityRevision:'availability-v1',idempotencyKey:randomUUID(),dateCheck:check()})
+ const review=await rpc<{snapshotHash:string}>('review',{...f.args,approvalId:approved.approval!.id,selectionRevision:selected.approval!.selectionRevision})
+ const submitted=await rpc('submit',{...f.args,approvalId:approved.approval!.id,selectionRevision:selected.approval!.selectionRevision,snapshotHash:review.snapshotHash,reviewExpiresAt:new Date(Date.now()+900000).toISOString(),signature:validateBookingSignature({name:'Synthetic review customer',method:'typed',strokes:[],acknowledged:true}),idempotencyKey:randomUUID(),dateCheck:check()})
+ assert.ok(submitted.submission);assert.equal(submitted.canEdit,false)
+ assert.deepEqual((await db.query('select * from public.lk_quote_analysis_jobs where id=$1',[f.analysisId])).rows[0],originalJob)
+ await assert.rejects(media('reopen',{...f.args,expectedRevision:revision,idempotencyKey:randomUUID()}),failure('LK409'))
+})
+test('contact-only edit reuses completed AI but requires a new approval freezing current contact and revision',async()=>{
+ const f=await fixture(),old=await approve(f),changedContact={...contact,name:'Updated synthetic customer',siteAddress:'2 Synthetic St',details:'New access notes'}
+ await requests('save',{...f.args,expectedRevision:1,idempotencyKey:randomUUID(),payload:{contact:changedContact,service},storageConsent:true,consentVersion:'quote-storage-review-v1'})
+ assert.equal((await analysisCurrent(f)).stale,false);assert.equal((await rpc('state',f.args)).approval!.stale,true)
+ await assert.rejects(rpc('date',{...f.args,approvalId:old.approval!.id,preferredDate:preferred(),availabilityRevision:'availability-v1',idempotencyKey:randomUUID(),dateCheck:check()}),failure('LK409'))
+ const updated=await approve(f,{expectedRevision:2});assert.equal(updated.approval!.analysisId,f.analysisId);assert.equal(updated.approval!.inputRevision,2)
+ assert.deepEqual(updated.approval!.snapshot.payload.contact,changedContact)
+ assert.deepEqual((await db.query<{source_snapshot:unknown}>('select source_snapshot from public.lk_live_quote_approvals where id=$1',[old.approval!.id])).rows[0].source_snapshot,old.approval!.snapshot)
+})
+test('completed AI reuse rejects changed service, foreign job, mismatched execution metadata and invalid coverage',async()=>{
+ const f=await fixture();await requests('request_review',{...f.args,expectedRevision:1,idempotencyKey:randomUUID()})
+ for(const patch of ["input_snapshot=jsonb_set(input_snapshot,'{service,doorCount}','99')", "input_snapshot=jsonb_set(input_snapshot,'{coverage,damageNotPresent}','null')", "input_snapshot=jsonb_set(input_snapshot,'{promptVersion}','\"different\"')", "input_snapshot=jsonb_set(input_snapshot,'{model}','\"different\"')", "input_snapshot=jsonb_set(input_snapshot,'{schemaVersion}','\"different\"')", "input_snapshot=jsonb_set(input_snapshot,'{pricingVersion}','\"different\"')"]) {
+  const original=(await db.query<{input_snapshot:unknown}>('select input_snapshot from public.lk_quote_analysis_jobs where id=$1',[f.analysisId])).rows[0].input_snapshot
+  await db.query(`update public.lk_quote_analysis_jobs set ${patch} where id=$1`,[f.analysisId]);assert.equal((await analysisCurrent(f)).stale,true);await assert.rejects(approve(f,{expectedRevision:2}),failure('LK409'))
+  await db.query('update public.lk_quote_analysis_jobs set input_snapshot=$2 where id=$1',[f.analysisId,original])
+ }
+ const other=await fixture('b'.repeat(64),'bob@example.invalid')
+ assert.equal((await db.query<{value:boolean}>('select public.lk_quote_analysis_source_current(j,r) value from public.lk_quote_analysis_jobs j cross join public.lk_quote_requests r where j.id=$1 and r.id=$2',[f.analysisId,other.r.id])).rows[0].value,false)
+})
+
+test('AI status-only reuse never widens queued, running, failed or uncertain revision/retry gates',async()=>{
+ for(const status of ['queued','running','failed','uncertain']) {
+  const f=await fixture(hash(status),`${status}@example.invalid`)
+  await db.query('update public.lk_quote_analysis_jobs set status=$2 where id=$1',[f.analysisId,status]);assert.equal((await analysisCurrent(f)).stale,false)
+  await requests('request_review',{...f.args,expectedRevision:1,idempotencyKey:randomUUID()})
+  assert.equal((await analysisCurrent(f)).stale,true);await assert.rejects(approve(f,{expectedRevision:2}),failure('LK409'))
+ }
+})
+test('a real saved service edit stays stale even when revision-only company review may reuse the analysis',async()=>{
+ const f=await fixture();await requests('save',{...f.args,expectedRevision:1,idempotencyKey:randomUUID(),payload:{contact,service:{...service,doorCount:9}},storageConsent:true,consentVersion:'quote-storage-review-v1'})
+ assert.equal((await analysisCurrent(f)).stale,true);await assert.rejects(approve(f,{expectedRevision:2}),failure('LK409'))
+})
+test('changing coverage through a new analysis invalidates previous approval while retaining its original snapshot',async()=>{
+ const f=await fixture(),approved=await approve(f),oldSnapshot=approved.approval!.snapshot
+ await media('analysis_start',{...f.args,expectedRevision:1,idempotencyKey:randomUUID(),aiConsentVersion:'openai-photo-analysis-v1',model:'gpt-6.1-sol',promptVersion:'cabinet-observations-v3',schemaVersion:'cabinet-photo-analysis-v2',pricingVersion:'lk-sydney-cabinet-v2-20261011',coverage:{upperNotApplicable:true,damageNotPresent:false}})
+ assert.equal((await rpc('state',f.args)).approval!.stale,true);await assert.rejects(approve(f),failure('LK409'))
+ assert.deepEqual((await db.query<{source_snapshot:unknown}>('select source_snapshot from public.lk_live_quote_approvals where id=$1',[approved.approval!.id])).rows[0].source_snapshot,oldSnapshot)
+})
+test('completed input matching helper is service-only with empty search path and fails closed on foreign input',async()=>{
+ const f=await fixture()
+ for(const role of ['anon','authenticated']) {
+  await db.exec(`set role ${role}`)
+  await assert.rejects(db.query('select public.lk_quote_analysis_source_current(null::public.lk_quote_analysis_jobs,null::public.lk_quote_requests)'),failure('42501'))
+ }
+ await db.exec('set role service_role')
+ const flags=(await db.query<{definer:boolean;config:string[];anon:boolean;authenticated:boolean;service:boolean}>("select p.prosecdef definer,p.proconfig config,has_function_privilege('anon',p.oid,'EXECUTE') anon,has_function_privilege('authenticated',p.oid,'EXECUTE') authenticated,has_function_privilege('service_role',p.oid,'EXECUTE') service from pg_proc p where p.oid='public.lk_quote_analysis_source_current(public.lk_quote_analysis_jobs,public.lk_quote_requests)'::regprocedure")).rows[0]
+ assert.equal(flags.definer,false);assert.equal(flags.anon,false);assert.equal(flags.authenticated,false);assert.equal(flags.service,true);assert.ok(flags.config.includes('search_path=\"\"'))
+ assert.equal((await db.query<{value:boolean}>('select public.lk_quote_analysis_source_current(null::public.lk_quote_analysis_jobs,r) value from public.lk_quote_requests r where r.id=$1',[f.r.id])).rows[0].value,false)
+})
+
+async function simpleSelected(f:Awaited<ReturnType<typeof fixture>>,time='09:00') {
+ const a=await approve(f,{acknowledgmentVersion:'live-booking-request-ack-v2'})
+ return rpc('date',{...f.args,approvalId:a.approval!.id,preferredDate:preferred(),preferredTime:time,availabilityRevision:'availability-v1',idempotencyKey:randomUUID(),dateCheck:check()})
+}
+async function simpleSubmit(f:Awaited<ReturnType<typeof fixture>>) {
+ const a=await simpleSelected(f),review=await rpc<{approvalId:string;selectionRevision:number;snapshotHash:string}>('review',{...f.args,approvalId:a.approval!.id,selectionRevision:1})
+ const args={...f.args,...review,reviewExpiresAt:new Date(Date.now()+900000).toISOString(),signature:validateBookingSignature({name:'Synthetic customer',method:'typed',strokes:[],acknowledged:true}),idempotencyKey:randomUUID(),dateCheck:check()}
+ return {state:await rpc('submit',args),args}
+}
+test('new acknowledgment freezes take-off time in review, signature hash and immutable submission without a pending Calendar marker',async()=>{
+ const f=await fixture(),{state,args}=await simpleSubmit(f),s=state.submission!
+ assert.equal(s.snapshot.version,'live-booking-request-ack-v2');assert.equal(s.preferredTime,'09:00');assert.equal(s.snapshot.preferredTime,'09:00');assert.equal(s.calendarStatus,'not_required');assert.equal(s.calendarEventId,null)
+ assert.equal((await rpc('submit',{...args,dateCheck:undefined})).submission!.signedContentHash,s.signedContentHash)
+ await assert.rejects(db.query("update public.lk_live_quote_submissions set preferred_time='10:00' where id=$1",[s.id]),failure('LK409'))
+ await assert.rejects(db.query("update public.lk_live_quote_submissions set calendar_status='pending' where id=$1",[s.id]),failure('LK409'))
+ assert.deepEqual(await rpc('occupancy',target),{segments:[]})
+})
+test('v2 selection requires valid future unambiguous Sydney time and binds time into the retry key',async()=>{
+ const f=await fixture(),a=await approve(f,{acknowledgmentVersion:'live-booking-request-ack-v2'}),args={...f.args,approvalId:a.approval!.id,preferredDate:preferred(),availabilityRevision:'availability-v1',idempotencyKey:randomUUID(),dateCheck:check()}
+ for(const preferredTime of [undefined,null,'24:00','09:60','9:00'])await assert.rejects(rpc('date',{...args,preferredTime}),failure('LK400'))
+ await rpc('date',{...args,preferredTime:'09:00'})
+ await assert.rejects(rpc('date',{...args,preferredTime:'10:00'}),failure('LK409'))
+ const first=await rpc<{snapshotHash:string}>('review',{...f.args,approvalId:a.approval!.id,selectionRevision:1})
+ await rpc('date',{...args,preferredTime:'10:00',idempotencyKey:randomUUID()})
+ const second=await rpc<{snapshotHash:string}>('review',{...f.args,approvalId:a.approval!.id,selectionRevision:2});assert.notEqual(first.snapshotHash,second.snapshotHash)
+ for(const local of ['2027-04-04T02:30','2027-10-03T02:30'])await assert.rejects(db.query('select public.lk_live_booking_sydney_instant($1)',[local]),failure('LK400'))
+})
+test('v2 received mail releases its lease without writing any Calendar event and rejects the legacy sync command',async()=>{
+ const f=await fixture(),{state}=await simpleSubmit(f),id=state.submission!.id,leaseToken=randomUUID();await rpc('delivery_claim',{id,leaseToken})
+ const pdf=Buffer.from('%PDF-synthetic receipt');await rpc('delivery_freeze',{id,leaseToken,pdfBase64:pdf.toString('base64'),pdfHash:hash(pdf.toString()),payload:{to:email,subject:'Synthetic request'}})
+ await assert.rejects(rpc('delivery_request_complete',{id,leaseToken}),failure('LK409'))
+ await rpc('delivery_email_attempt',{id,leaseToken});await rpc('delivery_email_accepted',{id,leaseToken,providerMessageId:'v2-provider'})
+ await assert.rejects(rpc('delivery_calendar_synced',{id,leaseToken,eventId:'forbidden',eventEtag:'etag'}),failure('LK409'))
+ const completed=await rpc<LiveBookingState['submission']>('delivery_request_complete',{id,leaseToken});assert.equal(completed!.calendarStatus,'not_required');assert.equal(completed!.calendarEventId,null)
+ assert.equal(await rpc('delivery_claim',{id,leaseToken:randomUUID()}),null)
+})
+
+test('v2 request delivery interrupted after email acceptance recovers its lease without switching to Calendar syncing',async()=>{
+ const f=await fixture(),{state}=await simpleSubmit(f),id=state.submission!.id,leaseToken=randomUUID();await rpc('delivery_claim',{id,leaseToken})
+ const pdf=Buffer.from('%PDF-synthetic receipt');await rpc('delivery_freeze',{id,leaseToken,pdfBase64:pdf.toString('base64'),pdfHash:hash(pdf.toString()),payload:{to:email,subject:'Synthetic request'}})
+ await rpc('delivery_email_attempt',{id,leaseToken});await rpc('delivery_email_accepted',{id,leaseToken,providerMessageId:'interrupted-v2-provider'})
+ await db.query("update public.lk_live_quote_submissions set lease_expires_at=now()-interval '1 second' where id=$1",[id])
+ const nextToken=randomUUID(),claimed=await rpc<LiveBookingDeliveryClaim>('delivery_claim',{id,leaseToken:nextToken})
+ assert.equal(claimed.submission.calendarStatus,'not_required');assert.equal(claimed.submission.emailStatus,'provider_accepted')
+ await rpc('delivery_request_complete',{id,leaseToken:nextToken});assert.equal(await rpc('delivery_claim',{id,leaseToken:randomUUID()}),null)
+})
+
+test('actual quote calculation through v2 approve/date/sign/submit prepares and confirms using the production subtotal/tax contract',async()=>{
+ // Exercise the real quote pricing calculator and all normal customer RPCs, not a fabricated money DTO.
+ const f=await fixture(),{state}=await simpleSubmit(f),original=state.submission!
+ const {initializeCompanyFixtureAuth,seedCompanyFixture,companyRpc,companyProof}=await import('../bookings/infrastructure/live-test-fixtures.mts')
+ await db.exec('reset role');await initializeCompanyFixtureAuth(db)
+ const staff=await seedCompanyFixture(db,{email:'fixture-staff-source@example.invalid'})
+ const requestId=f.r.id,takeOffEndLocal=preferred()+'T10:00',installDate=new Date(Date.parse(preferred())+7*86400000).toISOString().slice(0,10)
+ const args={...staff.staffArgs,requestId,expectedRevision:0,idempotencyKey:randomUUID(),takeOffEndLocal,installStartLocal:installDate+'T09:00',installEndLocal:installDate+'T11:00',companyNote:'Photo estimate only. Additional site damage and cost will be discussed before work.'}
+ const prepared=await companyRpc<{hash:string;amountExGst:number;gst:number;total:number}>(db,'staff_prepare_request',args)
+ assert.equal(prepared.amountExGst,f.pricing.subtotal);assert.equal(prepared.gst,f.pricing.tax);assert.equal(prepared.total,f.pricing.total)
+ const confirmed=await companyRpc<import('../bookings/domain/live-contracts.ts').LiveCompanyBookingState>(db,'staff_confirm_request',{...args,calendarCheck:companyProof(prepared.hash)})
+ assert.equal(confirmed.acceptance,null);assert.equal(confirmed.booking!.signedSubmissionId,original.id);assert.equal(confirmed.proposal!.total,original.snapshot.pricing.total);assert.equal(confirmed.proposal!.segments[0].startLocal,preferred()+'T09:00')
+ assert.deepEqual(confirmed.submission.snapshot,original.snapshot);assert.equal(confirmed.submission.signedContentHash,original.signedContentHash)
 })

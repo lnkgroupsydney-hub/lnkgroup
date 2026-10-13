@@ -4,7 +4,9 @@ import {join} from 'node:path'
 import fontkit from '@pdf-lib/fontkit'
 import {PDFDocument,rgb,type PDFPage} from 'pdf-lib'
 import {staffMailSender,type CompanyMailSender} from '../../../shared/email/company-sender.ts'
-import {validateBookingSignature} from '../../quotes/domain/booking-flow.ts'
+import {BOOKING_SIMPLE_ACK_VERSION,validateBookingSignature} from '../../quotes/domain/booking-flow.ts'
+import {validateReceiptSource} from '../../quotes/infrastructure/booking-receipt.ts'
+import {sydneyLocalToInstant} from '../../operations/calendar-access.ts'
 import {COMPANY_BOOKING_ACK_TEXT,COMPANY_BOOKING_ACK_VERSION,type LiveCompanyWorkerClaim} from '../domain/live-contracts.ts'
 
 export interface FrozenCompanyMail {pdfBase64:string;pdfHash:string;payload:Record<string,unknown>}
@@ -17,13 +19,17 @@ const titles={proposal_notice:'Company price and work schedule proposal',accepta
 const dateTime=(date:string)=>new Intl.DateTimeFormat('en-AU',{dateStyle:'medium',timeStyle:'short',timeZone:'Australia/Sydney'}).format(new Date(date))
 const nextDate=(date:string,days:number)=>new Date(Date.parse(`${date}T00:00:00Z`)+days*86400000).toISOString().slice(0,10)
 export function companyWorkPeriodsText(claim:LiveCompanyWorkerClaim):string {
- return claim.proposal.segments.map((s,i)=>`${i+1}. ${s.kind==='all_day'?`${s.startDate} to ${nextDate(s.endDate,-1)} inclusive (all day)`:`${dateTime(s.startAt)} to ${dateTime(s.endAt)} (Sydney)`}`).join('\n')
+ return claim.proposal.segments.map((s,i)=>`${i+1}. ${s.purpose==='take_off'?'Take-off: ':s.purpose==='install'?'Installation: ':''}${s.kind==='all_day'?`${s.startDate} to ${nextDate(s.endDate,-1)} inclusive (all day)`:`${dateTime(s.startAt)} to ${dateTime(s.endAt)} (Sydney)`}`).join('\n')
 }
 function validate(claim:LiveCompanyWorkerClaim){
  const p=claim.proposal,s=claim.submission.snapshot
  if(!Object.hasOwn(titles,claim.kind)||!HASH.test(p.hash)||!/^[-A-Z0-9]{1,80}$/.test(claim.submission.reference)||p.status!=='published'||!Number.isSafeInteger(p.amountExGst)||p.amountExGst<=0||p.gst!==Math.round(p.amountExGst/10)||p.total!==p.amountExGst+p.gst||p.currency!=='AUD'||!p.segments.length||p.segments.length>20||!s.verifiedEmail||s.verifiedEmail!==s.payload.contact.email||!/^[^\s<>@]+@[^\s<>@]+\.[^\s<>@]+$/.test(s.verifiedEmail)||typeof p.scope!=='string'||typeof p.adjustmentReason!=='string') throw new Error('Saved company proposal is invalid')
  for(const segment of p.segments){if(!Number.isFinite(Date.parse(segment.startAt))||Date.parse(segment.endAt)<=Date.parse(segment.startAt))throw new Error('Saved work period is invalid')}
- if(claim.kind!=='proposal_notice'){
+ const simple=claim.booking?.confirmationBasis==='signed_request'||p.confirmationBasis==='signed_request'
+ if(simple){
+  validateReceiptSource(claim.submission)
+  if(claim.kind!=='confirmation'||p.confirmationBasis!=='signed_request'||claim.booking?.confirmationBasis!=='signed_request'||claim.booking.signedSubmissionId!==claim.submission.id||claim.acceptance!==null||s.version!==BOOKING_SIMPLE_ACK_VERSION||typeof p.companyNote!=='string'||!p.companyNote.trim()||p.companyNote.length>3000||p.amountExGst!==s.pricing.subtotal||p.gst!==s.pricing.tax||p.total!==s.pricing.total||p.segments.length!==2||p.segments[0].purpose!=='take_off'||p.segments[1].purpose!=='install'||p.segments.some(period=>period.kind!=='timed')||p.segments[0].startLocal!==`${claim.submission.preferredDate}T${claim.submission.preferredTime}`||Date.parse(p.segments[0].startAt)!==Date.parse(sydneyLocalToInstant(p.segments[0].startLocal))||Date.parse(p.segments[1].startAt)<Date.parse(p.segments[0].endAt))throw new Error('Saved signed-request booking is invalid')
+ }else if(claim.kind!=='proposal_notice'){
   const a=claim.acceptance
   if(!a||a.proposalId!==p.id||a.proposalHash!==p.hash||a.acknowledgmentVersion!==COMPANY_BOOKING_ACK_VERSION||a.acknowledgmentText!==COMPANY_BOOKING_ACK_TEXT)throw new Error('Saved proposal acknowledgment is invalid')
   validateBookingSignature(a.signature)
@@ -33,7 +39,7 @@ function validate(claim:LiveCompanyWorkerClaim){
 export async function createCompanyBookingMail(claim:LiveCompanyWorkerClaim,sender:CompanyMailSender):Promise<FrozenCompanyMail>{
  if(typeof window!=='undefined')throw new Error('Company booking receipts are server-only')
  validate(claim)
- const company=staffMailSender({companyFrom:sender.from,companyReplyTo:sender.replyTo}),title=titles[claim.kind],p=claim.proposal
+ const company=staffMailSender({companyFrom:sender.from,companyReplyTo:sender.replyTo}),title=titles[claim.kind],p=claim.proposal,simple=p.confirmationBasis==='signed_request'
  const createdAt=claim.kind==='confirmation'?claim.booking!.confirmedAt!:claim.kind==='acceptance_receipt'?claim.acceptance!.acceptedAt:p.publishedAt!
  if(!Number.isFinite(Date.parse(createdAt)))throw new Error('Saved receipt timestamp is invalid')
  const pdf=await PDFDocument.create();pdf.registerFontkit(fontkit)
@@ -52,22 +58,33 @@ export async function createCompanyBookingMail(claim:LiveCompanyWorkerClaim,send
  paragraph(notice,11);y-=12
  field('Request reference',claim.submission.reference);field('Company proposal version',`${p.version} / ${p.id}`);field('Recorded at (Sydney)',dateTime(createdAt))
  field('Customer',claim.submission.snapshot.payload.contact.name);field('Verified recipient',claim.submission.snapshot.verifiedEmail)
- field('Final company supply price / GST / total',`${money(p.amountExGst)} / ${money(p.gst)} / ${money(p.total)} incl GST`)
+ field(simple?'Photo-based provisional supply price / GST / total':'Final company supply price / GST / total',`${money(p.amountExGst)} / ${money(p.gst)} / ${money(p.total)} incl GST`)
  field('Original photo estimate total',money(claim.submission.snapshot.pricing.total!));field('Company work scope',p.scope);field('Company adjustment / site review reason',p.adjustmentReason)
  field('All company work periods',companyWorkPeriodsText(claim));paragraph('Dates between separate periods are not automatically reserved. Work periods shown above are the company-entered schedule, not an automatically calculated working-hours policy.',9);y-=8
+ if(simple)field('Company booking and site inspection notice',p.companyNote)
  field('Proposal SHA-256',p.hash);field('Original signed request snapshot SHA-256',claim.submission.snapshotHash)
- if(claim.acceptance){
+ if(simple){
+  paragraph('Original customer booking request',14);y-=6
+  paragraph(claim.submission.snapshot.acknowledgment.text);y-=8
+  field('Acknowledgment version',claim.submission.snapshot.acknowledgment.version)
+  field('Requested take-off (Sydney)',`${claim.submission.preferredDate} ${claim.submission.preferredTime}`)
+  field('Request signed at (Sydney)',dateTime(claim.submission.submittedAt))
+  field('Originally signed name / method',`${claim.submission.signature.name} / ${claim.submission.signature.method??'drawn'}`)
+  field('Original signed content SHA-256',claim.submission.signedContentHash)
+  if(claim.submission.signature.strokes.length){need(145);const boxY=y-110;page!.drawRectangle({x:margin,y:boxY,width:contentWidth,height:100,borderWidth:.6,borderColor:muted});for(const stroke of claim.submission.signature.strokes)for(let i=1;i<stroke.length;i++){const a=stroke[i-1],b=stroke[i];page!.drawLine({start:{x:margin+8+a.x*(contentWidth-16),y:boxY+8+(1-a.y)*84},end:{x:margin+8+b.x*(contentWidth-16),y:boxY+8+(1-b.y)*84},thickness:1.3,color:ink})}y=boxY-20}
+  paragraph('The customer signed the original booking request and agreed that the company would assign installation. This is a company appointment confirmation; no second customer price or schedule acceptance is recorded.',9)
+ }else if(claim.acceptance){
   need(200);paragraph('Customer price and schedule acknowledgment',14);y-=6
   paragraph(COMPANY_BOOKING_ACK_TEXT);y-=8
   field('Acknowledgment version',COMPANY_BOOKING_ACK_VERSION);field('Accepted at (Sydney)',dateTime(claim.acceptance.acceptedAt));field('Signed name / method',`${claim.acceptance.signature.name} / ${claim.acceptance.signature.method??'drawn'}`)
   if(claim.acceptance.signature.strokes.length){need(145);const boxY=y-110;page!.drawRectangle({x:margin,y:boxY,width:contentWidth,height:100,borderWidth:.6,borderColor:muted});for(const stroke of claim.acceptance.signature.strokes)for(let i=1;i<stroke.length;i++){const a=stroke[i-1],b=stroke[i];page!.drawLine({start:{x:margin+8+a.x*(contentWidth-16),y:boxY+8+(1-a.y)*84},end:{x:margin+8+b.x*(contentWidth-16),y:boxY+8+(1-b.y)*84},thickness:1.3,color:ink})}y=boxY-20}
  }
  if(claim.booking?.status==='confirmed'){field('Confirmed booking',`${claim.booking.id} / version ${claim.booking.version}`);field('Confirmed at (Sydney)',dateTime(claim.booking.confirmedAt!));field('Calendar evidence',`${claim.booking.events.length} independently verified private busy work periods. Provider event IDs and private access URLs are retained in the EMS.`)}
- paragraph('This document records the company proposal and schedule acknowledgment. It does not issue an invoice, request payment or replace separately approved contractual terms. Photo files and private access URLs are not attached.',9)
+ paragraph(simple?'This document confirms the take-off and installation appointments and records the original photo-based provisional estimate. More extensive damage can increase the price after an on-site inspection; additional work and cost will be discussed before proceeding. It does not issue an invoice, request payment or replace separately approved contractual terms. Photo files and private access URLs are not attached.':'This document records the company proposal and schedule acknowledgment. It does not issue an invoice, request payment or replace separately approved contractual terms. Photo files and private access URLs are not attached.',9)
  paragraph('Unsupported font characters appear as [U+code point]. Original saved data remains unchanged.',8)
  pdf.getPages().forEach((page,i)=>page.drawText(`${claim.submission.reference} | COMPANY SCHEDULE | ${i+1} / ${pdf.getPageCount()}`,{x:margin,y:31,font,size:8,color:muted}))
  const bytes=await pdf.save({useObjectStreams:false}),pdfBase64=Buffer.from(bytes).toString('base64'),pdfHash=createHash('sha256').update(bytes).digest('hex')
- const text=`L&K Group - ${title}\n\nReference: ${claim.submission.reference}\nProposal version: ${p.version}\nFinal company amount: ${money(p.total)} incl GST (${money(p.amountExGst)} + GST ${money(p.gst)})\n\nWork periods:\n${companyWorkPeriodsText(claim)}\n\n${notice}\n\nOpen your saved quote at https://www.lnkgroupsydney.com.au/quote/start?service=cabinet-painting and verify your email to review the saved proposal.\n\nThe private company proposal/acknowledgment PDF is attached. Reply to this email if you need assistance.`
+ const text=simple?`L&K Group - ${title}\n\nReference: ${claim.submission.reference}\nPhoto-based provisional estimate: ${money(p.total)} incl GST (${money(p.amountExGst)} + GST ${money(p.gst)})\n\nYour confirmed appointments:\n${companyWorkPeriodsText(claim)}\n\nCompany notice:\n${p.companyNote}\n\n${notice}\n\nNo further online approval is needed. Your original request signature remains saved. Final quantities, repairs and price require on-site inspection; additional work and cost will be discussed before proceeding.\n\nView your saved booking at https://www.lnkgroupsydney.com.au/quote/start?service=cabinet-painting if needed. The booking confirmation PDF is attached. Reply to this email if you need assistance.`:`L&K Group - ${title}\n\nReference: ${claim.submission.reference}\nProposal version: ${p.version}\nFinal company amount: ${money(p.total)} incl GST (${money(p.amountExGst)} + GST ${money(p.gst)})\n\nWork periods:\n${companyWorkPeriodsText(claim)}\n\n${notice}\n\nOpen your saved quote at https://www.lnkgroupsydney.com.au/quote/start?service=cabinet-painting and verify your email to review the saved proposal.\n\nThe private company proposal/acknowledgment PDF is attached. Reply to this email if you need assistance.`
  const payload={from:company.from,reply_to:company.replyTo!,to:[claim.submission.snapshot.verifiedEmail],subject:`L&K Group ${title.toLowerCase()} - ${claim.submission.reference}`,text,html:`<!doctype html><html lang="en"><head><title>${escape(title)}</title></head><body><h1>L&amp;K Group ${escape(title)}</h1>${text.split('\n\n').map(part=>`<p>${escape(part).replace(/\n/g,'<br>')}</p>`).join('')}<p><a href="https://www.lnkgroupsydney.com.au/quote/start?service=cabinet-painting">Open saved quote</a></p></body></html>`,attachments:[{filename:`${claim.submission.reference}-company-${claim.kind}-v${p.version}.pdf`,content:pdfBase64}]}
  const frozen={pdfBase64,pdfHash,payload};if(!validCompanyBookingMail(frozen,claim))throw new Error('Company receipt is too large or invalid');return frozen
 }

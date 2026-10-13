@@ -10,7 +10,7 @@ import { verifiedBookingOwnerArgs } from '../../quotes/application/booking-flow.
 import type { QuoteRequestStore } from '../../quotes/application/requests.ts'
 import type { LiveCalendarTarget } from '../../quotes/domain/booking-flow.ts'
 import type { LiveCompanyBookingState, LiveCompanyCalendarCheck, LiveCompanyProposal, LiveCompanyReview, LiveCompanySegment } from '../domain/live-contracts.ts'
-import { liveObject, liveUuid, liveRevision, validateLiveProposal, validateBookingSignature } from '../domain/live-validation.ts'
+import { liveObject, liveUuid, liveRevision, validateLiveProposal, normalizeSimpleCompanyRequest, validateSimpleCompanyRequest, validateBookingSignature } from '../domain/live-validation.ts'
 import { liveCompanyBookingStore } from './live-store.ts'
 import { liveCompanyBookingFlow } from '../application/live-company-booking.ts'
 export interface LiveCompanyBookingApiDependencies {
@@ -43,6 +43,16 @@ export function createLiveCompanyBookingApi(deps:LiveCompanyBookingApiDependenci
   publish:safe(async(req,id)=>{const actor=await staff(req,true),row=await input(req);exact(row,['expectedRevision','proposalId','proposalHash','idempotencyKey']);const requestId=liveUuid(id),state=await staffState(actor,requestId),p=proposal(state,row.proposalId,row.proposalHash);const saved=await flow.staff<LiveCompanyBookingState>(actor,'staff_publish',{requestId,expectedRevision:liveRevision(row.expectedRevision),proposalId:p.id,proposalHash:p.hash,idempotencyKey:liveUuid(row.idempotencyKey),...(p.status==='published'?{}:{calendarCheck:await check(p)})});deps.enqueue(requestId);return json({state:saved})}),
   check:safe(async(req,id)=>{const actor=await staff(req,true),row=await input(req);exact(row,['proposalId','proposalHash']);const state=await staffState(actor,liveUuid(id)),p=proposal(state,row.proposalId,row.proposalHash);await flow.staff(actor,'staff_check',{requestId:state.requestId,proposalId:p.id,proposalHash:p.hash});const target=await deps.target();if(target.accountSub!==p.calendarTarget.accountSub||target.calendarId!==p.calendarTarget.calendarId)throw new QuoteRequestError(409,'The company Calendar changed.');return json({check:await deps.check(target,p.segments)})}),
   confirm:safe(async(req,id)=>{const actor=await staff(req,true),row=await input(req);exact(row,['expectedRevision','proposalId','proposalHash','idempotencyKey']);const requestId=liveUuid(id),state=await staffState(actor,requestId),p=proposal(state,row.proposalId,row.proposalHash);const saved=await flow.staff<LiveCompanyBookingState>(actor,'staff_confirm',{requestId,expectedRevision:liveRevision(row.expectedRevision),proposalId:p.id,proposalHash:p.hash,idempotencyKey:liveUuid(row.idempotencyKey),...(state.booking?{}:{calendarCheck:await check(p)})});deps.enqueue(requestId);return json({state:saved},202)}),
+  confirmRequest:safe(async(req,id)=>{
+   const actor=await staff(req,true),row=await input(req);exact(row,['expectedRevision','idempotencyKey','takeOffEndLocal','installStartLocal','installEndLocal','companyNote'])
+   const value=normalizeSimpleCompanyRequest(row),requestId=liveUuid(id),state=await staffState(actor,requestId)
+   // Successful response-loss replay remains available without a new Calendar request.
+   if(state.booking){const saved=await flow.staff<LiveCompanyBookingState>(actor,'staff_confirm_request',{requestId,...value});deps.enqueue(requestId);return json({state:saved},202)}
+   validateSimpleCompanyRequest(row,state.submission,sydneyLocalToInstant,deps.now())
+   const prepared=await flow.staff<LiveCompanyProposal>(actor,'staff_prepare_request',{requestId,...value})
+   const saved=await flow.staff<LiveCompanyBookingState>(actor,'staff_confirm_request',{requestId,...value,calendarCheck:await check(prepared)})
+   deps.enqueue(requestId);return json({state:saved},202)
+  }),
   retry:safe(async(req,id)=>{const actor=await staff(req,true);exact(await input(req),[]);const requestId=liveUuid(id),state=await flow.staff(actor,'staff_retry',{requestId});deps.enqueue(requestId);return json({state})}),
   reconcile:safe(async(req,id)=>{const actor=await staff(req,true);exact(await input(req),[]);const state=await staffState(actor,liveUuid(id));if(!state.booking)throw new QuoteRequestError(409,'There is no held company booking to reconcile.');const result=await deps.reconcile(state);return json({state:await deps.store.command('reconcile_result',{bookingId:state.booking.id,ok:result.ok,error:result.error??null})})}),
   customerState:safe(async req=>{const state=await flow.customer<LiveCompanyBookingState|null>(await owner(req),'customer_state');return json({state:state?{...state,booking:state.booking?{...state.booking,events:[]}:null}:null})}),
@@ -58,5 +68,5 @@ const api=createLiveCompanyBookingApi({store:liveCompanyBookingStore,now:Date.no
  reconcile:async state=>{const {reconcileLiveCompanyEvents}=await import('../live-calendar.ts');return reconcileLiveCompanyEvents(state)},
  enqueue:requestId=>after(async()=>{try{const {processCompanyBookingOutbox}=await import('../live-delivery.ts');await processCompanyBookingOutbox(requestId)}catch{/* Durable outbox and held periods remain available for retry. */}}),
 })
-export const adminLiveCompanyBookingsGet=api.list,adminLiveCompanyProposalPut=api.draft,adminLiveCompanyPublishPost=api.publish,adminLiveCompanyCheckPost=api.check,adminLiveCompanyConfirmPost=api.confirm,adminLiveCompanyRetryPost=api.retry,adminLiveCompanyReconcilePost=api.reconcile,adminLiveCompanyDocumentGet=api.staffDocument
+export const adminLiveCompanyBookingsGet=api.list,adminLiveCompanyProposalPut=api.draft,adminLiveCompanyPublishPost=api.publish,adminLiveCompanyCheckPost=api.check,adminLiveCompanyConfirmPost=api.confirm,adminLiveCompanyConfirmRequestPost=api.confirmRequest,adminLiveCompanyRetryPost=api.retry,adminLiveCompanyReconcilePost=api.reconcile,adminLiveCompanyDocumentGet=api.staffDocument
 export const customerLiveCompanyBookingGet=api.customerState,customerLiveCompanyReviewPost=api.review,customerLiveCompanyAcceptPost=api.accept,customerLiveCompanyDocumentGet=api.customerDocument

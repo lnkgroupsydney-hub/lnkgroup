@@ -44,3 +44,57 @@ test('recovery rejects a selected quote changed by another tab instead of displa
   };
   try { await assert.rejects(readCurrentCustomerRequest(id), /changed in another tab/); } finally { globalThis.fetch = original; }
 });
+
+import { canStartAnotherQuote, canRecoverExpiredCustomerAccess, EMPTY_CUSTOMER_ACCESS, customerMutation } from './customer-access-client.ts';
+test('another quote can start only after the exact saved quote is linked and current', () => {
+  const request = { id: 'b65b5359-f90d-45be-b4b9-c249aa7f6daf', email: 'fixture@example.test' };
+  const access = { customer: { email: request.email, expiresAt: '2026-10-13T23:00:00Z' }, currentRequestId: request.id, requests: [{ id: request.id, reference: 'RQ-1234567890ABCDEF1234567890ABCDEF', status: 'draft' as const, savedAt: '2026-10-13T00:00:00Z', revision: 1 }] };
+  assert.equal(canStartAnotherQuote(request, access, false), true);
+  assert.equal(canStartAnotherQuote(request, access, true), false);
+  assert.equal(canStartAnotherQuote(null, access, false), false);
+  assert.equal(canStartAnotherQuote(request, { ...access, requests: [] }, false), false);
+  assert.equal(canStartAnotherQuote(request, { ...access, currentRequestId: null }, false), false);
+  assert.equal(canStartAnotherQuote(request, { ...access, customer: null }, false), false);
+  assert.equal(canStartAnotherQuote(request, { ...access, customer: { ...access.customer, email: 'other@example.test' } }, false), false);
+});
+
+test('expired-access recovery is limited to an empty unchanged form and never replaces the linked-quote requirement', () => {
+  assert.equal(canRecoverExpiredCustomerAccess(null, EMPTY_CUSTOMER_ACCESS, false, true), true);
+  assert.equal(canRecoverExpiredCustomerAccess(null, EMPTY_CUSTOMER_ACCESS, false, false), false);
+  assert.equal(canRecoverExpiredCustomerAccess(null, EMPTY_CUSTOMER_ACCESS, true, true), false);
+  assert.equal(canRecoverExpiredCustomerAccess({ id }, EMPTY_CUSTOMER_ACCESS, false, true), false);
+  assert.equal(canRecoverExpiredCustomerAccess(null, state, false, true), false);
+  assert.equal(canRecoverExpiredCustomerAccess(null, { ...EMPTY_CUSTOMER_ACCESS, requests: [summary] }, false, true), false);
+  assert.equal(canRecoverExpiredCustomerAccess(null, { ...EMPTY_CUSTOMER_ACCESS, currentRequestId: id }, false, true), false);
+  assert.equal(canStartAnotherQuote({ id, email: 'fixture@example.test' }, EMPTY_CUSTOMER_ACCESS, false), false);
+});
+
+test('explicit expired-access recovery preserves writing capability and invalidates older private responses', async () => {
+  const originalFetch = globalThis.fetch;
+  const originalNavigator = Object.getOwnPropertyDescriptor(globalThis, 'navigator');
+  let writes = 0;
+  Object.defineProperty(globalThis, 'navigator', { configurable: true, value: { locks: { request: async (name: string, options: { mode: string }, action: () => Promise<unknown>) => {
+    assert.equal(name, 'lk-live-quote-session'); assert.equal(options.mode, 'exclusive'); return action();
+  } } } });
+  globalThis.fetch = async (url, init) => {
+    writes++;
+    assert.equal(url, '/api/quote/requests/customer/logout');
+    assert.equal(init?.method, 'POST'); assert.equal(init?.credentials, 'same-origin');
+    assert.deepEqual(JSON.parse(String(init?.body)), { preserveWritingSession: true });
+    return Response.json({ signedOut: true, writingSessionPreserved: true });
+  };
+  try {
+    const lifetime = new CustomerAccessLifetime();
+    const oldRead = lifetime.begin();
+    assert.equal(writes, 0);
+    const recovery = lifetime.begin();
+    const result = await customerMutation('logout', { preserveWritingSession: true });
+    assert.equal(result.signedOut, true); assert.equal(result.writingSessionPreserved, true);
+    assert.equal(writes, 1); assert.equal(lifetime.accepts(oldRead), false); assert.equal(lifetime.accepts(recovery), true);
+    lifetime.invalidate(); assert.equal(lifetime.accepts(recovery), false);
+  } finally {
+    globalThis.fetch = originalFetch;
+    if (originalNavigator) Object.defineProperty(globalThis, 'navigator', originalNavigator);
+    else Reflect.deleteProperty(globalThis, 'navigator');
+  }
+});

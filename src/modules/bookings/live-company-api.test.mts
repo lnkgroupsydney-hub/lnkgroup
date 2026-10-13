@@ -30,3 +30,35 @@ test('public state excludes private photo paths/input and company event ownershi
 test('manual timed/all-day intervals share UTC overlap rules and exclusive Sydney date projections',()=>{const timed=validateLiveProposal({amountExGst:12345,scope:'Scope',adjustmentReason:'Reason',segments:[{kind:'timed',startLocal:'2030-01-05T22:00',endLocal:'2030-01-06T00:00'}]},sydneyLocalToInstant,now);assert.equal(timed.segments[0].startAt,'2030-01-05T11:00:00.000Z');assert.equal(timed.segments[0].endDate,'2030-01-06');assert.throws(()=>validateLiveProposal({amountExGst:1,scope:'Scope',adjustmentReason:'Reason',segments:[{kind:'all_day',startDate:'2030-01-05',endDate:'2030-01-06'},{kind:'timed',startLocal:'2030-01-05T09:00',endLocal:'2030-01-05T10:00'}]},sydneyLocalToInstant,now),/overlap/)})
 test('Sydney daylight saving ambiguous/nonexistent times and invalid pricing/scope periods reject before storage',()=>{for(const startLocal of ['2027-04-04T02:30','2027-10-03T02:30'])assert.throws(()=>validateLiveProposal({amountExGst:1,scope:'Scope',adjustmentReason:'Reason',segments:[{kind:'timed',startLocal,endLocal:startLocal.slice(0,10)+'T04:00'}]},sydneyLocalToInstant,now),/ambiguous/);for(const amountExGst of [-1,0,NaN,Infinity,1.25,100000001])assert.throws(()=>validateLiveProposal({amountExGst,scope:'Scope',adjustmentReason:'Reason',segments:[{kind:'all_day',startDate:'2030-01-05',endDate:'2030-01-06'}]},sydneyLocalToInstant,now),QuoteRequestError)})
 test('disabled mutations and unsupported signature payloads never write proposals',async()=>{const off=setup({enabled:()=>false});assert.equal((await off.api.confirm(request('/confirm',cmd),requestId)).status,503);assert.equal(off.calls.length,0);const s=setup();assert.equal((await s.api.draft(request('/proposal',{extra:1}),requestId)).status,400);assert.equal(s.calls.length,0)})
+
+const simpleCommand={expectedRevision:0,idempotencyKey:randomUUID(),takeOffEndLocal:'2030-01-05T10:00',installStartLocal:'2030-01-09T09:00',installEndLocal:'2030-01-09T11:00',companyNote:'Any additional site damage and cost will be discussed before work.'}
+async function simpleSetup(conflicting=false,booking=false){
+ const {bookingAcknowledgment,BOOKING_SIMPLE_ACK_VERSION}=await import('../quotes/domain/booking-flow.ts')
+ const calls:{command:string;args:Record<string,unknown>}[]=[],checked:unknown[]=[],queued:string[]=[]
+ const simpleState={...state,revision:0,submission:{...state.submission,preferredDate:'2030-01-05',preferredTime:'09:00',snapshot:{...state.submission.snapshot,version:BOOKING_SIMPLE_ACK_VERSION,preferredDate:'2030-01-05',preferredTime:'09:00',acknowledgment:bookingAcknowledgment()}} ,proposal:null,proposals:[],booking:booking?{id:randomUUID(),confirmationBasis:'signed_request'}:null} as LiveCompanyBookingState
+ const prepared={...proposal,status:'published',confirmationBasis:'signed_request',companyNote:simpleCommand.companyNote,segments:[{kind:'timed',purpose:'take_off',startAt:'2030-01-04T22:00:00.000Z',endAt:'2030-01-04T23:00:00.000Z',startDate:'2030-01-05',endDate:'2030-01-06',startLocal:'2030-01-05T09:00',endLocal:'2030-01-05T10:00'},{kind:'timed',purpose:'install',startAt:'2030-01-08T22:00:00.000Z',endAt:'2030-01-09T00:00:00.000Z',startDate:'2030-01-09',endDate:'2030-01-10',startLocal:'2030-01-09T09:00',endLocal:'2030-01-09T11:00'}]} as LiveCompanyProposal
+ const s=setup({store:{async command<T>(command,args){calls.push({command,args});return(command==='staff_prepare_request'?prepared:simpleState) as T}},check:async(target,periods)=>{checked.push({target,periods});return{...target,revision:'v2-availability',checkedAt:new Date(now).toISOString(),expiresAt:new Date(now+60000).toISOString(),conflicts:conflicting?[{segmentIndex:1,source:'google',startAt:prepared.segments[1].startAt,endAt:prepared.segments[1].endAt,message:'Busy'}]:[]}},enqueue:id=>queued.push(id)})
+ return {...s,calls,checked,queued,simpleState}
+}
+test('single EMS button prepares protected original request, checks both periods, commits once and enqueues without customer acceptance',async()=>{
+ const s=await simpleSetup(),response=await s.api.confirmRequest(request('/confirm-request',simpleCommand),requestId);assert.equal(response.status,202,await response.clone().text())
+ assert.deepEqual(s.permissions,['operations.write']);assert.deepEqual(s.calls.map(c=>c.command),['staff_state','staff_prepare_request','staff_confirm_request']);assert.equal(s.checked.length,1)
+ const cmd=s.calls.at(-1)!;assert.equal((cmd.args.calendarCheck as {proposalHash:string}).proposalHash,hash);assert.equal(cmd.args.companyNote,simpleCommand.companyNote);assert.equal(Object.hasOwn(cmd.args,'amountExGst'),false);assert.equal(Object.hasOwn(cmd.args,'takeOffStartLocal'),false);assert.deepEqual(s.queued,[requestId])
+})
+test('single confirmation rejects forged amount/start fields, cross origin, mismatched source and invalid intervals before any Calendar allocation',async()=>{
+ for(const extra of [{amountExGst:1},{takeOffStartLocal:'2030-01-05T08:00'},{preferredTime:'08:00'},{segments}]){const s=await simpleSetup();assert.equal((await s.api.confirmRequest(request('/confirm-request',{...simpleCommand,...extra}),requestId)).status,400);assert.equal(s.calls.length,0)}
+ const s=await simpleSetup();assert.equal((await s.api.confirmRequest(request('/confirm-request',simpleCommand,{origin:'https://evil.invalid'}),requestId)).status,403);assert.equal(s.calls.length,0)
+ const legacy=setup();assert.equal((await legacy.api.confirmRequest(request('/confirm-request',simpleCommand),requestId)).status,409)
+ const bad=await simpleSetup();assert.equal((await bad.api.confirmRequest(request('/confirm-request',{...simpleCommand,installStartLocal:'2030-01-05T09:30'}),requestId)).status,400);assert.equal(bad.checked.length,0)
+})
+test('an install conflict prevents the single confirm transaction; successful response-loss replay skips all external Calendar calls',async()=>{
+ const bad=await simpleSetup(true);assert.equal((await bad.api.confirmRequest(request('/confirm-request',simpleCommand),requestId)).status,409);assert.equal(bad.calls.some(c=>c.command==='staff_confirm_request'),false);assert.deepEqual(bad.queued,[])
+ const replay=await simpleSetup(false,true);assert.equal((await replay.api.confirmRequest(request('/confirm-request',simpleCommand),requestId)).status,202);assert.deepEqual(replay.calls.map(c=>c.command),['staff_state','staff_confirm_request']);assert.equal(replay.checked.length,0)
+})
+test('same single-confirm body with surrounding note whitespace has identical first and response-loss replay command payloads',async()=>{
+ const body={...simpleCommand,companyNote:'  '+simpleCommand.companyNote+'  '},first=await simpleSetup(),replayed=await simpleSetup(false,true)
+ assert.equal((await first.api.confirmRequest(request('/confirm-request',body),requestId)).status,202)
+ assert.equal((await replayed.api.confirmRequest(request('/confirm-request',body),requestId)).status,202)
+ const before={...first.calls.at(-1)!.args};delete before.calendarCheck
+ assert.deepEqual(before,replayed.calls.at(-1)!.args);assert.equal(before.companyNote,simpleCommand.companyNote)
+})

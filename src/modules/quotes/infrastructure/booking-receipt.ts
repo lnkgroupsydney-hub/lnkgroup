@@ -4,7 +4,7 @@ import { join } from 'node:path'
 import fontkit from '@pdf-lib/fontkit'
 import { PDFDocument, rgb, type PDFPage } from 'pdf-lib'
 import { staffMailSender, type CompanyMailSender } from '../../../shared/email/company-sender.ts'
-import { BOOKING_ACKNOWLEDGMENT_TEXT, BOOKING_ACKNOWLEDGMENT_VERSION, validateBookingSignature, type LiveBookingSubmission } from '../domain/booking-flow.ts'
+import { BOOKING_SIMPLE_ACK_VERSION, isBookingAcknowledgment, validateBookingSignature, type LiveBookingSubmission } from '../domain/booking-flow.ts'
 import { validateEstimatePricing } from '../domain/pricing.ts'
 
 export interface LiveBookingEmailPayload extends Record<string, unknown> {
@@ -22,12 +22,15 @@ const fontData = () => fontBytes ??= readFile(join(process.cwd(), 'src/shared/as
 
 export function validateReceiptSource(source: LiveBookingSubmission): void {
   const s = source.snapshot
-  if (!s || s.mode !== 'live' || s.kind !== 'nonbinding_booking_request' || s.version !== BOOKING_ACKNOWLEDGMENT_VERSION ||
-      s.acknowledgment.version !== BOOKING_ACKNOWLEDGMENT_VERSION || s.acknowledgment.text !== BOOKING_ACKNOWLEDGMENT_TEXT ||
+  if (!s || s.mode !== 'live' || s.kind !== 'nonbinding_booking_request' || s.version !== s.acknowledgment?.version ||
+      !isBookingAcknowledgment(s.version, s.acknowledgment.text) ||
       !HASH.test(source.snapshotHash) || !HASH.test(source.signedContentHash) || !Number.isFinite(Date.parse(source.submittedAt)) || !/^[A-Z0-9-]{1,80}$/.test(source.reference) ||
       !email(s.verifiedEmail) || s.verifiedEmail !== s.payload.contact.email || s.preferredDate !== source.preferredDate ||
       !/^\d{4}-\d{2}-\d{2}$/.test(source.preferredDate) || !Array.isArray(s.photos) || s.photos.length > 8 ||
       s.photos.some(photo => !HASH.test(photo.contentHash) || !/^[a-zA-Z0-9_-]{1,100}$/.test(photo.id))) throw new Error('Invalid frozen booking request')
+  if (s.version === BOOKING_SIMPLE_ACK_VERSION) {
+    if (typeof source.preferredTime !== 'string' || !/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(source.preferredTime) || s.preferredTime !== source.preferredTime) throw new Error('The signed take-off time is invalid')
+  } else if (s.preferredTime != null || source.preferredTime != null) throw new Error('A legacy request cannot acquire an unsigned take-off time')
   const pricing = validateEstimatePricing(s.pricing)
   if (pricing.status !== 'provisional_estimate' || pricing.total === null) throw new Error('A frozen provisional estimate is required')
   validateBookingSignature(source.signature)
@@ -47,7 +50,7 @@ export async function createBookingReceiptPdf(source: LiveBookingSubmission): Pr
   }).join('')
   const date = new Date(source.submittedAt)
   pdf.setCreationDate(date); pdf.setModificationDate(date)
-  pdf.setCreator('L&K Group booking request receipt v1'); pdf.setProducer('L&K Group')
+  pdf.setCreator(`L&K Group booking request receipt ${source.snapshot.version === BOOKING_SIMPLE_ACK_VERSION ? 'v2' : 'v1'}`); pdf.setProducer('L&K Group')
   pdf.setTitle(`Booking request receipt - ${source.reference}`)
   pdf.setSubject('Nonbinding booking request. Pending company confirmation. No payment is due.')
   const width = 595.28, height = 841.89, margin = 46, contentWidth = width - margin * 2
@@ -90,7 +93,8 @@ export async function createBookingReceiptPdf(source: LiveBookingSubmission): Pr
   field('Service', 'Kitchen Cabinet Painting - existing cabinets')
   field('Requested work / surfaces', `${service.intent} / ${service.surfaces.join(', ')}`)
   field('Material / colour preference', [service.material, service.colourPreference].filter(Boolean).join(' / '))
-  field('Preferred start date (not reserved)', source.preferredDate)
+  if (s.version === BOOKING_SIMPLE_ACK_VERSION) field('Requested take-off date and time (Sydney; not reserved)', `${source.preferredDate} ${source.preferredTime}`)
+  else field('Preferred start date (not reserved)', source.preferredDate)
   paragraph('Frozen provisional painting estimate', 15); y -= 6
   for (const item of pricing.lineItems) field(item.label, `${item.quantity} x ${money(item.unitAmount)} = ${money(item.amount)}`)
   field('Subtotal / GST / total', `${money(pricing.subtotal!)} / ${money(pricing.tax!)} / ${money(pricing.total!)}`)
@@ -123,7 +127,7 @@ export async function createBookingReceiptPdf(source: LiveBookingSubmission): Pr
   }
   field('Frozen snapshot SHA-256', source.snapshotHash)
   field('Signed content SHA-256 (snapshot and signature)', source.signedContentHash)
-  paragraph('Exact quantities, repairs, final price, duration and legal terms require a later company proposal and separate acceptance. No payment is due.', 9)
+  paragraph(s.version === BOOKING_SIMPLE_ACK_VERSION ? 'The company will confirm your take-off appointment and assign the installation appointment by email. More extensive damage may increase the price after an on-site inspection; additional work and cost will be discussed before proceeding. No payment is due.' : 'Exact quantities, repairs, final price, duration and legal terms require a later company proposal and separate acceptance. No payment is due.', 9)
   paragraph('Unsupported font characters appear as [U+code point]. Original saved data remains unchanged.', 8)
   pdf.getPages().forEach((p, index) => p.drawText(`${source.reference} | NONBINDING REQUEST | ${index + 1} / ${pdf.getPageCount()}`, { x: margin, y: 31, size: 8, font, color: muted }))
   const bytes = await pdf.save({ useObjectStreams: false })
@@ -134,10 +138,13 @@ export async function createFrozenBookingReceipt(source: LiveBookingSubmission, 
   const company = staffMailSender({ companyFrom: sender.from, companyReplyTo: sender.replyTo })
   const pdf = await createBookingReceiptPdf(source)
   const pdfBase64 = Buffer.from(pdf.bytes).toString('base64')
-  const text = `L&K Group booking request receipt\n\nReference: ${source.reference}\nPreferred start date: ${source.preferredDate} (not reserved)\n\nYour signed booking request receipt is attached. This is a nonbinding request pending company confirmation. It does not authorise work, create a contract or require payment. Exact quantities, repairs, final scope, price and duration require company review and site confirmation. Final terms and any confirmed booking require a separate proposal and your acceptance.\n\nReply to this email if you need assistance.`
+  const simple = source.snapshot.version === BOOKING_SIMPLE_ACK_VERSION
+  const selected = simple ? `Requested take-off: ${source.preferredDate} ${source.preferredTime} (Sydney; not reserved)` : `Preferred start date: ${source.preferredDate} (not reserved)`
+  const next = simple ? 'No further online approval is required for the company to schedule these appointments. The company will confirm your take-off appointment and assign the installation appointment by email. Additional damage found on site may increase the price; any additional work and cost will be discussed before proceeding.' : 'Exact quantities, repairs, final scope, price and duration require company review and site confirmation. Final terms and any confirmed booking require a separate proposal and your acceptance.'
+  const text = `L&K Group booking request receipt\n\nReference: ${source.reference}\n${selected}\n\nYour signed booking request receipt is attached. This is a nonbinding request pending company confirmation. It does not authorise work, create a contract or require payment. ${next}\n\nReply to this email if you need assistance.`
   const payload: LiveBookingEmailPayload = {
     from: company.from, reply_to: company.replyTo!, to: [source.snapshot.verifiedEmail], subject: `L&K Group booking request receipt - ${source.reference}`,
-    text, html: `<!doctype html><html lang="en"><head><title>Booking request receipt</title></head><body><h1>L&amp;K Group booking request receipt</h1><p>Reference: ${source.reference}</p><p>Preferred start date: ${source.preferredDate} (not reserved)</p><p><strong>Nonbinding request. Pending company confirmation. No payment is due.</strong></p><p>Your signed booking request receipt is attached. Exact quantities, repairs, final scope, price and duration require company review and site confirmation. Final terms and any confirmed booking require a separate proposal and your acceptance.</p><p>Reply to this email if you need assistance.</p></body></html>`,
+    text, html: `<!doctype html><html lang="en"><head><title>Booking request receipt</title></head><body><h1>L&amp;K Group booking request receipt</h1><p>Reference: ${source.reference}</p><p>${selected}</p><p><strong>Nonbinding request. Pending company confirmation. No payment is due.</strong></p><p>Your signed booking request receipt is attached. ${next}</p><p>Reply to this email if you need assistance.</p></body></html>`,
     attachments: [{ filename: pdf.filename, content: pdfBase64 }],
   }
   const frozen = { pdfBase64, pdfHash: pdf.sha256, payload }

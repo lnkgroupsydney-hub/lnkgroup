@@ -1,6 +1,7 @@
 import { QuoteRequestError } from '../../quotes/domain/contracts.ts'
 import { bookingDate, bookingObject, bookingRevision, bookingUuid } from '../../quotes/domain/booking-flow.ts'
-import type { LiveCompanyProposalInput, LiveCompanySegment } from './live-contracts.ts'
+import { BOOKING_SIMPLE_ACK_VERSION, isBookingAcknowledgment, type LiveBookingSubmission } from '../../quotes/domain/booking-flow.ts'
+import type { LiveCompanyConfirmRequestInput, LiveCompanyProposalInput, LiveCompanySegment } from './live-contracts.ts'
 export { bookingObject as liveObject, bookingRevision as liveRevision, bookingUuid as liveUuid }
 function text(value: unknown, label: string, max: number) { if (typeof value !== 'string' || !value.trim() || value.trim().length > max || /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/.test(value)) throw new QuoteRequestError(400, `Enter valid ${label}.`); return value.trim() }
 const day = (value: string) => new Date(Date.parse(value) + 86400000).toISOString().slice(0,10)
@@ -20,3 +21,16 @@ export function validateLiveProposal(value: Record<string, unknown>, localToInst
 }
 
 export { validateBookingSignature } from '../../quotes/domain/booking-flow.ts'
+
+export function normalizeSimpleCompanyRequest(value: Record<string, unknown>): LiveCompanyConfirmRequestInput {
+ for (const field of ['takeOffEndLocal', 'installStartLocal', 'installEndLocal']) if (typeof value[field] !== 'string' || !/^\d{4}-\d{2}-\d{2}T(?:[01]\d|2[0-3]):[0-5]\d$/.test(value[field] as string)) throw new QuoteRequestError(400, 'Enter valid Sydney work date and time.')
+ return { expectedRevision: bookingRevision(value.expectedRevision), idempotencyKey: bookingUuid(value.idempotencyKey), takeOffEndLocal: value.takeOffEndLocal as string, installStartLocal: value.installStartLocal as string, installEndLocal: value.installEndLocal as string, companyNote: text(value.companyNote, 'company damage and installation note', 3000) }
+}
+export function validateSimpleCompanyRequest(value: Record<string, unknown>, submission: LiveBookingSubmission, localToInstant: (value: unknown) => string, now = Date.now()): LiveCompanyConfirmRequestInput {
+ const snapshot = submission.snapshot
+ if (snapshot.version !== BOOKING_SIMPLE_ACK_VERSION || !isBookingAcknowledgment(snapshot.acknowledgment.version, snapshot.acknowledgment.text) || !submission.preferredTime || snapshot.preferredTime !== submission.preferredTime || snapshot.preferredDate !== submission.preferredDate) throw new QuoteRequestError(409, 'This existing signed request requires the original separate company proposal workflow.')
+ const firstAt = localToInstant(`${submission.preferredDate}T${submission.preferredTime}`)
+ const takeOffEndAt = localToInstant(value.takeOffEndLocal), installStartAt = localToInstant(value.installStartLocal), installEndAt = localToInstant(value.installEndLocal)
+ if (Date.parse(firstAt) <= now || Date.parse(takeOffEndAt) <= Date.parse(firstAt) || Date.parse(installStartAt) < Date.parse(takeOffEndAt) || Date.parse(installEndAt) <= Date.parse(installStartAt) || Date.parse(takeOffEndAt) - Date.parse(firstAt) > 90 * 86400000 || Date.parse(installEndAt) - Date.parse(installStartAt) > 90 * 86400000) throw new QuoteRequestError(400, 'Choose future take-off and installation periods, with installation after take-off and an end after each start.')
+ return normalizeSimpleCompanyRequest(value)
+}

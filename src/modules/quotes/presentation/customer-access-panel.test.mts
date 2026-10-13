@@ -43,3 +43,11 @@ test('a guest draft with a different saved email requires verifying that address
   assert.match(html, /Verify email and keep this quote/); assert.match(html, /Verify that saved address below/);
   assert.doesNotMatch(html, /Currently open|Your linked quotes/);
 });
+
+test('new-quote entry preserves unlinked and dirty requests while permitting a current linked saved quote', () => {
+  assert.match(render(anonymous), /disabled="">Start a new quote/);
+  assert.match(render(verified), /class="secondary">Start a new quote/);
+  assert.match(render(verified, { hasUnsavedChanges: true }), /disabled="">Start a new quote/);
+  assert.match(render({ ...verified, currentRequestId: null }), /disabled="">Start a new quote/);
+  assert.match(render(anonymous), /verify the email of this specific quote/);
+});

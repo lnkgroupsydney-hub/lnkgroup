@@ -11,7 +11,7 @@ import type { AdminPageId } from "./admin-navigation";
 
 const shortcuts = [
   { label: "Client records", description: "Search clients and connect their enquiry history.", href: "/admin/customers", Icon: UsersRound },
-  { label: "Incoming enquiries", description: "Read conversations and review proposed schedules.", href: "/admin/enquiries", Icon: ClipboardList },
+  { label: "Incoming enquiries", description: "Review website requests, signed reservation requests and Gmail conversations.", href: "/admin/enquiries", Icon: ClipboardList },
   { label: "Quote requests", description: "Review saved customer requests and previous documents.", href: "/admin/quotes", Icon: FileText },
   { label: "Booking review", description: "Review dates, confirmations and calendar changes.", href: "/admin/schedule", Icon: CalendarDays },
 ];
@@ -35,7 +35,7 @@ export function AdminSection({ view }: { view: Exclude<AdminPageId, "overview"> 
   if (view === "settings") return <div className="admin-settings"><section id="company-connections" aria-labelledby="company-connections-title"><h2 id="company-connections-title" className="admin-section-title">Company connections</h2><OperationsView view="settings" /></section><section aria-labelledby="admin-security-title"><h2 id="admin-security-title" className="admin-section-title">Session security</h2><SessionSecurity onAccessLost={onAccessLost} embedded /></section></div>;
   if (view === "quotes") return <><LiveQuoteRequestsPanel onAccessLost={onAccessLost} /><details><summary>Previous signed demonstrations</summary><OperationsView view="quotes" /></details></>;
   if (view === "schedule") return <><LiveCompanyBookingSchedule onAccessLost={onAccessLost} /><details><summary>Previous company demonstration schedules</summary><OperationsView view="schedule" /></details></>;
-  if (view === "enquiries") return <OperationsView view={view} />;
+  if (view === "enquiries") return <><LiveQuoteRequestsPanel onAccessLost={onAccessLost} title="Website enquiries and reservation requests" description="Saved website details, photos and estimates appear here. Open a request to review the customer’s preferred date, signed reservation request and receipt, then prepare the final work periods and company confirmation." /><section aria-labelledby="gmail-enquiries-title"><h2 id="gmail-enquiries-title" className="admin-section-title">Gmail enquiries and previous demonstrations</h2><OperationsView view={view} /></section></>;
   const preparation = preparations[view];
   return <section className="admin-card admin-preparation"><span className="admin-status">Planned</span><Layers3 size={44} strokeWidth={1.4} aria-hidden="true" /><h2>{preparation.title}</h2><p>{preparation.body}</p><WorkspaceLink href={preparation.href} className="admin-primary-link">{preparation.link}<ArrowRight size={17} aria-hidden="true" /></WorkspaceLink></section>;
 }

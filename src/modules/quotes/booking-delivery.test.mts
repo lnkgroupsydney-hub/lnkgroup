@@ -2,7 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { createHash, randomUUID } from 'node:crypto'
 import { PDFDocument } from 'pdf-lib'
-import { BOOKING_ACKNOWLEDGMENT_TEXT, BOOKING_ACKNOWLEDGMENT_VERSION, type LiveBookingDeliveryClaim, type LiveBookingSubmission } from './domain/booking-flow.ts'
+import { BOOKING_ACKNOWLEDGMENT_TEXT, BOOKING_ACKNOWLEDGMENT_VERSION, BOOKING_SIMPLE_ACK_VERSION, bookingAcknowledgment, type LiveBookingDeliveryClaim, type LiveBookingSubmission } from './domain/booking-flow.ts'
 import { QUOTE_PRICING_VERSION } from './domain/pricing.ts'
 import { createBookingReceiptPdf, createFrozenBookingReceipt, validFrozenBookingReceipt, type FrozenBookingReceipt } from './infrastructure/booking-receipt.ts'
 import { processLiveBookingDelivery, processLiveBookingDeliveryBatch, LIVE_BOOKING_EMAIL_RETRY_WINDOW_MS, type LiveBookingDeliveryDependencies, type LiveBookingDeliveryResult } from './booking-delivery.ts'
@@ -35,7 +35,7 @@ function harness(options: { source?: LiveBookingSubmission; request?: typeof fet
       commands.push(command)
       if (options.storageFail === command) throw new Error('Synthetic storage failure')
       if (command === 'delivery_claim') {
-        if (busy || source.calendarStatus === 'synced' || args.id && args.id !== source.id) return null as T
+        if (busy || source.calendarStatus === 'synced' || source.calendarStatus === 'not_required' && source.emailStatus === 'provider_accepted' || args.id && args.id !== source.id) return null as T
         busy = true
         claim = { submission: structuredClone(source), leaseToken: String(args.leaseToken), leaseExpiresAt: new Date(now + 240000).toISOString(), emailIdempotencyKey: `live-booking-email:${source.id}:v1`, emailFirstAttemptAt: firstAttempt, frozenReceipt: frozen }
         return structuredClone(claim) as T
@@ -44,7 +44,8 @@ function harness(options: { source?: LiveBookingSubmission; request?: typeof fet
       assert.equal(args.id, source.id)
       if (command === 'delivery_freeze') { frozen ??= { pdfBase64: String(args.pdfBase64), pdfHash: String(args.pdfHash), payload: args.payload as FrozenBookingReceipt['payload'] }; source.receiptReady = true }
       if (command === 'delivery_email_attempt') { firstAttempt ??= new Date(now).toISOString(); source.emailStatus = 'sending' }
-      if (command === 'delivery_email_accepted') { source.emailStatus = 'provider_accepted'; source.providerMessageId = String(args.providerMessageId); source.calendarStatus = 'pending' }
+      if (command === 'delivery_email_accepted') { source.emailStatus = 'provider_accepted'; source.providerMessageId = String(args.providerMessageId); if(source.calendarStatus !== 'not_required') source.calendarStatus = 'pending' }
+      if (command === 'delivery_request_complete') { assert.equal(source.snapshot.version, BOOKING_SIMPLE_ACK_VERSION); assert.equal(source.emailStatus, 'provider_accepted'); source.calendarStatus = 'not_required'; busy = false }
       if (command === 'delivery_calendar_synced') { assert.ok(args.eventEtag); source.calendarStatus = 'synced'; source.calendarEventId = String(args.eventId); busy = false }
       if (command === 'delivery_failed') { source.error = String(args.error); if (args.stage === 'email') source.emailStatus = args.outcome as LiveBookingSubmission['emailStatus']; else source.calendarStatus = args.outcome as LiveBookingSubmission['calendarStatus']; busy = false }
       claim = { ...claim!, submission: structuredClone(source), frozenReceipt: frozen, emailFirstAttemptAt: firstAttempt }
@@ -72,6 +73,27 @@ test('drawn signature and long saved content produce a valid private receipt', a
   const source = submission(); source.signature = { name: 'Drawn signer', method: 'drawn', acknowledged: true, strokes: [[{ x: .1, y: .2 }, { x: .3, y: .5 }, { x: .5, y: .3 }, { x: .9, y: .8 }]] }
   source.snapshot.payload.contact.details = 'Long project details with local characters. '.repeat(100)
   assert.ok(validFrozenBookingReceipt(await createFrozenBookingReceipt(source, sender), source))
+})
+test('single-signature request freezes take-off time and installation delegation without a second approval notice', async () => {
+  const source = submission(); source.preferredTime = '10:30'; source.snapshot.preferredTime = '10:30'
+  source.snapshot.version = BOOKING_SIMPLE_ACK_VERSION; source.snapshot.acknowledgment = bookingAcknowledgment(); source.calendarStatus = 'not_required'
+  const receipt = await createFrozenBookingReceipt(source, sender)
+  assert.ok(validFrozenBookingReceipt(receipt, source)); assert.match(receipt.payload.text, /2026-11-01 10:30 \(Sydney/)
+  assert.match(receipt.payload.text, /No further online approval/); assert.doesNotMatch(receipt.payload.text, /separate proposal and your acceptance/)
+  for (const change of [s => { s.preferredTime = '11:30' }, s => { s.snapshot.preferredTime = null }, s => { s.preferredTime = '24:00'; s.snapshot.preferredTime = '24:00' }]) {
+    const changed = structuredClone(source); change(changed); await assert.rejects(createBookingReceiptPdf(changed))
+  }
+  const legacy = submission(); legacy.preferredTime = '10:30'; await assert.rejects(createBookingReceiptPdf(legacy))
+})
+test('new request receipt completes without creating a provisional Google Calendar event or another email', async () => {
+  const source = submission(); source.preferredTime = '10:30'; source.snapshot.preferredTime = '10:30'
+  source.snapshot.version = BOOKING_SIMPLE_ACK_VERSION; source.snapshot.acknowledgment = bookingAcknowledgment(); source.calendarStatus = 'not_required'
+  const h = harness({ source }); h.deps.createReceipt = s => createFrozenBookingReceipt(s, sender)
+  const result = await processLiveBookingDelivery(undefined, h.deps)
+  assert.equal(result.accepted, 1); assert.equal(result.calendarSynced, 0); assert.equal(result.storageErrors, 0)
+  assert.equal(h.metrics().calendarCalls, 0); assert.equal(h.source().calendarStatus, 'not_required'); assert.equal(h.source().calendarEventId, null)
+  assert.deepEqual(h.commands, ['delivery_claim','delivery_freeze','delivery_email_attempt','delivery_email_accepted','delivery_request_complete'])
+  assert.equal((await processLiveBookingDelivery(undefined, h.deps)).claimed, 0); assert.equal(h.metrics().calls, 1)
 })
 test('receipt rejects mismatched verified recipient, changed money, wrong ack and altered PDF', async () => {
   for (const modify of [s => { s.snapshot.payload.contact.email = 'other@example.invalid' }, s => { s.snapshot.pricing.total!++ }, s => { s.snapshot.acknowledgment.text = 'Wrong acknowledgment' as typeof BOOKING_ACKNOWLEDGMENT_TEXT }]) {
