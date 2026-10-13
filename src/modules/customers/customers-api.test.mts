@@ -31,7 +31,7 @@ test('unauthenticated, insufficient permission and verification denial never que
  }
 })
 test('cross-origin, absent Origin, wrong media type and oversized streaming bodies fail before storage',async()=>{
- for(const req of [post(create(),{origin:'https://foreign.invalid'}),post(create(),{origin:''}),post(create(),{'sec-fetch-site':'cross-site'}),post(create(),{'content-type':'application/jsonp'}),post(create(),{'content-length':'4097'}),post({name:'x'.repeat(5000)})]) {
+ for(const req of [post(create(),{origin:'https://foreign.invalid'}),post(create(),{origin:''}),post(create(),{'sec-fetch-site':'cross-site'}),post(create(),{'content-type':'application/jsonp'}),post(create(),{'content-length':'16385'}),post({name:'x'.repeat(17000)})]) {
   const f=fixture(),r=await f.api.create(req);assert.ok([403,413,415].includes(r.status));assert.equal(f.calls.length,0)
  }
 })
@@ -62,4 +62,30 @@ test('validation preserves optional blank fields as missing and caps search with
  assert.deepEqual(validateCreateCustomer({name:' Synthetic ',email:'',phone:' ',address:null,idempotencyKey:' key '}),{name:'Synthetic',email:null,phone:null,address:null,idempotencyKey:'key'})
  assert.throws(()=>customerSearch(new URLSearchParams('page=0')),CustomerError)
  assert.throws(()=>customerSearch(new URLSearchParams(`q=${'x'.repeat(121)}`)),CustomerError)
+})
+
+test('R2 candidates use read grant, resolve uses write grant and return explicit review without customer creation receipt',async()=>{
+ const f=fixture();await f.api.candidates(post({name:'Name',email:'a@example.invalid'}))
+ const requestId=randomUUID();const result=await f.api.resolve(post({...create(),source:{type:'quote_request',id:requestId,expectedCrmRevision:0,expectedSourceRevision:1}}))
+ assert.equal(result.status,200);assert.deepEqual(f.permissions,['operations.read','operations.write'])
+ assert.equal(f.calls[1].args.source && (f.calls[1].args.source as {id:string}).id,requestId)
+ const api=createCustomerApi({authorize:async()=>actor,baseUrl:()=>base,store:{command:async<T>()=>({outcome:'needs_review',candidates:[{customer:{id:randomUUID()},matchedBy:['email']}]}) as T}})
+ const review=await api.create(post(create()));assert.equal(review.status,409);const body=await review.json();assert.equal(body.code,'needs_review');assert.equal(body.candidates.length,1)
+})
+test('R2 property and customer mutation paths bind IDs, metadata and staff actor; invalid source CAS is rejected',async()=>{
+ const f=fixture(),id=randomUUID(),propertyId=randomUUID(),metadata={expectedRevision:2,reason:'Reviewed edit',idempotencyKey:randomUUID()}
+ assert.equal((await f.api.archive(post(metadata),id)).status,200)
+ assert.equal((await f.api.restore(post({...metadata,decision:{kind:'different_person',reason:'Distinct identity reviewed',reviewedCandidates:[]}}),id)).status,200)
+ const property={label:'Site',address:{line1:'10 Test',unit:'1',suburb:'Sydney',state:'NSW',postcode:'2000'},...metadata}
+ assert.equal((await f.api.property(post(property),id,propertyId,'property_update')).status,200)
+ assert.equal(f.calls[2].args.propertyId,propertyId);assert.equal(f.calls[2].args.actorUserId,actor.userId)
+ for(const source of [{type:'quote_request',id,expectedCrmRevision:0},{type:'quote_request',id,expectedCrmRevision:-1,expectedSourceRevision:1},{type:'quote_request',id,expectedCrmRevision:0,expectedSourceRevision:0}]) assert.equal((await f.api.resolve(post({...create(),source}))).status,400)
+ assert.equal((await f.api.property(post({...property,address:'unstructured'}),id,propertyId,'property_update')).status,400)
+})
+test('R2 bounded resolve body accepts meaningful combined inputs, exact byte boundary and rejects malformed Unicode',async()=>{
+ const f=fixture(),payload={...create(),property:{label:'Site',address:{line1:'10 Test',unit:'1',suburb:'Sydney',state:'NSW',postcode:'2000'},notes:'n'.repeat(2000)},decision:{kind:'different_person',reason:'Shared contact reviewed',reviewedCandidates:Array.from({length:100},()=>({id:randomUUID(),revision:1}))}}
+ assert.equal((await f.api.resolve(post(payload))).status,200)
+ const raw=JSON.stringify(create()),make=(bytes:number)=>new Request(base+'/api/admin/customers',{method:'POST',headers:{origin:base,'content-type':'application/json'},body:raw+' '.repeat(bytes-Buffer.byteLength(raw))})
+ assert.equal((await f.api.create(make(16384))).status,201);assert.equal((await f.api.create(make(16385))).status,413)
+ assert.equal((await f.api.create(post({...create(),name:'bad\ud800'}))).status,400)
 })

@@ -1,0 +1,73 @@
+.ems-root .admin-workspace { display: grid; grid-template-columns: var(--ems-sidebar) minmax(0,1fr); min-height: 100svh; }
+.ems-root .admin-sidebar { position: sticky; top: 0; height: 100svh; overflow-y: auto; display: flex; flex-direction: column; gap: 1.5rem; border-right: 1px solid var(--ems-line); background: var(--ems-surface); padding: 1.5rem .875rem 1rem; }
+.ems-root .admin-brand { display: flex; align-items: center; gap: .625rem; padding: 0 .5rem; text-decoration: none; color: var(--ems-ink); }
+.ems-root .admin-brand strong { font-size: 1.0625rem; font-weight: 800; letter-spacing: -.04em; }
+.ems-root .admin-brand small { display: block; margin-top: .125rem; font-size: .75rem; color: var(--ems-muted); }
+.ems-root .admin-monogram { width: 2.5rem; height: 2.5rem; display: grid; place-items: center; border-radius: .75rem; background: var(--ems-action); color: var(--ems-on-action); font-weight: 800; letter-spacing: -.06em; }
+.ems-root .admin-nav-group + .admin-nav-group { margin-top: 1.25rem; }
+.ems-root .admin-nav-label { margin: 0 .75rem .5rem; font-size: .6875rem; text-transform: uppercase; letter-spacing: .1em; font-weight: 700; color: var(--ems-muted); }
+.ems-root .admin-nav-list { display: grid; gap: .25rem; list-style: none; padding: 0; margin: 0; }
+.ems-root .admin-nav-list a { display: flex; align-items: center; gap: .625rem; min-height: 2.75rem; padding: .625rem .75rem; border-radius: .5rem; color: var(--ems-muted); text-decoration: none; font-size: .875rem; font-weight: 650; }
+.ems-root .admin-nav-list a[aria-current=page] { background: var(--ems-action); color: var(--ems-on-action); }
+.ems-root .admin-nav-tag { margin-left: auto; padding: .0625rem .3125rem; border: 1px solid currentColor; border-radius: .25rem; font-size: .625rem; font-weight: 500; }
+.ems-root .admin-sidebar-foot { display: flex; gap: .625rem; align-items: flex-start; margin-top: auto; padding: 1rem .5rem 0; border-top: 1px solid var(--ems-line); color: var(--ems-muted); font-size: .75rem; }
+.ems-root .admin-sidebar-foot p { margin: .125rem 0 0; }
+.ems-root .admin-workspace-body { min-width: 0; }
+.ems-root .admin-topbar { min-height: 4rem; padding: .625rem 1.75rem; display: flex; align-items: center; justify-content: space-between; gap: .75rem; background: var(--ems-surface); border-bottom: 1px solid var(--ems-line); }
+.ems-root .admin-breadcrumb { display: flex; align-items: center; gap: .625rem; min-width: 0; font-size: .8125rem; color: var(--ems-muted); }
+.ems-root .admin-breadcrumb ol { list-style: none; padding: 0; margin: 0; display: flex; align-items: center; gap: .625rem; flex-wrap: wrap; }
+.ems-root .admin-breadcrumb li { display: flex; align-items: center; gap: .625rem; }
+.ems-root .admin-breadcrumb a { color: inherit; text-decoration: none; }
+.ems-root .admin-breadcrumb [aria-current=page] { color: var(--ems-ink); font-weight: 700; }
+.ems-root .admin-menu-button { display: none; }
+.ems-root .admin-main { min-width: 0; max-width: 100rem; margin-inline: auto; padding: 1.75rem; background: transparent; min-height: 0; }
+.ems-root .ems-page-header { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
+.ems-root .ems-page-header h1 { margin: 0 0 .375rem; font-size: var(--ems-title); line-height: 1.2; font-weight: 750; letter-spacing: -.035em; }
+.ems-root .ems-page-header > div > p:last-child { max-width: 72ch; margin: 0; color: var(--ems-muted); font-size: .875rem; }
+.ems-root .ems-eyebrow, .ems-root .admin-eyebrow { margin: 0 0 .375rem; text-transform: uppercase; letter-spacing: .09em; font-size: .6875rem; font-weight: 700; color: var(--ems-muted); }
+.ems-root .admin-private-label { display: flex; align-items: center; gap: .375rem; white-space: nowrap; color: var(--ems-muted); font-size: .75rem; }
+.ems-root .ems-toolbar { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: .75rem; margin-bottom: 1rem; }
+.ems-root .ems-toolbar .ems-field { flex: 1 1 12rem; }
+.ems-root .ems-toolbar .ems-field:first-child { flex-grow: 2; }
+.ems-root .ems-actions, .ems-root .ems-record-actions { display: flex; align-items: center; gap: .625rem; flex-wrap: wrap; }
+.ems-root .ems-detail-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 1rem; }
+.ems-root .ems-detail-grid > * { min-width: 0; }
+.ems-root .ems-summary { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,12rem),1fr)); gap: 1rem; margin: 0 0 1rem; }
+.ems-root .ems-summary dt { font-size: var(--ems-small); color: var(--ems-muted); }
+.ems-root .ems-summary dd { margin: .25rem 0 0; font-weight: 600; overflow-wrap: anywhere; }
+.ems-root .admin-overview { display: grid; gap: 1.5rem; }
+.ems-root .admin-overview-intro { display: grid; grid-template-columns: minmax(0,1.6fr) minmax(0,.8fr); gap: 1.5rem; align-items: center; border: 1px solid var(--ems-line); border-radius: var(--ems-radius); padding: 1.5rem; background: var(--ems-surface); }
+.ems-root .admin-overview-intro h2 { margin: .5rem 0 .75rem; max-width: 28ch; font-size: 1.5rem; font-weight: 750; line-height: 1.3; letter-spacing: -.03em; }
+.ems-root .admin-overview-intro p { max-width: 62ch; margin: 0 0 1.25rem; color: var(--ems-muted); }
+.ems-root .admin-intro-mark { display: flex; flex-direction: column; align-items: center; gap: .875rem; color: var(--ems-muted); font-size: var(--ems-small); }
+.ems-root .admin-section-heading { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: .75rem; }
+.ems-root .admin-section-heading h2, .ems-root .admin-section-title { font-size: 1.0625rem; font-weight: 750; margin: 0; }
+.ems-root .admin-section-heading > span { color: var(--ems-muted); font-size: var(--ems-small); }
+.ems-root .admin-shortcuts { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: .875rem; }
+.ems-root .admin-shortcut { display: flex; flex-direction: column; align-items: start; gap: .75rem; border: 1px solid var(--ems-line); border-radius: var(--ems-radius); padding: 1.25rem; background: var(--ems-surface); color: var(--ems-ink); text-decoration: none; min-width: 0; }
+.ems-root .admin-shortcut h3 { margin: 0; font-size: .9375rem; font-weight: 750; }
+.ems-root .admin-shortcut p { margin: 0 0 .5rem; font-size: var(--ems-small); color: var(--ems-muted); }
+.ems-root .admin-shortcut-icon { display: grid; place-items: center; width: 2.5rem; height: 2.5rem; border: 1px solid var(--ems-line); border-radius: .625rem; }
+.ems-root .admin-shortcut-link { display: flex; align-items: center; justify-content: space-between; width: 100%; gap: .5rem; margin-top: auto; font-size: .75rem; font-weight: 700; }
+.ems-root .admin-overview-bottom { display: grid; grid-template-columns: 1.4fr 1fr; gap: 1rem; }
+.ems-root .admin-preparation { display: flex; flex-direction: column; align-items: start; gap: 1rem; max-width: 52rem; }
+.ems-root .admin-preparation h2 { margin: 0; font-size: 1.5rem; }
+.ems-root .admin-settings { display: grid; gap: 1.5rem; }
+.ems-root .admin-section-title { margin-bottom: 1rem; }
+/* Existing operation screens keep their own component styling while they migrate. */
+.ems-root .ems-legacy { margin-top: 1.25rem; border: 1px solid var(--ems-line); border-radius: var(--ems-radius); padding: 1rem; }
+.ems-root .ems-legacy > summary { min-height: 2.75rem; display: flex; align-items: center; cursor: pointer; font-weight: 650; }
+.ems-root .operations-shell { max-width: none; padding: 0; }
+.ems-root .operations-embedded { background: transparent; min-height: 0; }
+.ems-root .operations-enquiries { grid-template-columns: minmax(14rem,.4fr) minmax(0,1fr); }
+@media (max-width: 1180px) { .ems-root { --ems-sidebar: 13rem; } .ems-root .admin-shortcuts { grid-template-columns: repeat(2,minmax(0,1fr)); } .ems-root .admin-private-label { display: none; } }
+@media (max-width: 900px) { .ems-root .admin-workspace { grid-template-columns: minmax(0,1fr); } .ems-root .admin-sidebar { display: none; } .ems-root .admin-menu-button { display: inline-flex; } .ems-root .admin-topbar { padding-inline: 1.25rem; } .ems-root .admin-main { padding: 1.5rem 1.25rem; } .ems-root .operations-enquiries { grid-template-columns: minmax(0,1fr); } }
+@media (max-width: 600px) { .ems-root .admin-main { padding: 1.25rem .875rem 2rem; } .ems-root .admin-topbar { padding-inline: .875rem; } .ems-root .admin-breadcrumb li:first-child { display: none; } .ems-root .admin-account-label { display: none; } .ems-root .ems-page-header { align-items: start; } .ems-root .ems-detail-grid, .ems-root .admin-overview-bottom, .ems-root .admin-overview-intro { grid-template-columns: minmax(0,1fr); } .ems-root .admin-intro-mark { display: none; } .ems-root .admin-shortcuts { gap: .625rem; } .ems-root .admin-shortcut { padding: 1rem; } .ems-root .admin-section-heading > span { display: none; } }
+@media (max-width: 360px) { .ems-root .admin-shortcuts { grid-template-columns: minmax(0,1fr); } }
+
+.ems-root .ems-detail-page { display: grid; gap: 1rem; min-width: 0; }
+.ems-root .ems-section-heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem 1rem; }
+.ems-root .ems-section-heading > div { min-width: 0; }
+.ems-root .ems-section-heading h2 { margin: 0; font-size: 1.125rem; line-height: 1.35; font-weight: 750; }
+.ems-root .ems-back-link { display: inline-flex; align-items: center; justify-self: start; gap: .5rem; min-height: 3rem; padding: .5rem 0; color: var(--ems-ink); font-size: .875rem; font-weight: 700; text-underline-offset: .2em; overflow-wrap: anywhere; }
+.ems-root .ems-muted { color: var(--ems-muted); }
