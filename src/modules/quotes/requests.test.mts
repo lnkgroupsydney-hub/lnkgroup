@@ -114,6 +114,7 @@ test('request review requires saved service, has one receipt, and freezes custom
 test('storage consent and validation reject invalid details; client price/approval/actor fields are discarded', async () => {
   const cookie = await session()
   for (const invalid of [{ ...input(), storageConsent: false }, input(0, { contact: { ...contact, consent: false }, service: null }), input(0, { contact, service: { ...service, doorCount: -1 } }), { ...input(), expectedRevision: -1 }]) assert.equal((await api.save(request('PUT', cookie, invalid))).status, 400)
+  for (const changed of [{email:'a..b@example.com'}, {phone:'call me'}, {name:'12345'}, {siteAddress:'<b>Road</b>'}, {suburb:'Sydney\nOther'}]) assert.equal((await api.save(request('PUT',cookie,input(0,{contact:{...contact,...changed},service:null})))).status,400)
   const saved = await save(cookie, { ...input(0, { contact, service, price: 1, approved: true, signature: 'forged' }), actorUserId: actor.userId } as ReturnType<typeof input>)
   assert.deepEqual(Object.keys(saved.payload).sort(), ['contact','service']); assert.equal(saved.status, 'draft')
   assert.equal((await api.save(request('PUT', cookie, '{}', '/api/quote/requests', { 'content-length': '16001' }))).status, 413)

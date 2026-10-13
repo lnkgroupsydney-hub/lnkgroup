@@ -9,6 +9,7 @@ import {
   type AddressSuggestion,
 } from "@/shared/address";
 import "./address-autocomplete-input.css";
+import { ValidatedInput } from './validated-input';
 
 type Props = Omit<InputHTMLAttributes<HTMLInputElement>, "value" | "defaultValue"> & {
   value: string;
@@ -16,6 +17,10 @@ type Props = Omit<InputHTMLAttributes<HTMLInputElement>, "value" | "defaultValue
   /** All related address fields, so a late result cannot overwrite another edit. */
   addressContext: string;
   onAddressSelect: (address: AddressSelection, kind: AddressKind) => void;
+  /** A single-field customer record needs different confirmation from split fields. */
+  selectionMessage?: string;
+  validationLabel?: string;
+  requireLetter?: boolean;
 };
 type SearchState = {
   phase: "idle" | "waiting" | "loading" | "results" | "selecting" | "message";
@@ -29,7 +34,7 @@ const EMPTY: SearchState = { phase: "idle", query: "", context: "", suggestions:
 const UNAVAILABLE = "Address suggestions are unavailable. Enter your address manually.";
 
 export function AddressAutocompleteInput({
-  value, kind, addressContext, onAddressSelect, id, disabled, readOnly, autoComplete,
+  value, kind, addressContext, onAddressSelect, selectionMessage, validationLabel, requireLetter = kind !== 'postcode', id, disabled, readOnly, autoComplete,
   onChange, onFocus, onBlur, onKeyDown, onCompositionStart, onCompositionEnd,
   "aria-describedby": describedBy, ...inputProps
 }: Props) {
@@ -124,7 +129,7 @@ export function AddressAutocompleteInput({
       const selection = await session.select(suggestion.id);
       if (!stillCurrent(generation, query, context)) return;
       onAddressSelect(selection, kind);
-      setSearch({ ...EMPTY, phase: "message", message: "Address details updated. Check the street, suburb and postcode; enter any missing details and unit or apartment number." });
+      setSearch({ ...EMPTY, phase: "message", message: selectionMessage ?? "Address details updated. Check the street, suburb and postcode; enter any missing details and unit or apartment number." });
     } catch {
       if (stillCurrent(generation, query, context)) setSearch({ ...EMPTY, phase: "message", query, context, message: UNAVAILABLE });
     } finally {
@@ -138,12 +143,16 @@ export function AddressAutocompleteInput({
   const message = !configured && focused ? UNAVAILABLE
     : matchingSearch && search.phase === "loading" ? "Searching addresses…"
     : matchingSearch && search.phase === "selecting" ? "Loading selected address…"
-    : search.message && (matchingSearch || !search.query) ? search.message : "";
+    : search.message && (matchingSearch || !search.query) ? search.message
+    : focused && configured ? "Type to search Google Maps. Search text is sent to Google; you can also enter the address manually." : "";
 
   return <div className="address-autocomplete">
     <div className="address-autocomplete-control">
-    <input
+    <ValidatedInput
       {...inputProps}
+      validation={kind === 'postcode' ? 'postcode' : 'text'}
+      validationLabel={validationLabel ?? (kind === 'street' ? 'the site address' : kind === 'suburb' ? 'the suburb' : 'the postcode')}
+      requireLetter={requireLetter}
       ref={inputRef}
       id={inputId}
       value={value}

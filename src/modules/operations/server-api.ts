@@ -1,4 +1,5 @@
 import { createHash, randomUUID } from 'node:crypto'
+import { isValidText } from '../../shared/validation/input.ts'
 import { AppError, validateEnquiry, validateSchedule } from './domain/validation.ts'
 import { acquireSyncLease, getDb, localEnabled, releaseSyncLease, renewSyncLease } from './infrastructure/local-db.ts'
 import { clearOauthCookie, clearSessionCookie, createSession, destroySession, finishGoogleOAuth, getAuthorizedGoogleAccessToken, googleConfigured, requireSession, sessionInfo, startGoogleOAuth, verifyLocalPassword } from './infrastructure/auth.ts'
@@ -119,7 +120,7 @@ export const schedulePost = safe(async (req) => {
   const x = await body(req, 3000)
   if (!Number.isInteger(x.expectedRevision) || (x.expectedRevision as number) < 1) throw new AppError(400, 'Invalid revision')
   const dates = validateSchedule(x.startLocal, x.endLocal)
-  if (x.notes !== undefined && (typeof x.notes !== 'string' || x.notes.length > 2000 || /[\u0000-\u0008\u000b\u000c\u000e-\u001f]/.test(x.notes))) throw new AppError(400, 'Invalid notes')
+  if (x.notes !== undefined && !isValidText(x.notes, { maxLength: 2000, multiline: true })) throw new AppError(400, 'Invalid notes')
   const enquiry = scheduleEnquiry(idFrom(req, 'enquiries'), x.expectedRevision as number, dates.startAt, dates.endAt, (x.notes as string || '').trim())
   return json({ enquiry })
 })

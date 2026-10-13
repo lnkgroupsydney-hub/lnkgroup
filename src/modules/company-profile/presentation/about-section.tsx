@@ -35,21 +35,6 @@ export function AboutSection() {
           </ul>
         </div>
       </Container>
-      <Container className="mt-12">
-        <div className="border-t border-border pt-10">
-          <h3 className="max-w-3xl text-2xl leading-8 font-semibold tracking-tight">{companyContent.serviceArea.title}</h3>
-          <p className="mt-4 max-w-3xl text-base leading-7 text-muted">{companyContent.serviceArea.introduction}</p>
-          <div className="mt-7 grid gap-7 md:grid-cols-3">
-            {companyContent.serviceArea.groups.map((group) => (
-              <div key={group.title}>
-                <h4 className="text-base font-semibold">{group.title}</h4>
-                <p className="mt-2 text-sm leading-7 text-muted">{group.suburbs.join(", ")}</p>
-              </div>
-            ))}
-          </div>
-          <p className="mt-6 max-w-3xl text-sm leading-6 text-muted">{companyContent.serviceArea.addressNote}</p>
-        </div>
-      </Container>
     </section>
   );
 }

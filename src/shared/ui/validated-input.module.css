@@ -1,0 +1,2 @@
+.field { display: grid; gap: .35rem; min-width: 0; width: 100%; }
+.error { color: #8f2525; font-size: .8rem; font-weight: 400; line-height: 1.5; overflow-wrap: anywhere; }

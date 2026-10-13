@@ -4,7 +4,7 @@ import { join } from 'node:path'
 import fontkit from '@pdf-lib/fontkit'
 import { PDFDocument, rgb, type PDFPage } from 'pdf-lib'
 import { staffMailSender, type CompanyMailSender } from '../../../shared/email/company-sender.ts'
-import { BOOKING_SIMPLE_ACK_VERSION, isBookingAcknowledgment, validateBookingSignature, type LiveBookingSubmission } from '../domain/booking-flow.ts'
+import { BOOKING_SIMPLE_ACK_VERSION, isBookingAcknowledgment, parseBookingSignature, type LiveBookingSubmission } from '../domain/booking-flow.ts'
 import { validateEstimatePricing } from '../domain/pricing.ts'
 
 export interface LiveBookingEmailPayload extends Record<string, unknown> {
@@ -33,7 +33,7 @@ export function validateReceiptSource(source: LiveBookingSubmission): void {
   } else if (s.preferredTime != null || source.preferredTime != null) throw new Error('A legacy request cannot acquire an unsigned take-off time')
   const pricing = validateEstimatePricing(s.pricing)
   if (pricing.status !== 'provisional_estimate' || pricing.total === null) throw new Error('A frozen provisional estimate is required')
-  validateBookingSignature(source.signature)
+  parseBookingSignature(source.signature)
 }
 
 /** One private, deterministic receipt. The source is the frozen submission, never a current request. */

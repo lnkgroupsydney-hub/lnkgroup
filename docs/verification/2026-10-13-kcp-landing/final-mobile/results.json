@@ -1,0 +1,35 @@
+{
+  "upstream": "http://127.0.0.1:3019",
+  "startedAt": "2026-10-13T02:53:29.277Z",
+  "checks": [
+    {
+      "name": "viewport-390x844",
+      "passed": true,
+      "externalBlocked": [],
+      "apiFixtures": [],
+      "pageErrors": [],
+      "failedLocalResources": [],
+      "consoleWarnings": [],
+      "structure": {
+        "width": 390,
+        "documentWidth": 390,
+        "h1": 1,
+        "duplicateIds": [],
+        "missingFragments": [],
+        "title": "Kitchen Cabinet Painting | L&K Group",
+        "description": "Refresh suitable cabinet doors, drawer fronts and visible panels with L&K Group around Ermington and Inner West Sydney. Explore the process and request a photo-based provisional estimate.",
+        "robots": "noindex, nofollow"
+      },
+      "pageHeight": 12349,
+      "serviceHeight": 1209.625
+    }
+  ],
+  "isolation": "Fresh Playwright contexts; external requests aborted; every /api request fulfilled locally; no DB, API save/submit, company, AI, mail or Google calls.",
+  "limitations": [
+    "Headless Chrome is not a physical device.",
+    "200% text enlargement is simulated by root font-size; native browser zoom and actual 200% device/browser zoom are not certified.",
+    "No frame-rate, bundle-size, search-ranking or formal accessibility certification."
+  ],
+  "finishedAt": "2026-10-13T02:53:30.867Z",
+  "passed": true
+}

@@ -37,6 +37,15 @@ function denied(code:string){return(error:unknown)=>!!error&&typeof error==='obj
 beforeEach(async()=>{await db.exec('reset role');await db.exec(`truncate ${tables.map(table=>`public.${table}`).join(',')}`);await db.exec('set role service_role');now=Date.now();enabled=true;invalid=false;removed=false})
 after(async()=>db.close())
 
+test('malformed new verification email never reaches the provider or creates a challenge',async()=>{
+ let sends=0, commands=0
+ const validationApi=createCustomerAuthApi({store:{command:async<T>():Promise<T>=>{commands++;return null as T}},requests:requestsStore,provider:{...provider,send:async()=>{sends++}},baseUrl:()=>base,legacyUrl:()=>legacy,sessionKey:()=>secret,enabled:()=>true,now:()=>now,guestOwner:()=>null})
+ for(const email of ['a..b@example.com','a@-example.com','a@localhost','김@example.com','a\u0000@example.com']) {
+  assert.equal((await validationApi.send(req('POST','',{email}))).status,400)
+ }
+ assert.equal(sends,0);assert.equal(commands,0)
+})
+
 test('guest capability plus verified matching email links one request; cookies isolate staff and hide bearer secrets',async()=>{
  const {auth,writing,request,state}=await link();assert.equal(state.customer.email,alice.email);assert.equal(state.currentRequestId,request.id);assert.equal(state.requests.length,1)
  assert.ok(!auth.includes(alice.accessToken));assert.ok(!auth.includes(alice.email));assert.match(auth,/^lk_quote_customer_auth=/)

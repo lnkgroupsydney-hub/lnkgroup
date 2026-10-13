@@ -1,5 +1,5 @@
 import { DEMO_PRICE, DEMO_TERMS, DEMO_VERSION, CURRENT_DEMO_VERSION, type DemoSignature, type DemoSnapshot } from '../domain/demo-submission.ts'
-import { validateQuoteDraft } from '../domain/quote-draft.ts'
+import { parseQuoteDraft } from '../domain/quote-draft.ts'
 import { validateQuotePhotoManifest } from '../domain/quote-photos.ts'
 
 export interface DemoDocumentSource {
@@ -29,7 +29,7 @@ function validSource(source: DemoDocumentSource) {
       JSON.stringify(s.terms) !== JSON.stringify(DEMO_TERMS) || !/^[A-Za-z0-9-]{1,80}$/.test(source.reference) ||
       !/^[a-f0-9]{64}$/.test(source.snapshot_hash) || !Number.isFinite(Date.parse(source.submitted_at)) ||
       !/^\d{4}-\d{2}-\d{2}$/.test(s.preferredDate)) throw new Error('Invalid demonstration document source')
-  if (!validateQuoteDraft(s.payload).service) throw new Error('Missing demonstration service')
+  if (!parseQuoteDraft(s.payload).service) throw new Error('Missing demonstration service')
   if (s.version === CURRENT_DEMO_VERSION) validateQuotePhotoManifest(s.photos)
   else if (s.photos !== undefined) throw new Error('Legacy demonstration cannot include new photo evidence')
   const signature = source.signature

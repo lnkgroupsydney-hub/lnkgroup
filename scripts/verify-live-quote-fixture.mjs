@@ -10,11 +10,11 @@ import { createQuoteRequestApi } from '../src/modules/quotes/infrastructure/api.
 import { QuoteRequestError } from '../src/modules/quotes/domain/contracts.ts'
 
 const pages = new Set(['/quote/start', '/admin', '/admin/quotes'])
-const assets = new Set(['/favicon.ico', '/images/lk-group-logo.png'])
+const assets = new Set(['/favicon.ico', '/images/lk-group-logo-circle-transparent.png'])
 const navigationHeaders = ['accept', 'rsc', 'next-router-state-tree', 'next-router-prefetch', 'next-router-segment-prefetch', 'next-url', 'purpose']
 function logo(url) {
   return url.pathname === '/_next/image' && url.searchParams.size === 3
-    && url.searchParams.getAll('url').length === 1 && url.searchParams.get('url') === '/images/lk-group-logo.png'
+    && url.searchParams.getAll('url').length === 1 && url.searchParams.get('url') === '/images/lk-group-logo-circle-transparent.png'
     && url.searchParams.getAll('w').length === 1 && ['96', '128', '256'].includes(url.searchParams.get('w'))
     && url.searchParams.getAll('q').length === 1 && url.searchParams.get('q') === '75'
 }
@@ -59,7 +59,9 @@ export async function createLiveQuoteFixture({ port = 3014, hostname = '127.0.0.
     authorize: async () => { if (flags.staffAccessStatus) throw new QuoteRequestError(flags.staffAccessStatus, 'Synthetic staff access ended.'); return actor } })
   async function control(value) {
     if (value.reset) {
-      await db.exec('reset role; truncate public.lk_quote_acceptances,public.lk_quote_versions,public.lk_terms_versions,public.lk_quote_request_access,public.lk_quote_request_audit,public.lk_quote_requests; set role service_role;')
+      // New media/booking tables also reference requests. This database exists
+      // only in this local synthetic fixture; reset its complete FK graph.
+      await db.exec('reset role; truncate public.lk_quote_acceptances,public.lk_quote_versions,public.lk_terms_versions,public.lk_quote_request_access,public.lk_quote_request_audit,public.lk_quote_requests cascade; set role service_role;')
       calls = []; resetFlags()
     }
     for (const key of ['loseNextSaveResponse', 'conflictNextSave']) if (key in value) flags[key] = value[key] === true

@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto'
+import { isValidEmail } from '../../../shared/validation/input.ts'
 import { AdminAccessError } from '../domain/errors.ts'
 import {
   STAFF_SESSION_MS, requiredIdentity, requiredReadyIdentity, staffRequestClient, staffServiceClient,
@@ -101,7 +102,7 @@ export const staffOperationsSessionGet = authRoute(async (_req, context) => {
 
 export const staffLoginPost = authRoute(async (req, context) => {
   const input = await body(req)
-  if (typeof input.email !== 'string' || input.email.length > 254 || !input.email.trim().includes('@')
+  if (!isValidEmail(input.email)
     || typeof input.password !== 'string' || input.password.length < 1 || input.password.length > 256) throw new InputError(400, 'Enter your email and password.')
   const email = input.email.trim().toLowerCase()
   await rateLimit(`staff-login:${createHash('sha256').update(email).digest('hex')}`, 8, 900_000)

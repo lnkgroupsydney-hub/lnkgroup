@@ -1,0 +1,39 @@
+{
+  "source": "public/images/lk-group-logo-circle-transparent.png",
+  "width": 1254,
+  "height": 1254,
+  "outerCorners": [
+    [
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0
+    ]
+  ],
+  "insideBlackDisc": [
+    0,
+    0,
+    0,
+    254
+  ],
+  "transparentRatio": 0.2625251507774802,
+  "nearOpaqueBlackRatio": 0.5788615187381241
+}

@@ -2,10 +2,11 @@
 
 import dynamic from "next/dynamic";
 import Image from "next/image";
+import { ArrowDown, ArrowDownRight, ArrowUp } from "lucide-react";
 import type { CSSProperties } from "react";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { siteAssets } from "@/shared/config/assets";
-import { cabinetPaintingContent as content } from "../content/cabinet-painting-content";
+import { kitchenChapterProgress } from "@/shared/ui/kitchen-scene/timeline";
 
 const KitchenScene = dynamic(
   () => import("@/shared/ui/kitchen-scene").then((module) => module.KitchenScene),
@@ -15,80 +16,85 @@ const KitchenScene = dynamic(
 const stages = [
   {
     id: "cabinet-process-existing", number: "01", title: "Inspect the existing kitchen", label: "Inspection",
-    detail: "Understand the starting surface",
-    copy: "We assess the cabinet material, existing finish, condition and access, then identify the doors, drawers, frames and panels proposed for painting. Colour, sheen, repairs and exclusions are agreed for the project.",
+    detail: "Material, condition and proposed scope are assessed first.",
+    copy: "We inspect the existing cabinets and identify the doors, drawers, frames and panels proposed for painting.",
     image: siteAssets.frontStoryExisting,
   },
   {
     id: "cabinet-process-remove", number: "02", title: "Remove doors and hardware", label: "Removal",
-    detail: "Keep each part accounted for",
-    copy: "Cabinet doors are removed for spray painting and drying in a separate booth. Drawer fronts, handles, hinges, labelling and refitting are discussed as part of the agreed scope; fixed surfaces are assessed separately.",
+    detail: "Labelling, hardware and refitting are agreed in the scope.",
+    copy: "Removable doors are taken off for spray painting and drying in a separate booth.",
     image: siteAssets.frontStoryRemoved,
   },
   {
     id: "cabinet-process-clean", number: "03", title: "Clean before coating", label: "Cleaning",
-    detail: "Remove residues that affect adhesion",
-    copy: "Kitchen surfaces can hold grease and everyday residue. Cleaning and degreasing form part of preparation where required by the assessed material and selected coating system.",
+    detail: "Cleaning depends on the surface and coating system.",
+    copy: "Grease and everyday residues are cleaned away where needed to support adhesion.",
     image: siteAssets.cinematicCleaning,
   },
   {
     id: "cabinet-process-prepare", number: "04", title: "Prepare and repair", label: "Surface preparation",
-    detail: "Create a sound base",
-    copy: "Suitable surfaces may be sanded and small chips or dents patched under the agreed preparation scope. Lifting coverings, swelling or underlying damage need separate assessment and may call for another approach.",
+    detail: "Lifting coverings or underlying damage need separate assessment.",
+    copy: "Suitable surfaces are sanded and small chips or dents patched under the agreed preparation scope.",
     image: siteAssets.frontStoryPrepared,
   },
   {
     id: "cabinet-process-mask", number: "05", title: "Protect the surroundings", label: "Masking",
-    detail: "Define the work area",
-    copy: "Adjacent benchtops, walls, floors and appliances are protected as needed for the agreed work. Any fixed frames or panels to be coated are identified before work begins.",
+    detail: "Fixed frames and panels to be coated are identified first.",
+    copy: "Nearby benchtops, walls, floors and appliances are protected for the agreed work.",
     image: siteAssets.cinematicMasking,
   },
   {
     id: "cabinet-process-undercoat", number: "06", title: "Build the foundation", label: "Primer / undercoat",
-    detail: "Surface → preparation → base coat",
-    copy: "A compatible primer or undercoat may form the base for the selected finish. The actual product and method depend on the cabinet surface, its existing coating and manufacturer instructions.",
+    detail: "The compatible system follows manufacturer instructions.",
+    copy: "A compatible primer or undercoat builds the base for the selected finish where required.",
     image: siteAssets.storyUndercoat,
   },
   {
     id: "cabinet-process-finish", number: "07", title: "Apply the finish", label: "Finish coats",
-    detail: "Colour and sheen take shape",
-    copy: "L&K uses Dulux Aqua Enamel and spray-paints removable cabinet doors in a separate booth. The exact product, number of coats, colour, sheen and treatment of fixed surfaces are confirmed for your kitchen.",
+    detail: "Actual product, coat count, colour and sheen are agreed.",
+    copy: "The illustration shows two finish-coat passes over the same prepared doors.",
     image: siteAssets.frontStoryCoatTwo,
   },
   {
     id: "cabinet-process-cure", number: "08", title: "Allow time to dry", label: "Drying & curing",
-    detail: "Care continues after application",
-    copy: "Drying between stages and full curing are different. L&K generally allows 3–7 days for work and drying, and recommends careful use for 7 days after reinstallation. Your schedule and care instructions depend on the project.",
+    detail: "Work generally takes 3–7 days, with careful use for 7 days after refitting.",
+    copy: "The finish dries between stages, while full curing and care continue after application.",
     image: siteAssets.frontStoryCoatTwo,
   },
   {
     id: "cabinet-process-reassemble", number: "09", title: "Reassemble and check", label: "Reassembly",
-    detail: "Bring the kitchen back together",
-    copy: "When the finish is ready, the agreed doors and hardware are refitted. Alignment, operation and painted surfaces are reviewed against the agreed scope.",
+    detail: "Alignment, operation and finish are reviewed against the scope.",
+    copy: "Once the finish is ready, the agreed doors and hardware are refitted and checked.",
     image: siteAssets.frontStoryFinished,
   },
   {
     id: "cabinet-process-complete", number: "09", title: "The same kitchen, refreshed", label: "Finished kitchen",
-    detail: "Existing layout, new finish direction",
-    copy: "The original kitchen layout remains. This generated concept illustrates how a new cabinet finish could change its character; the actual result depends on the surfaces, colour and work agreed for your home.",
+    detail: "Generated concept; the result depends on your agreed project.",
+    copy: "The existing layout stays in place as a new finish changes the kitchen’s character.",
     image: siteAssets.frontStoryFinished,
   },
 ] as const;
 
 function interpolateProgress(nodes: HTMLElement[], viewportHeight: number) {
-  const target = viewportHeight * 0.52;
   const centres = nodes.map((node) => {
     const rect = node.getBoundingClientRect();
     return rect.top + rect.height / 2;
   });
-  if (target <= centres[0]) return 0;
-  for (let index = 0; index < centres.length - 1; index += 1) {
-    if (target <= centres[index + 1]) {
-      const span = centres[index + 1] - centres[index];
-      return index + (span > 0 ? (target - centres[index]) / span : 0);
-    }
-  }
-  return centres.length - 1;
+  return kitchenChapterProgress(centres, viewportHeight / 2);
+}
+
+function chapterIndexFromHash(hash: string) {
+  return stages.findIndex((stage) => `#${stage.id}` === hash);
+}
+
+function nearestChapter(nodes: (HTMLElement | null)[]) {
+  return nodes.reduce((best, node, index) => {
+    if (!node) return best;
+    const bounds = node.getBoundingClientRect();
+    const distance = Math.abs(bounds.top + bounds.height / 2 - window.innerHeight / 2);
+    return distance <= best.distance ? { index, distance } : best;
+  }, { index: 0, distance: Number.POSITIVE_INFINITY }).index;
 }
 
 function alignChapterToViewport(chapter: HTMLElement) {
@@ -97,16 +103,21 @@ function alignChapterToViewport(chapter: HTMLElement) {
   window.scrollTo({ top: Math.max(0, top), behavior: "instant" });
 }
 
-export function CabinetCinematicStory() {
+type CabinetCinematicStoryProps = {
+  process: { title: string; introduction: string; confirmations: readonly string[] };
+};
+
+export function CabinetCinematicStory({ process }: CabinetCinematicStoryProps) {
   const rootRef = useRef<HTMLElement>(null);
   const chaptersRef = useRef<(HTMLElement | null)[]>([]);
-  const pendingChapterRef = useRef<{ index: number; staticMode: boolean } | null>(null);
+  const pendingChapterRef = useRef<{ index: number; staticMode: boolean; focus: boolean } | null>(null);
   const staticReadingRef = useRef(0);
   const toolbarFocusedRef = useRef(false);
   const activeRef = useRef(0);
   const staticModeRef = useRef(false);
   const eligibleRef = useRef(false);
   const initialHashRestoredRef = useRef(false);
+  const readyFrameRef = useRef(0);
   const [eligible, setEligible] = useState(false);
   const [staticMode, setStaticMode] = useState(false);
   const [inView, setInView] = useState(false);
@@ -119,30 +130,71 @@ export function CabinetCinematicStory() {
   useLayoutEffect(() => {
     const pending = pendingChapterRef.current;
     if (!pending || pending.staticMode !== staticMode) return;
+    toolbarFocusedRef.current = false;
     const chapter = chaptersRef.current[pending.index];
     if (!chapter) return;
     alignChapterToViewport(chapter);
     const frame = requestAnimationFrame(() => {
       alignChapterToViewport(chapter);
-      chapter.focus({ preventScroll: true });
+      if (pending.focus) chapter.focus({ preventScroll: true });
       pendingChapterRef.current = null;
     });
     return () => cancelAnimationFrame(frame);
   }, [staticMode, eligible, unavailable]);
 
   useLayoutEffect(() => {
-    if (!enhanced || initialHashRestoredRef.current) return;
+    if (initialHashRestoredRef.current) return;
     initialHashRestoredRef.current = true;
     if (pendingChapterRef.current) return;
-    const hash = window.location.hash.slice(1);
-    const index = stages.findIndex((stage) => stage.id === hash);
+    const index = chapterIndexFromHash(window.location.hash);
     const chapter = chaptersRef.current[index];
     if (index < 0 || !chapter) return;
     activeRef.current = index;
+    staticReadingRef.current = index;
+    setActive(index);
+    setProgress(Math.min(9, index + 0.5));
     alignChapterToViewport(chapter);
     const frame = requestAnimationFrame(() => alignChapterToViewport(chapter));
     return () => cancelAnimationFrame(frame);
   }, [enhanced]);
+
+  useEffect(() => {
+    let frame = 0;
+    const align = (index: number) => {
+      if (frame) cancelAnimationFrame(frame);
+      frame = 0;
+      const chapter = chaptersRef.current[index];
+      if (!chapter) return;
+      // Let the browser perform its native hash/history change first. We only
+      // align the same target to the reading centre; scrolling never writes URL.
+      frame = requestAnimationFrame(() => {
+        frame = 0;
+        alignChapterToViewport(chapter);
+        activeRef.current = index;
+        staticReadingRef.current = index;
+        setActive(index);
+        setProgress(Math.min(9, index + 0.5));
+        chapter.focus({ preventScroll: true });
+      });
+    };
+    const hashChange = () => align(chapterIndexFromHash(window.location.hash));
+    const click = (event: MouseEvent) => {
+      if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      const link = event.target instanceof Element ? event.target.closest("a[href]") : null;
+      if (!(link instanceof HTMLAnchorElement) || link.hasAttribute("download") || (link.target && link.target !== "_self")) return;
+      const url = new URL(link.href, window.location.href);
+      if (url.origin !== window.location.origin || url.pathname !== window.location.pathname || url.search !== window.location.search) return;
+      // A second click on the current hash doesn't emit hashchange.
+      align(chapterIndexFromHash(url.hash));
+    };
+    window.addEventListener("hashchange", hashChange);
+    document.addEventListener("click", click);
+    return () => {
+      window.removeEventListener("hashchange", hashChange);
+      document.removeEventListener("click", click);
+      if (frame) cancelAnimationFrame(frame);
+    };
+  }, []);
 
   useEffect(() => {
     const query = window.matchMedia("(min-width: 1024px) and (min-height: 700px) and (prefers-reduced-motion: no-preference)");
@@ -152,14 +204,21 @@ export function CabinetCinematicStory() {
       const chapterVisible = chaptersRef.current.some((chapter) => {
         if (!chapter) return false;
         const rect = chapter.getBoundingClientRect();
-        return rect.bottom > 0 && rect.top < window.innerHeight;
+        return rect.top <= window.innerHeight / 2 && rect.bottom >= window.innerHeight / 2;
       });
       if (initialized && next !== eligibleRef.current && chapterVisible) {
+        // matchMedia fires after CSS has changed the chapter geometry. Keep the
+        // step recorded in the previous layout instead of measuring that jump.
         const index = eligibleRef.current && !staticModeRef.current ? activeRef.current : staticReadingRef.current;
-        pendingChapterRef.current = { index, staticMode: staticModeRef.current };
+        pendingChapterRef.current = { index, staticMode: staticModeRef.current, focus: !!rootRef.current?.contains(document.activeElement) };
+        staticReadingRef.current = index;
         activeRef.current = index;
         setActive(index);
-        setProgress(Math.min(9, index + 0.4));
+        setProgress(Math.min(9, index + 0.5));
+      }
+      if (!initialized && next) {
+        const index = chapterIndexFromHash(window.location.hash);
+        if (index >= 0) pendingChapterRef.current = { index, staticMode: false, focus: false };
       }
       eligibleRef.current = next;
       setEligible(next);
@@ -191,8 +250,8 @@ export function CabinetCinematicStory() {
       if (bounds.bottom < 0 || bounds.top > window.innerHeight) return;
       const nodes = chaptersRef.current.filter((node): node is HTMLElement => node !== null);
       if (nodes.length !== stages.length) return;
-      const next = Math.min(9, Math.max(0, interpolateProgress(nodes, window.innerHeight) + 0.4));
-      setProgress((previous) => Math.abs(previous - next) > 0.006 ? next : previous);
+      const next = interpolateProgress(nodes, window.innerHeight);
+      setProgress(next);
       const index = Math.min(9, Math.max(0, Math.floor(next)));
       activeRef.current = index;
       setActive(index);
@@ -225,6 +284,7 @@ export function CabinetCinematicStory() {
       if (visibleIndex >= 0) staticReadingRef.current = visibleIndex;
     };
     const schedule = () => { if (!frame) frame = requestAnimationFrame(update); };
+    schedule();
     window.addEventListener("scroll", schedule, { passive: true });
     window.addEventListener("resize", schedule);
     return () => {
@@ -234,10 +294,29 @@ export function CabinetCinematicStory() {
     };
   }, [enhanced]);
 
-  const handleReady = useCallback(() => { setReady(true); setUnavailable(false); }, []);
+  useEffect(() => () => {
+    if (readyFrameRef.current) cancelAnimationFrame(readyFrameRef.current);
+    readyFrameRef.current = 0;
+  }, [enhanced, inView]);
+
+  const handleReady = useCallback(() => {
+    if (readyFrameRef.current) cancelAnimationFrame(readyFrameRef.current);
+    // The engine has rendered successfully. Keep the transparent canvas mounted
+    // for a paint before switching both layers, so the transition can interpolate.
+    readyFrameRef.current = requestAnimationFrame(() => {
+      readyFrameRef.current = 0;
+      setReady(true);
+    });
+  }, []);
   const handleUnavailable = useCallback(() => {
     const index = activeRef.current;
-    pendingChapterRef.current = { index, staticMode: true };
+    const bounds = chaptersRef.current[index]?.getBoundingClientRect();
+    // Preloading can fail while the introduction or preceding section is being
+    // read. Only restore a chapter when it actually contains the reading point.
+    const readingChapter = bounds && bounds.top <= window.innerHeight / 2 && bounds.bottom >= window.innerHeight / 2;
+    pendingChapterRef.current = readingChapter ? { index, staticMode: true, focus: !!rootRef.current?.contains(document.activeElement) } : null;
+    if (readyFrameRef.current) cancelAnimationFrame(readyFrameRef.current);
+    readyFrameRef.current = 0;
     staticReadingRef.current = index;
     staticModeRef.current = true;
     setUnavailable(true);
@@ -246,42 +325,41 @@ export function CabinetCinematicStory() {
   }, []);
   const current = stages[active];
   const switchView = (nextStatic: boolean) => {
-    const measuredIndex = chaptersRef.current.reduce((best, node, index) => {
-      if (!node) return best;
-      const bounds = node.getBoundingClientRect();
-      const distance = Math.abs(bounds.top + bounds.height / 2 - window.innerHeight * 0.5);
-      return distance < best.distance ? { index, distance } : best;
-    }, { index: active, distance: Number.POSITIVE_INFINITY }).index;
+    const measuredIndex = nearestChapter(chaptersRef.current);
     const readingIndex = nextStatic ? measuredIndex : staticReadingRef.current;
+    // The focused toolbar button may unmount without blur. Release its reading
+    // lock explicitly so the next static visit can track a different chapter.
+    toolbarFocusedRef.current = false;
     if (nextStatic) staticReadingRef.current = readingIndex;
-    pendingChapterRef.current = { index: readingIndex, staticMode: nextStatic };
-    if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+    pendingChapterRef.current = { index: readingIndex, staticMode: nextStatic, focus: true };
     activeRef.current = readingIndex;
     staticModeRef.current = nextStatic;
     setActive(readingIndex);
-    setProgress(Math.min(9, readingIndex + 0.4));
+    setProgress(Math.min(9, readingIndex + 0.5));
     setReady(false);
     setStaticMode(nextStatic);
   };
+
+  const sceneReady = ready && enhanced && inView && !unavailable;
 
   return (
     <section id="cabinet-process" ref={rootRef} className="kcp-story" data-enhanced={enhanced} aria-labelledby="cabinet-process-title">
       <div className="kcp-wrap kcp-story-intro">
         <p className="kcp-kicker">The transformation / 01—09</p>
-        <h2 id="cabinet-process-title">Every finish begins long before the colour.</h2>
-        <p>{content.process.introduction}</p>
+        <h2 id="cabinet-process-title">{process.title}</h2>
+        <p>{process.introduction}</p>
         <div className="kcp-story-intro-actions">
-          <a href="#cabinet-process-existing" className="kcp-link">Explore the process <span aria-hidden="true">↘</span></a>
-          <a href="#cabinet-transformation" className="kcp-link">Skip the story <span aria-hidden="true">↓</span></a>
+          <a href="#cabinet-process-existing" className="kcp-link"><span>Explore the process</span> <ArrowDownRight size={16} aria-hidden="true" /></a>
+          <a href="#cabinet-transformation" className="kcp-link"><span>Skip the story</span> <ArrowDown size={16} aria-hidden="true" /></a>
         </div>
         <p className="kcp-small">Illustrative process and generated imagery. The exact preparation and coating system is confirmed for your cabinets.</p>
       </div>
-      {staticMode && eligible ? <div className="kcp-static-toolbar"><div className="kcp-wrap"><span>{unavailable ? "3D unavailable — static process view" : "Static process view"}</span>{!unavailable ? <button type="button" onFocus={() => { toolbarFocusedRef.current = true; }} onBlur={() => { toolbarFocusedRef.current = false; }} onPointerDown={() => { toolbarFocusedRef.current = true; }} onKeyDown={() => { toolbarFocusedRef.current = true; }} onClick={() => switchView(false)}>Return to 3D story ↑</button> : null}</div></div> : null}
+      {staticMode && eligible ? <div className="kcp-static-toolbar"><div className="kcp-wrap"><span>{unavailable ? "3D unavailable — static process view" : "Static process view"}</span>{!unavailable ? <button type="button" onFocus={() => { toolbarFocusedRef.current = true; }} onBlur={() => { toolbarFocusedRef.current = false; }} onPointerDown={() => { toolbarFocusedRef.current = true; }} onKeyDown={() => { toolbarFocusedRef.current = true; }} onClick={() => switchView(false)} className="kcp-link"><span>Return to 3D story</span> <ArrowUp size={16} aria-hidden="true" /></button> : null}</div></div> : null}
       <div className="kcp-story-stage" aria-hidden={!enhanced}>
         <div className="kcp-stage-visual">
-          <Image src={current.image.src} alt="" width={current.image.width} height={current.image.height} sizes="(min-width: 1024px) 100vw, 1px" className={`kcp-stage-poster ${ready && enhanced && inView && !unavailable ? "is-ready" : ""}`} />
+          <Image src={current.image.src} alt="" width={current.image.width} height={current.image.height} sizes="(min-width: 1024px) 100vw, 1px" className={`kcp-stage-poster ${sceneReady ? "is-ready" : ""}`} />
           {enhanced && inView && !unavailable ? (
-            <KitchenScene progress={progress} mode="story" className="kcp-stage-canvas" onReady={handleReady} onUnavailable={handleUnavailable} />
+            <KitchenScene progress={progress} mode="story" className={`kcp-stage-canvas ${sceneReady ? "is-ready" : ""}`} onReady={handleReady} onUnavailable={handleUnavailable} />
           ) : null}
           <div className="kcp-stage-veil" />
         </div>
@@ -297,7 +375,7 @@ export function CabinetCinematicStory() {
           <ol style={{ "--kcp-track": `${progress / 9 * 100}%` } as CSSProperties}>
             {stages.slice(0, 9).map((stage, index) => (
               <li key={stage.id}>
-                <a href={`#${stage.id}`} aria-label={`Step ${stage.number}: ${stage.label}`} aria-current={active === index ? "step" : undefined} title={stage.label}>
+                <a href={`#${stage.id}`} aria-label={`Step ${stage.number}: ${stage.label}`} aria-current={Math.min(active, 8) === index ? "step" : undefined} title={stage.label}>
                   <span className="kcp-nav-tick" />
                 </a>
               </li>
@@ -305,7 +383,7 @@ export function CabinetCinematicStory() {
           </ol>
           <div className="kcp-stage-nav-actions">
             <button type="button" onClick={() => switchView(true)}>Static view</button>
-            <a href="#cabinet-transformation">Skip <span aria-hidden="true">↓</span></a>
+            <a href="#cabinet-transformation" className="kcp-link"><span>Skip</span> <ArrowDown size={16} aria-hidden="true" /></a>
           </div>
         </nav>
       </div>
@@ -331,8 +409,8 @@ export function CabinetCinematicStory() {
         ))}
       </ol>
       <div className="kcp-story-outro kcp-wrap">
-        <p>{content.process.confirmations.join(" ")}</p>
-        {staticMode && eligible && !unavailable ? <button type="button" className="kcp-link" onClick={() => switchView(false)}>Return to animated story ↑</button> : null}
+        <p>{process.confirmations.join(" ")}</p>
+        {staticMode && eligible && !unavailable ? <button type="button" className="kcp-link" onClick={() => switchView(false)}><span>Return to animated story</span> <ArrowUp size={16} aria-hidden="true" /></button> : null}
       </div>
     </section>
   );

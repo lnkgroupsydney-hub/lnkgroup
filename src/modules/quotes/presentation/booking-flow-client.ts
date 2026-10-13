@@ -32,7 +32,7 @@ export class BookingResponseLifetime {
   reopen() { this.open = true; this.version++; }
 }
 
-import { BOOKING_SIMPLE_ACK_VERSION, isBookingAcknowledgment, validateBookingSignature, type LiveBookingAvailability, type LiveBookingReview, type LiveBookingSnapshot, type LiveBookingState, type LiveBookingSubmission } from '../domain/booking-flow.ts';
+import { BOOKING_SIMPLE_ACK_VERSION, isBookingAcknowledgment, parseBookingSignature, type LiveBookingAvailability, type LiveBookingReview, type LiveBookingSnapshot, type LiveBookingState, type LiveBookingSubmission } from '../domain/booking-flow.ts';
 import { isRecord } from './request-client.ts';
 
 function acknowledgmentMatches(value: unknown) {
@@ -53,7 +53,7 @@ function snapshotMatches(value: unknown, requestId: string): value is LiveBookin
 export function parseBookingSubmission(value: unknown, requestId: string): LiveBookingSubmission {
   if (!isRecord(value) || value.requestId !== requestId || typeof value.id !== 'string' || typeof value.reference !== 'string' || !dateValid(value.preferredDate) || typeof value.submittedAt !== 'string' || !Number.isFinite(Date.parse(value.submittedAt)) || typeof value.receiptReady !== 'boolean' || !['pending','sending','provider_accepted','retrying','failed','outcome_unknown','manual_review'].includes(String(value.emailStatus)) || !['not_required','blocked','pending','syncing','synced','retrying','conflict','manual_review'].includes(String(value.calendarStatus)) || !snapshotMatches(value.snapshot, requestId)) throw new Error('The saved booking request receipt could not be verified. Check its saved status.');
   if (value.snapshot.preferredDate !== undefined && value.snapshot.preferredDate !== value.preferredDate || value.snapshot.version === BOOKING_SIMPLE_ACK_VERSION && (!bookingTimeValid(value.preferredTime) || value.preferredTime !== value.snapshot.preferredTime || value.calendarStatus !== 'not_required')) throw new Error('The saved take-off date and time did not match the signed request.');
-  validateBookingSignature(value.signature);
+  parseBookingSignature(value.signature);
   return value as unknown as LiveBookingSubmission;
 }
 export function parseBookingState(body: Record<string, unknown>, requestId: string, requireVerified = true): LiveBookingState {

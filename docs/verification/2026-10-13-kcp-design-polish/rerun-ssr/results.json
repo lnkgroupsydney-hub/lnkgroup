@@ -1,0 +1,86 @@
+{
+  "upstream": "http://127.0.0.1:3019",
+  "startedAt": "2026-10-13T03:20:27.423Z",
+  "checks": [
+    {
+      "name": "server-content-home-region-and-kcp-summary",
+      "passed": false,
+      "externalBlocked": [],
+      "apiFixtures": [],
+      "pageErrors": [],
+      "failedLocalResources": [
+        {
+          "path": "/_next/static/css/6793a757a1140d68.css",
+          "status": 500
+        },
+        {
+          "path": "/_next/static/css/6793a757a1140d68.css",
+          "status": 500
+        }
+      ],
+      "consoleWarnings": [],
+      "home": {
+        "width": 1280,
+        "documentWidth": 1280,
+        "h1": 1,
+        "duplicateIds": [],
+        "missingFragments": [],
+        "title": "L&K Group | Painting & Home Care in Ermington, Sydney",
+        "description": "L&K Group offers residential painting, kitchen cabinet painting, handyman services, paint touch-up kits and kimchi. Local to Ermington and nearby Sydney suburbs.",
+        "robots": "noindex, nofollow"
+      },
+      "homeRegionGroups": [
+        [
+          "Ermington",
+          "Dundas",
+          "Telopea",
+          "Carlingford",
+          "North Rocks"
+        ],
+        [
+          "Epping",
+          "Eastwood",
+          "Macquarie Park",
+          "Ryde",
+          "Lane Cove",
+          "Gladesville"
+        ],
+        [
+          "Silverwater",
+          "Rhodes",
+          "Concord",
+          "Drummoyne",
+          "Auburn",
+          "Lidcombe",
+          "Strathfield",
+          "Five Dock",
+          "Burwood",
+          "Ashfield"
+        ]
+      ],
+      "kcp": {
+        "width": 1280,
+        "documentWidth": 1280,
+        "h1": 1,
+        "duplicateIds": [],
+        "missingFragments": [],
+        "title": "Kitchen Cabinet Painting | L&K Group",
+        "description": "Refresh suitable cabinet doors, drawer fronts and visible panels with L&K Group around Ermington and Inner West Sydney. Explore the process and request a photo-based provisional estimate.",
+        "robots": "noindex, nofollow"
+      },
+      "serverHtmlBytes": {
+        "home": 60021,
+        "kcp": 80137
+      },
+      "error": "AssertionError [ERR_ASSERTION]: Local page/assets load successfully\n+ actual - expected\n\n+ [\n+   {\n+     path: '/_next/static/css/6793a757a1140d68.css',\n+     status: 500\n+   },\n+   {\n+     path: '/_next/static/css/6793a757a1140d68.css',\n+     status: 500\n+   }\n+ ]\n- []\n\n    at scenario (file:///Users/jimee/Desktop/L&K%20Group/scripts/verify-kcp-landing-ui.mjs:94:14)\n    at runNextTicks (node:internal/process/task_queues:65:5)\n    at process.processImmediate (node:internal/timers:472:9)\n    at async verifyKcpLanding (file:///Users/jimee/Desktop/L&K%20Group/scripts/verify-kcp-landing-ui.mjs:222:5)\n    at async file:///Users/jimee/Desktop/L&K%20Group/scripts/verify-kcp-landing-ui.mjs:434:20"
+    }
+  ],
+  "isolation": "Fresh Playwright contexts; external requests aborted; every /api request fulfilled locally; no DB, API save/submit, company, AI, mail or Google calls.",
+  "limitations": [
+    "Headless Chrome is not a physical device.",
+    "200% text enlargement is simulated by root font-size; native browser zoom and actual 200% device/browser zoom are not certified.",
+    "No frame-rate, bundle-size, search-ranking or formal accessibility certification."
+  ],
+  "finishedAt": "2026-10-13T03:20:28.855Z",
+  "passed": false
+}

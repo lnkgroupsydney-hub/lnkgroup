@@ -4,7 +4,7 @@ import {join} from 'node:path'
 import fontkit from '@pdf-lib/fontkit'
 import {PDFDocument,rgb,type PDFPage} from 'pdf-lib'
 import {staffMailSender,type CompanyMailSender} from '../../../shared/email/company-sender.ts'
-import {BOOKING_SIMPLE_ACK_VERSION,validateBookingSignature} from '../../quotes/domain/booking-flow.ts'
+import {BOOKING_SIMPLE_ACK_VERSION,parseBookingSignature} from '../../quotes/domain/booking-flow.ts'
 import {validateReceiptSource} from '../../quotes/infrastructure/booking-receipt.ts'
 import {sydneyLocalToInstant} from '../../operations/calendar-access.ts'
 import {COMPANY_BOOKING_ACK_TEXT,COMPANY_BOOKING_ACK_VERSION,type LiveCompanyWorkerClaim} from '../domain/live-contracts.ts'
@@ -32,7 +32,7 @@ function validate(claim:LiveCompanyWorkerClaim){
  }else if(claim.kind!=='proposal_notice'){
   const a=claim.acceptance
   if(!a||a.proposalId!==p.id||a.proposalHash!==p.hash||a.acknowledgmentVersion!==COMPANY_BOOKING_ACK_VERSION||a.acknowledgmentText!==COMPANY_BOOKING_ACK_TEXT)throw new Error('Saved proposal acknowledgment is invalid')
-  validateBookingSignature(a.signature)
+  parseBookingSignature(a.signature)
  }
  if(claim.kind==='confirmation'&&(!claim.booking||claim.booking.status!=='confirmed'||!claim.booking.confirmedAt||claim.booking.proposalId!==p.id||claim.booking.proposalHash!==p.hash||claim.booking.events.length!==p.segments.length||claim.booking.events.some(e=>!e.etag||!e.verifiedAt||!HASH.test(e.payloadHash))))throw new Error('Calendar confirmation has not been independently verified')
 }
