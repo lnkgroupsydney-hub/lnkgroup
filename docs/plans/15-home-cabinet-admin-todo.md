@@ -1,5 +1,13 @@
 # 메인 → Cabinet → 회사 관리 웹 제작 TODO
 
+**2026-10-13 견적 UI·UX 운영 반영:** [Git·배포·실제 운영 검증](../verification/2026-10-13-quote-ui-release.md).
+
+- [x] 구현 f3d5d94 / main 병합4bb0b80 / 회사 origin 반영 / Vercel Production READY·운영 alias source 일치.
+- [x] 동일 코드 전체767/767·로컬 브라우저40/40, 운영 익명 desktop/mobile107/107·화면·리소스 확인. 기존 업무 자료 mutation과 환경/DB migration 없음.
+- [ ] 회사 Google Maps 키·API·결제 준비 후 실제 주소 검색/선택 및 실제 고객 이메일·사진AI·예약 제공자 인수.
+
+아래 미배포 표시는 각 검증 당시의 기록이며 최신 배포 상태는 위 기록을 따른다.
+
 **2026-10-13 새 견적과 기존 견적·예약 진입:** [51번 계획](51-quote-entry-and-contact-prefill.md)·[검증 기록](../verification/2026-10-13-quote-entry-contact-prefill.md).
 
 - [x] 첫 화면 두 카드·명시적 기존 선택·권한 있는 연락처 세 항목만 사전 입력·새 ID 생성·기존 업무 자료 보존.
