@@ -1,5 +1,7 @@
 # L&K Group 웹 서비스 구축 계획
 
+**2026-10-14 실제 회사 사진 견적·서명·예약 인수:** 회사 Chrome의 **localhost:3034 고객 UI + 운영 EMS**에서 사진 5장 업로드·실제 AI 1회·견적에 묶인 이메일 인증·10/28 09:30 typed QA 확인 서명/제출·EMS 단일 확정을 진행했다. 도어14/서랍6·**A$2,700 + GST270 = A$2,970**의 원본 잠정 도장비, 10/28 take-off·10/30 installation의 실제 Google 일정/DB 점유2개, 접수/확정 INBOX 각1통·동결 PDF bytes와 기존 견적2건 보존 hash를 대조했다. 문구3곳을 바로잡고 Reload 후 같은 접수번호·금액·확정 기간/문서를 재분석·재확정 없이 복원했다. 집중 검사 **37/37**·최종 lint/타입/build 통과; 전체767은 이번 재실행이 아니다. 로컬 고객 UI와 실제 회사 제공자 연결 인수이며 배포 고객 UI 전체 E2E로 확대하지 않는다. QA 일정/기록을 보관하고 이번 commit·merge·push·배포·DB/환경/가격 기준 변경은 없다. [실행 기록/남은 범위](docs/verification/2026-10-14-quote-live-e2e.md)를 따른다.
+
 **2026-10-13 견적 UI·UX 운영 배포 완료:** 구현 `f3d5d94`를 회사 main에 병합(`4bb0b80`)하고 기존 Vercel Git 연동으로 Production READY·운영 alias를 확인했다. 동일 코드의 전체 767/767·로컬 브라우저40/40·lint/타입/build와 실제 운영 데스크톱·모바일107/107 검사가 통과했다. 원본 공유 폴더와 기존 업무 자료를 보존하며 이번 배포에 DB/환경 설정 변경은 없다. [운영 견적](https://www.lnkgroupsydney.com.au/quote/start)·[배포/검증/남은 Google 준비 기록](docs/verification/2026-10-13-quote-ui-release.md). 아래 미배포/미커밋 설명은 당시 기록이다.
 
 **2026-10-13 새 견적/기존 견적·예약 진입 분리:** 첫 화면의 두 카드에서 작업을 선택하며 새 견적에는 권한이 확인된 이름·이메일·전화만 미리 채운다. 별도 ID를 만들고 기존 견적·사진·분석·서명·예약·접수 기록을 보존한다. 미저장·결과 불명 요청과 다른 탭의 전환/복구를 보호하고 방문일 단일 인증을 유지했다. 전체 **767/767**, 관련 **37/37**, fixture **4/4**, lint·타입·build와 로컬 브라우저 **40/40** 통과. [51번 계획](docs/plans/51-quote-entry-and-contact-prefill.md)·[검증 기록/화면](docs/verification/2026-10-13-quote-entry-contact-prefill.md)·[3002 미리보기](http://127.0.0.1:3002/quote/start)를 따른다. 실제 회사 제공자/DB 인수·운영 배포·commit/push/merge는 수행하지 않았다.

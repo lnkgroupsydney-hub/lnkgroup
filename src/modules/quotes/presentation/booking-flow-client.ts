@@ -99,7 +99,7 @@ export const bookingEmailLabels: Record<LiveBookingSubmission['emailStatus'], st
   pending: 'Receipt email waiting to send', sending: 'Sending receipt email', provider_accepted: 'Receipt email accepted by the email provider (inbox delivery is not confirmed)', retrying: 'Retrying receipt email', failed: 'Receipt email failed', outcome_unknown: 'Receipt email outcome is uncertain; company review required', manual_review: 'Receipt email requires company review',
 };
 export const bookingCalendarLabels: Record<LiveBookingSubmission['calendarStatus'], string> = {
-  not_required: 'Calendar will be saved after company booking confirmation', blocked: 'Pending calendar entry waits for receipt email acceptance', pending: 'Pending calendar entry waiting to sync', syncing: 'Syncing pending calendar entry', synced: 'Pending confirmation entry synced to the company calendar; no date is reserved', retrying: 'Retrying pending calendar entry', conflict: 'Calendar conflict requires company review', manual_review: 'Calendar entry requires company review',
+  not_required: 'Calendar visits are managed through company booking confirmation; see the booking status below', blocked: 'Pending calendar entry waits for receipt email acceptance', pending: 'Pending calendar entry waiting to sync', syncing: 'Syncing pending calendar entry', synced: 'Pending confirmation entry synced to the company calendar; no date is reserved', retrying: 'Retrying pending calendar entry', conflict: 'Calendar conflict requires company review', manual_review: 'Calendar entry requires company review',
 };
 
 /** A successful status read cannot confirm an earlier approval/date/review command.

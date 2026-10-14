@@ -1,5 +1,14 @@
 # 메인 → Cabinet → 회사 관리 웹 제작 TODO
 
+**2026-10-14 실제 회사 제공자 인수:** [로컬 고객 UI·운영 EMS·DB/Google/Gmail 대조 기록](../verification/2026-10-14-quote-live-e2e.md). 과거 미인수/미배포 표시는 각 실행 당시의 기록이며 이번 실행 범위는 이 최신 항목을 따른다.
+
+- [x] 회사 Chrome localhost:3034의 사진5장 실제 업로드·유료 AI1회·도어14/서랍6·A$2,970 GST 포함 잠정 도장비·현재 견적 이메일 인증·10/28 09:30 typed QA 서명/제출.
+- [x] 운영 EMS 단일 Booking confirm·원본 사진/분석/가격 유지·signed_request·두 점유·10/28 take-off09:30–10:30 및10/30 install10:00–12:00의 Google 독립GET2회/Calendar 화면 대조.
+- [x] 접수/확정 INBOX 각1통·Gmail API의 전체 본문/동결 PDF bytes/hash 일치, 기존 견적2건의 지정 컬럼hash 불변, 관련37/37·최종lint/타입/build 통과. 전체767은 이번 재실행이 아니다.
+- [x] 기존 운영 draft·회사 DB/schema/Auth/env/가격 기준 보존. 이번 QA 날짜/기록을 보관하며 자동 삭제·commit/merge/push/배포하지 않음.
+- [x] 접수 상태 문구3곳 보정·실제 Reload 후 본인 견적 목록/같은 접수번호·금액·기간·확정 상태/PDF 복원. 재AI·재확정 없음.
+- [ ] 배포 고객 UI 전체 E2E·Google Maps 실제 검색/선택·실물 모바일 인수는 별도.
+
 **2026-10-13 견적 UI·UX 운영 반영:** [Git·배포·실제 운영 검증](../verification/2026-10-13-quote-ui-release.md).
 
 - [x] 구현 f3d5d94 / main 병합4bb0b80 / 회사 origin 반영 / Vercel Production READY·운영 alias source 일치.
