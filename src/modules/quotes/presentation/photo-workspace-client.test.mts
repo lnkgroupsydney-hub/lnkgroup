@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { parsePhotoWorkspace, canRequestPhotoAnalysis, validatePhotoFile, photoAnalysisRequestBody } from './photo-workspace-client.ts';
-import { calculateEstimatePricing, calculateLegacyEstimatePricing, pendingCompanyPricing } from '../domain/pricing.ts';
+import { calculateEstimatePricing, calculatePreviousEstimatePricing, calculateLegacyEstimatePricing, pendingCompanyPricing, QUOTE_PRICING_VERSION } from '../domain/pricing.ts';
 import { PHOTO_ROLES, type PhotoAnalysis, type ProvisionalPhotoAnalysis } from '../domain/analysis.ts';
 import type { ServiceDetails } from '../domain/contracts.ts';
 const id = 'b65b5359-f90d-45be-b4b9-c249aa7f6daf', photoId = '205f3d74-69e5-4cbe-b4b4-31d4a382cfad';
@@ -100,7 +100,8 @@ test('workspace restores mixed historical and AI-quantity results without replac
     },
     estimateScope: { status: 'estimable', extent: 'whole_project', anchorPhotoId: photoId, scopePhotoIds: [photoId], contextPhotoIds: [], conflictingPhotoIds: [], description: 'The main cabinet run.', assumptions: ['Exact quantities require an on-site check.'] },
   };
-  const pricing = calculateEstimatePricing(analysis, { ...request.payload.service, doorCount: null, drawerCount: null } as ServiceDetails);
+  const service = { ...request.payload.service, doorCount: null, drawerCount: null } as ServiceDetails;
+  const pricing = calculatePreviousEstimatePricing(analysis, service);
   const current = { ...previous, id: 'ae9ea361-bef7-4c6a-9788-4e341f0480bc', analysis, pricing };
   const payload = { request, photos: [photo], jobs: [previous, current], latest: current };
   const parsed = parsePhotoWorkspace(payload, id);
@@ -110,6 +111,11 @@ test('workspace restores mixed historical and AI-quantity results without replac
   assert.equal(parsed.latest?.analysis?.quantities.doors.customer, null);
   assert.equal(parsed.request.payload.service?.doorCount, 8);
   assert.deepEqual(parsed.latest?.analysis, analysis);
+  const newest = { ...current, id: '16166211-7267-46bc-8755-aa06b9a0832e', pricing: calculateEstimatePricing(analysis, service) };
+  const newPolicy = parsePhotoWorkspace({ ...payload, request: { ...request, pricingVersion: QUOTE_PRICING_VERSION }, jobs: [previous, current, newest], latest: newest }, id);
+  assert.equal(newPolicy.jobs[1].pricing?.total, 242000);
+  assert.equal(newPolicy.latest?.pricing?.total, 220000);
+  assert.equal(newPolicy.latest?.pricing?.tax, 0);
   const mismatchedAnalysis = { ...analysis, quantities: { ...analysis.quantities, doors: { ...analysis.quantities.doors, estimated: 13 } } };
   const invalid = { ...current, analysis: mismatchedAnalysis };
   assert.throws(() => parsePhotoWorkspace({ ...payload, jobs: [previous, invalid], latest: invalid }, id), /does not match/);

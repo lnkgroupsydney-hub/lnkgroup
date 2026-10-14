@@ -6,6 +6,7 @@ import { PDFDocument, rgb, type PDFPage } from 'pdf-lib'
 import { staffMailSender, type CompanyMailSender } from '../../../shared/email/company-sender.ts'
 import { BOOKING_SIMPLE_ACK_VERSION, isBookingAcknowledgment, parseBookingSignature, type LiveBookingSubmission } from '../domain/booking-flow.ts'
 import { validateEstimatePricing } from '../domain/pricing.ts'
+import { quotePricingDisplay, NO_GST_NOTICE } from '../domain/pricing-display.ts'
 
 export interface LiveBookingEmailPayload extends Record<string, unknown> {
   from: string; reply_to: string; to: [string]; subject: string; text: string; html: string
@@ -97,7 +98,8 @@ export async function createBookingReceiptPdf(source: LiveBookingSubmission): Pr
   else field('Preferred start date (not reserved)', source.preferredDate)
   paragraph('Frozen provisional painting estimate', 15); y -= 6
   for (const item of pricing.lineItems) field(item.label, `${item.quantity} x ${money(item.unitAmount)} = ${money(item.amount)}`)
-  field('Subtotal / GST / total', `${money(pricing.subtotal!)} / ${money(pricing.tax!)} / ${money(pricing.total!)}`)
+  if (quotePricingDisplay(pricing.pricingVersion).includesGst) field('Subtotal / GST / total', `${money(pricing.subtotal!)} / ${money(pricing.tax!)} / ${money(pricing.total!)}`)
+  else { field('Estimated total (AUD)', money(pricing.total!)); field('GST', NO_GST_NOTICE) }
   field('Pricing basis', `${pricing.pricingVersion}; AI estimated doors ${pricing.basis!.doors}, drawer fronts ${pricing.basis!.drawers}; ${pricing.basis!.extent}`)
   field('Estimate notice', pricing.notice)
   const scope = s.analysis.estimateScope as { assumptions?: unknown; description?: unknown } | undefined
@@ -141,10 +143,11 @@ export async function createFrozenBookingReceipt(source: LiveBookingSubmission, 
   const simple = source.snapshot.version === BOOKING_SIMPLE_ACK_VERSION
   const selected = simple ? `Requested take-off: ${source.preferredDate} ${source.preferredTime} (Sydney; not reserved)` : `Preferred start date: ${source.preferredDate} (not reserved)`
   const next = simple ? 'No further online approval is required for the company to schedule these appointments. The company will confirm your take-off appointment and assign the installation appointment by email. Additional damage found on site may increase the price; any additional work and cost will be discussed before proceeding.' : 'Exact quantities, repairs, final scope, price and duration require company review and site confirmation. Final terms and any confirmed booking require a separate proposal and your acceptance.'
-  const text = `L&K Group booking request receipt\n\nReference: ${source.reference}\n${selected}\n\nYour signed booking request receipt is attached. This is a nonbinding request pending company confirmation. It does not authorise work, create a contract or require payment. ${next}\n\nReply to this email if you need assistance.`
+  const priceNotice = quotePricingDisplay(source.snapshot.pricing.pricingVersion).includesGst ? '' : `Photo-based provisional estimate: AUD ${(source.snapshot.pricing.total! / 100).toFixed(2)}. ${NO_GST_NOTICE}\n\n`
+  const text = `L&K Group booking request receipt\n\nReference: ${source.reference}\n${selected}\n\n${priceNotice}Your signed booking request receipt is attached. This is a nonbinding request pending company confirmation. It does not authorise work, create a contract or require payment. ${next}\n\nReply to this email if you need assistance.`
   const payload: LiveBookingEmailPayload = {
     from: company.from, reply_to: company.replyTo!, to: [source.snapshot.verifiedEmail], subject: `L&K Group booking request receipt - ${source.reference}`,
-    text, html: `<!doctype html><html lang="en"><head><title>Booking request receipt</title></head><body><h1>L&amp;K Group booking request receipt</h1><p>Reference: ${source.reference}</p><p>${selected}</p><p><strong>Nonbinding request. Pending company confirmation. No payment is due.</strong></p><p>Your signed booking request receipt is attached. ${next}</p><p>Reply to this email if you need assistance.</p></body></html>`,
+    text, html: `<!doctype html><html lang="en"><head><title>Booking request receipt</title></head><body><h1>L&amp;K Group booking request receipt</h1><p>Reference: ${source.reference}</p><p>${selected}</p>${priceNotice ? `<p>${priceNotice.trim()}</p>` : ''}<p><strong>Nonbinding request. Pending company confirmation. No payment is due.</strong></p><p>Your signed booking request receipt is attached. ${next}</p><p>Reply to this email if you need assistance.</p></body></html>`,
     attachments: [{ filename: pdf.filename, content: pdfBase64 }],
   }
   const frozen = { pdfBase64, pdfHash: pdf.sha256, payload }

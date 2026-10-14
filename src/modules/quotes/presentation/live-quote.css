@@ -8,7 +8,7 @@
 .lq-saved-signature{display:block;width:min(100%,25rem);height:auto;border:1px solid var(--site-border-strong);background:#fff;color:#1d2522;margin-block:1rem}
 
 /* The quote journey keeps each step in the same workspace. */
-.quote-route-shell{height:100dvh;min-height:24rem;display:grid;grid-template-rows:auto minmax(0,1fr) auto;background:var(--site-background)}
+.quote-route-shell{height:100dvh;min-height:24rem;display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr) auto;background:var(--site-background)}
 .quote-route-shell>main{min-height:0;outline:none}
 .quote-route-header{display:flex;align-items:center;justify-content:space-between;gap:1rem;max-width:80rem;width:100%;margin:auto;padding:.85rem 2rem}
 .quote-brand{display:flex;align-items:center;gap:.65rem;text-decoration:none;font-weight:800;font-size:.95rem}.quote-brand img{width:40px;height:40px;object-fit:contain}.quote-brand small{display:block;font-size:.65rem;font-weight:500;color:var(--site-muted);margin-top:.15rem}.quote-exit{display:flex;align-items:center;gap:.5rem;min-height:44px;font-size:.8rem;font-weight:600;text-decoration:none}

@@ -1,0 +1,867 @@
+{
+  "synthetic": true,
+  "upstream": "http://127.0.0.1:3051",
+  "checks": [
+    {
+      "name": "new-3-2-1280",
+      "expectedTotalCents": 145000,
+      "taxCents": 0,
+      "pricingVersion": "lk-sydney-cabinet-v3-20261014",
+      "acknowledgmentVersion": "live-booking-request-ack-v2",
+      "savedSubmissionPreserved": true,
+      "historicalAcknowledgmentSeededForRead": false,
+      "passed": true
+    },
+    {
+      "name": "new-3-2-390",
+      "expectedTotalCents": 145000,
+      "taxCents": 0,
+      "pricingVersion": "lk-sydney-cabinet-v3-20261014",
+      "acknowledgmentVersion": "live-booking-request-ack-v2",
+      "savedSubmissionPreserved": true,
+      "historicalAcknowledgmentSeededForRead": false,
+      "passed": true
+    },
+    {
+      "name": "new-3-2-320",
+      "expectedTotalCents": 145000,
+      "taxCents": 0,
+      "pricingVersion": "lk-sydney-cabinet-v3-20261014",
+      "acknowledgmentVersion": "live-booking-request-ack-v2",
+      "savedSubmissionPreserved": true,
+      "historicalAcknowledgmentSeededForRead": false,
+      "passed": true
+    },
+    {
+      "name": "new-12-4-390",
+      "expectedTotalCents": 220000,
+      "taxCents": 0,
+      "pricingVersion": "lk-sydney-cabinet-v3-20261014",
+      "acknowledgmentVersion": "live-booking-request-ack-v2",
+      "savedSubmissionPreserved": true,
+      "historicalAcknowledgmentSeededForRead": false,
+      "passed": true
+    },
+    {
+      "name": "v1-3-2-390",
+      "expectedTotalCents": 165000,
+      "taxCents": 15000,
+      "pricingVersion": "lk-sydney-cabinet-v1-20261011",
+      "savedAnalysisPreserved": true,
+      "bookingNotApplicable": "Historical pricing v1 has estimate_ready, not bookable provisional_estimate.",
+      "passed": true
+    },
+    {
+      "name": "v2-3-2-390",
+      "expectedTotalCents": 165000,
+      "taxCents": 15000,
+      "pricingVersion": "lk-sydney-cabinet-v2-20261011",
+      "acknowledgmentVersion": "live-booking-request-ack-v2",
+      "savedSubmissionPreserved": true,
+      "historicalAcknowledgmentSeededForRead": false,
+      "passed": true
+    },
+    {
+      "name": "v1-3-2-320",
+      "expectedTotalCents": 165000,
+      "taxCents": 15000,
+      "pricingVersion": "lk-sydney-cabinet-v1-20261011",
+      "savedAnalysisPreserved": true,
+      "bookingNotApplicable": "Historical pricing v1 has estimate_ready, not bookable provisional_estimate.",
+      "passed": true
+    },
+    {
+      "name": "v2-ack1-restoration-3-2-390",
+      "expectedTotalCents": 165000,
+      "taxCents": 15000,
+      "pricingVersion": "lk-sydney-cabinet-v2-20261011",
+      "acknowledgmentVersion": "live-booking-request-ack-v1",
+      "savedSubmissionPreserved": true,
+      "historicalAcknowledgmentSeededForRead": true,
+      "passed": true
+    }
+  ],
+  "errors": [],
+  "layouts": [
+    {
+      "name": "new-3-2-1280-estimate",
+      "width": 1280,
+      "scrollWidth": 1280,
+      "height": 800,
+      "scrollHeight": 800,
+      "routeHeader": 1280,
+      "actions": [
+        {
+          "text": "Back",
+          "left": 305,
+          "right": 403.90625
+        },
+        {
+          "text": "Choose a visit",
+          "left": 1056.328125,
+          "right": 1215
+        }
+      ]
+    },
+    {
+      "name": "new-3-2-1280-price-breakdown",
+      "width": 1280,
+      "scrollWidth": 1280,
+      "height": 800,
+      "scrollHeight": 800,
+      "routeHeader": 1280,
+      "actions": [
+        {
+          "text": "Back",
+          "left": 305,
+          "right": 403.90625
+        },
+        {
+          "text": "Choose a visit",
+          "left": 1056.328125,
+          "right": 1215
+        }
+      ]
+    },
+    {
+      "name": "new-3-2-1280-price-breakdown-right",
+      "width": 1280,
+      "scrollWidth": 1280,
+      "height": 800,
+      "scrollHeight": 800,
+      "routeHeader": 1280,
+      "actions": [
+        {
+          "text": "Back",
+          "left": 305,
+          "right": 403.90625
+        },
+        {
+          "text": "Choose a visit",
+          "left": 1056.328125,
+          "right": 1215
+        }
+      ]
+    },
+    {
+      "name": "new-3-2-1280-signature",
+      "width": 1280,
+      "scrollWidth": 1280,
+      "height": 800,
+      "scrollHeight": 800,
+      "routeHeader": 1280,
+      "actions": [
+        {
+          "text": "Change visit",
+          "left": 305,
+          "right": 453.859375
+        },
+        {
+          "text": "Submit booking request",
+          "left": 991.8125,
+          "right": 1215
+        }
+      ]
+    },
+    {
+      "name": "new-3-2-1280-receipt",
+      "width": 1280,
+      "scrollWidth": 1280,
+      "height": 800,
+      "scrollHeight": 800,
+      "routeHeader": 1280,
+      "actions": [
+        {
+          "text": "Manage saved quote",
+          "left": 305,
+          "right": 506.671875
+        }
+      ]
+    },
+    {
+      "name": "new-3-2-1280-ems",
+      "width": 1280,
+      "scrollWidth": 1280,
+      "height": 800,
+      "scrollHeight": 7090,
+      "routeHeader": null,
+      "actions": []
+    },
+    {
+      "name": "new-3-2-390-estimate",
+      "width": 390,
+      "scrollWidth": 390,
+      "height": 852,
+      "scrollHeight": 852,
+      "routeHeader": 390,
+      "actions": [
+        {
+          "text": "Back",
+          "left": 25,
+          "right": 105.796875
+        },
+        {
+          "text": "Choose a visit",
+          "left": 230.765625,
+          "right": 365
+        }
+      ]
+    },
+    {
+      "name": "new-3-2-390-price-breakdown",
+      "width": 390,
+      "scrollWidth": 390,
+      "height": 852,
+      "scrollHeight": 852,
+      "routeHeader": 390,
+      "actions": [
+        {
+          "text": "Back",
+          "left": 25,
+          "right": 105.796875
+        },
+        {
+          "text": "Choose a visit",
+          "left": 230.765625,
+          "right": 365
+        }
+      ]
+    },
+    {
+      "name": "new-3-2-390-price-breakdown-right",
+      "width": 390,
+      "scrollWidth": 390,
+      "height": 852,
+      "scrollHeight": 852,
+      "routeHeader": 390,
+      "actions": [
+        {
+          "text": "Back",
+          "left": 25,
+          "right": 105.796875
+        },
+        {
+          "text": "Choose a visit",
+          "left": 230.765625,
+          "right": 365
+        }
+      ]
+    },
+    {
+      "name": "new-3-2-390-signature",
+      "width": 390,
+      "scrollWidth": 390,
+      "height": 852,
+      "scrollHeight": 852,
+      "routeHeader": 390,
+      "actions": [
+        {
+          "text": "Change visit",
+          "left": 25,
+          "right": 150.46875
+        },
+        {
+          "text": "Submit booking request",
+          "left": 173.078125,
+          "right": 365
+        }
+      ]
+    },
+    {
+      "name": "new-3-2-390-receipt",
+      "width": 390,
+      "scrollWidth": 390,
+      "height": 852,
+      "scrollHeight": 852,
+      "routeHeader": 390,
+      "actions": [
+        {
+          "text": "Manage saved quote",
+          "left": 25,
+          "right": 197.6875
+        }
+      ]
+    },
+    {
+      "name": "new-3-2-390-ems",
+      "width": 390,
+      "scrollWidth": 390,
+      "height": 852,
+      "scrollHeight": 9764,
+      "routeHeader": null,
+      "actions": []
+    },
+    {
+      "name": "new-3-2-320-estimate",
+      "width": 320,
+      "scrollWidth": 320,
+      "height": 852,
+      "scrollHeight": 852,
+      "routeHeader": 320,
+      "actions": [
+        {
+          "text": "Back",
+          "left": 20.1875,
+          "right": 91.65625
+        },
+        {
+          "text": "Choose a visit",
+          "left": 180.53125,
+          "right": 299.8125
+        }
+      ]
+    },
+    {
+      "name": "new-3-2-320-price-breakdown",
+      "width": 320,
+      "scrollWidth": 320,
+      "height": 852,
+      "scrollHeight": 852,
+      "routeHeader": 320,
+      "actions": [
+        {
+          "text": "Back",
+          "left": 20.1875,
+          "right": 91.65625
+        },
+        {
+          "text": "Choose a visit",
+          "left": 180.53125,
+          "right": 299.8125
+        }
+      ]
+    },
+    {
+      "name": "new-3-2-320-price-breakdown-right",
+      "width": 320,
+      "scrollWidth": 320,
+      "height": 852,
+      "scrollHeight": 852,
+      "routeHeader": 320,
+      "actions": [
+        {
+          "text": "Back",
+          "left": 20.1875,
+          "right": 91.65625
+        },
+        {
+          "text": "Choose a visit",
+          "left": 180.53125,
+          "right": 299.8125
+        }
+      ]
+    },
+    {
+      "name": "new-3-2-320-signature",
+      "width": 320,
+      "scrollWidth": 320,
+      "height": 852,
+      "scrollHeight": 852,
+      "routeHeader": 320,
+      "actions": [
+        {
+          "text": "Change visit",
+          "left": 20.1875,
+          "right": 129.328125
+        },
+        {
+          "text": "Submit booking request",
+          "left": 133.328125,
+          "right": 299.8125
+        }
+      ]
+    },
+    {
+      "name": "new-3-2-320-receipt",
+      "width": 320,
+      "scrollWidth": 320,
+      "height": 852,
+      "scrollHeight": 852,
+      "routeHeader": 320,
+      "actions": [
+        {
+          "text": "Manage saved quote",
+          "left": 20.1875,
+          "right": 168.484375
+        }
+      ]
+    },
+    {
+      "name": "new-3-2-320-ems",
+      "width": 320,
+      "scrollWidth": 320,
+      "height": 852,
+      "scrollHeight": 11272,
+      "routeHeader": null,
+      "actions": []
+    },
+    {
+      "name": "new-12-4-390-estimate",
+      "width": 390,
+      "scrollWidth": 390,
+      "height": 852,
+      "scrollHeight": 852,
+      "routeHeader": 390,
+      "actions": [
+        {
+          "text": "Back",
+          "left": 25,
+          "right": 105.796875
+        },
+        {
+          "text": "Choose a visit",
+          "left": 230.765625,
+          "right": 365
+        }
+      ]
+    },
+    {
+      "name": "new-12-4-390-price-breakdown",
+      "width": 390,
+      "scrollWidth": 390,
+      "height": 852,
+      "scrollHeight": 852,
+      "routeHeader": 390,
+      "actions": [
+        {
+          "text": "Back",
+          "left": 25,
+          "right": 105.796875
+        },
+        {
+          "text": "Choose a visit",
+          "left": 230.765625,
+          "right": 365
+        }
+      ]
+    },
+    {
+      "name": "new-12-4-390-price-breakdown-right",
+      "width": 390,
+      "scrollWidth": 390,
+      "height": 852,
+      "scrollHeight": 852,
+      "routeHeader": 390,
+      "actions": [
+        {
+          "text": "Back",
+          "left": 25,
+          "right": 105.796875
+        },
+        {
+          "text": "Choose a visit",
+          "left": 230.765625,
+          "right": 365
+        }
+      ]
+    },
+    {
+      "name": "new-12-4-390-signature",
+      "width": 390,
+      "scrollWidth": 390,
+      "height": 852,
+      "scrollHeight": 852,
+      "routeHeader": 390,
+      "actions": [
+        {
+          "text": "Change visit",
+          "left": 25,
+          "right": 150.46875
+        },
+        {
+          "text": "Submit booking request",
+          "left": 173.078125,
+          "right": 365
+        }
+      ]
+    },
+    {
+      "name": "new-12-4-390-receipt",
+      "width": 390,
+      "scrollWidth": 390,
+      "height": 852,
+      "scrollHeight": 852,
+      "routeHeader": 390,
+      "actions": [
+        {
+          "text": "Manage saved quote",
+          "left": 25,
+          "right": 197.6875
+        }
+      ]
+    },
+    {
+      "name": "new-12-4-390-ems",
+      "width": 390,
+      "scrollWidth": 390,
+      "height": 852,
+      "scrollHeight": 9750,
+      "routeHeader": null,
+      "actions": []
+    },
+    {
+      "name": "v1-3-2-390-estimate",
+      "width": 390,
+      "scrollWidth": 390,
+      "height": 852,
+      "scrollHeight": 852,
+      "routeHeader": 390,
+      "actions": [
+        {
+          "text": "Back",
+          "left": 25,
+          "right": 105.796875
+        },
+        {
+          "text": "Choose a visit",
+          "left": 230.765625,
+          "right": 365
+        }
+      ]
+    },
+    {
+      "name": "v1-3-2-390-price-breakdown",
+      "width": 390,
+      "scrollWidth": 390,
+      "height": 852,
+      "scrollHeight": 852,
+      "routeHeader": 390,
+      "actions": [
+        {
+          "text": "Back",
+          "left": 25,
+          "right": 105.796875
+        },
+        {
+          "text": "Choose a visit",
+          "left": 230.765625,
+          "right": 365
+        }
+      ]
+    },
+    {
+      "name": "v1-3-2-390-price-breakdown-right",
+      "width": 390,
+      "scrollWidth": 390,
+      "height": 852,
+      "scrollHeight": 852,
+      "routeHeader": 390,
+      "actions": [
+        {
+          "text": "Back",
+          "left": 25,
+          "right": 105.796875
+        },
+        {
+          "text": "Choose a visit",
+          "left": 230.765625,
+          "right": 365
+        }
+      ]
+    },
+    {
+      "name": "v1-3-2-390-ems",
+      "width": 390,
+      "scrollWidth": 390,
+      "height": 852,
+      "scrollHeight": 6212,
+      "routeHeader": null,
+      "actions": []
+    },
+    {
+      "name": "v2-3-2-390-estimate",
+      "width": 390,
+      "scrollWidth": 390,
+      "height": 852,
+      "scrollHeight": 852,
+      "routeHeader": 390,
+      "actions": [
+        {
+          "text": "Back",
+          "left": 25,
+          "right": 105.796875
+        },
+        {
+          "text": "Choose a visit",
+          "left": 230.765625,
+          "right": 365
+        }
+      ]
+    },
+    {
+      "name": "v2-3-2-390-price-breakdown",
+      "width": 390,
+      "scrollWidth": 390,
+      "height": 852,
+      "scrollHeight": 852,
+      "routeHeader": 390,
+      "actions": [
+        {
+          "text": "Back",
+          "left": 25,
+          "right": 105.796875
+        },
+        {
+          "text": "Choose a visit",
+          "left": 230.765625,
+          "right": 365
+        }
+      ]
+    },
+    {
+      "name": "v2-3-2-390-price-breakdown-right",
+      "width": 390,
+      "scrollWidth": 390,
+      "height": 852,
+      "scrollHeight": 852,
+      "routeHeader": 390,
+      "actions": [
+        {
+          "text": "Back",
+          "left": 25,
+          "right": 105.796875
+        },
+        {
+          "text": "Choose a visit",
+          "left": 230.765625,
+          "right": 365
+        }
+      ]
+    },
+    {
+      "name": "v2-3-2-390-signature",
+      "width": 390,
+      "scrollWidth": 390,
+      "height": 852,
+      "scrollHeight": 852,
+      "routeHeader": 390,
+      "actions": [
+        {
+          "text": "Change visit",
+          "left": 25,
+          "right": 150.46875
+        },
+        {
+          "text": "Submit booking request",
+          "left": 173.078125,
+          "right": 365
+        }
+      ]
+    },
+    {
+      "name": "v2-3-2-390-receipt",
+      "width": 390,
+      "scrollWidth": 390,
+      "height": 852,
+      "scrollHeight": 852,
+      "routeHeader": 390,
+      "actions": [
+        {
+          "text": "Manage saved quote",
+          "left": 25,
+          "right": 197.6875
+        }
+      ]
+    },
+    {
+      "name": "v2-3-2-390-ems",
+      "width": 390,
+      "scrollWidth": 390,
+      "height": 852,
+      "scrollHeight": 9808,
+      "routeHeader": null,
+      "actions": []
+    },
+    {
+      "name": "v1-3-2-320-estimate",
+      "width": 320,
+      "scrollWidth": 320,
+      "height": 852,
+      "scrollHeight": 852,
+      "routeHeader": 320,
+      "actions": [
+        {
+          "text": "Back",
+          "left": 20.1875,
+          "right": 91.65625
+        },
+        {
+          "text": "Choose a visit",
+          "left": 180.53125,
+          "right": 299.8125
+        }
+      ]
+    },
+    {
+      "name": "v1-3-2-320-price-breakdown",
+      "width": 320,
+      "scrollWidth": 320,
+      "height": 852,
+      "scrollHeight": 852,
+      "routeHeader": 320,
+      "actions": [
+        {
+          "text": "Back",
+          "left": 20.1875,
+          "right": 91.65625
+        },
+        {
+          "text": "Choose a visit",
+          "left": 180.53125,
+          "right": 299.8125
+        }
+      ]
+    },
+    {
+      "name": "v1-3-2-320-price-breakdown-right",
+      "width": 320,
+      "scrollWidth": 320,
+      "height": 852,
+      "scrollHeight": 852,
+      "routeHeader": 320,
+      "actions": [
+        {
+          "text": "Back",
+          "left": 20.1875,
+          "right": 91.65625
+        },
+        {
+          "text": "Choose a visit",
+          "left": 180.53125,
+          "right": 299.8125
+        }
+      ]
+    },
+    {
+      "name": "v1-3-2-320-ems",
+      "width": 320,
+      "scrollWidth": 320,
+      "height": 852,
+      "scrollHeight": 7082,
+      "routeHeader": null,
+      "actions": []
+    },
+    {
+      "name": "v2-ack1-restoration-3-2-390-estimate",
+      "width": 390,
+      "scrollWidth": 390,
+      "height": 852,
+      "scrollHeight": 852,
+      "routeHeader": 390,
+      "actions": [
+        {
+          "text": "Back",
+          "left": 25,
+          "right": 105.796875
+        },
+        {
+          "text": "Choose a visit",
+          "left": 230.765625,
+          "right": 365
+        }
+      ]
+    },
+    {
+      "name": "v2-ack1-restoration-3-2-390-price-breakdown",
+      "width": 390,
+      "scrollWidth": 390,
+      "height": 852,
+      "scrollHeight": 852,
+      "routeHeader": 390,
+      "actions": [
+        {
+          "text": "Back",
+          "left": 25,
+          "right": 105.796875
+        },
+        {
+          "text": "Choose a visit",
+          "left": 230.765625,
+          "right": 365
+        }
+      ]
+    },
+    {
+      "name": "v2-ack1-restoration-3-2-390-price-breakdown-right",
+      "width": 390,
+      "scrollWidth": 390,
+      "height": 852,
+      "scrollHeight": 852,
+      "routeHeader": 390,
+      "actions": [
+        {
+          "text": "Back",
+          "left": 25,
+          "right": 105.796875
+        },
+        {
+          "text": "Choose a visit",
+          "left": 230.765625,
+          "right": 365
+        }
+      ]
+    },
+    {
+      "name": "v2-ack1-restoration-3-2-390-signature",
+      "width": 390,
+      "scrollWidth": 390,
+      "height": 852,
+      "scrollHeight": 852,
+      "routeHeader": 390,
+      "actions": [
+        {
+          "text": "Change visit",
+          "left": 25,
+          "right": 150.46875
+        },
+        {
+          "text": "Submit booking request",
+          "left": 173.078125,
+          "right": 365
+        }
+      ]
+    },
+    {
+      "name": "v2-ack1-restoration-3-2-390-receipt",
+      "width": 390,
+      "scrollWidth": 390,
+      "height": 852,
+      "scrollHeight": 852,
+      "routeHeader": 390,
+      "actions": [
+        {
+          "text": "Manage saved quote",
+          "left": 25,
+          "right": 197.6875
+        }
+      ]
+    },
+    {
+      "name": "v2-ack1-restoration-3-2-390-ems",
+      "width": 390,
+      "scrollWidth": 390,
+      "height": 852,
+      "scrollHeight": 9803,
+      "routeHeader": null,
+      "actions": []
+    }
+  ],
+  "latestRun": {
+    "checkedAt": "2026-10-14T02:26:57.425Z",
+    "scenarios": [
+      "new-3-2-1280",
+      "new-3-2-390",
+      "new-3-2-320",
+      "new-12-4-390",
+      "v1-3-2-390",
+      "v2-3-2-390",
+      "v1-3-2-320",
+      "v2-ack1-restoration-3-2-390"
+    ],
+    "targeted": false
+  },
+  "limitations": [
+    "Quote save/read is real PGlite API. Media, OTP, booking and company confirmation are validated synthetic browser fixtures.",
+    "No production DB, real email, AI, Google Calendar or real customer records used. PDF/mail content and immutable DB preservation are verified separately."
+  ]
+}

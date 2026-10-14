@@ -1,5 +1,6 @@
 import { parseQuoteDraft } from '../../enquiries/domain.ts';
 import type { LiveQuoteRequest } from '../index.ts';
+import { PREVIOUS_QUOTE_PRICING_VERSION, QUOTE_PRICING_VERSION } from '../domain/pricing.ts';
 
 export class LiveRequestError extends Error {
   readonly status: number;
@@ -12,6 +13,7 @@ export function parseLiveRequest(value: unknown): LiveQuoteRequest {
   if (!isRecord(value) || typeof value.id !== 'string' || !/^[a-f0-9-]{36}$/.test(value.id)
     || typeof value.reference !== 'string' || !/^RQ-[A-F0-9]{32}$/.test(value.reference)
     || value.mode !== 'live' || value.companyId !== 'lk-group'
+    || (value.pricingVersion != null && ![PREVIOUS_QUOTE_PRICING_VERSION, QUOTE_PRICING_VERSION].includes(String(value.pricingVersion)))
     || !Number.isSafeInteger(value.revision) || Number(value.revision) < 1
     || !['draft', 'review_requested'].includes(String(value.status))
     || typeof value.savedAt !== 'string' || !Number.isFinite(Date.parse(value.savedAt))

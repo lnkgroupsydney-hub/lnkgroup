@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { createHash, randomUUID } from 'node:crypto'
 import { PDFDocument } from 'pdf-lib'
 import { BOOKING_ACKNOWLEDGMENT_TEXT, BOOKING_ACKNOWLEDGMENT_VERSION, BOOKING_SIMPLE_ACK_VERSION, bookingAcknowledgment, type LiveBookingDeliveryClaim, type LiveBookingSubmission } from './domain/booking-flow.ts'
-import { QUOTE_PRICING_VERSION } from './domain/pricing.ts'
+import { PREVIOUS_QUOTE_PRICING_VERSION as QUOTE_PRICING_VERSION, QUOTE_PRICING_VERSION as NO_GST_PRICING_VERSION } from './domain/pricing.ts'
 import { createBookingReceiptPdf, createFrozenBookingReceipt, validFrozenBookingReceipt, type FrozenBookingReceipt } from './infrastructure/booking-receipt.ts'
 import { processLiveBookingDelivery, processLiveBookingDeliveryBatch, LIVE_BOOKING_EMAIL_RETRY_WINDOW_MS, type LiveBookingDeliveryDependencies, type LiveBookingDeliveryResult } from './booking-delivery.ts'
 
@@ -68,6 +68,20 @@ test('receipt PDF is deterministic, contains frozen signature metadata and keeps
   const frozen = await createFrozenBookingReceipt(source, sender)
   assert.ok(validFrozenBookingReceipt(frozen, source)); assert.deepEqual(frozen.payload.to, [source.snapshot.verifiedEmail]); assert.equal(frozen.payload.attachments.length, 1)
   assert.equal(frozen.payload.reply_to, sender.replyTo); assert.match(frozen.payload.text, /nonbinding/); assert.doesNotMatch(frozen.payload.subject, /demo|contract/i)
+})
+test('new no-GST receipt uses the signed A$1,450 total and rejects an added tax', async () => {
+  const source = submission()
+  source.snapshot.pricing = { ...source.snapshot.pricing, pricingVersion: NO_GST_PRICING_VERSION, minimumSubtotal: 145000, gstRateBps: 0,
+    lineItems: [{ code: 'doors', label: 'Estimated cabinet door preparation and painting', quantity: 8, unitAmount: 15000, amount: 120000 }, { code: 'minimum_adjustment', label: 'Minimum painting charge adjustment', quantity: 1, unitAmount: 25000, amount: 25000 }],
+    basis: { type: 'ai_estimated_quantities', extent: 'whole_project', anchorPhotoId: 'photo-1', doors: 8, drawers: 0 }, subtotal: 145000, tax: 0, total: 145000 }
+  const receipt = await createFrozenBookingReceipt(source, sender)
+  assert.ok(validFrozenBookingReceipt(receipt, source))
+  assert.match(receipt.payload.text, /provisional estimate: AUD 1450\.00\. No GST charged\. The supplier is not registered for GST\./)
+  assert.match(receipt.payload.html, /No GST charged/)
+  assert.doesNotMatch(receipt.payload.text, /incl GST|excluding GST|\+ GST/)
+  assert.deepEqual(Buffer.from((await createBookingReceiptPdf(source)).bytes), Buffer.from(receipt.pdfBase64, 'base64'))
+  const changed = structuredClone(source); changed.snapshot.pricing.tax = 14500; changed.snapshot.pricing.total = 159500
+  await assert.rejects(createBookingReceiptPdf(changed))
 })
 test('drawn signature and long saved content produce a valid private receipt', async () => {
   const source = submission(); source.signature = { name: 'Drawn signer', method: 'drawn', acknowledged: true, strokes: [[{ x: .1, y: .2 }, { x: .3, y: .5 }, { x: .5, y: .3 }, { x: .9, y: .8 }]] }

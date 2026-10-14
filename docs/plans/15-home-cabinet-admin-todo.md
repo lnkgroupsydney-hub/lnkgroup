@@ -1,5 +1,12 @@
 # 메인 → Cabinet → 회사 관리 웹 제작 TODO
 
+**2026-10-14 신규 A$1,450·GST 미부과:** [53번 정책](53-new-quote-no-gst-pricing.md)·[검증 기록](../verification/2026-10-14-no-gst-pricing.md).
+
+- [x] 신규 요청 가격 v3 고정·GST 0, 기존 요청 정책/분석/서명/예약/감사/동결 문서 보존.
+- [x] 고객/EMS 금액·세금 표기와 신규 접수/예약 확정 메일·PDF 일치. 과거 PDF 바이트와 전체 메일 payload 동등성 확인.
+- [x] 전체773/773·lint·타입·최종build, 실제 로컬 브라우저8/8·44개 레이아웃, PDF4종/8쪽 렌더링·시각 점검. 모바일 상세 표 화면 넘침 수정·재검증.
+- [ ] 회사 DB 새 migration 적용 → 앱/worker 운영 배포 → 실제 신규 메일/PDF 및 기존 견적/예약 복구 인수. 기존 자료 backfill 없음.
+
 **2026-10-14 main 통합·운영 배포와 전체 운영 인수:** [Git·배포·운영 고객 UI/EMS/실제 제공자 기록](../verification/2026-10-14-quote-production-release.md).
 
 - [x] 현재 브랜치 변경 6파일 커밋 `f17985d`, main 병합 `98ecb75`·동일 트리·회사 origin 두 브랜치 atomic push/원격 SHA 대조.

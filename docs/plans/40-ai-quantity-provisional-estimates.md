@@ -1,5 +1,7 @@
 # AI 수량 추정 기반 사진 가견적
 
+**2026-10-14 신규 가격 v3:** 신규 요청의 시작가는 A$1,450이고 GST를 추가하지 않는다. AI 수량·범위·제외 조건은 유지하며 기존 v1/v2 결과를 보존한다. [53번 계획](53-new-quote-no-gst-pricing.md)·[검증/운영 적용 상태](../verification/2026-10-14-no-gst-pricing.md)를 따른다. 아래 GST 10%·A$1,500은 당시 v2 정책이다.
+
 2026-10-11 · Australia/Sydney · 구현·회사 운영 검증 완료 · 구현 브랜치 `codex/ai-quantity-estimates-20261011` → `main` 병합 `425959b`
 
 ## 사용자 결정

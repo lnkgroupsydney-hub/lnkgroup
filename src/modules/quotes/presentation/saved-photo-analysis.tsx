@@ -1,6 +1,7 @@
 import type { PublicAnalysisJob } from '../domain/photo-workspace';
 import type { AnalysisQuantity, EstimatedAnalysisQuantity } from '../domain/analysis';
-import type { EstimatePricing } from '../domain/pricing';
+import type { EstimatePricing } from '../domain/pricing.ts';
+import { quotePricingDisplay } from '../domain/pricing-display.ts';
 import { displayTime, surfaceLabels } from './request-client.ts';
 import { photoRoleLabels } from './photo-workspace-client.ts';
 const outcomeLabels = { analysis_ready: 'Photo assessment ready', additional_photos_required: 'Additional photos needed', site_review_required: 'Details need confirmation or an on-site check' };
@@ -12,22 +13,23 @@ function money(cents: number) {
 }
 function SavedEstimatePricing({ pricing }: { pricing: EstimatePricing }) {
   if (pricing.status === 'awaiting_company_rates') return <p className="lq-notice"><strong>Earlier analysis: pricing setup was pending.</strong> {pricing.notice} Request a new analysis for the current saved details to use the current pricing rules. This earlier result has no estimate amount.</p>;
+  const taxDisplay = quotePricingDisplay(pricing.pricingVersion);
   const provisional = pricing.status === 'provisional_estimate';
   const priced = pricing.status === 'estimate_ready' || provisional;
   return <div className="lq-estimate">
     <h5>{provisional ? 'Provisional painting estimate' : priced ? 'Photo-based estimate' : 'More information needed before an estimate'}</h5>
     {priced ? <>
-      <p className="lq-estimate-total"><strong>{money(pricing.total!)} incl GST</strong><span>{provisional ? 'Based on AI-estimated cabinet-front quantities — subject to site inspection' : 'Estimated total for the saved scope'}</span></p>
+      <p className="lq-estimate-total"><strong>{money(pricing.total!)} {taxDisplay.amountSuffix}</strong><span>{provisional ? 'Based on AI-estimated cabinet-front quantities — subject to site inspection' : 'Estimated total for the saved scope'}</span></p>
       {provisional && <p className="lq-notice"><strong>Estimated painting cost, not a final project quote.</strong> We will check the exact quantities, condition and work scope on site before adjusting the final price. Unpriced work listed below is additional and is not included in this amount.</p>}
       <div className="lq-price-table" role="region" aria-label="Estimate price breakdown" tabIndex={0}>
         <table><caption>Work and price breakdown (AUD)</caption>
-          <thead><tr><th scope="col">Item</th><th scope="col">{provisional ? 'Estimated quantity' : 'Quantity'}</th><th scope="col">Unit price (ex GST)</th><th scope="col">Amount (ex GST)</th></tr></thead>
+          <thead><tr><th scope="col">Item</th><th scope="col">{provisional ? 'Estimated quantity' : 'Quantity'}</th><th scope="col">Unit price{taxDisplay.exGstSuffix}</th><th scope="col">Amount{taxDisplay.exGstSuffix}</th></tr></thead>
           <tbody>{pricing.lineItems.map(item => <tr key={item.code}><th scope="row">{item.label}</th><td>{provisional && ['doors', 'drawers'].includes(item.code) ? `Approx. ${item.quantity}` : item.quantity}</td><td>{money(item.unitAmount)}</td><td>{money(item.amount)}</td></tr>)}</tbody>
-          <tfoot><tr><th scope="row" colSpan={3}>Subtotal (ex GST)</th><td>{money(pricing.subtotal!)}</td></tr><tr><th scope="row" colSpan={3}>GST (10%)</th><td>{money(pricing.tax!)}</td></tr><tr className="lq-price-total"><th scope="row" colSpan={3}>{provisional ? 'Provisional painting amount (incl GST)' : 'Estimated total (incl GST)'}</th><td><strong>{money(pricing.total!)}</strong></td></tr></tfoot>
+          <tfoot><tr><th scope="row" colSpan={3}>Subtotal{taxDisplay.exGstSuffix}</th><td>{money(pricing.subtotal!)}</td></tr><tr><th scope="row" colSpan={3}>{taxDisplay.includesGst ? 'GST (10%)' : 'GST'}</th><td>{taxDisplay.includesGst ? money(pricing.tax!) : 'Not charged'}</td></tr><tr className="lq-price-total"><th scope="row" colSpan={3}>{`${provisional ? 'Provisional painting amount' : 'Estimated total'}${taxDisplay.totalSuffix}`}</th><td><strong>{money(pricing.total!)}</strong></td></tr></tfoot>
         </table>
       </div>
     </> : <>
-      <p className="lq-estimate-total"><strong>From A$1,650 incl GST</strong><span>(A$1,500 + GST) · Starting price only</span></p>
+      <p className="lq-estimate-total"><strong>From {taxDisplay.startingAmount} {taxDisplay.amountSuffix}</strong><span>{taxDisplay.includesGst ? '(A$1,500 + GST)' : 'The supplier is not registered for GST.'} · Starting price only</span></p>
       <p className="lq-notice"><strong>Your estimate total is not available yet.</strong> The starting price is not a total for this request. Add or confirm the following details so the full scope can be assessed.</p>
       <ul>{pricing.reviewReasons.map((reason, index) => <li key={index}>{reason}</li>)}</ul>
     </>}

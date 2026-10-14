@@ -6,7 +6,7 @@ import {createCompanyBookingMail,validCompanyBookingMail} from './infrastructure
 import type {LiveCompanyWorkerClaim} from './domain/live-contracts.ts'
 import {COMPANY_BOOKING_SITE_DAMAGE_NOTE} from './domain/live-contracts.ts'
 import {BOOKING_SIMPLE_ACK_VERSION,bookingAcknowledgment} from '../quotes/domain/booking-flow.ts'
-import {QUOTE_PRICING_VERSION} from '../quotes/domain/pricing.ts'
+import {PREVIOUS_QUOTE_PRICING_VERSION as QUOTE_PRICING_VERSION,QUOTE_PRICING_VERSION as NO_GST_PRICING_VERSION} from '../quotes/domain/pricing.ts'
 function signedRequestClaim(){
  const c=companyClaim();c.acceptance=null;c.submission.preferredTime='09:00';c.submission.snapshot.preferredTime='09:00';c.submission.snapshot.version=BOOKING_SIMPLE_ACK_VERSION;c.submission.snapshot.acknowledgment=bookingAcknowledgment()
  c.submission.calendarStatus='not_required';c.submission.calendarEventId=null
@@ -45,6 +45,16 @@ test('one company confirmation sends take-off and installation with the original
  const p=JSON.parse(h.payloads[0]);assert.match(p.text,/Take-off:/);assert.match(p.text,/Installation:/);assert.match(p.text,/provisional estimate: AUD 1650.00/)
  assert.match(p.text,/additional work and cost will be discussed/i);assert.match(p.text,/No further online approval/);assert.doesNotMatch(p.text,/Final company amount|review the saved proposal/)
  assert.ok(h.commands.indexOf('finish_calendar')<h.commands.indexOf('email_attempt'));assert.ok(validCompanyBookingMail(h.claim().frozenMail,h.claim()))
+})
+test('new signed-request confirmation keeps A$1,450 with no GST through Calendar and frozen mail',async()=>{
+ const c=signedRequestClaim(),p=c.submission.snapshot.pricing
+ c.submission.snapshot.pricing={...p,pricingVersion:NO_GST_PRICING_VERSION,minimumSubtotal:145000,gstRateBps:0,lineItems:[{code:'doors',label:'Estimated cabinet door preparation and painting',quantity:8,unitAmount:15000,amount:120000},{code:'minimum_adjustment',label:'Minimum painting charge adjustment',quantity:1,unitAmount:25000,amount:25000}],basis:{type:'ai_estimated_quantities',extent:'whole_project',anchorPhotoId:c.submission.snapshot.photos[0].id,doors:8,drawers:0},subtotal:145000,tax:0,total:145000}
+ c.proposal.amountExGst=145000;c.proposal.gst=0;c.proposal.total=145000
+ const h=harness();h.setClaim(c);const r=await processCompanyBookingOutbox(undefined,h.deps)
+ assert.equal(r.confirmed,1);assert.equal(r.accepted,1);assert.ok(validCompanyBookingMail(h.claim().frozenMail,h.claim()))
+ const mail=JSON.parse(h.payloads[0]);assert.match(mail.text,/provisional estimate: AUD 1450\.00\. No GST charged\. The supplier is not registered for GST\./);assert.match(mail.html,/No GST charged/);assert.doesNotMatch(mail.text,/incl GST|excluding GST|\+ GST/)
+ const changed=structuredClone(h.claim());changed.proposal.gst=14500;changed.proposal.total=159500
+ await assert.rejects(createCompanyBookingMail(changed,companyTestSender))
 })
 test('signed-request confirmation rejects a changed original time, increased price, forged acceptance or missing source binding',async()=>{
  const complete=async()=>{const h=harness();h.setClaim(signedRequestClaim());await processCompanyBookingOutbox(undefined,h.deps);return h.claim()}

@@ -3,12 +3,13 @@ import assert from 'node:assert/strict'
 import { createHash, randomUUID } from 'node:crypto'
 import { readdirSync, readFileSync } from 'node:fs'
 import { PGlite } from '@electric-sql/pglite'
-import { calculateLegacyEstimatePricing as calculateEstimatePricing, calculateEstimatePricing as calculateProvisionalPricing, pendingCompanyPricing, LEGACY_QUOTE_PRICING_VERSION as QUOTE_PRICING_VERSION } from './domain/pricing.ts'
+import { calculateLegacyEstimatePricing as calculateEstimatePricing, calculatePreviousEstimatePricing as calculateProvisionalPricing, pendingCompanyPricing, LEGACY_QUOTE_PRICING_VERSION as QUOTE_PRICING_VERSION } from './domain/pricing.ts'
 import { PHOTO_ROLES, type LegacyPhotoAnalysis } from './domain/analysis.ts'
+// This suite exercises the historical v1/v2 RPC contract before the v3 cutover.
 const db = new PGlite()
 await db.exec(`create role anon; create role authenticated; create role service_role bypassrls;
  create schema storage; create table storage.buckets(id text primary key,name text,public boolean,file_size_limit bigint,allowed_mime_types text[]);`)
-for (const name of readdirSync(new URL('../../../supabase/migrations/', import.meta.url)).filter(n => n.endsWith('.sql')).sort()) await db.exec(readFileSync(new URL(`../../../supabase/migrations/${name}`, import.meta.url), 'utf8'))
+for (const name of readdirSync(new URL('../../../supabase/migrations/', import.meta.url)).filter(n => n.endsWith('.sql') && !n.endsWith('_live_quote_no_gst_pricing_v3.sql')).sort()) await db.exec(readFileSync(new URL(`../../../supabase/migrations/${name}`, import.meta.url), 'utf8'))
 const tables = (await db.query<{tablename:string}>("select tablename from pg_tables where schemaname='public' and tablename like 'lk_%'")).rows.map(x => x.tablename)
 type Photo = { id:string; requestId:string; state:string; sourceHash:string; objectPath:string; stagingPath:string }
 type Job = { id:string; status:string; stale:boolean; attempts:number; inputRevision:number; inputSnapshot:Record<string,unknown>; manifest:Array<{id:string;objectPath:string}>; analysis:unknown; pricing:unknown; leaseToken:string|null }

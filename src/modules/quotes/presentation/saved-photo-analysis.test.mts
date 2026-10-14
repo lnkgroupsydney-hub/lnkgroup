@@ -6,7 +6,7 @@ import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { transpileModule, JsxEmit, ModuleKind } from 'typescript';
 import { PHOTO_ROLES, type PhotoAnalysis, type ProvisionalPhotoAnalysis } from '../domain/analysis.ts';
-import { calculateEstimatePricing, calculateLegacyEstimatePricing, pendingCompanyPricing } from '../domain/pricing.ts';
+import { calculatePreviousEstimatePricing as calculateEstimatePricing, calculateEstimatePricing as calculateNoGstPricing, calculateLegacyEstimatePricing, pendingCompanyPricing } from '../domain/pricing.ts';
 import type { PublicAnalysisJob } from '../domain/photo-workspace.ts';
 import type { ServiceDetails } from '../domain/contracts.ts';
 
@@ -70,6 +70,22 @@ test('AI quantity estimates show a provisional painting price with absent custom
   assert.match(html, /Approx\. 12<\/td>/);
   assert.match(html, /check the exact quantities, condition and work scope on site/);
   assert.doesNotMatch(html, /Your estimate total is not available yet|Please confirm this quantity in service details/);
+});
+test('new estimates show A$1,450 without GST and retain higher scope prices without adding tax', () => {
+  const estimated = aiEstimatedAnalysis();
+  estimated.quantities.doors.estimated = 8; estimated.quantities.drawers.estimated = 0;
+  const pricing = calculateNoGstPricing(estimated, { ...service, doorCount: null, drawerCount: null });
+  const html = render({ ...job, analysis: estimated, pricing });
+  assert.match(html, /<strong>A\$1,450 no GST charged<\/strong>/);
+  assert.match(html, /GST<\/th><td>Not charged<\/td>/);
+  assert.match(html, /The supplier is not registered for GST/);
+  assert.doesNotMatch(html, /incl GST|ex GST|GST \(10%\)|excluding GST/);
+  const higher = aiEstimatedAnalysis();
+  assert.match(render({ ...job, analysis: higher, pricing: calculateNoGstPricing(higher, { ...service, doorCount: null, drawerCount: null }) }), /<strong>A\$2,200 no GST charged<\/strong>/);
+  estimated.estimateScope.status = 'not_estimable'; estimated.estimateScope.anchorPhotoId = null;
+  const incomplete = render({ ...job, analysis: estimated, pricing: calculateNoGstPricing(estimated, service) });
+  assert.match(incomplete, /From A\$1,450 no GST charged/);
+  assert.doesNotMatch(incomplete, /<table>|incl GST|ex GST|excluding GST/);
 });
 test('mixed views show only primary scope painting with severe repair costs explicitly excluded', () => {
   const estimated = aiEstimatedAnalysis();

@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { calculateLegacyEstimatePricing as calculateEstimatePricing, calculateEstimatePricing as calculateProvisionalEstimatePricing, pendingCompanyPricing, validateEstimatePricing, LEGACY_QUOTE_PRICING_VERSION as QUOTE_PRICING_VERSION, QUOTE_PRICING_VERSION as CURRENT_PRICING_VERSION } from './domain/pricing.ts'
+import { calculateLegacyEstimatePricing as calculateEstimatePricing, calculatePreviousEstimatePricing as calculateProvisionalEstimatePricing, calculateEstimatePricing as calculateCurrentEstimatePricing, pendingCompanyPricing, validateEstimatePricing, LEGACY_QUOTE_PRICING_VERSION as QUOTE_PRICING_VERSION, PREVIOUS_QUOTE_PRICING_VERSION as CURRENT_PRICING_VERSION, QUOTE_PRICING_VERSION as NEW_PRICING_VERSION } from './domain/pricing.ts'
 import { PHOTO_ROLES, type PhotoAnalysis, type ProvisionalPhotoAnalysis } from './domain/analysis.ts'
 import type { ServiceDetails } from './domain/contracts.ts'
 const service: ServiceDetails = {serviceId:'cabinet-painting',intent:'full-repainting',surfaces:['doors','drawers'],doorCount:8,drawerCount:3,material:'',colourPreference:''}
@@ -54,3 +54,15 @@ test('moderate panel, unknown or unselected drawer damage in the same scope phot
  const selected=provisional();selected.observedDamage=[{...damage('door-repair','moderate'),estimateScope:'included',surface:'doors'},{...damage('drawer-excluded','severe'),estimateScope:'included',surface:'drawers'},{...damage('door-structural','severe'),estimateScope:'included',surface:'doors'}];
  const price=calculateProvisionalEstimatePricing(selected,{...service,surfaces:['doors']});assert.equal(price.total,192500);assert.deepEqual(price.exclusions.map(item=>[item.code,item.damageIds]),[['structural_or_unclassified_repairs',['door-structural']],['unverified_damage_scope',['drawer-excluded']]]);assert.deepEqual(validateEstimatePricing(price),price);
 });
+
+
+test('v3 pricing uses A$1450 minimum without GST while preserving historical policies',()=>{
+ const current=calculateCurrentEstimatePricing(provisional(),service)
+ assert.equal(current.pricingVersion,NEW_PRICING_VERSION);assert.equal(current.minimumSubtotal,145000);assert.equal(current.gstRateBps,0);assert.equal(current.subtotal,150000);assert.equal(current.tax,0);assert.equal(current.total,150000);assert.match(current.notice,/No GST charged/);assert.deepEqual(validateEstimatePricing(current),current)
+ const small=provisional();small.quantities.doors.estimated=2;small.quantities.drawers.estimated=1
+ const minimum=calculateCurrentEstimatePricing(small,service);assert.equal(minimum.total,145000);assert.equal(minimum.lineItems.find(item=>item.code==='minimum_adjustment')?.amount,105000)
+ const repair=provisional();repair.observedDamage=[{...damage('moderate','moderate'),estimateScope:'included',surface:'doors'}];assert.equal(calculateCurrentEstimatePricing(repair,service).total,175000)
+ const large=provisional();large.quantities.doors.estimated=17;large.quantities.drawers.estimated=5;assert.equal(calculateCurrentEstimatePricing(large,service).total,305000)
+ for(const forged of [{...minimum,tax:14500,total:159500},{...minimum,gstRateBps:1000},{...minimum,minimumSubtotal:150000},{...minimum,pricingVersion:CURRENT_PRICING_VERSION},{...minimum,pricingVersion:QUOTE_PRICING_VERSION}])assert.throws(()=>validateEstimatePricing(forged))
+ assert.equal(calculateProvisionalEstimatePricing(small,service).total,165000);assert.equal(calculateEstimatePricing(analysis(),service).total,165000)
+})

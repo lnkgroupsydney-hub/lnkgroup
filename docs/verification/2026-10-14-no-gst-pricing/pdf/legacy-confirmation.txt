@@ -1,0 +1,68 @@
+L&K GROUP / COMPANY PRICE AND WORK SCHEDULE
+Booking confirmed
+Company booking and work periods are confirmed. Contractual terms and work authorisation
+remain separate. No payment is requested by this receipt.
+REQUEST REFERENCE
+REQUEST-SYNTHETIC
+COMPANY PROPOSAL VERSION
+1 / 00000000-0000-4000-8000-000000000005
+RECORDED AT (SYDNEY)
+13 Oct 2026, 1:00 pm
+CUSTOMER
+Synthetic customer
+VERIFIED RECIPIENT
+verified@example.invalid
+PHOTO-BASED PROVISIONAL SUPPLY PRICE / GST / TOTAL
+AUD 1500.00 / AUD 150.00 / AUD 1650.00 incl GST
+ORIGINAL PHOTO ESTIMATE TOTAL
+AUD 1650.00
+COMPANY WORK SCOPE
+Paint existing cabinet doors and drawer fronts.
+COMPANY ADJUSTMENT / SITE REVIEW REASON
+Site review confirmed repair scope.
+ALL COMPANY WORK PERIODS
+1. Take-off: 20 Oct 2026, 9:00 am to 20 Oct 2026, 10:00 am (Sydney)
+2. Installation: 26 Oct 2026, 9:00 am to 26 Oct 2026, 11:00 am (Sydney)
+Dates between separate periods are not automatically reserved. Work periods shown above are the company-entered
+schedule, not an automatically calculated working-hours policy.
+COMPANY BOOKING AND SITE INSPECTION NOTICE
+The estimate is based on the supplied photos. Additional damage found on site may increase the price. Any
+additional work and cost will be discussed with you before proceeding.
+PROPOSAL SHA-256
+aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+ORIGINAL SIGNED REQUEST SNAPSHOT SHA-256
+bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+Original customer booking request
+I acknowledge the provisional photo-based painting estimate and request the take-off date and Sydney
+time shown here. I agree that the company may assign the installation date and time and notify me in the
+booking confirmation email. Additional damage found on site may increase the price; any additional work
+REQUEST-SYNTHETIC | COMPANY SCHEDULE | 1 / 2
+
+L&K GROUP / COMPANY PRICE AND WORK SCHEDULE
+and cost will be discussed before proceeding. No date is held until company confirmation. This request is
+not a contract, work authorisation or payment obligation.
+ACKNOWLEDGMENT VERSION
+live-booking-request-ack-v2
+REQUESTED TAKE-OFF (SYDNEY)
+2026-10-20 09:00
+REQUEST SIGNED AT (SYDNEY)
+13 Oct 2026, 1:00 pm
+ORIGINALLY SIGNED NAME / METHOD
+Synthetic customer / typed
+ORIGINAL SIGNED CONTENT SHA-256
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+The customer signed the original booking request and agreed that the company would assign installation. This is a
+company appointment confirmation; no second customer price or schedule acceptance is recorded.
+CONFIRMED BOOKING
+00000000-0000-4000-8000-000000000007 / version 1
+CONFIRMED AT (SYDNEY)
+13 Oct 2026, 1:00 pm
+CALENDAR EVIDENCE
+2 independently verified private busy work periods. Provider event IDs and private access URLs are retained
+in the EMS.
+This document confirms the take-off and installation appointments and records the original photo-based provisional
+estimate. More extensive damage can increase the price after an on-site inspection; additional work and cost will be
+discussed before proceeding. It does not issue an invoice, request payment or replace separately approved contractual
+terms. Photo files and private access URLs are not attached.
+Unsupported font characters appear as [U+code point]. Original saved data remains unchanged.
+REQUEST-SYNTHETIC | COMPANY SCHEDULE | 2 / 2

@@ -10,7 +10,7 @@ import {createAnalysisRunner,type PhotoObjectPort} from './application/photo-med
 import {normalizeLivePhoto} from './infrastructure/photo-objects.ts';
 import {analyzeCabinetPhotos,PhotoAnalysisError} from './infrastructure/openai-photo-analyzer.ts';
 import {AI_CONSENT_VERSION,PHOTO_ROLES,PHOTO_ANALYSIS_MODEL,PHOTO_ANALYSIS_PROMPT_VERSION,PHOTO_ANALYSIS_SCHEMA_VERSION} from './domain/analysis.ts';
-import {QUOTE_PRICING_VERSION,LEGACY_QUOTE_PRICING_VERSION} from './domain/pricing.ts';
+import {QUOTE_PRICING_VERSION,PREVIOUS_QUOTE_PRICING_VERSION,LEGACY_QUOTE_PRICING_VERSION} from './domain/pricing.ts';
 import {QuoteRequestError,type QuoteRequestActor,type LiveQuoteRequest,type ServiceDetails} from './domain/contracts.ts';
 import type {InternalPhoto,PhotoWorkspace} from './domain/photo-workspace.ts';
 
@@ -76,6 +76,19 @@ function req(method:string,cookie?:string,body?:unknown,path='/api/quote/request
 }
 function write(expectedRevision:number,extra:Record<string,unknown>={}) {return{expectedRevision,idempotencyKey:randomUUID(),...extra};}
 async function owner(details:ServiceDetails=service) {const response=await requests.session(req('POST',undefined,undefined,'/api/quote/requests/session'));assert.equal(response.status,200);const cookie=response.headers.get('set-cookie')!.split(';')[0];const saved=await requests.save(req('PUT',cookie,{...write(0),payload:{contact,service:details},storageConsent:true},'/api/quote/requests'));assert.equal(saved.status,200);return{cookie,request:(await saved.json()).request as LiveQuoteRequest};}
+async function legacyOwner() {
+ await db.exec('reset role');await db.exec('alter table public.lk_quote_requests alter column pricing_version drop default');await db.exec('set role service_role')
+ try { return await owner() } finally { await db.exec('reset role');await db.exec("alter table public.lk_quote_requests alter column pricing_version set default 'lk-sydney-cabinet-v3-20261014'");await db.exec('set role service_role') }
+}
+async function historicalStart(args:Record<string,unknown>) {
+ await db.exec('reset role')
+ const saved=(await db.query<{definition:string}>("select pg_get_functiondef('public.lk_quote_media_guest_command(text,jsonb)'::regprocedure) definition")).rows[0].definition
+ const source=readFileSync(new URL('../../../supabase/migrations/20261011020822_live_quote_ai_quantity_pricing_v2.sql',import.meta.url),'utf8')
+ const legacy=source.slice(source.indexOf('create or replace function public.lk_quote_media_command'),source.lastIndexOf('commit;')).replace('public.lk_quote_media_command(', 'public.lk_quote_media_guest_command(')
+ await db.exec(legacy);await db.exec('set role service_role')
+ try { return await mediaStore.command<import('./domain/photo-workspace.ts').InternalPhotoWorkspace>('analysis_start',args) }
+ finally { await db.exec('reset role');await db.exec(saved);await db.exec('set role service_role') }
+}
 async function workspace(cookie:string) {const response=await api.workspace(req('GET',cookie));assert.equal(response.status,200,await response.clone().text());return await response.json() as PhotoWorkspace;}
 async function ready(cookie:string,revision=1) {
  const response=await api.begin(req('POST',cookie,write(revision,{role:'overview',mimeType:'image/jpeg',sizeBytes:original.length,sourceHash:hash(original)})));assert.equal(response.status,200,await response.clone().text());
@@ -126,7 +139,7 @@ test('explicit AI consent gates jobs; one provider call stores same validated re
  for(const extra of [{aiConsent:false},{aiConsentVersion:'quote-storage-review-v1'},{coverage:{upperNotApplicable:'yes',damageNotPresent:false}}])assert.equal((await api.start(req('POST',cookie,analysisInput(2,extra)))).status,400);
  assert.equal(await count('lk_quote_analysis_jobs'),0);aiReady=false;assert.equal((await api.start(req('POST',cookie,analysisInput()))).status,503);aiReady=true;
  const queued=await start(cookie),process=await api.process(req('POST',cookie),queued.latest!.id);assert.equal(process.status,200,await process.clone().text());const completed=await process.json() as PhotoWorkspace;
- assert.equal(providerCalls,1);assert.equal(completed.latest!.status,'succeeded');assert.equal(completed.latest!.pricing!.status,'provisional_estimate');assert.equal(completed.latest!.pricing!.subtotal,150000);assert.equal(completed.latest!.pricing!.tax,15000);assert.equal(completed.latest!.pricing!.total,165000);assert.equal(completed.latest!.usage!.reasoningTokens,100);
+ assert.equal(providerCalls,1);assert.equal(completed.latest!.status,'succeeded');assert.equal(completed.latest!.pricing!.status,'provisional_estimate');assert.equal(completed.latest!.pricing!.subtotal,145000);assert.equal(completed.latest!.pricing!.tax,0);assert.equal(completed.latest!.pricing!.total,145000);assert.equal(completed.latest!.usage!.reasoningTokens,100);
  assert.ok(!sentBody.includes('PRIVATE'));assert.ok(!sentBody.includes('private.client@example.invalid'));assert.equal(JSON.parse(sentBody).model,'gpt-6.1-sol');assert.deepEqual(JSON.parse(sentBody).reasoning,{effort:'medium'});
  const company=await(await api.staffWorkspace(req('GET'),request.id)).json();assert.deepEqual(company.latest,completed.latest);assert.notEqual(company.photos[0].contentUrl,completed.photos[0].contentUrl);
  for(const secret of ['inputSnapshot','manifest','leaseToken','ownerHash','objectPath','providerResponseId','inputKey'])assert.ok(!JSON.stringify(completed).includes(secret));
@@ -171,34 +184,34 @@ test('completed provider output missing usage or response ID is safely failed be
 test('insufficient photos remain review-only; severe repairs are excluded and moderate coating repairs charge once',async()=>{
  for(const failure of ['low_quality','severe','moderate'] as const){
   const {cookie,request}=await owner();await ready(cookie);providerFailure=failure;const queued=await start(cookie);const response=await api.process(req('POST',cookie),queued.latest!.id);assert.equal(response.status,200,await response.clone().text());const done=await response.json() as PhotoWorkspace;assert.equal(done.latest!.status,'succeeded');assert.equal(done.latest!.pricing!.pricingVersion,QUOTE_PRICING_VERSION);
-  if(failure==='moderate'){assert.equal(done.latest!.pricing!.total,192500);assert.equal(done.latest!.pricing!.lineItems.filter(x=>x.code==='moderate_repairs').length,1);}
+  if(failure==='moderate'){assert.equal(done.latest!.pricing!.total,170000);assert.equal(done.latest!.pricing!.lineItems.filter(x=>x.code==='moderate_repairs').length,1);}
   else if(failure==='low_quality'){assert.equal(done.latest!.pricing!.status,'review_required');assert.equal(done.latest!.pricing!.total,null);assert.deepEqual(done.latest!.pricing!.lineItems,[]);}
-  else{assert.equal(done.latest!.pricing!.status,'provisional_estimate');assert.equal(done.latest!.pricing!.total,165000);assert.ok('exclusions' in done.latest!.pricing!);assert.deepEqual(done.latest!.pricing!.exclusions[0].damageIds,['edge-1','edge-2']);}
+  else{assert.equal(done.latest!.pricing!.status,'provisional_estimate');assert.equal(done.latest!.pricing!.total,145000);assert.ok('exclusions' in done.latest!.pricing!);assert.deepEqual(done.latest!.pricing!.exclusions[0].damageIds,['edge-1','edge-2']);}
   const company=await(await api.staffWorkspace(req('GET'),request.id)).json();assert.deepEqual(company.latest,done.latest);
  }
  assert.equal(providerCalls,3);
 });
 test('saved unknown customer quantities use AI estimated fronts provisionally without overwriting the inquiry',async()=>{
  const {cookie}=await owner({...service,doorCount:null,drawerCount:null});await ready(cookie);const queued=await start(cookie);const processed=await api.process(req('POST',cookie),queued.latest!.id);assert.equal(processed.status,200,await processed.clone().text());const saved=await processed.json() as PhotoWorkspace;
- assert.equal(saved.latest!.status,'succeeded');assert.equal(saved.latest!.pricing!.status,'provisional_estimate');assert.equal(saved.latest!.pricing!.total,165000);assert.ok('basis' in saved.latest!.pricing!);assert.deepEqual(saved.latest!.pricing!.basis,{type:'ai_estimated_quantities',extent:'whole_project',anchorPhotoId:saved.photos[0].id,doors:5,drawers:2});assert.equal(saved.request.payload.service!.doorCount,null);assert.equal(saved.request.payload.service!.drawerCount,null);assert.equal(saved.latest!.analysis!.quantities.doors.customer,null);assert.equal(saved.latest!.analysis!.quantities.drawers.customer,null);assert.equal(saved.latest!.analysis!.outcome,'site_review_required');assert.equal(providerCalls,1);
+ assert.equal(saved.latest!.status,'succeeded');assert.equal(saved.latest!.pricing!.status,'provisional_estimate');assert.equal(saved.latest!.pricing!.total,145000);assert.ok('basis' in saved.latest!.pricing!);assert.deepEqual(saved.latest!.pricing!.basis,{type:'ai_estimated_quantities',extent:'whole_project',anchorPhotoId:saved.photos[0].id,doors:5,drawers:2});assert.equal(saved.request.payload.service!.doorCount,null);assert.equal(saved.request.payload.service!.drawerCount,null);assert.equal(saved.latest!.analysis!.quantities.doors.customer,null);assert.equal(saved.latest!.analysis!.quantities.drawers.customer,null);assert.equal(saved.latest!.analysis!.outcome,'site_review_required');assert.equal(providerCalls,1);
  assert.equal((await api.process(req('POST',cookie),queued.latest!.id)).status,200);assert.equal(providerCalls,1);
 });
 test('same overview panel, unknown and unselected drawer repairs save without charging the door-only estimate',async()=>{
  for(const surface of ['panels','unknown','drawers'] as const){
   const {cookie}=await owner({...service,surfaces:['doors']});await ready(cookie);providerDamageSurface=surface;providerFailure='moderate';const queued=await start(cookie);const response=await api.process(req('POST',cookie),queued.latest!.id);assert.equal(response.status,200,await response.clone().text());const saved=await response.json() as PhotoWorkspace;
-  assert.equal(saved.latest!.status,'succeeded');assert.equal(saved.latest!.pricing!.status,'provisional_estimate');assert.equal(saved.latest!.pricing!.total,165000);assert.equal(saved.latest!.pricing!.lineItems.some(item=>item.code==='moderate_repairs'),false);assert.ok('exclusions' in saved.latest!.pricing!);assert.deepEqual(saved.latest!.pricing!.exclusions.map(item=>[item.code,item.damageIds]),[['unverified_damage_scope',['edge-1','edge-2']]]);
+  assert.equal(saved.latest!.status,'succeeded');assert.equal(saved.latest!.pricing!.status,'provisional_estimate');assert.equal(saved.latest!.pricing!.total,145000);assert.equal(saved.latest!.pricing!.lineItems.some(item=>item.code==='moderate_repairs'),false);assert.ok('exclusions' in saved.latest!.pricing!);assert.deepEqual(saved.latest!.pricing!.exclusions.map(item=>[item.code,item.damageIds]),[['unverified_damage_scope',['edge-1','edge-2']]]);
  }
  assert.equal(providerCalls,3);assert.equal(finishCalls,3);
 });
 test('queued unconfigured pricing with the current execution contract retains historical pending pricing',async()=>{
- const {cookie}=await owner();await ready(cookie);const current=await workspace(cookie);
+ const {cookie}=await legacyOwner();await ready(cookie);const current=await workspace(cookie);
  const queued=await db.query<{id:string}>("select owner_hash id from public.lk_quote_requests where id=$1",[current.request.id]);const ownerHash=queued.rows[0].id;
- const pending=await mediaStore.command<import('./domain/photo-workspace.ts').InternalPhotoWorkspace>('analysis_start',{companyId:'lk-group',ownerHash,expectedRevision:2,idempotencyKey:randomUUID(),aiConsentVersion:AI_CONSENT_VERSION,model:PHOTO_ANALYSIS_MODEL,promptVersion:PHOTO_ANALYSIS_PROMPT_VERSION,schemaVersion:PHOTO_ANALYSIS_SCHEMA_VERSION,pricingVersion:'unconfigured',coverage:{upperNotApplicable:false,damageNotPresent:false}});
+ const pending=await historicalStart({companyId:'lk-group',ownerHash,expectedRevision:2,idempotencyKey:randomUUID(),aiConsentVersion:AI_CONSENT_VERSION,model:PHOTO_ANALYSIS_MODEL,promptVersion:PHOTO_ANALYSIS_PROMPT_VERSION,schemaVersion:PHOTO_ANALYSIS_SCHEMA_VERSION,pricingVersion:'unconfigured',coverage:{upperNotApplicable:false,damageNotPresent:false}});
  const response=await api.process(req('POST',cookie),pending.latest!.id);assert.equal(response.status,200,await response.clone().text());const done=await response.json() as PhotoWorkspace;assert.equal(done.latest!.pricing!.status,'awaiting_company_rates');assert.equal(done.latest!.pricing!.total,null);assert.equal(providerCalls,1);
 });
 test('obsolete queued prompt fails before photo reads or paid calls; explicit retry uses the current contract',async()=>{
- const {cookie}=await owner();await ready(cookie);const current=await workspace(cookie),ownerHash=(await db.query<{owner_hash:string}>('select owner_hash from public.lk_quote_requests where id=$1',[current.request.id])).rows[0].owner_hash;
- const pending=await mediaStore.command<import('./domain/photo-workspace.ts').InternalPhotoWorkspace>('analysis_start',{companyId:'lk-group',ownerHash,expectedRevision:2,idempotencyKey:randomUUID(),aiConsentVersion:AI_CONSENT_VERSION,model:PHOTO_ANALYSIS_MODEL,promptVersion:'cabinet-observations-v1',schemaVersion:'cabinet-photo-analysis-v1',pricingVersion:LEGACY_QUOTE_PRICING_VERSION,coverage:{upperNotApplicable:false,damageNotPresent:false}});
+ const {cookie}=await legacyOwner();await ready(cookie);const current=await workspace(cookie),ownerHash=(await db.query<{owner_hash:string}>('select owner_hash from public.lk_quote_requests where id=$1',[current.request.id])).rows[0].owner_hash;
+ const pending=await historicalStart({companyId:'lk-group',ownerHash,expectedRevision:2,idempotencyKey:randomUUID(),aiConsentVersion:AI_CONSENT_VERSION,model:PHOTO_ANALYSIS_MODEL,promptVersion:'cabinet-observations-v1',schemaVersion:'cabinet-photo-analysis-v1',pricingVersion:LEGACY_QUOTE_PRICING_VERSION,coverage:{upperNotApplicable:false,damageNotPresent:false}});
  const stopped=await api.process(req('POST',cookie),pending.latest!.id);assert.equal(stopped.status,200);const failed=await stopped.json() as PhotoWorkspace;
  assert.equal(failed.latest!.status,'failed');assert.match(failed.latest!.error!,/version changed.*Explicitly retry/);assert.equal(failed.latest!.usage,null);assert.equal(failed.latest!.analysis,null);assert.equal(objectReadCalls,0);assert.equal(providerCalls,0);assert.equal(finishCalls,0);
  assert.equal((await api.process(req('POST',cookie),pending.latest!.id)).status,200);assert.equal(providerCalls,0);
@@ -209,18 +222,18 @@ test('obsolete queued prompt fails before photo reads or paid calls; explicit re
 
 async function legacyFailure(cookie:string,status:'failed'|'uncertain',versions:Record<string,string>={}) {
  const current=await workspace(cookie),ownerRow=await db.query<{owner_hash:string}>('select owner_hash from public.lk_quote_requests where id=$1',[current.request.id]);
- const queued=await mediaStore.command<import('./domain/photo-workspace.ts').InternalPhotoWorkspace>('analysis_start',{companyId:'lk-group',ownerHash:ownerRow.rows[0].owner_hash,expectedRevision:current.request.revision,idempotencyKey:randomUUID(),aiConsentVersion:AI_CONSENT_VERSION,model:'gpt-6.1-sol',promptVersion:'cabinet-observations-v1',schemaVersion:'cabinet-photo-analysis-v1',pricingVersion:'unconfigured',...versions,coverage:{upperNotApplicable:false,damageNotPresent:false}});
+ const queued=await historicalStart({companyId:'lk-group',ownerHash:ownerRow.rows[0].owner_hash,expectedRevision:current.request.revision,idempotencyKey:randomUUID(),aiConsentVersion:AI_CONSENT_VERSION,model:'gpt-6.1-sol',promptVersion:'cabinet-observations-v1',schemaVersion:'cabinet-photo-analysis-v1',pricingVersion:'unconfigured',...versions,coverage:{upperNotApplicable:false,damageNotPresent:false}});
  const leaseToken=randomUUID();const claimed=await mediaStore.command<import('./domain/photo-workspace.ts').InternalAnalysisJob>('analysis_claim',{companyId:'lk-group',jobId:queued.latest!.id,leaseToken});
  await mediaStore.command('analysis_fail',{companyId:'lk-group',jobId:claimed.id,leaseToken,status,error:'Synthetic legacy failure without provider call.'});return claimed.id;
 }
 for(const status of ['failed','uncertain'] as const)test(`explicit ${status} legacy retry starts the new version and exact response-loss replay returns one job`,async()=>{
- const {cookie}=await owner();await ready(cookie);const legacyId=await legacyFailure(cookie,status),input=analysisInput(2,{retryOf:legacyId});
+ const {cookie}=await legacyOwner();await ready(cookie);const legacyId=await legacyFailure(cookie,status),input=analysisInput(2,{retryOf:legacyId});
  const first=await api.start(req('POST',cookie,input));assert.equal(first.status,200,await first.clone().text());const started=await first.json() as PhotoWorkspace;assert.notEqual(started.latest!.id,legacyId);assert.equal(started.latest!.status,'queued');assert.equal(started.jobs.find(job=>job.id===legacyId)!.status,status);
  const repeated=await api.start(req('POST',cookie,input));assert.equal(repeated.status,200,await repeated.clone().text());assert.deepEqual(await repeated.json(),started);assert.equal(await count('lk_quote_analysis_jobs'),2);assert.equal(providerCalls,0);
- const row=(await db.query<{pricing_version:string}>('select pricing_version from public.lk_quote_analysis_jobs where id=$1',[started.latest!.id])).rows[0];assert.equal(row.pricing_version,QUOTE_PRICING_VERSION);
+ const row=(await db.query<{pricing_version:string}>('select pricing_version from public.lk_quote_analysis_jobs where id=$1',[started.latest!.id])).rows[0];assert.equal(row.pricing_version,PREVIOUS_QUOTE_PRICING_VERSION);
 });
 test('explicit retry of a failed v1 priced analysis creates one v2 job and preserves exact replay',async()=>{
- const {cookie}=await owner();await ready(cookie);
+ const {cookie}=await legacyOwner();await ready(cookie);
  const versions={model:PHOTO_ANALYSIS_MODEL,promptVersion:'cabinet-observations-v2',schemaVersion:'cabinet-photo-analysis-v1',pricingVersion:LEGACY_QUOTE_PRICING_VERSION};
  const oldId=await legacyFailure(cookie,'failed',versions),input=analysisInput(2,{retryOf:oldId});
  const first=await api.start(req('POST',cookie,input));assert.equal(first.status,200,await first.clone().text());const started=await first.json() as PhotoWorkspace;
@@ -229,7 +242,7 @@ test('explicit retry of a failed v1 priced analysis creates one v2 job and prese
  const row=(await db.query<{retry_of:string|null,prompt_version:string}>('select retry_of,prompt_version from public.lk_quote_analysis_jobs where id=$1',[started.latest!.id])).rows[0];assert.equal(row.retry_of,null);assert.equal(row.prompt_version,PHOTO_ANALYSIS_PROMPT_VERSION);assert.equal(await count('lk_quote_analysis_jobs'),2);assert.equal(providerCalls,0);
 });
 test('legacy retries reject foreign, unknown, stale and nonfailed jobs before creating a new priced job',async()=>{
- const a=await owner();await ready(a.cookie);const legacyId=await legacyFailure(a.cookie,'failed');const b=await owner();await ready(b.cookie);
+ const a=await legacyOwner();await ready(a.cookie);const legacyId=await legacyFailure(a.cookie,'failed');const b=await legacyOwner();await ready(b.cookie);
  for(const retryOf of [legacyId,randomUUID()])assert.equal((await api.start(req('POST',b.cookie,analysisInput(2,{retryOf})))).status,404);
  assert.equal((await api.start(req('POST',a.cookie,analysisInput(1,{retryOf:legacyId})))).status,409);
  const changed=await requests.save(req('PUT',a.cookie,{...write(2),payload:{contact,service:{...service,doorCount:7}},storageConsent:true},'/api/quote/requests'));assert.equal(changed.status,200);
@@ -238,7 +251,7 @@ test('legacy retries reject foreign, unknown, stale and nonfailed jobs before cr
  assert.equal(await count('lk_quote_analysis_jobs'),2);assert.equal(providerCalls,0);
 });
 test('same-version explicit retry retains the failed job link and replays without a provider call',async()=>{
- const {cookie}=await owner();await ready(cookie);const old=await start(cookie);const leaseToken=randomUUID();await mediaStore.command('analysis_claim',{companyId:'lk-group',jobId:old.latest!.id,leaseToken});await mediaStore.command('analysis_fail',{companyId:'lk-group',jobId:old.latest!.id,leaseToken,status:'failed',error:'Synthetic current version failure.'});
+ const {cookie}=await legacyOwner();await ready(cookie);const old=await start(cookie);const leaseToken=randomUUID();await mediaStore.command('analysis_claim',{companyId:'lk-group',jobId:old.latest!.id,leaseToken});await mediaStore.command('analysis_fail',{companyId:'lk-group',jobId:old.latest!.id,leaseToken,status:'failed',error:'Synthetic current version failure.'});
  const input=analysisInput(2,{retryOf:old.latest!.id});const first=await api.start(req('POST',cookie,input));assert.equal(first.status,200,await first.clone().text());const retried=await first.json() as PhotoWorkspace;assert.equal(retried.latest!.attempts,2);
  const replay=await api.start(req('POST',cookie,input));assert.equal(replay.status,200);assert.deepEqual(await replay.json(),retried);const row=(await db.query<{retry_of:string}>('select retry_of from public.lk_quote_analysis_jobs where id=$1',[retried.latest!.id])).rows[0];assert.equal(row.retry_of,old.latest!.id);assert.equal(providerCalls,0);
 });
