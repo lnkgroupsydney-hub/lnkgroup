@@ -1,5 +1,15 @@
 # 메인 → Cabinet → 회사 관리 웹 제작 TODO
 
+**2026-10-14 main 통합·운영 배포와 전체 운영 인수:** [Git·배포·운영 고객 UI/EMS/실제 제공자 기록](../verification/2026-10-14-quote-production-release.md).
+
+- [x] 현재 브랜치 변경 6파일 커밋 `f17985d`, main 병합 `98ecb75`·동일 트리·회사 origin 두 브랜치 atomic push/원격 SHA 대조.
+- [x] 회사 Vercel 프로젝트/계정 확인, 해당 main Production READY·회사 도메인 alias·공개 견적 HTTP 200, 해당 배포의 초기 15분 error 로그 0건.
+- [x] 사용자 기존 이메일 연결·정상 신규 시작으로 인증 의존성 해결. 배포 고객 UI의 사진5장·AI1회·14도어/6서랍·A$2,970·신규 OTP1회·비구속 typed QA서명/제출을 실제 완료.
+- [x] 운영 EMS 단일 confirm·11/2 take-off09:30–10:30/11/4 install10:00–12:00 Sydney·Google GET2회/GUI·접수/확정 INBOX 각1통·Gmail API 본문/PDF byteshash·정상 API 날짜 차단 대조.
+- [x] 기존3요청 선택컬럼 hash 불변·접근 보호 유지·QA10/28·30 및11/2·4 점유/자료 보관, 관련37/37·최종check 재사용. 전체767은 오늘 재실행하지 않음.
+- [x] 최종 운영 Reload·회사 verified 세션/Saved quote 목록·같은 견적/기간/확정 상태·접수/확정 PDF두 개 enabled·세 수정 문구의 실제 표시/레이아웃 확인. 재OTP·재AI·재서명·재제출·재확정 없음. 후속 서버 error로그0건.
+- [ ] 실물 모바일·브라우저 console·PDF 페이지별 시각 인수 및 미래 webhook/cron·현장 최종 가격/정식 계약 등은 별도.
+
 **2026-10-14 실제 회사 제공자 인수:** [로컬 고객 UI·운영 EMS·DB/Google/Gmail 대조 기록](../verification/2026-10-14-quote-live-e2e.md). 과거 미인수/미배포 표시는 각 실행 당시의 기록이며 이번 실행 범위는 이 최신 항목을 따른다.
 
 - [x] 회사 Chrome localhost:3034의 사진5장 실제 업로드·유료 AI1회·도어14/서랍6·A$2,970 GST 포함 잠정 도장비·현재 견적 이메일 인증·10/28 09:30 typed QA 서명/제출.
