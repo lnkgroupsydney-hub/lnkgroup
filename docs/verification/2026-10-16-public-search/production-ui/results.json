@@ -1,0 +1,39 @@
+{
+  "passed": true,
+  "base": "https://www.lnkgroupsydney.com.au",
+  "checks": [
+    {
+      "path": "/",
+      "width": 1440,
+      "passed": true,
+      "errors": [],
+      "failures": [],
+      "blocked": []
+    },
+    {
+      "path": "/services/cabinet-painting",
+      "width": 1440,
+      "passed": true,
+      "errors": [],
+      "failures": [],
+      "blocked": []
+    },
+    {
+      "path": "/",
+      "width": 390,
+      "passed": true,
+      "errors": [],
+      "failures": [],
+      "blocked": []
+    },
+    {
+      "path": "/services/cabinet-painting",
+      "width": 390,
+      "passed": true,
+      "errors": [],
+      "failures": [],
+      "blocked": []
+    }
+  ],
+  "isolation": "Read-only public documents and assets only; APIs, writes and external origins blocked; no application cookies or customer data"
+}

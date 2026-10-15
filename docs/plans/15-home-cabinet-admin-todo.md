@@ -4,7 +4,7 @@
 
 - [x] 1~2단계 로컬 구현: Production www의 두 공개 페이지/등록 이미지 예외, 비공개·Preview 기본 보호, canonical·OG·robots·sitemap·실제 정보 구조화 데이터.
 - [x] 정책5/5·관련 회귀122/122·HTTP Production/alias/Preview 각26·실제 브라우저17/17·lint/타입/별도 Production·Preview build.
-- [ ] 회사 운영 배포와 실제 www/배포 URL의 HTTP·익명 고객 자료 보호 인수.
+- [x] 회사 main 반영·운영 배포, 실제 www HTTP26/26·브라우저4/4와 보호된 배포 URL 각11개 응답·익명 고객 자료 보호 인수. Preview 미설정 견적 API는503으로 닫힘.
 - [ ] 회사 Search Console 소유권·사이트맵 제출·URL 검사·AI 포함 확인. 실제 색인/AI 노출은 별도 결과.
 
 **2026-10-14 신규 A$1,450·GST 미부과:** [53번 정책](53-new-quote-no-gst-pricing.md)·[검증 기록](../verification/2026-10-14-no-gst-pricing.md).

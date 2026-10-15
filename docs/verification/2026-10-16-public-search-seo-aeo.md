@@ -27,4 +27,15 @@ Production 빌드의 배포별 URL은 HTML에 운영 canonical과 index metadata
 
 회사 Google 계정 `lnkgroupsydney@gmail.com` 로그인은 확인했으나 도메인 Search Console 속성은 접근 불가로 표시됐다. 소유권 인증·사이트맵 제출·URL 검사·AI 포함 설정의 완료 여부는 실제 회사 속성 접근 후 별도로 기록한다. 코드의 검색 허용과 Google 실제 색인·순위·AI 인용은 서로 다른 결과다.
 
-운영 배포/실제 www 인수 및 Search Console은 아직 진행 중이다.
+## 운영 배포·인수 완료
+
+검증한 제품 커밋은 `59014a0931c237454265a6272c0e463a56ecd7fc`이며 회사 main에도 fast-forward로 반영했다. 기존 회사 Git 연동의 별도 **Production 빌드** `dpl_BffN6ygbV7Y9LVBByRHMC6QF5ye2`를 READY/STAGED에서 검사하고 승격했다. Preview 빌드를 재사용해 운영 metadata를 바꾸는 방식은 사용하지 않았다. 회사 www의 source SHA와 READY/PROMOTED를 확인했다. 최종 문서 후속 커밋은 제품 코드 변경 없이 결과를 기록한다.
+
+- 배포된 Preview `dpl_5v5MVmxdVyRH9oqcuXrodhgWf2cg`와 staged Production은 회사 CLI 인증으로 각각11개 응답을 확인했다. Vercel Deployment Protection을 해제하지 않았다.
+- Preview의 실제 견적 API는 운영 연결이 없어 503 `not configured`로 닫힌다. Preview의 실고객 인증 인수로 확대하지 않는다. HTML·HTTP noindex, robots 전체 제한, 빈 sitemap·고객 데이터 미반환을 확인했다. 최초 도구의 200/401 가정 실패와 수정 결과를 구분해 보관했다.
+- 운영 **www의 HTTP 26/26**: 두 공개 페이지 GET/HEAD·Googlebot·UTM canonical/OG, 공개 원본/최적화 이미지, robots·sitemap 2개 URL, 관리자·견적 noindex, 익명 요청 `{request:null}`, 고객 사진/PDF 401 및 `private, no-store`·`Vary: Cookie` 통과.
+- 운영 **실제 브라우저4/4**: 홈/KCP 각각1440px·390px, 공개 metadata·canonical·이미지 로딩·가로 넘침·모바일 메뉴/Escape·KCP FAQ 키보드 및 내부 링크 확인. 런타임 오류·HTTP 실패·차단된 외부/쓰기 요청0건. 스크린샷을 직접 확인했다. 고객 견적을 새로 만들거나 열지 않았다.
+
+[운영 HTTP](2026-10-16-public-search/production/http-results.json) · [운영 브라우저](2026-10-16-public-search/production-ui/results.json) · [배포 상태](2026-10-16-public-search/production-deployment.json).
+
+회사 Search Console의 소유권 인증·사이트맵 제출·URL 검사·AI 포함 상태는 미완료다. 회사 계정 로그인은 확인했지만 해당 도메인 속성 접근 불가 안내가 나타나고 자동 제어에서 인증 안내가 열리지 않아 사용자 화면 확인을 요청했다. 실제 Google 색인·검색 순위·AI 인용은 보장하거나 완료로 표시하지 않는다.
