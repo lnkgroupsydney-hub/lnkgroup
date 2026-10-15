@@ -1,5 +1,5 @@
 export const siteConfig = {
   name: "L&K Group",
   language: "en-AU",
-  isPrototype: true,
+  url: "https://www.lnkgroupsydney.com.au",
 } as const;

@@ -1,11 +1,16 @@
 import type { Metadata } from "next";
-import { HomePageContent, homeContent } from "@/modules/company-profile";
+import { HomePageContent, homeContent, PublicStructuredData } from "@/modules/company-profile";
 import { siteConfig } from "@/shared/config/site";
+import { publicPageSearchMetadata } from "@/shared/seo/metadata";
+
+const searchMetadata = publicPageSearchMetadata("/");
 
 export const metadata: Metadata = {
+  ...searchMetadata,
   title: homeContent.title,
   description: homeContent.description,
   openGraph: {
+    ...searchMetadata.openGraph,
     title: homeContent.title,
     description: homeContent.description,
     siteName: siteConfig.name,
@@ -20,5 +25,5 @@ export const metadata: Metadata = {
 };
 
 export default function HomePage() {
-  return <HomePageContent />;
+  return <><PublicStructuredData page="home" /><HomePageContent /></>;
 }

@@ -1,0 +1,78 @@
+{
+  "upstream": "http://127.0.0.1:3136",
+  "startedAt": "2026-10-15T20:49:56.008Z",
+  "checks": [
+    {
+      "name": "mobile-menu-keyboard-escape-and-section-focus",
+      "passed": true,
+      "externalBlocked": [],
+      "apiFixtures": [],
+      "blockedWrites": [],
+      "pageErrors": [],
+      "failedLocalResources": [],
+      "consoleErrors": [],
+      "triggerFocus": {
+        "focused": true,
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "outlineColor": "rgb(46, 58, 63)",
+        "shadow": "rgb(250, 248, 243) 0px 0px 0px 6px",
+        "top": 20,
+        "bottom": 68,
+        "viewportHeight": 852
+      },
+      "linkFocus": {
+        "focused": true,
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "outlineColor": "rgb(46, 58, 63)",
+        "shadow": "rgb(250, 248, 243) 0px 0px 0px 6px",
+        "top": 85,
+        "bottom": 133,
+        "viewportHeight": 852
+      },
+      "links": [
+        {
+          "label": "Services",
+          "href": "#services",
+          "activeId": "services",
+          "targetTop": 32.484375
+        },
+        {
+          "label": "About",
+          "href": "#about",
+          "activeId": "about",
+          "targetTop": 31.625
+        },
+        {
+          "label": "What we offer",
+          "href": "#gallery",
+          "activeId": "gallery",
+          "targetTop": 31.640625
+        },
+        {
+          "label": "Service area",
+          "href": "#service-area",
+          "activeId": "service-area",
+          "targetTop": 31.53125
+        },
+        {
+          "label": "Contact",
+          "href": "#contact",
+          "activeId": "contact",
+          "targetTop": 31.625
+        }
+      ]
+    }
+  ],
+  "isolation": "Fresh contexts without stored sessions; service workers blocked; external requests aborted; all backend writes blocked. Quote-entry scenario alone simulates the exact automatic POST session handshake with {ready:true}, without cookies or records, then serves empty customer/request GET fixtures. No backend session/create, save, submission, company session or external service action.",
+  "limitations": [
+    "Headless Chrome does not certify physical-device behaviour.",
+    "200% TEXT enlargement uses root font-size, not native browser zoom.",
+    "Computed keyboard focus cues and element geometry are checked; screenshots still require visual review. No pixel contrast/WCAG certification.",
+    "Coming-soon cards are checked for interactive DOM, DOM event properties and hydrated React handler props; this is not a general audit of arbitrary delegated JavaScript listeners.",
+    "No production deployment, search ranking, real API persistence, mail or Google integration is exercised."
+  ],
+  "finishedAt": "2026-10-15T20:49:57.549Z",
+  "passed": true
+}

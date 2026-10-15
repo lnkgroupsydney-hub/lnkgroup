@@ -131,7 +131,7 @@ export async function verifyKcpLanding({ upstream = 'http://127.0.0.1:3002', out
     assert.deepEqual(value.missingFragments, [])
     assert.ok(value.documentWidth <= value.width + 1, `Horizontal overflow ${value.documentWidth}/${value.width}`)
     assert.ok(value.title && value.description)
-    assert.match(value.robots ?? '', /noindex/)
+    assert.equal(value.robots, process.env.SEO_EXPECT_INDEXABLE === 'true' ? 'index, follow' : 'noindex, nofollow')
     return value
   }
   const stageLinks = page => page.locator('.kcp-stage-nav ol a')

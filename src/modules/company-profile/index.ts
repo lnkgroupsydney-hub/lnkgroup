@@ -1,4 +1,5 @@
 export { companyContent } from "./content/company-content";
+export { PublicStructuredData } from "./presentation/public-structured-data";
 export { CompanyHeader } from "./presentation/company-header";
 export { BenefitsSection } from "./presentation/benefits-section";
 export { AboutSection } from "./presentation/about-section";

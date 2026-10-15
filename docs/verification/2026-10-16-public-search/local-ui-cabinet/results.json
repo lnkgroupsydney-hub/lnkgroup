@@ -1,0 +1,227 @@
+{
+  "upstream": "http://127.0.0.1:3136",
+  "startedAt": "2026-10-15T20:48:34.930Z",
+  "checks": [
+    {
+      "name": "viewport-320x568",
+      "passed": true,
+      "externalBlocked": [],
+      "apiFixtures": [],
+      "pageErrors": [],
+      "failedLocalResources": [],
+      "consoleWarnings": [],
+      "structure": {
+        "width": 320,
+        "documentWidth": 320,
+        "h1": 1,
+        "duplicateIds": [],
+        "missingFragments": [],
+        "title": "Kitchen Cabinet Painting | L&K Group",
+        "description": "Refresh suitable cabinet doors, drawer fronts and visible panels with L&K Group around Ermington and Inner West Sydney. Explore the process and request a photo-based provisional estimate.",
+        "robots": "index, follow"
+      },
+      "pageHeight": 13106,
+      "serviceHeight": 1408.578125
+    },
+    {
+      "name": "viewport-390x844",
+      "passed": true,
+      "externalBlocked": [],
+      "apiFixtures": [],
+      "pageErrors": [],
+      "failedLocalResources": [],
+      "consoleWarnings": [],
+      "structure": {
+        "width": 390,
+        "documentWidth": 390,
+        "h1": 1,
+        "duplicateIds": [],
+        "missingFragments": [],
+        "title": "Kitchen Cabinet Painting | L&K Group",
+        "description": "Refresh suitable cabinet doors, drawer fronts and visible panels with L&K Group around Ermington and Inner West Sydney. Explore the process and request a photo-based provisional estimate.",
+        "robots": "index, follow"
+      },
+      "pageHeight": 12460,
+      "serviceHeight": 1249.625
+    },
+    {
+      "name": "viewport-768x1024",
+      "passed": true,
+      "externalBlocked": [],
+      "apiFixtures": [],
+      "pageErrors": [],
+      "failedLocalResources": [],
+      "consoleWarnings": [],
+      "structure": {
+        "width": 768,
+        "documentWidth": 768,
+        "h1": 1,
+        "duplicateIds": [],
+        "missingFragments": [],
+        "title": "Kitchen Cabinet Painting | L&K Group",
+        "description": "Refresh suitable cabinet doors, drawer fronts and visible panels with L&K Group around Ermington and Inner West Sydney. Explore the process and request a photo-based provisional estimate.",
+        "robots": "index, follow"
+      },
+      "pageHeight": 9695,
+      "serviceHeight": 1020.296875
+    },
+    {
+      "name": "viewport-1280x720",
+      "passed": true,
+      "externalBlocked": [],
+      "apiFixtures": [],
+      "pageErrors": [],
+      "failedLocalResources": [],
+      "consoleWarnings": [],
+      "structure": {
+        "width": 1280,
+        "documentWidth": 1280,
+        "h1": 1,
+        "duplicateIds": [],
+        "missingFragments": [],
+        "title": "Kitchen Cabinet Painting | L&K Group",
+        "description": "Refresh suitable cabinet doors, drawer fronts and visible panels with L&K Group around Ermington and Inner West Sydney. Explore the process and request a photo-based provisional estimate.",
+        "robots": "index, follow"
+      },
+      "firstStepControls": {
+        "top": 651.265625,
+        "bottom": 696.265625,
+        "height": 45,
+        "viewportHeight": 720
+      },
+      "pageHeight": 11559,
+      "serviceHeight": 786.6875
+    },
+    {
+      "name": "viewport-1440x900",
+      "passed": true,
+      "externalBlocked": [],
+      "apiFixtures": [],
+      "pageErrors": [],
+      "failedLocalResources": [],
+      "consoleWarnings": [],
+      "structure": {
+        "width": 1440,
+        "documentWidth": 1440,
+        "h1": 1,
+        "duplicateIds": [],
+        "missingFragments": [],
+        "title": "Kitchen Cabinet Painting | L&K Group",
+        "description": "Refresh suitable cabinet doors, drawer fronts and visible panels with L&K Group around Ermington and Inner West Sydney. Explore the process and request a photo-based provisional estimate.",
+        "robots": "index, follow"
+      },
+      "firstStepControls": {
+        "top": 831.46875,
+        "bottom": 876.46875,
+        "height": 45,
+        "viewportHeight": 900
+      },
+      "pageHeight": 13381,
+      "serviceHeight": 812.09375
+    },
+    {
+      "name": "viewport-1023x700",
+      "passed": true,
+      "externalBlocked": [],
+      "apiFixtures": [],
+      "pageErrors": [],
+      "failedLocalResources": [],
+      "consoleWarnings": [],
+      "structure": {
+        "width": 1023,
+        "documentWidth": 1023,
+        "h1": 1,
+        "duplicateIds": [],
+        "missingFragments": [],
+        "title": "Kitchen Cabinet Painting | L&K Group",
+        "description": "Refresh suitable cabinet doors, drawer fronts and visible panels with L&K Group around Ermington and Inner West Sydney. Explore the process and request a photo-based provisional estimate.",
+        "robots": "index, follow"
+      },
+      "pageHeight": 10382,
+      "serviceHeight": 952.46875
+    },
+    {
+      "name": "viewport-1024x700",
+      "passed": true,
+      "externalBlocked": [],
+      "apiFixtures": [],
+      "pageErrors": [],
+      "failedLocalResources": [],
+      "consoleWarnings": [],
+      "structure": {
+        "width": 1024,
+        "documentWidth": 1024,
+        "h1": 1,
+        "duplicateIds": [],
+        "missingFragments": [],
+        "title": "Kitchen Cabinet Painting | L&K Group",
+        "description": "Refresh suitable cabinet doors, drawer fronts and visible panels with L&K Group around Ermington and Inner West Sydney. Explore the process and request a photo-based provisional estimate.",
+        "robots": "index, follow"
+      },
+      "firstStepControls": {
+        "top": 631.15625,
+        "bottom": 676.15625,
+        "height": 45,
+        "viewportHeight": 700
+      },
+      "pageHeight": 11038,
+      "serviceHeight": 764.0625
+    },
+    {
+      "name": "viewport-1280x699",
+      "passed": true,
+      "externalBlocked": [],
+      "apiFixtures": [],
+      "pageErrors": [],
+      "failedLocalResources": [],
+      "consoleWarnings": [],
+      "structure": {
+        "width": 1280,
+        "documentWidth": 1280,
+        "h1": 1,
+        "duplicateIds": [],
+        "missingFragments": [],
+        "title": "Kitchen Cabinet Painting | L&K Group",
+        "description": "Refresh suitable cabinet doors, drawer fronts and visible panels with L&K Group around Ermington and Inner West Sydney. Explore the process and request a photo-based provisional estimate.",
+        "robots": "index, follow"
+      },
+      "pageHeight": 11226,
+      "serviceHeight": 786.6875
+    },
+    {
+      "name": "viewport-1280x700",
+      "passed": true,
+      "externalBlocked": [],
+      "apiFixtures": [],
+      "pageErrors": [],
+      "failedLocalResources": [],
+      "consoleWarnings": [],
+      "structure": {
+        "width": 1280,
+        "documentWidth": 1280,
+        "h1": 1,
+        "duplicateIds": [],
+        "missingFragments": [],
+        "title": "Kitchen Cabinet Painting | L&K Group",
+        "description": "Refresh suitable cabinet doors, drawer fronts and visible panels with L&K Group around Ermington and Inner West Sydney. Explore the process and request a photo-based provisional estimate.",
+        "robots": "index, follow"
+      },
+      "firstStepControls": {
+        "top": 631,
+        "bottom": 676,
+        "height": 45,
+        "viewportHeight": 700
+      },
+      "pageHeight": 11385,
+      "serviceHeight": 786.6875
+    }
+  ],
+  "isolation": "Fresh Playwright contexts; external requests aborted; every /api request fulfilled locally; no DB, API save/submit, company, AI, mail or Google calls.",
+  "limitations": [
+    "Headless Chrome is not a physical device.",
+    "200% text enlargement is simulated by root font-size; native browser zoom and actual 200% device/browser zoom are not certified.",
+    "No frame-rate, bundle-size, search-ranking or formal accessibility certification."
+  ],
+  "finishedAt": "2026-10-15T20:48:47.501Z",
+  "passed": true
+}

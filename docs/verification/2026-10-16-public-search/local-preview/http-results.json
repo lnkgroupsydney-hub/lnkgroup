@@ -1,0 +1,239 @@
+{
+  "passed": true,
+  "base": "http://127.0.0.1:3137",
+  "environment": "preview",
+  "simulatedHost": null,
+  "checks": [
+    {
+      "path": "/",
+      "method": "GET",
+      "agent": "default",
+      "status": 200,
+      "robots": "noindex, nofollow",
+      "cache": "s-maxage=31536000",
+      "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch, Accept-Encoding"
+    },
+    {
+      "path": "/",
+      "method": "GET",
+      "agent": "Googlebot",
+      "status": 200,
+      "robots": "noindex, nofollow",
+      "cache": "s-maxage=31536000",
+      "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch, Accept-Encoding"
+    },
+    {
+      "path": "/",
+      "method": "HEAD",
+      "agent": "default",
+      "status": 200,
+      "robots": "noindex, nofollow",
+      "cache": "s-maxage=31536000",
+      "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch, Accept-Encoding"
+    },
+    {
+      "path": "/?utm_source=chatgpt.com",
+      "method": "GET",
+      "agent": "default",
+      "status": 200,
+      "robots": "noindex, nofollow",
+      "cache": "s-maxage=31536000",
+      "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch, Accept-Encoding"
+    },
+    {
+      "path": "/services/cabinet-painting",
+      "method": "GET",
+      "agent": "default",
+      "status": 200,
+      "robots": "noindex, nofollow",
+      "cache": "s-maxage=31536000",
+      "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch, Accept-Encoding"
+    },
+    {
+      "path": "/services/cabinet-painting",
+      "method": "GET",
+      "agent": "Googlebot",
+      "status": 200,
+      "robots": "noindex, nofollow",
+      "cache": "s-maxage=31536000",
+      "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch, Accept-Encoding"
+    },
+    {
+      "path": "/services/cabinet-painting",
+      "method": "HEAD",
+      "agent": "default",
+      "status": 200,
+      "robots": "noindex, nofollow",
+      "cache": "s-maxage=31536000",
+      "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch, Accept-Encoding"
+    },
+    {
+      "path": "/services/cabinet-painting?utm_source=chatgpt.com",
+      "method": "GET",
+      "agent": "default",
+      "status": 200,
+      "robots": "noindex, nofollow",
+      "cache": "s-maxage=31536000",
+      "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch, Accept-Encoding"
+    },
+    {
+      "path": "/admin",
+      "method": "GET",
+      "agent": "default",
+      "status": 200,
+      "robots": "noindex, nofollow",
+      "cache": "private, no-cache, no-store, max-age=0, must-revalidate",
+      "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch, Accept-Encoding"
+    },
+    {
+      "path": "/admin/customers",
+      "method": "GET",
+      "agent": "default",
+      "status": 404,
+      "robots": "noindex, nofollow",
+      "cache": "private, no-cache, no-store, max-age=0, must-revalidate",
+      "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch, Accept-Encoding"
+    },
+    {
+      "path": "/quote/start?service=cabinet-painting",
+      "method": "GET",
+      "agent": "default",
+      "status": 200,
+      "robots": "noindex, nofollow",
+      "cache": "private, no-cache, no-store, max-age=0, must-revalidate",
+      "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch, Accept-Encoding"
+    },
+    {
+      "path": "/quote/start?mode=demo",
+      "method": "GET",
+      "agent": "default",
+      "status": 200,
+      "robots": "noindex, nofollow",
+      "cache": "private, no-cache, no-store, max-age=0, must-revalidate",
+      "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch, Accept-Encoding"
+    },
+    {
+      "path": "/images/home/cabinet-painting.webp",
+      "method": "HEAD",
+      "agent": "default",
+      "status": 200,
+      "robots": "noindex, nofollow",
+      "cache": "public, max-age=0",
+      "vary": null
+    },
+    {
+      "path": "/_next/image?url=%2Fimages%2Fhome%2Fcabinet-painting.webp&w=640&q=75",
+      "method": "HEAD",
+      "agent": "default",
+      "status": 200,
+      "robots": "noindex, nofollow",
+      "cache": "public, max-age=14400, must-revalidate",
+      "vary": "Accept"
+    },
+    {
+      "path": "/images/story/kitchen-finished.webp",
+      "method": "HEAD",
+      "agent": "default",
+      "status": 200,
+      "robots": "noindex, nofollow",
+      "cache": "public, max-age=0",
+      "vary": null
+    },
+    {
+      "path": "/_next/image?url=%2Fimages%2Fstory%2Fkitchen-finished.webp&w=640&q=75",
+      "method": "HEAD",
+      "agent": "default",
+      "status": 200,
+      "robots": "noindex, nofollow",
+      "cache": "public, max-age=14400, must-revalidate",
+      "vary": "Accept"
+    },
+    {
+      "path": "/images/lk-group-logo-circle-transparent.png",
+      "method": "HEAD",
+      "agent": "default",
+      "status": 200,
+      "robots": "noindex, nofollow",
+      "cache": "public, max-age=0",
+      "vary": null
+    },
+    {
+      "path": "/_next/image?url=%2Fimages%2Flk-group-logo-circle-transparent.png&w=640&q=75",
+      "method": "HEAD",
+      "agent": "default",
+      "status": 200,
+      "robots": "noindex, nofollow",
+      "cache": "public, max-age=14400, must-revalidate",
+      "vary": "Accept"
+    },
+    {
+      "path": "/images/unregistered-search-test.webp",
+      "method": "GET",
+      "agent": "default",
+      "status": 404,
+      "robots": "noindex, nofollow",
+      "cache": "private, no-cache, no-store, max-age=0, must-revalidate",
+      "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch, Accept-Encoding"
+    },
+    {
+      "path": "/services/not-approved",
+      "method": "GET",
+      "agent": "default",
+      "status": 404,
+      "robots": "noindex, nofollow",
+      "cache": "private, no-cache, no-store, max-age=0, must-revalidate",
+      "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch, Accept-Encoding"
+    },
+    {
+      "path": "/robots.txt",
+      "method": "GET",
+      "agent": "default",
+      "status": 200,
+      "robots": "noindex, nofollow",
+      "cache": "public, max-age=0, must-revalidate",
+      "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch"
+    },
+    {
+      "path": "/sitemap.xml",
+      "method": "GET",
+      "agent": "default",
+      "status": 200,
+      "robots": "noindex, nofollow",
+      "cache": "public, max-age=0, must-revalidate",
+      "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch"
+    },
+    {
+      "path": "/api/quote/requests",
+      "method": "GET",
+      "agent": "default",
+      "status": 200,
+      "robots": "noindex, nofollow",
+      "cache": "private, no-store",
+      "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch, Cookie"
+    },
+    {
+      "path": "/api/quote/requests/photos/11111111-1111-4111-8111-111111111111/content",
+      "method": "GET",
+      "status": 401,
+      "robots": "noindex, nofollow",
+      "cache": "private, no-store",
+      "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch, Cookie"
+    },
+    {
+      "path": "/api/quote/photos/11111111-1111-4111-8111-111111111111/content",
+      "method": "GET",
+      "status": 401,
+      "robots": "noindex, nofollow",
+      "cache": "private, no-store",
+      "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch, Cookie"
+    },
+    {
+      "path": "/api/quote/requests/booking/documents/receipt",
+      "method": "GET",
+      "status": 401,
+      "robots": "noindex, nofollow",
+      "cache": "private, no-store",
+      "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch, Cookie"
+    }
+  ]
+}

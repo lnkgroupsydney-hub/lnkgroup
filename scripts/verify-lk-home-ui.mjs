@@ -45,7 +45,7 @@ export async function verifyLkHome({ upstream = 'http://127.0.0.1:3026', output 
   mkdirSync(directory, { recursive: true })
   const report = {
     upstream: base, startedAt: new Date().toISOString(), checks: [],
-    isolation: 'Fresh contexts without stored sessions; service workers blocked; external requests aborted; all backend writes blocked. Quote-entry scenario alone simulates the exact automatic POST session handshake with {ready:true}, without cookies or records, then serves empty customer/request GET fixtures. No backend session/create, save, submission, company session or external service action.',
+    isolation: 'Fresh contexts without stored sessions; service workers blocked; external requests aborted; all backend writes blocked. Quote-entry scenario alone simulates the exact explicit start-new logout POST and automatic session POST handshake with no cookies or records, then serves empty customer/request GET fixtures. No backend session/create, save, submission, company session or external service action.',
     limitations: [
       'Headless Chrome does not certify physical-device behaviour.',
       '200% TEXT enlargement uses root font-size, not native browser zoom.',
@@ -67,6 +67,10 @@ export async function verifyLkHome({ upstream = 'http://127.0.0.1:3026', output 
       if (url.origin !== base) {
         evidence.externalBlocked.push({ ...entry, origin: url.origin })
         return route.abort('blockedbyclient')
+      }
+      if (name === 'cabinet-detail-to-empty-quote-read-only' && request.method() === 'POST' && url.pathname === '/api/quote/requests/customer/logout' && request.postData() === JSON.stringify({ intent: 'start-new' })) {
+        evidence.apiFixtures.push({ ...entry, fixture: 'synthetic-start-new-no-cookie-no-record' })
+        return route.fulfill({ status: 200, contentType: 'application/json', headers: { 'cache-control': 'no-store', 'x-lk-home-ui-fixture': 'synthetic-start-new' }, body: JSON.stringify({ signedOut: true, writingSessionPreserved: true, contact: null }) })
       }
       // Canonical api.session returns {ready:true}; the form opens this before
       // reading a draft. Simulate that response entirely inside the browser,
@@ -155,8 +159,7 @@ export async function verifyLkHome({ upstream = 'http://127.0.0.1:3026', output 
     assert.match(value.title, /L&K Group/)
     assert.match(value.title, /Sydney|Ermington/)
     assert.ok(value.description?.trim().length > 40, 'Description is meaningful')
-    assert.match(value.robots ?? '', /noindex/)
-    assert.match(value.robots ?? '', /nofollow/)
+    assert.equal(value.robots, process.env.SEO_EXPECT_INDEXABLE === 'true' ? 'index, follow' : 'noindex, nofollow')
     assert.equal(value.headings[0]?.level, 1, 'Main starts with the primary heading')
     for (let i = 1; i < value.headings.length; i++) assert.ok(value.headings[i].level <= value.headings[i - 1].level + 1, `Heading hierarchy does not skip levels: ${value.headings[i].text}`)
     for (const id of sectionIds.filter(id => !['home', 'main-content'].includes(id))) assert.equal(await page.locator(`#${id} h2`).count(), 1, `#${id} has a section H2`)
@@ -396,6 +399,7 @@ export async function verifyLkHome({ upstream = 'http://127.0.0.1:3026', output 
       assert.ok(await quote.isVisible())
       await quote.click()
       await page.waitForURL(`${base}${quotePath}`)
+      await page.getByRole('button', { name: 'Start a new quote', exact: true }).click()
       const name = page.getByRole('textbox', { name: /Your name|Full name/ }).first()
       await name.waitFor()
       await page.waitForFunction(element => !element.matches(':disabled'), await name.elementHandle())
@@ -403,7 +407,8 @@ export async function verifyLkHome({ upstream = 'http://127.0.0.1:3026', output 
       evidence.quote = { path: new URL(page.url()).pathname + new URL(page.url()).search, customerName: await name.inputValue(), enabled: await name.isEnabled(), fixtureOnly: true }
       assert.ok(evidence.apiFixtures.some(call => call.path === '/api/quote/requests/session' && call.fixture === 'synthetic-empty-session-handshake-no-cookie-no-record'), 'Automatic quote session handshake was simulated entirely in the browser')
       assert.ok(evidence.apiFixtures.some(call => call.path === '/api/quote/requests' && call.method === 'GET'), 'Quote initialized from an empty request fixture')
-      assert.ok(evidence.apiFixtures.every(call => (['/api/quote/requests/customer', '/api/quote/requests'].includes(call.path) && call.method === 'GET') || (call.path === '/api/quote/requests/session' && call.method === 'POST' && call.fixture === 'synthetic-empty-session-handshake-no-cookie-no-record')), 'Only the simulated session handshake and empty quote GET fixtures were requested')
+      assert.ok(evidence.apiFixtures.some(call => call.fixture === 'synthetic-start-new-no-cookie-no-record'), 'The explicit new-quote choice was simulated without backend changes')
+      assert.ok(evidence.apiFixtures.every(call => (['/api/quote/requests/customer', '/api/quote/requests'].includes(call.path) && call.method === 'GET') || (call.path === '/api/quote/requests/session' && call.method === 'POST' && call.fixture === 'synthetic-empty-session-handshake-no-cookie-no-record') || (call.path === '/api/quote/requests/customer/logout' && call.method === 'POST' && call.fixture === 'synthetic-start-new-no-cookie-no-record')), 'Only simulated entry/session transitions and empty quote GET fixtures were requested')
     })
   } finally {
     await browser.close()
