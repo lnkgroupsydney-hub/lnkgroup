@@ -1,0 +1,16 @@
+The following is a diff from the previous accessibility tree for Window: "Untitled query | SQL Editor | lnk…up project | lnkgroup | Supabase" with ~ and + representing changed and added elements, respectively. Removed elements are summarized by ID range.
+Removed element IDs: 788
+~									762 button Run
++											788 button 1 row
+~										789 table
++											790 row rollout_report
++												791 column header
++													792 text rollout_report
++											793 row {"result":"GST v3 migration applied","preservation":[{"rows":6,"table":"lk_live_booking_confirmed_segments","sha256":"fd54de9a769b4f36c424b5b26f2b2fb7f626df12c2647d179db15865dbb3b548","unchanged":true},{"rows":0,"table":"lk_live_company_acceptances","sha256":"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855","unchanged":true},{"rows":3,"table":"lk_live_company_audit","sha256":"88091051f1cbcd34690bb40b3bd21d420b5d9ba9663d5029fe43566af28438d2","unchanged":true},{"rows":3,"table":"lk_live_compa
++												794 cell
++													795 container
++														796 text {"result":"GST v3 migration applied","preservation":[{"rows":6,"table":"lk_live_booking_confirmed_segments","sha256":"fd54de9a769b4f36c424b5b26f2b2fb7f626df12c2647d179db15865dbb3b548","unchanged":true},{"rows":0,"table":"lk_live_company_acceptances","sha256":"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855","unchanged":true},{"rows":3,"table":"lk_live_company_audit","sha256":"88091051f1cbcd34690bb40b3bd21d420b5d9ba9663d5029fe43566af28438d2","unchanged":true},{"rows":3,"table":"lk_live_compa
++														797 button View full cell content
+The focused UI element is 764 editor (settable) Editor content, Value: end $smoke$;
+commit;
+select current_setting('lk.gst_v3_report')::jsonb||jsonb_build_object('new_request_check',current_setting('lk.gst_v3_smoke')) as rollout_report;

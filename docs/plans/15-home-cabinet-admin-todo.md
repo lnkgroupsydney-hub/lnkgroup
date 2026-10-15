@@ -5,7 +5,8 @@
 - [x] 신규 요청 가격 v3 고정·GST 0, 기존 요청 정책/분석/서명/예약/감사/동결 문서 보존.
 - [x] 고객/EMS 금액·세금 표기와 신규 접수/예약 확정 메일·PDF 일치. 과거 PDF 바이트와 전체 메일 payload 동등성 확인.
 - [x] 전체773/773·lint·타입·최종build, 실제 로컬 브라우저8/8·44개 레이아웃, PDF4종/8쪽 렌더링·시각 점검. 모바일 상세 표 화면 넘침 수정·재검증.
-- [ ] 회사 DB 새 migration 적용 → 앱/worker 운영 배포 → 실제 신규 메일/PDF 및 기존 견적/예약 복구 인수. 기존 자료 backfill 없음.
+- [x] 2026-10-15 회사 DB migration·기존18테이블 전체행 보존·신규v3 RPC 임시생성/롤백·접근보호 확인, READY production 승격·www/apex 연결, 운영3/3 화면/오류0 검증. [운영 기록](../verification/2026-10-15-no-gst-production-release.md). 기존 자료 backfill 없음.
+- [ ] 신규 v3의 실제 고객 메일/PDF 발송·유료 AI·Google 예약 전체 제공자 인수는 이번 배포에서 반복하지 않음. 기존 자료는 DB 해시·로컬 과거 버전 복구/문서 바이트 검사로 보존 확인.
 
 **2026-10-14 main 통합·운영 배포와 전체 운영 인수:** [Git·배포·운영 고객 UI/EMS/실제 제공자 기록](../verification/2026-10-14-quote-production-release.md).
 

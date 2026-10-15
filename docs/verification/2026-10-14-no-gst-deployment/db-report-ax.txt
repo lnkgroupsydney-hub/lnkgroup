@@ -1,0 +1,41 @@
+The following is a diff from the previous accessibility tree for Window: "Untitled query | SQL Editor | lnk…up project | lnkgroup | Supabase" with ~ and + representing changed and added elements, respectively. Removed elements are summarized by ID range.
+~									692 editor Editor content, Value: {
+	"result": "GST v3 migration applied",
+	"preservation": [
+		{
+			"rows": 6,
+			"table": "lk_live_booking_confirmed_segments",
+			"sha256": "fd54de9a769b4f36c424b5b26f2b2fb7f626df12c2647d179db15865dbb3b548",
+			"unchanged": true
+		},
+		{
+…		}
+	],
+	"existing_quotes": 4,
+	"existing_bookings": 3,
+	"new_request_check": "passed; synthetic request rolled back; role restored",
+	"repriced_old_quotes": 0,
+	"existing_signed_submissions": 3
+}
+Selected text: ```
+{
+	"result": "GST v3 migration applied",
+	"preservation": [
+		{
+			"rows": 6,
+			"table": "lk_live_booking_confirmed_segments",
+			"sha256": "fd54de9a769b4f36c424b5b26f2b2fb7f626df12c2647d179db15865dbb3b548",
+			"unchanged": true
+		},
+		{
+…		}
+	],
+	"existing_quotes": 4,
+	"existing_bookings": 3,
+	"new_request_check": "passed; synthetic request rolled back; role restored",
+	"repriced_old_quotes": 0,
+	"existing_signed_submissions": 3
+}
+```
+
+Note: Pay special attention to the content selected by the user. If the user asks a question or refers to the content they are looking at on-screen, they might be referring to the selected content (but they might be referring to something else that's visible, too).

@@ -1,0 +1,118 @@
+{
+  "result": "GST v3 migration applied",
+  "preservation": [
+    {
+      "rows": 6,
+      "table": "lk_live_booking_confirmed_segments",
+      "sha256": "fd54de9a769b4f36c424b5b26f2b2fb7f626df12c2647d179db15865dbb3b548",
+      "unchanged": true
+    },
+    {
+      "rows": 0,
+      "table": "lk_live_company_acceptances",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "unchanged": true
+    },
+    {
+      "rows": 3,
+      "table": "lk_live_company_audit",
+      "sha256": "88091051f1cbcd34690bb40b3bd21d420b5d9ba9663d5029fe43566af28438d2",
+      "unchanged": true
+    },
+    {
+      "rows": 3,
+      "table": "lk_live_company_booking_requests",
+      "sha256": "2ed07a20cfeb78598619e678dd0b0c67a3284d46272f51c37f71f9fe6b3ceace",
+      "unchanged": true
+    },
+    {
+      "rows": 3,
+      "table": "lk_live_company_bookings",
+      "sha256": "144ab1a0356c9ef28747790abdb4bd0644e4c4983ed5086261c25b48d331220f",
+      "unchanged": true
+    },
+    {
+      "rows": 3,
+      "table": "lk_live_company_command_receipts",
+      "sha256": "4efe83ed3b4948aaf083603aa76e72768e65873f997697d57ec66768831991e0",
+      "unchanged": true
+    },
+    {
+      "rows": 6,
+      "table": "lk_live_company_events",
+      "sha256": "bd0a77a1095255330e3515f58d7aad60c2734b7531b7720a3c80580d0728bba0",
+      "unchanged": true
+    },
+    {
+      "rows": 3,
+      "table": "lk_live_company_outbox",
+      "sha256": "64b301dd8a35f4e9e76a0a39cb5203fa1aaafd33e341580a23fd9bb884771c5f",
+      "unchanged": true
+    },
+    {
+      "rows": 3,
+      "table": "lk_live_company_proposals",
+      "sha256": "446b5ab24c83bc0f34332ae9d6539380da71328f9584b1f23aabe74971882ec8",
+      "unchanged": true
+    },
+    {
+      "rows": 3,
+      "table": "lk_live_quote_approvals",
+      "sha256": "47e8585c36340b232bbc75c0008025ca0b959e302381b74d8f0c85c2a733d23d",
+      "unchanged": true
+    },
+    {
+      "rows": 9,
+      "table": "lk_live_quote_booking_receipts",
+      "sha256": "4f11a2c7e4a461b4e0a723b31ed37bb1965392f950f28287d4d09486af69068e",
+      "unchanged": true
+    },
+    {
+      "rows": 13,
+      "table": "lk_live_quote_photos",
+      "sha256": "7858b0704b8de8101193ef8f8ff8560ec4036be5388d6484860dcc2a80770e34",
+      "unchanged": true
+    },
+    {
+      "rows": 3,
+      "table": "lk_live_quote_submissions",
+      "sha256": "4944ce75c1fe18f06d14270901b4f7da0df53a841ba141d9297ba6d9098cdf3d",
+      "unchanged": true
+    },
+    {
+      "rows": 4,
+      "table": "lk_quote_analysis_jobs",
+      "sha256": "d11cd41d30edc9c17c49ea74066a0001a7f220fe4f18567e4e0f2fb98852b3a1",
+      "unchanged": true
+    },
+    {
+      "rows": 38,
+      "table": "lk_quote_media_audit",
+      "sha256": "fe30f8ffcfbb7579a2917fdea418f04614c4532bca7e3b5f4686ed2f90b9ac23",
+      "unchanged": true
+    },
+    {
+      "rows": 30,
+      "table": "lk_quote_media_receipts",
+      "sha256": "4f23e1d05c135b257fcca50dff929cc90eb36a66bf2ceb0e6faa0482f0367761",
+      "unchanged": true
+    },
+    {
+      "rows": 8,
+      "table": "lk_quote_request_audit",
+      "sha256": "63631cecd602b37d821eac50fe632c7b10e9ea9ce10f5803748f0767cb8346de",
+      "unchanged": true
+    },
+    {
+      "rows": 4,
+      "table": "lk_quote_requests",
+      "sha256": "6b22a2d83668be0df65d2f110c704a3d7a1c72ea85ac027ef9bcefbcdcf8c368",
+      "unchanged": true
+    }
+  ],
+  "existing_quotes": 4,
+  "existing_bookings": 3,
+  "new_request_check": "passed; synthetic request rolled back; role restored",
+  "repriced_old_quotes": 0,
+  "existing_signed_submissions": 3
+}

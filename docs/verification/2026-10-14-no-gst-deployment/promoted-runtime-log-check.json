@@ -1,0 +1,8 @@
+{
+  "deploymentId": "dpl_8Ge3JKqxqig7Dp2szmsAzzQ7wJae",
+  "command": "vercel logs <deployment> --environment production --no-branch --level error --since 15m --json --limit 100",
+  "checkedAt": "2026-10-15T07:54:22.517968+00:00",
+  "exitCode": 0,
+  "returnedErrorLogEntries": 0,
+  "scope": "Recent errors for this promoted deployment; not continuous monitoring"
+}

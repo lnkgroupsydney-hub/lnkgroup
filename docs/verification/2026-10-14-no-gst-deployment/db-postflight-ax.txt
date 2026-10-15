@@ -1,0 +1,17 @@
+The following is a diff from the previous accessibility tree for Window: "Untitled query | SQL Editor | lnk…up project | lnkgroup | Supabase" with ~ and + representing changed and added elements, respectively. Removed elements are summarized by ID range.
+Removed element IDs: 808
+~				802 tickbox Downloads, Value: 0
+~									765 button Run
++											808 button 1 row(Limited to only 100 rows)
+~										809 table
++											810 row postflight
++												811 column header
++													812 text postflight
++											813 row {"existing_quotes":4,"new_quote_default":"'lk-sydney-cabinet-v3-20261014'::text","quote_rls_enabled":true,"anon_can_execute_new_validator":false,"legacy_requests_without_repricing":4,"temporary_smoke_requests_retained":0,"service_role_can_execute_new_validator":true,"authenticated_can_execute_new_validator":false} View full cell content
++												814 cell
++													815 container
++														816 text {"existing_quotes":4,"new_quote_default":"'lk-sydney-cabinet-v3-20261014'::text","quote_rls_enabled":true,"anon_can_execute_new_validator":false,"legacy_requests_without_repricing":4,"temporary_smoke_requests_retained":0,"service_role_can_execute_new_validator":true,"authenticated_can_execute_new_validator":false}
++														817 button View full cell content
+The focused UI element is 767 editor (settable) Editor content, Value:  'service_role_can_execute_new_validator',has_function_privilege('service_role','public.lk_quote_pricing_v3_valid(jsonb,jsonb,jsonb,jsonb)','execute'),
+ 'quote_rls_enabled',(select relrowsecurity from pg_class where oid='public.lk_quote_requests'::regclass)
+) as postflight;
