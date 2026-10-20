@@ -1,0 +1,26 @@
+{
+  "id": "dpl_HALJE1DmbmvjyiKt82Zf88au9Evj",
+  "url": "lnkgroup-obxqu5c9b-lnkgroupsydney-8702.vercel.app",
+  "readyState": "READY",
+  "readySubstate": "PROMOTED",
+  "target": "production",
+  "gitSource": {
+    "ref": "main",
+    "repoId": 1399672806,
+    "sha": "1e9cbf9daad23f4d0f2381c2d9a4fe1073b77887",
+    "type": "github",
+    "prId": null
+  },
+  "alias": [
+    "lnkgroup.vercel.app",
+    "www.lnkgroupsydney.com.au",
+    "lnkgroupsydney.com.au",
+    "lnkgroup-lnkgroupsydney-8702.vercel.app",
+    "lnkgroup-git-main-lnkgroupsydney-8702.vercel.app"
+  ],
+  "buildingAt": 1792051056017,
+  "ready": 1792051112444,
+  "checkedAt": "2026-10-15T08:00:11.944140+00:00",
+  "productSourceUnchangedFrom": "ee064e38fd54ebb257a5d36460886ec7f9d1a5f7",
+  "buildDurationSeconds": 56.427
+}
