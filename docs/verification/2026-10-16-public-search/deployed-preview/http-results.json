@@ -1,0 +1,6 @@
+{
+  "passed": false,
+  "base": "https://lnkgroup-6hvqlpx7z-lnkgroupsydney-8702.vercel.app",
+  "checks": [],
+  "error": "AssertionError [ERR_ASSERTION]: GET /: 302"
+}
