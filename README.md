@@ -1,5 +1,7 @@
 # L&K Group 웹 서비스 구축 계획
 
+**2026-10-20 전체 워크트리 로컬 main 통합·정리:** 기존 8개 워크트리의 변경을 커밋·병합하고 원본 폴더를 최신 `main`으로 전환했다. 보조 6개를 삭제하고 비공개 자료 772개를 Git 제외 경로에 백업했다. 전체808/808·검색/타임라인13/13·lint/타입/build·관리자 Chrome13+16·공개 화면6개 검사와 reviewer 재검토를 통과했다. 원본과 현재 대화용 워크트리만 유지하며 push·운영 배포·회사 DB 적용은 수행하지 않았다. EMS R2 기존 미완료 범위는 유지한다. [통합·정리·검증 기록](docs/verification/2026-10-20-worktree-consolidation.md). 아래 미커밋/미병합 설명은 당시 기록이다.
+
 **2026-10-16 공개 검색 SEO·AEO 1~2단계:** [54번 계획](docs/plans/54-public-search-seo-aeo-foundation.md)에 따라 Production www의 홈/KCP·등록 홍보 이미지만 검색 허용하고 canonical·sitemap·robots·공개 구조화 데이터를 추가했다. 관리자·견적·고객 사진/서명 문서·Preview의 기존 보호를 유지한다. 정책5/5·관련 회귀122/122·HTTP 환경별26개·브라우저17/17 및 lint/타입/별도 Production·Preview 빌드를 확인했다. 회사 main 반영·운영 www 배포와 실제 HTTP26/26·브라우저4/4를 완료했다. Search Console은 회사 계정 로그인 확인 후 도메인 소유권 인증이 남아 있다. [검증 기록](docs/verification/2026-10-16-public-search-seo-aeo.md).
 
 **2026-10-15 신규 A$1,450·GST 미부과 운영 반영:** 회사 DB에 가격 v3 migration을 적용하고 검증된 production 배포를 www 운영 도메인으로 승격했다. 기존 견적4건·서명접수3건·예약3건을 포함한 **18/18 테이블의 건수·전체행 해시가 동일**하며 재가격 계산은 0건이다. 신규 DB 기본값·접근 보호, 운영 1280/390/320px **3/3**과 A$1,450/No GST 표시·오류0건을 확인했다. 제품 코드 전체773/773·로컬8/8·PDF/메일 바이트 검증은 앞선 동일 코드 결과를 재사용했다. 실제 신규 고객 메일·AI·Google 예약 호출은 이번 배포에서 반복하지 않았다. [운영 견적](https://www.lnkgroupsydney.com.au/quote/start)·[DB/배포/검증 기록](docs/verification/2026-10-15-no-gst-production-release.md). 아래 로컬 구현·미배포 설명은 당시 상태다.

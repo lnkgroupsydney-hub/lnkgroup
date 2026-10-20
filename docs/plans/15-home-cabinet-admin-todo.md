@@ -1,5 +1,7 @@
 # 메인 → Cabinet → 회사 관리 웹 제작 TODO
 
+**2026-10-20 전체 워크트리 통합·정리:** 로컬 main에 8개 워크트리의 변경을 보존·병합했다. 전체808/808·검색/타임라인13/13·check·관리자 Chrome13+16·공개 화면6개·reviewer 재검토 통과. 보조6개 삭제·비공개772개 백업·원본 main과 현재 대화용 폴더 유지. push·배포·회사 SQL 적용 및 기존 R2 잔여 기능 완료는 포함하지 않는다. [실행 기록](../verification/2026-10-20-worktree-consolidation.md).
+
 **2026-10-16 공개 검색 SEO·AEO:** [54번 계획](54-public-search-seo-aeo-foundation.md)·[검증 기록](../verification/2026-10-16-public-search-seo-aeo.md).
 
 - [x] 1~2단계 로컬 구현: Production www의 두 공개 페이지/등록 이미지 예외, 비공개·Preview 기본 보호, canonical·OG·robots·sitemap·실제 정보 구조화 데이터.
