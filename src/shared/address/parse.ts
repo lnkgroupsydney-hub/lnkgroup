@@ -34,6 +34,12 @@ export function parseAustralianAddress(
 
 const comparable = (value: string) => clean(value).toLocaleLowerCase('en-AU');
 
+/** For existing records that store one address string rather than three fields. */
+export function formatSelectedAddress(selected: AddressSelection): string {
+  const locality = [clean(selected.region), clean(selected.postcode)].filter(Boolean).join(' ');
+  return [clean(selected.siteAddress), clean(selected.suburb), locality].filter(Boolean).join(', ');
+}
+
 function comparableStreet(value: string) {
   const suffixes: Record<string, string> = {
     st: 'street', rd: 'road', ave: 'avenue', av: 'avenue', dr: 'drive',

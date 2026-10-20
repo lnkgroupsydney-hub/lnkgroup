@@ -1,0 +1,21 @@
+The following is a diff from the previous accessibility tree for Window: "Advisors | lnkgroup project | lnkgroup | Supabase" with ~ and + representing changed and added elements, respectively. Removed elements are summarized by ID range.
+Removed element IDs: 839, 850-852
+~319 standard window Advisors | lnkgroup project | lnkgroup | Supabase - Google Chrome – Kang (L&K Group), URL: supabase.com/dashboard/project/xlqyafthsxallostcqfe/advisors/security?preset=WARN&id=, Secondary Actions: Raise
+~	320 container Advisors | lnkgroup project | lnkgroup | Supabase - Google Chrome – Kang (L&K Group), URL: supabase.com/dashboard/project/xlqyafthsxallostcqfe/advisors/security?preset=WARN&id=
+~					328 text field (settable) Address and search bar, Value: supabase.com/dashboard/project/xlqyafthsxallostcqfe/advisors/security?preset=WARN&id=, Placeholder: Ask Google or type a URL
+~					688 HTML content Advisors | lnkgroup project | lnkgroup | Supabase, URL: supabase.com/dashboard/project/xlqyafthsxallostcqfe/advisors/security?preset=WARN&id=
+~										824 tab (settable, integer) Errors 0 errors, Value: 0
+~										829 tab (selected) Warnings 1 warnings, Value: 1
++									868 pop-up button Filter
+~									841 pop-up button Export
++										869 row Leaked Password Protection Disabled Auth Leaked password protection is currently disabled.
++											870 cell
++												871 image
++												872 heading Leaked Password Protection Disabled, Value: 3
++													873 text Leaked Password Protection Disabled
++											874 cell
++												875 image
++												876 text Auth
++											877 cell
++												878 text Leaked password protection is currently disabled.
+The focused UI element is 829 tab (selected) Warnings 1 warnings, Value: 1

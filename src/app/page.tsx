@@ -1,47 +1,29 @@
 import type { Metadata } from "next";
-import {
-  AboutSection,
-  BenefitsSection,
-  CompanyFooter,
-  CompanyHeader,
-  ContactSection,
-  companyContent,
-} from "@/modules/company-profile";
-import { getServices, ServicesSection } from "@/modules/service-catalog";
-import { GallerySection } from "@/modules/showcase";
+import { HomePageContent, homeContent, PublicStructuredData } from "@/modules/company-profile";
 import { siteConfig } from "@/shared/config/site";
+import { publicPageSearchMetadata } from "@/shared/seo/metadata";
+
+const searchMetadata = publicPageSearchMetadata("/");
 
 export const metadata: Metadata = {
-  title: companyContent.home.title,
-  description: companyContent.home.description,
+  ...searchMetadata,
+  title: homeContent.title,
+  description: homeContent.description,
   openGraph: {
-    title: companyContent.home.title,
-    description: companyContent.home.description,
+    ...searchMetadata.openGraph,
+    title: homeContent.title,
+    description: homeContent.description,
     siteName: siteConfig.name,
     locale: "en_AU",
     type: "website",
   },
   twitter: {
     card: "summary",
-    title: companyContent.home.title,
-    description: companyContent.home.description,
+    title: homeContent.title,
+    description: homeContent.description,
   },
 };
 
 export default function HomePage() {
-  const services = getServices();
-
-  return (
-    <>
-      <CompanyHeader />
-      <main id="main-content" tabIndex={-1}>
-        <ServicesSection services={services} />
-        <BenefitsSection />
-        <AboutSection />
-        <GallerySection />
-        <ContactSection />
-      </main>
-      <CompanyFooter />
-    </>
-  );
+  return <><PublicStructuredData page="home" /><HomePageContent /></>;
 }

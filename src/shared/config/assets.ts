@@ -9,11 +9,53 @@ export type ImageAsset = Readonly<{
 // Replace the path, description and dimensions together when approved assets arrive.
 export const siteAssets = {
   wordmark: {
-    src: "/images/lk-group-logo.png",
+    src: "/images/lk-group-logo-circle-transparent.png",
     alt: "L&K Group logo",
-    width: 900,
-    height: 900,
+    width: 1254,
+    height: 1254,
     provenance: "company-supplied-logo",
+  },
+  homeGroupHero: {
+    src: "/images/home/group-home-hero.webp",
+    alt: "Generated concept of a cared-for Sydney home with a living room, painted kitchen and everyday dining setting.",
+    width: 1672,
+    height: 941,
+    provenance: "generated-concept",
+  },
+  homeResidentialPainting: {
+    src: "/images/home/residential-painting.webp",
+    alt: "Illustrative concept of a naturally lit living room with freshly painted walls and a neatly protected painting area.",
+    width: 1536,
+    height: 1024,
+    provenance: "generated-concept",
+  },
+  homeCabinetPainting: {
+    src: "/images/home/cabinet-painting.webp",
+    alt: "Illustrative concept of existing kitchen cabinet doors and drawer fronts refreshed with a sage-green painted finish.",
+    width: 1536,
+    height: 1024,
+    provenance: "generated-concept",
+  },
+  homeHandyman: {
+    src: "/images/home/handyman.webp",
+    alt: "Illustrative concept of a small home repair: adjusting an interior door hinge with a screwdriver.",
+    width: 1536,
+    height: 1024,
+    provenance: "generated-concept",
+  },
+  homeTouchUpKits: {
+    src: "/images/home/touch-up-kits.webp",
+    alt: "Illustrative concept of paint touch-up supplies with a plain paint pot, brush and compact roller.",
+    width: 1536,
+    height: 1024,
+    provenance: "generated-concept",
+  },
+  homeKimchi: {
+    src: "/images/home/kimchi.webp",
+    alt: "Illustrative concept of cabbage kimchi served in a ceramic bowl on a wooden dining table.",
+    width: 1536,
+    height: 1024,
+    provenance: "generated-concept",
   },
   companyArtwork: {
     src: "/images/lk-group-promotional-artwork.png",

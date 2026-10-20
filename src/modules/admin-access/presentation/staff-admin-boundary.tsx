@@ -5,6 +5,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { authRequest, AuthRequestError } from "./staff-auth-request";
 import { authenticatorQrImage } from "./authenticator-qr";
+import { ValidatedInput, reportSectionValidity } from "@/shared/ui/validated-input";
+import { isValidEmail } from "@/shared/validation/input";
 import "./staff-admin-console.css";
 
 type StaffSession = {
@@ -135,6 +137,8 @@ export function StaffAdminBoundary({ children, authMain = false }: { children: R
 
   function login(event: React.FormEvent) {
     event.preventDefault();
+    if (!reportSectionValidity(event.currentTarget as HTMLFormElement)) return;
+    if (!isValidEmail(email) || !password.length || password.length > 256) { setError("Check your administrator email and password."); return; }
     void perform("login", async (epoch) => {
       try { await authRequest("login", { email: email.trim(), password }); }
       finally { if (mounted.current && epoch === accessEpoch.current) setPassword(""); }
@@ -144,7 +148,8 @@ export function StaffAdminBoundary({ children, authMain = false }: { children: R
 
   function changePassword(event: React.FormEvent) {
     event.preventDefault();
-    if (password.length < 16) { setError("Use at least 16 characters for your new password."); return; }
+    if (!reportSectionValidity(event.currentTarget as HTMLFormElement)) return;
+    if (password.length < 16 || password.length > 128) { setError("Use at least 16 characters for your new password."); return; }
     if (password !== confirmation) { setError("The two passwords do not match."); return; }
     void perform("password", async (epoch) => {
       try { await authRequest("password", { password }); }
@@ -188,6 +193,7 @@ export function StaffAdminBoundary({ children, authMain = false }: { children: R
 
   function verifyEmailCode(event: React.FormEvent) {
     event.preventDefault();
+    if (!reportSectionValidity(event.currentTarget as HTMLFormElement)) return;
     if (!/^\d{6}$/.test(code)) { setError("Enter the six-digit code from your email."); return; }
     void perform("email-verify", async (epoch) => {
       try { await authRequest("email/verify", { code }); }
@@ -198,6 +204,7 @@ export function StaffAdminBoundary({ children, authMain = false }: { children: R
 
   function verify(event: React.FormEvent) {
     event.preventDefault();
+    if (!reportSectionValidity(event.currentTarget as HTMLFormElement)) return;
     const selectedFactor = enrollment?.factorId ?? (factorId || session?.factors?.[0]?.id);
     if (!selectedFactor) { setError("Choose an authenticator before continuing."); return; }
     if (!/^\d{6}$/.test(code)) { setError("Enter the six-digit code from your authenticator."); return; }
@@ -247,9 +254,9 @@ export function StaffAdminBoundary({ children, authMain = false }: { children: R
       {!loading && !session && <section className="operations-panel"><h2>Access unavailable</h2><p>Administrator access could not be verified. Retry to check your session.</p><button type="button" disabled={disabled} onClick={() => void perform("retry", epoch => refresh(undefined, epoch))}>{busy === "retry" ? "Checking…" : "Retry"}</button></section>}
       {session?.stage === "signed_out" && <section className="operations-panel">
         <h2>Sign in</h2>
-        <form onSubmit={login} aria-busy={busy === "login"}>
-          <label htmlFor="staff-email">Administrator email<input id="staff-email" name="email" type="email" autoComplete="username" required value={email} onChange={(event) => setEmail(event.target.value)} disabled={disabled} /></label>
-          <label htmlFor="staff-password">Password<input id="staff-password" name="password" type="password" autoComplete="current-password" required value={password} onChange={(event) => setPassword(event.target.value)} disabled={disabled} /></label>
+        <form noValidate onSubmit={login} aria-busy={busy === "login"}>
+          <label htmlFor="staff-email">Administrator email<ValidatedInput validation="email" validationLabel="your administrator email" maxLength={254} id="staff-email" name="email" type="email" autoComplete="username" required value={email} onChange={(event) => setEmail(event.target.value)} disabled={disabled} /></label>
+          <label htmlFor="staff-password">Password<ValidatedInput validation="password" validationLabel="your password" maxLength={256} id="staff-password" name="password" type="password" autoComplete="current-password" required value={password} onChange={(event) => setPassword(event.target.value)} disabled={disabled} /></label>
           <button type="submit" disabled={disabled}>{busy === "login" ? "Signing in…" : "Sign in"}</button>
         </form>
         <p className="operations-small staff-admin-help">Use your ESN administrator password. Your Google account password is separate. Access is limited to accounts created by the company.</p>
@@ -258,9 +265,9 @@ export function StaffAdminBoundary({ children, authMain = false }: { children: R
       {session?.stage === "password_change" && <section className="operations-panel">
         <h2>Replace your temporary password</h2>
         <p>Choose a permanent password of at least 16 characters. Save it in your password manager before continuing.</p>
-        <form onSubmit={changePassword} aria-busy={busy === "password"}>
-          <label htmlFor="staff-new-password">New password<input id="staff-new-password" name="new-password" type="password" autoComplete="new-password" minLength={16} required value={password} onChange={(event) => setPassword(event.target.value)} disabled={disabled} /></label>
-          <label htmlFor="staff-confirm-password">Confirm new password<input id="staff-confirm-password" name="confirm-password" type="password" autoComplete="new-password" minLength={16} required value={confirmation} onChange={(event) => setConfirmation(event.target.value)} disabled={disabled} /></label>
+        <form noValidate onSubmit={changePassword} aria-busy={busy === "password"}>
+          <label htmlFor="staff-new-password">New password<ValidatedInput validation="password" validationLabel="your new password" maxLength={128} id="staff-new-password" name="new-password" type="password" autoComplete="new-password" minLength={16} required value={password} onChange={(event) => setPassword(event.target.value)} disabled={disabled} /></label>
+          <label htmlFor="staff-confirm-password">Confirm new password<ValidatedInput validation="password" validationLabel="password confirmation" maxLength={128} id="staff-confirm-password" name="confirm-password" type="password" autoComplete="new-password" minLength={16} required value={confirmation} onChange={(event) => setConfirmation(event.target.value)} disabled={disabled} /></label>
           <button type="submit" disabled={disabled}>{busy === "password" ? "Saving password…" : "Save new password"}</button>
         </form>
       </section>}
@@ -275,8 +282,8 @@ export function StaffAdminBoundary({ children, authMain = false }: { children: R
         {emailVerification?.sent && <>
           <p role="status">A verification code was sent. Enter it below to continue.</p>
           <p id="staff-email-code-expiry" className="operations-small staff-admin-countdown">{expirySeconds > 0 ? `This code expires in ${Math.floor(expirySeconds / 60)}:${String(expirySeconds % 60).padStart(2, "0")}.` : "This code has expired. Resend a code to continue."}</p>
-          <form onSubmit={verifyEmailCode} aria-busy={busy === "email-verify"}>
-            <label htmlFor="staff-email-code">Email verification code<input ref={emailCodeInput} id="staff-email-code" name="email-code" type="text" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} required className="staff-admin-code" aria-describedby="staff-email-code-expiry" value={code} onChange={(event) => setCode(event.target.value.replace(/\D/g, "").slice(0, 6))} disabled={disabled || expirySeconds === 0} /></label>
+          <form noValidate onSubmit={verifyEmailCode} aria-busy={busy === "email-verify"}>
+            <label htmlFor="staff-email-code">Email verification code<ValidatedInput validation="code" codeLengths={[6]} validationLabel="the email verification code" ref={emailCodeInput} id="staff-email-code" name="email-code" type="text" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} required className="staff-admin-code" aria-describedby="staff-email-code-expiry" value={code} onChange={(event) => setCode(event.target.value)} disabled={disabled || expirySeconds === 0} /></label>
             <button type="submit" disabled={disabled || expirySeconds === 0}>{busy === "email-verify" ? "Verifying…" : "Verify and continue"}</button>
           </form>
         </>}
@@ -298,9 +305,9 @@ export function StaffAdminBoundary({ children, authMain = false }: { children: R
       </section>}
       {(session?.stage === "mfa_enroll" && enrollment || session?.stage === "mfa_verify" && hasFactors) && <section className="operations-panel">
         <h2>Authenticator code</h2>
-        <form onSubmit={verify} aria-busy={busy === "verify"}>
+        <form noValidate onSubmit={verify} aria-busy={busy === "verify"}>
           {session?.stage === "mfa_verify" && session.factors && session.factors.length > 1 && <label htmlFor="staff-factor">Authenticator<select id="staff-factor" value={factorId || session.factors[0].id} onChange={(event) => setFactorId(event.target.value)} disabled={disabled}>{session.factors.map((factor) => <option key={factor.id} value={factor.id}>{factor.friendlyName || "Authenticator"}</option>)}</select></label>}
-          <label htmlFor="staff-code">Six-digit code<input id="staff-code" name="code" type="text" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} required className="staff-admin-code" value={code} onChange={(event) => setCode(event.target.value.replace(/\D/g, "").slice(0, 6))} disabled={disabled} /></label>
+          <label htmlFor="staff-code">Six-digit code<ValidatedInput validation="code" codeLengths={[6]} validationLabel="the authenticator code" id="staff-code" name="code" type="text" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} required className="staff-admin-code" value={code} onChange={(event) => setCode(event.target.value)} disabled={disabled} /></label>
           <button type="submit" disabled={disabled}>{busy === "verify" ? "Verifying…" : "Verify and continue"}</button>
         </form>
       </section>}

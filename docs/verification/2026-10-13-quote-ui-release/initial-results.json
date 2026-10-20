@@ -1,0 +1,364 @@
+{
+  "base": "https://www.lnkgroupsydney.com.au",
+  "startedAt": "2026-10-13T09:44:04.371Z",
+  "finishedAt": "2026-10-13T09:44:14.174Z",
+  "passed": false,
+  "assertions": [
+    {
+      "scope": "desktop",
+      "name": "production quote route returns 200",
+      "passed": true
+    },
+    {
+      "scope": "desktop",
+      "name": "entry contains two explicit choices",
+      "passed": true
+    },
+    {
+      "scope": "desktop",
+      "name": "entry has no prematurely opened contact form",
+      "passed": true
+    },
+    {
+      "scope": "desktop",
+      "name": "anonymous customer access contains no contact or selected request",
+      "passed": true
+    },
+    {
+      "scope": "desktop",
+      "name": "fresh context has no quote capability or request",
+      "passed": true
+    },
+    {
+      "scope": "desktop",
+      "name": "preflight context has no cookies or existing customer capability",
+      "passed": true
+    },
+    {
+      "scope": "desktop",
+      "name": "entry: no horizontal overflow",
+      "passed": true
+    },
+    {
+      "scope": "desktop",
+      "name": "entry: visible images decoded",
+      "passed": true
+    },
+    {
+      "scope": "desktop",
+      "name": "entry: stylesheets present",
+      "passed": true
+    },
+    {
+      "scope": "desktop",
+      "name": "existing quotes opens by keyboard and requires email",
+      "passed": true
+    },
+    {
+      "scope": "desktop",
+      "name": "input[name=\"customer-email\"]: invalid input rejected",
+      "passed": true
+    },
+    {
+      "scope": "desktop",
+      "name": "input[name=\"customer-email\"]: expected input accepted",
+      "passed": true
+    },
+    {
+      "scope": "desktop",
+      "name": "back from saved access returns to entry",
+      "passed": true
+    },
+    {
+      "scope": "desktop",
+      "name": "live-name: fresh input empty",
+      "passed": true
+    },
+    {
+      "scope": "desktop",
+      "name": "live-email: fresh input empty",
+      "passed": true
+    },
+    {
+      "scope": "desktop",
+      "name": "live-phone: fresh input empty",
+      "passed": true
+    },
+    {
+      "scope": "desktop",
+      "name": "live-site: fresh input empty",
+      "passed": true
+    },
+    {
+      "scope": "desktop",
+      "name": "live-suburb: fresh input empty",
+      "passed": true
+    },
+    {
+      "scope": "desktop",
+      "name": "live-postcode: fresh input empty",
+      "passed": true
+    },
+    {
+      "scope": "desktop",
+      "name": "live-details: fresh input empty",
+      "passed": true
+    },
+    {
+      "scope": "desktop",
+      "name": "storage consent is unchecked",
+      "passed": true
+    },
+    {
+      "scope": "desktop",
+      "name": "live-name: correct input type",
+      "passed": true
+    },
+    {
+      "scope": "desktop",
+      "name": "live-email: correct input type",
+      "passed": true
+    },
+    {
+      "scope": "desktop",
+      "name": "live-phone: correct input type",
+      "passed": true
+    },
+    {
+      "scope": "desktop",
+      "name": "live-site: correct input type",
+      "passed": true
+    },
+    {
+      "scope": "desktop",
+      "name": "postcode uses numeric keyboard and four digit limit",
+      "passed": false
+    },
+    {
+      "scope": "desktop",
+      "name": "scenario completes",
+      "passed": false,
+      "error": "postcode uses numeric keyboard and four digit limit"
+    },
+    {
+      "scope": "mobile",
+      "name": "production quote route returns 200",
+      "passed": true
+    },
+    {
+      "scope": "mobile",
+      "name": "entry contains two explicit choices",
+      "passed": true
+    },
+    {
+      "scope": "mobile",
+      "name": "entry has no prematurely opened contact form",
+      "passed": true
+    },
+    {
+      "scope": "mobile",
+      "name": "anonymous customer access contains no contact or selected request",
+      "passed": true
+    },
+    {
+      "scope": "mobile",
+      "name": "fresh context has no quote capability or request",
+      "passed": true
+    },
+    {
+      "scope": "mobile",
+      "name": "preflight context has no cookies or existing customer capability",
+      "passed": true
+    },
+    {
+      "scope": "mobile",
+      "name": "entry: no horizontal overflow",
+      "passed": true
+    },
+    {
+      "scope": "mobile",
+      "name": "entry: visible images decoded",
+      "passed": true
+    },
+    {
+      "scope": "mobile",
+      "name": "entry: stylesheets present",
+      "passed": true
+    },
+    {
+      "scope": "mobile",
+      "name": "existing quotes opens by keyboard and requires email",
+      "passed": true
+    },
+    {
+      "scope": "mobile",
+      "name": "input[name=\"customer-email\"]: invalid input rejected",
+      "passed": true
+    },
+    {
+      "scope": "mobile",
+      "name": "input[name=\"customer-email\"]: expected input accepted",
+      "passed": true
+    },
+    {
+      "scope": "mobile",
+      "name": "back from saved access returns to entry",
+      "passed": true
+    },
+    {
+      "scope": "mobile",
+      "name": "live-name: fresh input empty",
+      "passed": true
+    },
+    {
+      "scope": "mobile",
+      "name": "live-email: fresh input empty",
+      "passed": true
+    },
+    {
+      "scope": "mobile",
+      "name": "live-phone: fresh input empty",
+      "passed": true
+    },
+    {
+      "scope": "mobile",
+      "name": "live-site: fresh input empty",
+      "passed": true
+    },
+    {
+      "scope": "mobile",
+      "name": "live-suburb: fresh input empty",
+      "passed": true
+    },
+    {
+      "scope": "mobile",
+      "name": "live-postcode: fresh input empty",
+      "passed": true
+    },
+    {
+      "scope": "mobile",
+      "name": "live-details: fresh input empty",
+      "passed": true
+    },
+    {
+      "scope": "mobile",
+      "name": "storage consent is unchecked",
+      "passed": true
+    },
+    {
+      "scope": "mobile",
+      "name": "live-name: correct input type",
+      "passed": true
+    },
+    {
+      "scope": "mobile",
+      "name": "live-email: correct input type",
+      "passed": true
+    },
+    {
+      "scope": "mobile",
+      "name": "live-phone: correct input type",
+      "passed": true
+    },
+    {
+      "scope": "mobile",
+      "name": "live-site: correct input type",
+      "passed": true
+    },
+    {
+      "scope": "mobile",
+      "name": "postcode uses numeric keyboard and four digit limit",
+      "passed": false
+    },
+    {
+      "scope": "mobile",
+      "name": "scenario completes",
+      "passed": false,
+      "error": "postcode uses numeric keyboard and four digit limit"
+    },
+    {
+      "scope": "network",
+      "name": "no quote, contact, email, photo, AI, booking or calendar mutations reached server",
+      "passed": true
+    },
+    {
+      "scope": "network",
+      "name": "no unexpected network calls were blocked",
+      "passed": true
+    },
+    {
+      "scope": "network",
+      "name": "anonymous session POSTs returned actual HTTP 200",
+      "passed": true
+    },
+    {
+      "scope": "network",
+      "name": "no image/css/chunk/font HTTP failures",
+      "passed": true
+    },
+    {
+      "scope": "network",
+      "name": "no browser request failures",
+      "passed": true
+    }
+  ],
+  "limitations": [
+    "Fresh anonymous contexts only. No customer records were opened; production database content was not independently audited.",
+    "Email delivery, photo analysis, Maps billing/key readiness, saved-customer prefill, booking creation and calendar delivery were not exercised.",
+    "Session/logout POSTs only create or preserve anonymous cookies. Form input values remained in the browser; Save & continue and OTP submit were never clicked."
+  ],
+  "pageErrors": [],
+  "console": [],
+  "blocked": [],
+  "allowedSessionMutations": [
+    {
+      "scope": "desktop",
+      "method": "POST",
+      "host": "www.lnkgroupsydney.com.au",
+      "path": "/api/quote/requests/session",
+      "type": "fetch",
+      "purpose": "empty private cookie session"
+    },
+    {
+      "scope": "desktop",
+      "method": "POST",
+      "host": "www.lnkgroupsydney.com.au",
+      "path": "/api/quote/requests/customer/logout",
+      "type": "fetch",
+      "purpose": "anonymous new-entry transition"
+    },
+    {
+      "scope": "desktop",
+      "method": "POST",
+      "host": "www.lnkgroupsydney.com.au",
+      "path": "/api/quote/requests/session",
+      "type": "fetch",
+      "purpose": "empty private cookie session"
+    },
+    {
+      "scope": "mobile",
+      "method": "POST",
+      "host": "www.lnkgroupsydney.com.au",
+      "path": "/api/quote/requests/session",
+      "type": "fetch",
+      "purpose": "empty private cookie session"
+    },
+    {
+      "scope": "mobile",
+      "method": "POST",
+      "host": "www.lnkgroupsydney.com.au",
+      "path": "/api/quote/requests/customer/logout",
+      "type": "fetch",
+      "purpose": "anonymous new-entry transition"
+    },
+    {
+      "scope": "mobile",
+      "method": "POST",
+      "host": "www.lnkgroupsydney.com.au",
+      "path": "/api/quote/requests/session",
+      "type": "fetch",
+      "purpose": "empty private cookie session"
+    }
+  ],
+  "failedRequests": []
+}

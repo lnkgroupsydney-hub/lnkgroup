@@ -2,8 +2,9 @@ import { QuoteRequestError } from '../../quotes/domain/contracts.ts'
 import { bookingDate, bookingObject, bookingRevision, bookingUuid } from '../../quotes/domain/booking-flow.ts'
 import { BOOKING_SIMPLE_ACK_VERSION, isBookingAcknowledgment, type LiveBookingSubmission } from '../../quotes/domain/booking-flow.ts'
 import type { LiveCompanyConfirmRequestInput, LiveCompanyProposalInput, LiveCompanySegment } from './live-contracts.ts'
+import { isValidText } from '../../../shared/validation/input.ts'
 export { bookingObject as liveObject, bookingRevision as liveRevision, bookingUuid as liveUuid }
-function text(value: unknown, label: string, max: number) { if (typeof value !== 'string' || !value.trim() || value.trim().length > max || /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/.test(value)) throw new QuoteRequestError(400, `Enter valid ${label}.`); return value.trim() }
+function text(value: unknown, label: string, max: number) { if (!isValidText(value, { maxLength: max, required: true, multiline: true })) throw new QuoteRequestError(400, `Enter valid ${label}.`); return value.trim() }
 const day = (value: string) => new Date(Date.parse(value) + 86400000).toISOString().slice(0,10)
 const localDate = (value: string) => new Intl.DateTimeFormat('en-CA', { timeZone:'Australia/Sydney',year:'numeric',month:'2-digit',day:'2-digit' }).format(new Date(value))
 export function validateLiveProposal(value: Record<string, unknown>, localToInstant: (value: unknown) => string, now = Date.now()): LiveCompanyProposalInput {

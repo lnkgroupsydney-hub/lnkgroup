@@ -1,0 +1,36 @@
+{
+  "synthetic": true,
+  "noNetworkCalls": true,
+  "baselineComparison": {
+    "legacyRequestPdfBytes": true,
+    "legacyRequestMailPayload": true,
+    "legacyConfirmationPdfBytes": true,
+    "legacyConfirmationMailPayload": true
+  },
+  "documents": {
+    "new-request": {
+      "sha256": "87c4aea00a9afc95093c49523705e6d2d2ce73640d4460a09b685eeb6a3e2718",
+      "bytes": 15116,
+      "pages": 2,
+      "moneyAndGstTextVerified": true
+    },
+    "new-confirmation": {
+      "sha256": "878a24de501d1b15b079fd76b98afdee03d0c35940149f0abb21a849dd28c24b",
+      "bytes": 14712,
+      "pages": 2,
+      "moneyAndGstTextVerified": true
+    },
+    "legacy-request": {
+      "sha256": "9ec84b8351a05871b7df9f8dcca6f55660ba13ca790e4b8e90bd56c8ab67836a",
+      "bytes": 14754,
+      "pages": 2,
+      "moneyAndGstTextVerified": true
+    },
+    "legacy-confirmation": {
+      "sha256": "503368f2da0fea5c92b997419a9faab80dd54eba9fc1c66bdd03e9f40eceafde",
+      "bytes": 14588,
+      "pages": 2,
+      "moneyAndGstTextVerified": true
+    }
+  }
+}

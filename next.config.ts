@@ -1,5 +1,5 @@
 import type { NextConfig } from "next";
-import { siteConfig } from "./src/shared/config/site";
+import { searchHeaders } from "./src/shared/seo/search-policy";
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
@@ -7,16 +7,7 @@ const nextConfig: NextConfig = {
     '/api/**/*': ['./src/shared/assets/pdf-fonts/LKDemoSans-Regular.ttf'],
   },
   async headers() {
-    return siteConfig.isPrototype
-      ? [
-          {
-            source: "/:path*",
-            headers: [
-              { key: "X-Robots-Tag", value: "noindex, nofollow" },
-            ],
-          },
-        ]
-      : [];
+    return searchHeaders();
   },
 };
 

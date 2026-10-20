@@ -1,0 +1,10 @@
+{
+  "existing_quotes": 4,
+  "new_quote_default": "'lk-sydney-cabinet-v3-20261014'::text",
+  "quote_rls_enabled": true,
+  "anon_can_execute_new_validator": false,
+  "legacy_requests_without_repricing": 4,
+  "temporary_smoke_requests_retained": 0,
+  "service_role_can_execute_new_validator": true,
+  "authenticated_can_execute_new_validator": false
+}

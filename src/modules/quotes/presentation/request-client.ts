@@ -1,5 +1,6 @@
-import { validateQuoteDraft } from '../../enquiries/domain.ts';
+import { parseQuoteDraft } from '../../enquiries/domain.ts';
 import type { LiveQuoteRequest } from '../index.ts';
+import { PREVIOUS_QUOTE_PRICING_VERSION, QUOTE_PRICING_VERSION } from '../domain/pricing.ts';
 
 export class LiveRequestError extends Error {
   readonly status: number;
@@ -12,6 +13,7 @@ export function parseLiveRequest(value: unknown): LiveQuoteRequest {
   if (!isRecord(value) || typeof value.id !== 'string' || !/^[a-f0-9-]{36}$/.test(value.id)
     || typeof value.reference !== 'string' || !/^RQ-[A-F0-9]{32}$/.test(value.reference)
     || value.mode !== 'live' || value.companyId !== 'lk-group'
+    || (value.pricingVersion != null && ![PREVIOUS_QUOTE_PRICING_VERSION, QUOTE_PRICING_VERSION].includes(String(value.pricingVersion)))
     || !Number.isSafeInteger(value.revision) || Number(value.revision) < 1
     || !['draft', 'review_requested'].includes(String(value.status))
     || typeof value.savedAt !== 'string' || !Number.isFinite(Date.parse(value.savedAt))
@@ -21,7 +23,7 @@ export function parseLiveRequest(value: unknown): LiveQuoteRequest {
     || (value.status === 'draft' ? value.reviewRequestedAt !== null : typeof value.reviewRequestedAt !== 'string' || !Number.isFinite(Date.parse(value.reviewRequestedAt)))) {
     throw new Error('The server did not confirm your saved request. Keep your entries and retry.');
   }
-  return { ...value, payload: validateQuoteDraft(value.payload) } as LiveQuoteRequest;
+  return { ...value, payload: parseQuoteDraft(value.payload) } as LiveQuoteRequest;
 }
 export async function liveRequest(path: string, init: RequestInit = {}): Promise<Record<string, unknown>> {
   const response = await fetch(path, { ...init, credentials: 'same-origin', cache: 'no-store', signal: init.signal ?? AbortSignal.timeout(25_000) });

@@ -1,0 +1,1016 @@
+{
+  "target": "https://lnkgroup-33u5onafc-lnkgroupsydney-8702.vercel.app",
+  "checkedAt": "2026-10-14T02:44:21.973Z",
+  "documentOnly": true,
+  "checks": [],
+  "requests": [
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/quote/start",
+      "kind": "read"
+    }
+  ],
+  "responses": [
+    {
+      "width": 1280,
+      "path": "/quote/start",
+      "status": 302
+    },
+    {
+      "width": 1280,
+      "path": "/sso-api",
+      "status": 307
+    },
+    {
+      "width": 1280,
+      "path": "/login",
+      "status": 200
+    }
+  ],
+  "errors": [
+    {
+      "width": 1280,
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+    },
+    {
+      "width": 1280,
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+    },
+    {
+      "width": 1280,
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+    },
+    {
+      "width": 1280,
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+    },
+    {
+      "width": 1280,
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+    },
+    {
+      "width": 1280,
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+    },
+    {
+      "width": 1280,
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+    },
+    {
+      "width": 1280,
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+    },
+    {
+      "width": 1280,
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+    },
+    {
+      "width": 1280,
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+    },
+    {
+      "width": 1280,
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+    },
+    {
+      "width": 1280,
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+    },
+    {
+      "width": 1280,
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+    },
+    {
+      "width": 1280,
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+    },
+    {
+      "width": 1280,
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+    },
+    {
+      "width": 1280,
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+    },
+    {
+      "width": 1280,
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+    },
+    {
+      "width": 1280,
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+    },
+    {
+      "width": 1280,
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+    },
+    {
+      "width": 1280,
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+    },
+    {
+      "width": 1280,
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+    },
+    {
+      "width": 1280,
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+    },
+    {
+      "width": 1280,
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+    },
+    {
+      "width": 1280,
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+    },
+    {
+      "width": 1280,
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+    },
+    {
+      "width": 1280,
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+    },
+    {
+      "width": 1280,
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+    },
+    {
+      "width": 1280,
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+    },
+    {
+      "width": 1280,
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+    },
+    {
+      "width": 1280,
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+    },
+    {
+      "width": 1280,
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+    },
+    {
+      "width": 1280,
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+    },
+    {
+      "width": 1280,
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+    },
+    {
+      "width": 1280,
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+    },
+    {
+      "width": 1280,
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+    },
+    {
+      "width": 1280,
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+    },
+    {
+      "width": 1280,
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+    },
+    {
+      "width": 1280,
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+    },
+    {
+      "width": 1280,
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+    },
+    {
+      "width": 1280,
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+    },
+    {
+      "width": 1280,
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+    },
+    {
+      "width": 1280,
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+    },
+    {
+      "width": 1280,
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+    },
+    {
+      "width": 1280,
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+    },
+    {
+      "width": 1280,
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+    },
+    {
+      "width": 1280,
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+    },
+    {
+      "width": 1280,
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+    },
+    {
+      "width": 1280,
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+    },
+    {
+      "width": 1280,
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+    },
+    {
+      "width": 1280,
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+    },
+    {
+      "width": 1280,
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+    },
+    {
+      "width": 1280,
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+    },
+    {
+      "width": 1280,
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+    },
+    {
+      "width": 1280,
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+    },
+    {
+      "width": 1280,
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+    },
+    {
+      "width": 1280,
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+    },
+    {
+      "width": 1280,
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+    },
+    {
+      "width": 1280,
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+    },
+    {
+      "width": 1280,
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+    },
+    {
+      "width": 1280,
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+    },
+    {
+      "width": 1280,
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+    },
+    {
+      "width": 1280,
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+    },
+    {
+      "width": 1280,
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+    },
+    {
+      "width": 1280,
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+    },
+    {
+      "width": 1280,
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+    },
+    {
+      "width": 1280,
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+    },
+    {
+      "width": 1280,
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+    },
+    {
+      "width": 1280,
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+    },
+    {
+      "width": 1280,
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+    },
+    {
+      "width": 1280,
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+    },
+    {
+      "width": 1280,
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+    },
+    {
+      "width": 1280,
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+    },
+    {
+      "width": 1280,
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+    },
+    {
+      "width": 1280,
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+    },
+    {
+      "width": 1280,
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+    },
+    {
+      "width": 1280,
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+    },
+    {
+      "width": 1280,
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+    },
+    {
+      "width": 1280,
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+    },
+    {
+      "width": 1280,
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+    },
+    {
+      "width": 1280,
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+    },
+    {
+      "width": 1280,
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+    },
+    {
+      "width": 1280,
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+    },
+    {
+      "width": 1280,
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+    },
+    {
+      "width": 1280,
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+    },
+    {
+      "width": 1280,
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+    },
+    {
+      "width": 1280,
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+    },
+    {
+      "width": 1280,
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+    },
+    {
+      "width": 1280,
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+    },
+    {
+      "width": 1280,
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+    }
+  ],
+  "httpFailures": [],
+  "blocked": [
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/immutable/media/797e433ab948586e.p.1v5bejj26fx9h.woff2",
+      "origin": "https://vercel.com"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/immutable/media/GeistPixel_Square.p.3ig4wtfmw09gh.woff2",
+      "origin": "https://vercel.com"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/immutable/media/Geist_Variable-s.p.2v-cf9syxr5ni.woff2",
+      "origin": "https://vercel.com"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/immutable/chunks/0gvlll3u3g4q-.css",
+      "origin": "https://vercel.com"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/immutable/chunks/2sfw9u-iu4_wn.css",
+      "origin": "https://vercel.com"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/immutable/chunks/3-qb-ev6vlqj7.css",
+      "origin": "https://vercel.com"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/immutable/chunks/1jpbon1_zvpvv.css",
+      "origin": "https://vercel.com"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/immutable/chunks/1mr0y9jyv9s62.css",
+      "origin": "https://vercel.com"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/immutable/chunks/3ps3utijwv595.css",
+      "origin": "https://vercel.com"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/immutable/chunks/0u44-a2n-u36q.css",
+      "origin": "https://vercel.com"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/immutable/chunks/2wny3fe5x9sou.js",
+      "origin": "https://vercel.com"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/immutable/chunks/3f3uh5k11blgh.js",
+      "origin": "https://vercel.com"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/immutable/chunks/1u5p9z0_h20n5.js",
+      "origin": "https://vercel.com"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/immutable/chunks/13g2e97otw359.js",
+      "origin": "https://vercel.com"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/immutable/chunks/0nnqhkjwj8gnq.js",
+      "origin": "https://vercel.com"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/immutable/chunks/0yozc2xsqq198.js",
+      "origin": "https://vercel.com"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/immutable/chunks/turbopack-01ajvkb8u8coi.js",
+      "origin": "https://vercel.com"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/immutable/chunks/1und73qra5c5x.js",
+      "origin": "https://vercel.com"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/immutable/chunks/056moa4oglvla.js",
+      "origin": "https://vercel.com"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/immutable/chunks/3ovktedt927cl.js",
+      "origin": "https://vercel.com"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/immutable/chunks/34-7xcu2ocpn4.js",
+      "origin": "https://vercel.com"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/immutable/chunks/38sq7iggyvci_.js",
+      "origin": "https://vercel.com"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/immutable/chunks/3o2vzjw9tl72v.js",
+      "origin": "https://vercel.com"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/immutable/chunks/12knm_xp-s__3.js",
+      "origin": "https://vercel.com"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/immutable/chunks/1i7gpwhik_xzv.js",
+      "origin": "https://vercel.com"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/immutable/chunks/1u_r3l0-_r89-.js",
+      "origin": "https://vercel.com"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/immutable/chunks/16rg4giox8a92.js",
+      "origin": "https://vercel.com"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/immutable/chunks/3k968w4s7cw5n.js",
+      "origin": "https://vercel.com"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/immutable/chunks/23nmg43yopx__.js",
+      "origin": "https://vercel.com"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/immutable/chunks/2n-4ypa-6wtzi.js",
+      "origin": "https://vercel.com"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/immutable/chunks/1ism9993ohvj6.js",
+      "origin": "https://vercel.com"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/immutable/chunks/43s4rc5pni-nb.js",
+      "origin": "https://vercel.com"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/immutable/chunks/0rrw-iewonv1g.js",
+      "origin": "https://vercel.com"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/immutable/chunks/0ambgv387vyv1.js",
+      "origin": "https://vercel.com"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/immutable/chunks/0921svbb2z8_7.js",
+      "origin": "https://vercel.com"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/immutable/chunks/037qaylo91q9h.js",
+      "origin": "https://vercel.com"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/immutable/chunks/2yaaefj-1nfht.js",
+      "origin": "https://vercel.com"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/immutable/chunks/1of9km68ryaj7.js",
+      "origin": "https://vercel.com"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/immutable/chunks/1lc846rd7k7u1.js",
+      "origin": "https://vercel.com"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/immutable/chunks/2cpd-sm3rdd_k.js",
+      "origin": "https://vercel.com"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/immutable/chunks/1966ac9cp3_ed.js",
+      "origin": "https://vercel.com"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/immutable/chunks/17dw7qs8w52yf.js",
+      "origin": "https://vercel.com"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/immutable/chunks/2ll2trtp9yoww.js",
+      "origin": "https://vercel.com"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/immutable/chunks/2jh9e_qwh2jdb.js",
+      "origin": "https://vercel.com"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/immutable/chunks/11drcv_usn6zm.js",
+      "origin": "https://vercel.com"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/immutable/chunks/352xpul9g7pef.js",
+      "origin": "https://vercel.com"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/immutable/chunks/3uryflzpjo0j7.js",
+      "origin": "https://vercel.com"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/immutable/chunks/416u6_wh4n8id.js",
+      "origin": "https://vercel.com"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/immutable/chunks/1x4ota4lspgbd.js",
+      "origin": "https://vercel.com"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/immutable/chunks/3ay-u0ldf9j46.js",
+      "origin": "https://vercel.com"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/immutable/chunks/2e771q53yuk-z.js",
+      "origin": "https://vercel.com"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/immutable/chunks/0kkmhz4tliqc2.js",
+      "origin": "https://vercel.com"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/immutable/chunks/22__u898yj1-w.js",
+      "origin": "https://vercel.com"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/immutable/chunks/3apec151di1x6.js",
+      "origin": "https://vercel.com"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/immutable/chunks/3wb7k510ah06q.js",
+      "origin": "https://vercel.com"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/immutable/chunks/3p1y64i679a4d.js",
+      "origin": "https://vercel.com"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/immutable/chunks/3dk0k4lnpgsdt.js",
+      "origin": "https://vercel.com"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/immutable/chunks/3z99re31u09ke.js",
+      "origin": "https://vercel.com"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/immutable/chunks/2t3amf3ks33cz.js",
+      "origin": "https://vercel.com"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/immutable/chunks/1mz20zikoz4gl.js",
+      "origin": "https://vercel.com"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/immutable/chunks/232sbcy03j3e4.js",
+      "origin": "https://vercel.com"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/immutable/chunks/2_x3cg4miufv8.js",
+      "origin": "https://vercel.com"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/immutable/chunks/0bxiq53n_1g4c.js",
+      "origin": "https://vercel.com"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/immutable/chunks/2jtlzp3y75prw.js",
+      "origin": "https://vercel.com"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/immutable/chunks/24qtl6pydxpol.js",
+      "origin": "https://vercel.com"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/immutable/chunks/2kzgbwgwsvfc6.js",
+      "origin": "https://vercel.com"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/immutable/chunks/3sgzqeqyub54z.js",
+      "origin": "https://vercel.com"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/immutable/chunks/3db-vcxc1ixxn.js",
+      "origin": "https://vercel.com"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/immutable/chunks/37y4__z5au_s1.js",
+      "origin": "https://vercel.com"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/immutable/chunks/3v2ke8fh92n8l.js",
+      "origin": "https://vercel.com"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/immutable/chunks/252fmsd5w_6qc.js",
+      "origin": "https://vercel.com"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/immutable/chunks/1dxg_-t2rvt35.js",
+      "origin": "https://vercel.com"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/immutable/chunks/0ix9wakt1nmbr.js",
+      "origin": "https://vercel.com"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/immutable/chunks/2nldozip2z6e3.js",
+      "origin": "https://vercel.com"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/immutable/chunks/0-b9sjfhwdq0y.js",
+      "origin": "https://vercel.com"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/immutable/chunks/270bcex-fxyn-.js",
+      "origin": "https://vercel.com"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/immutable/chunks/0a8m2up0m7ube.js",
+      "origin": "https://vercel.com"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/immutable/chunks/0e9_kes33qa1t.js",
+      "origin": "https://vercel.com"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/immutable/chunks/2bx26xln6qup0.js",
+      "origin": "https://vercel.com"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/immutable/chunks/1bki434veys9v.js",
+      "origin": "https://vercel.com"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/immutable/chunks/07w1o0tr0_vt4.js",
+      "origin": "https://vercel.com"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/immutable/chunks/2nrlr80urd4hm.js",
+      "origin": "https://vercel.com"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/immutable/media/logo-google-color-light.2x6g4y99zlarz.svg",
+      "origin": "https://vercel.com"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/immutable/media/logo-google-color-dark.3nr_e0zdganvm.svg",
+      "origin": "https://vercel.com"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/immutable/media/logo-github-color-light.1184n6l5g07-6.svg",
+      "origin": "https://vercel.com"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/immutable/media/logo-github-color-dark.1k-70sin_m3qn.svg",
+      "origin": "https://vercel.com"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/immutable/media/logo-open-ai-color-light.19_d6xia9t_gb.svg",
+      "origin": "https://vercel.com"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/immutable/media/logo-open-ai-color-dark.2s69z6l-k1q-7.svg",
+      "origin": "https://vercel.com"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/gsi/client",
+      "origin": "https://accounts.google.com"
+    }
+  ],
+  "message": "Deployment protection or a redirect changed the requested origin.\n+ actual - expected\n\n+ 'https://vercel.com'\n- 'https://lnkgroup-33u5onafc-lnkgroupsydney-8702.vercel.app'\n           ^\n"
+}

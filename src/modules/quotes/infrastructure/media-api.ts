@@ -3,7 +3,7 @@ import { QuoteRequestError, type QuoteRequestActor, type QuoteRequestOwner } fro
 import { requestId, validateReviewRequest } from '../domain/validation.ts'
 import { LIVE_PHOTO_LIMITS, LIVE_PHOTO_ROLES, type InternalPhoto, type InternalPhotoWorkspace } from '../domain/photo-workspace.ts'
 import { AI_CONSENT_VERSION, PHOTO_ANALYSIS_MODEL, PHOTO_ANALYSIS_PROMPT_VERSION, PHOTO_ANALYSIS_SCHEMA_VERSION } from '../domain/analysis.ts'
-import { QUOTE_PRICING_VERSION } from '../domain/pricing.ts'
+import { QUOTE_PRICING_VERSION, PREVIOUS_QUOTE_PRICING_VERSION } from '../domain/pricing.ts'
 import type { QuoteRequestStore } from '../application/requests.ts'
 import { publicPhoto, publicWorkspace, type PhotoObjectPort } from '../application/photo-media.ts'
 import { quoteRequestAccess } from './api.ts'
@@ -78,9 +78,11 @@ export function createQuoteMediaApi(deps: { access: Access; store: QuoteRequestS
       if (input.aiConsentVersion!==AI_CONSENT_VERSION || input.aiConsent!==true) throw new QuoteRequestError(400,'Confirm permission to send your photos to OpenAI for cabinet analysis.')
       const coverage=record(input.coverage)
       if (typeof coverage.upperNotApplicable!=='boolean' || typeof coverage.damageNotPresent!=='boolean') throw new QuoteRequestError(400,'Confirm which cabinet areas apply.')
+      const current=await deps.store.command<InternalPhotoWorkspace>('workspace',args)
+      const pricingVersion=current.request.pricingVersion ?? PREVIOUS_QUOTE_PRICING_VERSION
+      if (![QUOTE_PRICING_VERSION, PREVIOUS_QUOTE_PRICING_VERSION].includes(pricingVersion)) throw new QuoteRequestError(409,'The saved request pricing policy could not be verified.')
       let retryOf=input.retryOf==null ? null : requestId(input.retryOf)
       if (retryOf) {
-        const current=await deps.store.command<InternalPhotoWorkspace>('workspace',args)
         // Inspect the referenced historical job, not latest: an exact response-loss
         // replay still refers to the old failed job after the new job was created.
         const previous=current.jobs.find(job=>job.id===retryOf)
@@ -90,9 +92,9 @@ export function createQuoteMediaApi(deps: { access: Access; store: QuoteRequestS
         const versions=record(previous.inputSnapshot)
         // An explicit retry after an execution-contract update starts a new job;
         // historical results and exact response-loss receipts stay immutable.
-        if (versions.model!==PHOTO_ANALYSIS_MODEL || versions.promptVersion!==PHOTO_ANALYSIS_PROMPT_VERSION || versions.schemaVersion!==PHOTO_ANALYSIS_SCHEMA_VERSION || versions.pricingVersion!==QUOTE_PRICING_VERSION) retryOf=null
+        if (versions.model!==PHOTO_ANALYSIS_MODEL || versions.promptVersion!==PHOTO_ANALYSIS_PROMPT_VERSION || versions.schemaVersion!==PHOTO_ANALYSIS_SCHEMA_VERSION || versions.pricingVersion!==pricingVersion) retryOf=null
       }
-      const result=await deps.store.command<InternalPhotoWorkspace>('analysis_start',{...args,...command,aiConsentVersion:AI_CONSENT_VERSION,model:PHOTO_ANALYSIS_MODEL,promptVersion:PHOTO_ANALYSIS_PROMPT_VERSION,schemaVersion:PHOTO_ANALYSIS_SCHEMA_VERSION,pricingVersion:QUOTE_PRICING_VERSION,coverage:{upperNotApplicable:coverage.upperNotApplicable,damageNotPresent:coverage.damageNotPresent},retryOf})
+      const result=await deps.store.command<InternalPhotoWorkspace>('analysis_start',{...args,...command,aiConsentVersion:AI_CONSENT_VERSION,model:PHOTO_ANALYSIS_MODEL,promptVersion:PHOTO_ANALYSIS_PROMPT_VERSION,schemaVersion:PHOTO_ANALYSIS_SCHEMA_VERSION,pricingVersion,coverage:{upperNotApplicable:coverage.upperNotApplicable,damageNotPresent:coverage.damageNotPresent},retryOf})
       return json(publicWorkspace(result))
     }),
     process: safe(async (req,id) => {

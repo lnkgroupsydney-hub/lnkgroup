@@ -1,0 +1,55 @@
+{
+  "node": "v24.14.1",
+  "npm": "11.11.0",
+  "upstream": "http://127.0.0.1:3043",
+  "runtimeFlags": [
+    "STAFF_ADMIN_AUTH_ENABLED=true",
+    "QUOTE_LIVE_ENABLED=true"
+  ],
+  "operations": {
+    "pass": 749,
+    "total": 749,
+    "log": "operations-summary.txt"
+  },
+  "timeline": {
+    "pass": 8,
+    "total": 8,
+    "log": "timeline-summary.txt"
+  },
+  "kcp": {
+    "pass": 16,
+    "total": 16,
+    "results": "kcp-results.json"
+  },
+  "home": {
+    "pass": 12,
+    "total": 12,
+    "results": "home-results.json"
+  },
+  "adminInput": {
+    "pass": 3,
+    "total": 3,
+    "log": "admin-input-results.txt"
+  },
+  "initialFailures": [
+    "KCP old 10 km expectation inconsistent with approved homepage service area; verifier updated, final 16/16 passed",
+    "Admin UI unavailable without STAFF_ADMIN_AUTH_ENABLED; safely enabled runtime UI flag, final 3/3 passed",
+    "Homepage quote entry required QUOTE_LIVE_ENABLED; safely enabled runtime UI flag, final 12/12 passed"
+  ],
+  "externalServices": "Not executed; browser traffic blocked and local fixtures only",
+  "latestRelated": {
+    "pass": 29,
+    "total": 29,
+    "log": "booking-related-summary.txt"
+  },
+  "latestChecks": {
+    "lint": "passed",
+    "typecheck": "passed",
+    "build": "passed"
+  },
+  "quoteLatest": {
+    "pass": 18,
+    "total": 18,
+    "results": "quote-results.json"
+  }
+}

@@ -1,0 +1,30 @@
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/jimee/.codex/worktrees/kcp-main-integration-20261013/L&K Group/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ customer access validates email, owner-scoped summaries and selected membership before rendering (1.941958ms)
+✔ verification countdown accepts bounded provider durations and rejects impossible timing (0.103792ms)
+✔ late quote results after session changes or logout cannot restore private views (0.092708ms)
+✔ previous-domain recovery consumes a short-lived token from the fragment and removes it from history (0.187959ms)
+✔ recovery rejects a selected quote changed by another tab instead of displaying a different record (8.669833ms)
+✔ another quote can start only after the exact saved quote is linked and current (0.085333ms)
+✔ expired-access recovery is limited to an empty unchanged form and never replaces the linked-quote requirement (0.053042ms)
+✔ explicit expired-access recovery preserves writing capability and invalidates older private responses (0.195541ms)
+(node:50298) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/jimee/.codex/worktrees/kcp-main-integration-20261013/L&K%20Group/src/shared/validation/input.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/jimee/.codex/worktrees/kcp-main-integration-20261013/L&K Group/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ unverified writing access offers specific-quote email binding and accessible email recovery (4.22675ms)
+✔ authenticated quote list identifies the open quote and preserves unsaved changes on switching (9.035416ms)
+✔ a guest draft with a different saved email requires verifying that address before switching customer identity (0.334541ms)
+✔ new-quote entry preserves unlinked and dirty requests while permitting a current linked saved quote (1.468791ms)
+✔ booking mode has one saved-email challenge and keeps management choices out of the visit step (0.609792ms)
+✔ booking OTP can be skipped only for an unexpired matching identity and current linked request (0.360583ms)
+✔ booking code binding fails closed when request, saved email or revision changes (0.074375ms)
+ℹ tests 29
+ℹ suites 0
+ℹ pass 29
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 254.622792

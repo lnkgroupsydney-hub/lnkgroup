@@ -1,0 +1,14 @@
+[
+  {
+    "path": "src/modules/quotes/presentation/booking-flow-panel.tsx",
+    "sha256": "4c9eb5e10ffebdc1f90bf57df16368139d33f2bb98c8334e0a3dfc93a43e2e34"
+  },
+  {
+    "path": "scripts/verify-quote-journey-ui.mjs",
+    "sha256": "49ea9fe218b9c2e3fa755eb7180c818aa0c3f380456451ec9ae19a05d7e35973"
+  },
+  {
+    "path": "scripts/verify-kcp-landing-ui.mjs",
+    "sha256": "69921231518b32ad3d44e0d90c4b662d65fc24aed5ed42abd1773ea37ec64f25"
+  }
+]

@@ -1,0 +1,137 @@
+{
+  "node": "v24.14.1",
+  "wrapperSha256": "ecf7ebf70be45aa4d3ef2b7968d4e40bc5395230519ca4e9a484b4e6034917b1",
+  "preV3Migrations": 21,
+  "passed": true,
+  "seeded": {
+    "oldGuestRequests": 1,
+    "oldSignedSubmissions": 1,
+    "oldConfirmedBookings": 1,
+    "confirmedSegments": 2,
+    "verifiedCalendarEvents": 2
+  },
+  "all18TablesUnchanged": true,
+  "rateBucketsUnchanged": true,
+  "syntheticSmokeNoRowsPersisted": true,
+  "roleRestored": "postgres",
+  "failedPreservationRollsBackSchemaAndRows": true,
+  "postCommitNewRequestDoesNotChangeHistoricalReport": true,
+  "rolloutReport": {
+    "result": "GST v3 migration applied",
+    "preservation": [
+      {
+        "rows": 2,
+        "table": "lk_live_booking_confirmed_segments",
+        "sha256": "9bb51f8de437a3ea0e89cb66d9c27048731704c7bf474fa0c5b595a93a8a75d2",
+        "unchanged": true
+      },
+      {
+        "rows": 0,
+        "table": "lk_live_company_acceptances",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "unchanged": true
+      },
+      {
+        "rows": 1,
+        "table": "lk_live_company_audit",
+        "sha256": "0d4b4d6d7cada728449bb741dc3065f04490ce8962b45c0ab02505d0b58c6eb0",
+        "unchanged": true
+      },
+      {
+        "rows": 1,
+        "table": "lk_live_company_booking_requests",
+        "sha256": "24d8010223e96a96d220a8eb9ba9cd5c1985ac411773fec31119d6762f1fb058",
+        "unchanged": true
+      },
+      {
+        "rows": 1,
+        "table": "lk_live_company_bookings",
+        "sha256": "68b129b3c3ae3159529c49d501c349805098a2f4cbc2076bfe4b7d235d0982e3",
+        "unchanged": true
+      },
+      {
+        "rows": 1,
+        "table": "lk_live_company_command_receipts",
+        "sha256": "2b6afe2e8b08e313cead4b71cca9903c94efeb1191f46fddcf0ab1e1edd52799",
+        "unchanged": true
+      },
+      {
+        "rows": 2,
+        "table": "lk_live_company_events",
+        "sha256": "59e19d69b4f60c9f04862d771a9d25b03cab0d8bff849c0202601f6cacedcb60",
+        "unchanged": true
+      },
+      {
+        "rows": 1,
+        "table": "lk_live_company_outbox",
+        "sha256": "260b80ec1169c3050889eeb54708f31c7ea96036aa9ad04f5fdc2681e387e420",
+        "unchanged": true
+      },
+      {
+        "rows": 1,
+        "table": "lk_live_company_proposals",
+        "sha256": "0b54a671f6a0936966be7172a1a2ce433b6c6e99ac8d2e5e6cb3041dbd0ba7a6",
+        "unchanged": true
+      },
+      {
+        "rows": 1,
+        "table": "lk_live_quote_approvals",
+        "sha256": "cda59159cfef39e0379ec1780c45b046330b8d273dea06e321f237fa6cb8d160",
+        "unchanged": true
+      },
+      {
+        "rows": 0,
+        "table": "lk_live_quote_booking_receipts",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "unchanged": true
+      },
+      {
+        "rows": 0,
+        "table": "lk_live_quote_photos",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "unchanged": true
+      },
+      {
+        "rows": 1,
+        "table": "lk_live_quote_submissions",
+        "sha256": "32fe3c677127e771288844176c2fe8044a2c09666fbcc18bc83e3009b74d7299",
+        "unchanged": true
+      },
+      {
+        "rows": 1,
+        "table": "lk_quote_analysis_jobs",
+        "sha256": "c444ef476b795098b46d864b8261b089c5d59d1cf2f78c1a4bb46f3314aef731",
+        "unchanged": true
+      },
+      {
+        "rows": 0,
+        "table": "lk_quote_media_audit",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "unchanged": true
+      },
+      {
+        "rows": 0,
+        "table": "lk_quote_media_receipts",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "unchanged": true
+      },
+      {
+        "rows": 1,
+        "table": "lk_quote_request_audit",
+        "sha256": "5e68bf6da5d7b057e8eb10565180a0a579d69e33ce13c1b71b55d4645ace3fd5",
+        "unchanged": true
+      },
+      {
+        "rows": 2,
+        "table": "lk_quote_requests",
+        "sha256": "0c3c16e1109bd4c6c013f3e6e858a63730b2ff12d1b70058814405c4ce9bdfb8",
+        "unchanged": true
+      }
+    ],
+    "existing_quotes": 2,
+    "existing_bookings": 1,
+    "new_request_check": "passed; synthetic request rolled back; role restored",
+    "repriced_old_quotes": 0,
+    "existing_signed_submissions": 1
+  }
+}

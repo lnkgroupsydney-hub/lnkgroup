@@ -1,7 +1,9 @@
+import type { QUOTE_PRICING_VERSION, PREVIOUS_QUOTE_PRICING_VERSION } from './pricing.ts'
 import type { QuoteDraftInput } from '../../enquiries/domain.ts'
 export type { QuoteDraftInput, ContactDetails, ServiceDetails } from '../../enquiries/domain.ts'
 export const LIVE_STORAGE_CONSENT_VERSION = 'quote-storage-review-v1'
 export interface LiveQuoteRequest {
+  pricingVersion?: typeof QUOTE_PRICING_VERSION | typeof PREVIOUS_QUOTE_PRICING_VERSION
   id: string; reference: string; mode: 'live'; companyId: 'lk-group'; revision: number
   status: 'draft' | 'review_requested'; payload: QuoteDraftInput; consentVersion: string
   savedAt: string; createdAt: string; reviewRequestedAt: string | null; customerId: string | null

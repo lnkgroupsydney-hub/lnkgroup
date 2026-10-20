@@ -1,0 +1,80 @@
+{
+  "synthetic": true,
+  "checks": [
+    {
+      "name": "contact validation preserves invalid typing and paste, connects inline errors and blocks save",
+      "passed": true
+    },
+    {
+      "name": "optional phone, domestic, +61, 0061 and business numbers save; leading zero postcode remains a string",
+      "passed": true
+    },
+    {
+      "name": "whole cabinet counts preserve raw invalid input, block exponent coercion and accept blank, zero and 500",
+      "passed": true
+    },
+    {
+      "name": "multiline notes keep line breaks, reject control characters and overflow without clipping pasted text",
+      "passed": true
+    },
+    {
+      "name": "legacy contact and hidden service errors recover together; discard clears an existing inline error",
+      "passed": true
+    },
+    {
+      "name": "contact lost response retries same save; service and back preserve fields",
+      "passed": true
+    },
+    {
+      "name": "320px keyboard, long details, one panel, fixed outer scroll",
+      "passed": true
+    },
+    {
+      "name": "409 preserves unsaved entries and access loss clears private view",
+      "passed": true
+    },
+    {
+      "name": "queued/running/stale/failed/uncertain keep photo work and recovery controls",
+      "passed": true
+    },
+    {
+      "name": "late hidden photo read cannot erase unsaved contact edits",
+      "passed": true
+    },
+    {
+      "name": "booking email verification binds the new quote once and never opens an older quote for the same email",
+      "passed": true
+    },
+    {
+      "name": "a current linked valid email session skips OTP; generic unlinked access needs one bound challenge",
+      "passed": true
+    },
+    {
+      "name": "a verify response for another quote preserves the current quote and reports an error",
+      "passed": true
+    },
+    {
+      "name": "late booking verify is ignored after management opens; cross-tab changes preserve dirty entries until explicit continuation",
+      "passed": true
+    },
+    {
+      "name": "a cross-tab notification preserves an unsaved first-step form and permits explicit local discard",
+      "passed": true
+    },
+    {
+      "name": "cross-tab access recovery preserves a pending booking payload and retries the same date command",
+      "passed": true
+    },
+    {
+      "name": "explicit management selection restores the chosen linked quote after a delayed private read",
+      "passed": true
+    },
+    {
+      "name": "photo estimate, date, typed signature, lost-submit retry and reload receipt",
+      "passed": true
+    }
+  ],
+  "consoleErrors": [],
+  "google": "Real Google autocomplete not executed; this fixture permits local origins only",
+  "production": "No production API, AI, email or Google calls"
+}

@@ -30,9 +30,9 @@ test('synthetic fixture preserves navigation and isolates every API and credenti
     assert.match(rsc.headers.get('vary'), /RSC/)
     assert.equal(forwarded[1].headers.rsc, '1'); assert.equal(forwarded[1].headers['next-router-state-tree'], '%5B%22%22%5D')
     assert.equal(forwarded[1].headers['next-router-prefetch'], '1'); assert.equal(forwarded[1].headers['next-url'], '/admin/customers')
-    assert.equal((await fetch(`${base}/images/lk-group-logo.png`, { headers: credentials })).status, 200)
+    assert.equal((await fetch(`${base}/images/lk-group-logo-circle-transparent.png`, { headers: credentials })).status, 200)
     for (const width of [96, 128, 256]) {
-      const path = `/_next/image?url=%2Fimages%2Flk-group-logo.png&w=${width}&q=75`
+      const path = `/_next/image?url=%2Fimages%2Flk-group-logo-circle-transparent.png&w=${width}&q=75`
       const logo = await fetch(base + path, { headers: credentials })
       assert.equal(logo.status, 200); assert.equal(logo.headers.get('set-cookie'), null)
       assert.equal(forwarded.at(-1).path, path)
@@ -42,13 +42,13 @@ test('synthetic fixture preserves navigation and isolates every API and credenti
     for (const path of [
       '/api/unknown', '/api/google/callback', '/admin/not-approved', '/admin/customers/id',
       '/_next/image?url=https://example.invalid/private&w=128&q=75',
-      '/_next/image?url=http://127.0.0.1:3002/images/lk-group-logo.png&w=128&q=75',
+      '/_next/image?url=http://127.0.0.1:3002/images/lk-group-logo-circle-transparent.png&w=128&q=75',
       '/_next/image?url=%2Fapi%2Fquote%2Fbooking&w=128&q=75',
       '/_next/image?url=%2Fimages%2Fother.png&w=128&q=75',
-      '/_next/image?url=%2Fimages%2Flk-group-logo.png&url=%2Fapi%2Fquote%2Fbooking&w=128&q=75',
-      '/_next/image?url=%2Fimages%2Flk-group-logo.png&w=128&q=75&extra=1',
-      '/_next/image?url=%2Fimages%2Flk-group-logo.png&w=4096&q=75',
-      '/_next/image?url=%2Fimages%2Flk-group-logo.png&w=128&q=100',
+      '/_next/image?url=%2Fimages%2Flk-group-logo-circle-transparent.png&url=%2Fapi%2Fquote%2Fbooking&w=128&q=75',
+      '/_next/image?url=%2Fimages%2Flk-group-logo-circle-transparent.png&w=128&q=75&extra=1',
+      '/_next/image?url=%2Fimages%2Flk-group-logo-circle-transparent.png&w=4096&q=75',
+      '/_next/image?url=%2Fimages%2Flk-group-logo-circle-transparent.png&w=128&q=100',
     ]) assert.ok((await fetch(base + path, { headers: credentials })).status >= 400)
     assert.equal((await fetch(`${base}/admin/settings`, { method: 'POST', headers: credentials })).status, 404)
     assert.equal((await fetch(`${base}/admin`, { headers: { 'next-url': 'https://example.invalid/admin' } })).status, 400)

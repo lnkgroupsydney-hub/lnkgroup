@@ -1,4 +1,5 @@
 import type { QuoteDraftInput } from './contracts.ts'
+import { isValidText } from '../../../shared/validation/input.ts'
 import { QuoteRequestError } from './contracts.ts'
 import type { ProvisionalEstimatePricing } from './pricing.ts'
 
@@ -88,8 +89,16 @@ export function bookingTime(value: unknown): string {
   return value
 }
 export function validateBookingSignature(value: unknown): LiveBookingSignature {
+  return bookingSignature(value, false)
+}
+/** Existing immutable signatures use their original validation contract. */
+export function parseBookingSignature(value: unknown): LiveBookingSignature {
+  return bookingSignature(value, true)
+}
+function bookingSignature(value: unknown, stored: boolean): LiveBookingSignature {
   const row = bookingObject(value), method = row.method ?? 'drawn'
   if (Object.keys(row).some(key => !['name', 'method', 'strokes', 'acknowledged'].includes(key)) || typeof row.name !== 'string' || !row.name.trim() || row.name.trim().length > 120 || /[\u0000-\u001f\u007f]/.test(row.name) || row.acknowledged !== true || !['typed', 'drawn'].includes(method as string) || !Array.isArray(row.strokes) || row.strokes.length > 100) throw new QuoteRequestError(400, 'Enter your name and acknowledge the booking request summary.')
+  if (!stored && !isValidText(row.name, { maxLength: 120, required: true, requireLetter: true })) throw new QuoteRequestError(400, 'Enter your name and acknowledge the booking request summary.')
   let points = 0, visible = false, minX = 1, maxX = 0, minY = 1, maxY = 0
   for (const stroke of row.strokes) {
     if (!Array.isArray(stroke) || stroke.length < 2) throw new QuoteRequestError(400, 'Complete your signature before submitting.')

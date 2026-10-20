@@ -3,7 +3,13 @@ import type { ServiceDetails } from './contracts.ts'
 
 /** L&K's initial estimating rules, not an official Sydney market average. */
 export const LEGACY_QUOTE_PRICING_VERSION = 'lk-sydney-cabinet-v1-20261011'
-export const QUOTE_PRICING_VERSION = 'lk-sydney-cabinet-v2-20261011'
+export const PREVIOUS_QUOTE_PRICING_VERSION = 'lk-sydney-cabinet-v2-20261011'
+export const QUOTE_PRICING_VERSION = 'lk-sydney-cabinet-v3-20261014'
+export function quotePricingPolicy(version: string = QUOTE_PRICING_VERSION) {
+  if (version === QUOTE_PRICING_VERSION) return { minimumSubtotal: 145000, gstRateBps: 0 } as const
+  if (version === PREVIOUS_QUOTE_PRICING_VERSION || version === LEGACY_QUOTE_PRICING_VERSION) return { minimumSubtotal: 150000, gstRateBps: 1000 } as const
+  throw new Error('The quote pricing policy could not be validated.')
+}
 export interface PendingCompanyPricing {
   status: 'awaiting_company_rates'; currency: 'AUD'; pricingVersion: 'unconfigured'
   lineItems: []; subtotal: null; tax: null; total: null; notice: string
@@ -16,8 +22,9 @@ export interface LegacyCalculatedEstimatePricing {
 }
 export const EXCLUDED_WORK_CODES = ['structural_or_unclassified_repairs','unverified_damage_scope','additional_surfaces','unseen_cabinetry'] as const
 export interface ExcludedEstimateWork { code: typeof EXCLUDED_WORK_CODES[number]; description: string; damageIds: string[] }
-export interface ProvisionalEstimatePricing extends Omit<LegacyCalculatedEstimatePricing, 'status' | 'pricingVersion'> {
-  status: 'provisional_estimate' | 'review_required'; pricingVersion: typeof QUOTE_PRICING_VERSION
+export interface ProvisionalEstimatePricing extends Omit<LegacyCalculatedEstimatePricing, 'status' | 'pricingVersion' | 'minimumSubtotal' | 'gstRateBps'> {
+  status: 'provisional_estimate' | 'review_required'; pricingVersion: typeof QUOTE_PRICING_VERSION | typeof PREVIOUS_QUOTE_PRICING_VERSION
+  minimumSubtotal: 145000 | 150000; gstRateBps: 0 | 1000
   amountScope: 'painting_only'; siteConfirmationRequired: true
   basis: { type: 'ai_estimated_quantities'; extent: 'whole_project' | 'primary_view'; anchorPhotoId: string; doors: number; drawers: number } | null
   exclusions: ExcludedEstimateWork[]
@@ -71,6 +78,13 @@ function provisionalExclusions(analysis: ProvisionalPhotoAnalysis, service: Serv
   return exclusions
 }
 export function calculateEstimatePricing(analysis: PhotoAnalysis, service: ServiceDetails): ProvisionalEstimatePricing {
+  return calculateProvisionalPricing(analysis, service, QUOTE_PRICING_VERSION)
+}
+export function calculatePreviousEstimatePricing(analysis: PhotoAnalysis, service: ServiceDetails): ProvisionalEstimatePricing {
+  return calculateProvisionalPricing(analysis, service, PREVIOUS_QUOTE_PRICING_VERSION)
+}
+function calculateProvisionalPricing(analysis: PhotoAnalysis, service: ServiceDetails, version: ProvisionalEstimatePricing['pricingVersion']): ProvisionalEstimatePricing {
+  const policy = quotePricingPolicy(version)
   const reasons:string[]=[]
   const provisional='estimateScope' in analysis?analysis:null
   const selectedDoors=service.surfaces.includes('doors'),selectedDrawers=service.surfaces.includes('drawers')
@@ -93,16 +107,16 @@ export function calculateEstimatePricing(analysis: PhotoAnalysis, service: Servi
   const warnings=['This is a provisional painting amount. Confirm exact quantities, repair work and final price on site.']
   if(provisional&&(provisional.quantities.doors.needsConfirmation||provisional.quantities.drawers.needsConfirmation))warnings.push('Customer counts and photographed counts need confirmation; the amount uses the AI estimates for the selected fronts.')
   if(provisional&&[provisional.quantities.doors,provisional.quantities.drawers].some(quantity=>quantity.confidence==='low'))warnings.push('Some photo quantity estimates have low confidence and need particular attention on site.')
-  const result:ProvisionalEstimatePricing={status:reasons.length?'review_required':'provisional_estimate',currency:'AUD',pricingVersion:QUOTE_PRICING_VERSION,amountUnit:'cents',minimumSubtotal:150000,gstRateBps:1000,lineItems:[],subtotal:null,tax:null,total:null,reviewReasons:[...new Set([...reasons,...warnings])],notice:'Provisional photo-based painting amount using L&K initial pricing rules, starting from A$1,500 excluding GST. Ordinary preparation and minor coating repairs are included. AI quantities are indicative; exact quantities, materials, adhesion, hidden damage and final scope require site confirmation. Separately listed excluded work is not priced. This is not a confirmed booking or contract.',amountScope:'painting_only',siteConfirmationRequired:true,basis:null,exclusions:provisional?provisionalExclusions(provisional,service):[]}
+  const result:ProvisionalEstimatePricing={status:reasons.length?'review_required':'provisional_estimate',currency:'AUD',pricingVersion:version,amountUnit:'cents',minimumSubtotal:policy.minimumSubtotal,gstRateBps:policy.gstRateBps,lineItems:[],subtotal:null,tax:null,total:null,reviewReasons:[...new Set([...reasons,...warnings])],notice:`Provisional photo-based painting amount using L&K initial pricing rules, starting from ${version===QUOTE_PRICING_VERSION?'A$1,450. No GST charged. The supplier is not registered for GST.':'A$1,500 excluding GST.'} Ordinary preparation and minor coating repairs are included. AI quantities are indicative; exact quantities, materials, adhesion, hidden damage and final scope require site confirmation. Separately listed excluded work is not priced. This is not a confirmed booking or contract.`,amountScope:'painting_only',siteConfirmationRequired:true,basis:null,exclusions:provisional?provisionalExclusions(provisional,service):[]}
   if(reasons.length||!provisional)return result
   result.basis={type:'ai_estimated_quantities',extent:provisional.estimateScope.extent,anchorPhotoId:provisional.estimateScope.anchorPhotoId!,doors,drawers}
   const add=(code:string,label:string,quantity:number,unitAmount:number)=>{if(quantity&&unitAmount>0)result.lineItems.push({code,label,quantity,unitAmount,amount:quantity*unitAmount})}
   add('doors','Estimated cabinet door preparation and painting',doors,15000)
   add('drawers','Estimated drawer front preparation and painting',drawers,10000)
   const painting=result.lineItems.reduce((sum,item)=>sum+item.amount,0)
-  add('minimum_adjustment','Minimum painting charge adjustment',1,Math.max(0,150000-painting))
+  add('minimum_adjustment','Minimum painting charge adjustment',1,Math.max(0,policy.minimumSubtotal-painting))
   if(provisional.observedDamage.some(damage=>isPricedDamage(damage,provisional,service)&&damage.severity==='moderate'&&['peeling','chipping','cracking'].includes(damage.kind)))add('moderate_repairs','Moderate coating repairs (once per estimated scope)',1,25000)
-  result.subtotal=result.lineItems.reduce((sum,item)=>sum+item.amount,0);result.tax=Math.round(result.subtotal*1000/10000);result.total=result.subtotal+result.tax
+  result.subtotal=result.lineItems.reduce((sum,item)=>sum+item.amount,0);result.tax=Math.round(result.subtotal*policy.gstRateBps/10000);result.total=result.subtotal+result.tax
   return result
 }
 
@@ -118,8 +132,10 @@ export function validateEstimatePricing(value: unknown): EstimatePricing {
     if (!hasKeys(['status','currency','pricingVersion','lineItems','subtotal','tax','total','notice']) || row.pricingVersion !== 'unconfigured' || row.lineItems.length || row.subtotal !== null || row.tax !== null || row.total !== null) return fail()
     return value as PendingCompanyPricing
   }
-  const provisional=row.pricingVersion===QUOTE_PRICING_VERSION
-  if (!hasKeys(['status','currency','pricingVersion','amountUnit','minimumSubtotal','gstRateBps','lineItems','subtotal','tax','total','reviewReasons','notice',...(provisional?['amountScope','siteConfirmationRequired','basis','exclusions']:[])]) || ![QUOTE_PRICING_VERSION,LEGACY_QUOTE_PRICING_VERSION].includes(row.pricingVersion as string) || row.amountUnit !== 'cents' || row.minimumSubtotal !== 150000 || row.gstRateBps !== 1000 || !Array.isArray(row.reviewReasons) || row.reviewReasons.length > 20 || !row.reviewReasons.every(text)) return fail()
+  const provisional=row.pricingVersion===QUOTE_PRICING_VERSION||row.pricingVersion===PREVIOUS_QUOTE_PRICING_VERSION
+  if (![QUOTE_PRICING_VERSION, PREVIOUS_QUOTE_PRICING_VERSION, LEGACY_QUOTE_PRICING_VERSION].includes(row.pricingVersion as string)) return fail()
+  const policy=quotePricingPolicy(row.pricingVersion as string)
+  if (!hasKeys(['status','currency','pricingVersion','amountUnit','minimumSubtotal','gstRateBps','lineItems','subtotal','tax','total','reviewReasons','notice',...(provisional?['amountScope','siteConfirmationRequired','basis','exclusions']:[])]) || ![QUOTE_PRICING_VERSION,PREVIOUS_QUOTE_PRICING_VERSION,LEGACY_QUOTE_PRICING_VERSION].includes(row.pricingVersion as string) || row.amountUnit !== 'cents' || row.minimumSubtotal !== policy.minimumSubtotal || row.gstRateBps !== policy.gstRateBps || !Array.isArray(row.reviewReasons) || row.reviewReasons.length > 20 || !row.reviewReasons.every(text)) return fail()
   if(provisional){
     if(row.amountScope!=='painting_only'||row.siteConfirmationRequired!==true||!Array.isArray(row.exclusions)||row.exclusions.length>4)return fail()
     const codes=new Set<string>(),damageIds=new Set<string>()
@@ -142,7 +158,7 @@ export function validateEstimatePricing(value: unknown): EstimatePricing {
     if (!row.reviewReasons.length || row.lineItems.length || row.subtotal !== null || row.tax !== null || row.total !== null || provisional&&row.basis!==null) return fail()
   } else if (row.status === (provisional?'provisional_estimate':'estimate_ready')) {
     const integer = (v: unknown): v is number => Number.isSafeInteger(v) && (v as number) >= 0 && (v as number) <= 20000000
-    if (!provisional&&row.reviewReasons.length || provisional&&row.basis===null || !row.lineItems.length || row.lineItems.length > 4 || !integer(row.subtotal) || row.subtotal < 150000 || !integer(row.tax) || !integer(row.total)) return fail()
+    if (!provisional&&row.reviewReasons.length || provisional&&row.basis===null || !row.lineItems.length || row.lineItems.length > 4 || !integer(row.subtotal) || row.subtotal < policy.minimumSubtotal || !integer(row.tax) || !integer(row.total)) return fail()
     let sum = 0
     const codes = new Set<string>()
     for (const item of row.lineItems) {
@@ -156,7 +172,7 @@ export function validateEstimatePricing(value: unknown): EstimatePricing {
     const lines = row.lineItems as EstimateLineItem[]
     const painting = lines.filter(line => ['doors','drawers'].includes(line.code)).reduce((sum,line) => sum + line.amount,0)
     const adjustment = lines.find(line => line.code === 'minimum_adjustment')?.amount ?? 0
-    if (!painting || adjustment !== Math.max(0,150000 - painting) || sum !== row.subtotal || row.tax !== Math.round(row.subtotal * 1000 / 10000) || row.total !== row.subtotal + row.tax) return fail()
+    if (!painting || adjustment !== Math.max(0,policy.minimumSubtotal - painting) || sum !== row.subtotal || row.tax !== Math.round(row.subtotal * policy.gstRateBps / 10000) || row.total !== row.subtotal + row.tax) return fail()
     if(provisional){
       const basis=row.basis as NonNullable<ProvisionalEstimatePricing['basis']>
       if((lines.find(line=>line.code==='doors')?.quantity??0)!==basis.doors||(lines.find(line=>line.code==='drawers')?.quantity??0)!==basis.drawers)return fail()

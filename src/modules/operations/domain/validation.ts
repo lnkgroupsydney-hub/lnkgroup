@@ -1,4 +1,5 @@
 import type { EnquiryInput } from './contracts.ts'
+import { isValidAustralianPhone, isValidAustralianPostcode, isValidEmail, isValidInteger, isValidText } from '../../../shared/validation/input.ts'
 
 export class AppError extends Error {
   readonly status: number
@@ -11,13 +12,13 @@ function text(value: unknown, name: string, max: number, required = true, multil
     throw new AppError(400, `Invalid ${name}`)
   }
   const trimmed = value.trim()
-  if ((required && !trimmed) || trimmed.length > max || (multiline ? /[\u0000-\u0008\u000b\u000c\u000e-\u001f]/ : /[\u0000-\u001f]/).test(trimmed)) throw new AppError(400, `Invalid ${name}`)
+  if (!isValidText(value, { maxLength: max, required, multiline, requireLetter: ['name', 'siteAddress', 'suburb'].includes(name) })) throw new AppError(400, `Invalid ${name}`)
   return trimmed
 }
 
 function count(value: unknown, name: string): number | null {
   if (value === null) return null
-  if (!Number.isInteger(value) || (value as number) < 0 || (value as number) > 500) throw new AppError(400, `Invalid ${name}`)
+  if (!isValidInteger(value, 0, 500)) throw new AppError(400, `Invalid ${name}`)
   return value as number
 }
 
@@ -37,9 +38,11 @@ export function validateEnquiry(value: unknown): EnquiryInput {
   if (!Array.isArray(x.targetSurfaces) || x.targetSurfaces.length < 1 || x.targetSurfaces.length > 12) throw new AppError(400, 'Invalid targetSurfaces')
   const targetSurfaces = x.targetSurfaces.map((v) => text(v, 'targetSurfaces', 60))
   const email = text(x.email, 'email', 254).toLowerCase()
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new AppError(400, 'Invalid email')
+  if (!isValidEmail(email)) throw new AppError(400, 'Invalid email')
   const postcode = text(x.postcode, 'postcode', 4)
-  if (!/^\d{4}$/.test(postcode)) throw new AppError(400, 'Invalid postcode')
+  if (!isValidAustralianPostcode(postcode)) throw new AppError(400, 'Invalid postcode')
+  const phone = text(x.phone, 'phone', 40, false)
+  if (!isValidAustralianPhone(phone)) throw new AppError(400, 'Enter a valid Australian phone number.')
   const preferredDate = validDate(x.preferredDate)
   return {
     serviceId: 'cabinet-painting', projectIntent: text(x.projectIntent, 'projectIntent', 160),
@@ -47,7 +50,7 @@ export function validateEnquiry(value: unknown): EnquiryInput {
     doorCount: count(x.doorCount, 'doorCount'), drawerCount: count(x.drawerCount, 'drawerCount'),
     material: text(x.material, 'material', 100, false), colourPreference: text(x.colourPreference, 'colourPreference', 100, false),
     notes: text(x.notes, 'notes', 3000, false, true), name: text(x.name, 'name', 120), email,
-    phone: text(x.phone, 'phone', 40, false), siteAddress: text(x.siteAddress, 'siteAddress', 240, false),
+    phone, siteAddress: text(x.siteAddress, 'siteAddress', 240, false),
     preferredDate, acknowledgement: true, idempotencyKey: text(x.idempotencyKey, 'idempotencyKey', 100),
   }
 }

@@ -1,5 +1,85 @@
 # 메인 → Cabinet → 회사 관리 웹 제작 TODO
 
+**2026-10-16 공개 검색 SEO·AEO:** [54번 계획](54-public-search-seo-aeo-foundation.md)·[검증 기록](../verification/2026-10-16-public-search-seo-aeo.md).
+
+- [x] 1~2단계 로컬 구현: Production www의 두 공개 페이지/등록 이미지 예외, 비공개·Preview 기본 보호, canonical·OG·robots·sitemap·실제 정보 구조화 데이터.
+- [x] 정책5/5·관련 회귀122/122·HTTP Production/alias/Preview 각26·실제 브라우저17/17·lint/타입/별도 Production·Preview build.
+- [x] 회사 main 반영·운영 배포, 실제 www HTTP26/26·브라우저4/4와 보호된 배포 URL 각11개 응답·익명 고객 자료 보호 인수. Preview 미설정 견적 API는503으로 닫힘.
+- [ ] 회사 Search Console 소유권·사이트맵 제출·URL 검사·AI 포함 확인. 실제 색인/AI 노출은 별도 결과.
+
+**2026-10-14 신규 A$1,450·GST 미부과:** [53번 정책](53-new-quote-no-gst-pricing.md)·[검증 기록](../verification/2026-10-14-no-gst-pricing.md).
+
+- [x] 신규 요청 가격 v3 고정·GST 0, 기존 요청 정책/분석/서명/예약/감사/동결 문서 보존.
+- [x] 고객/EMS 금액·세금 표기와 신규 접수/예약 확정 메일·PDF 일치. 과거 PDF 바이트와 전체 메일 payload 동등성 확인.
+- [x] 전체773/773·lint·타입·최종build, 실제 로컬 브라우저8/8·44개 레이아웃, PDF4종/8쪽 렌더링·시각 점검. 모바일 상세 표 화면 넘침 수정·재검증.
+- [x] 2026-10-15 회사 DB migration·기존18테이블 전체행 보존·신규v3 RPC 임시생성/롤백·접근보호 확인, READY production 승격·www/apex 연결, 운영3/3 화면/오류0 검증. [운영 기록](../verification/2026-10-15-no-gst-production-release.md). 기존 자료 backfill 없음.
+- [ ] 신규 v3의 실제 고객 메일/PDF 발송·유료 AI·Google 예약 전체 제공자 인수는 이번 배포에서 반복하지 않음. 기존 자료는 DB 해시·로컬 과거 버전 복구/문서 바이트 검사로 보존 확인.
+
+**2026-10-13 견적 UI·UX 운영 반영:** [Git·배포·실제 운영 검증](../verification/2026-10-13-quote-ui-release.md).
+
+- [x] 구현 f3d5d94 / main 병합4bb0b80 / 회사 origin 반영 / Vercel Production READY·운영 alias source 일치.
+- [x] 동일 코드 전체767/767·로컬 브라우저40/40, 운영 익명 desktop/mobile107/107·화면·리소스 확인. 기존 업무 자료 mutation과 환경/DB migration 없음.
+- [ ] 회사 Google Maps 키·API·결제 준비 후 실제 주소 검색/선택 및 실제 고객 이메일·사진AI·예약 제공자 인수.
+
+아래 미배포 표시는 각 검증 당시의 기록이며 최신 배포 상태는 위 기록을 따른다.
+
+**2026-10-13 새 견적과 기존 견적·예약 진입:** [51번 계획](51-quote-entry-and-contact-prefill.md)·[검증 기록](../verification/2026-10-13-quote-entry-contact-prefill.md).
+
+- [x] 첫 화면 두 카드·명시적 기존 선택·권한 있는 연락처 세 항목만 사전 입력·새 ID 생성·기존 업무 자료 보존.
+- [x] fresh baseline·미저장/결과 불명 요청·숨은 guest·다른 탭·첫 저장·사진/date/signature/body/key 복구 경계 보호, 방문일 단일 인증 유지.
+- [x] 전체 767/767·관련 37/37·fixture 4/4·lint·타입·build, 로컬 production 브라우저 40/40과 desktop/mobile 시각 점검 통과. 검증 build를 3002에 연결.
+- [ ] 실제 회사 DB/인증 이메일·외부 제공자·운영 배포 인수. 이번 구현과 별도.
+
+**2026-10-13 최신 Git 통합:** 캐비넷·홈·견적 UI·입력 검증·방문일 단일 인증 변경을 `a93b3b4`에 커밋하고 main에 병합했다(`b747587`). [통합 검증 기록](../verification/2026-10-13-kcp-main-integration.md).
+
+- [x] 전체 749/749·타임라인 8/8·마지막 예약 복구 관련 29/29, 최신 lint·타입·build와 브라우저 49/49 통과.
+- [x] 회사 origin에 작업 브랜치/main atomic push, 원격 SHA와 병합/검증 트리 동일성 확인. 원본 공유 작업 폴더 보존.
+
+**2026-10-13 방문일 단일 이메일 인증:** [50번 계획](50-booking-stage-email-verification.md)과 [검증 기록](../verification/2026-10-13-booking-stage-email-verification.md)을 따른다.
+
+- [x] 방문일 현재 견적에 고정된 단일 OTP, 유효 연결 세션 생략, 인증 후 입력/분석/날짜 유지와 목록 목적 분리.
+- [x] 다른 탭/늦은 응답·관리 복원·접수본·불명확한 예약 재시도 보존, footer 추가 저장과 인증 재조회 달력/pending review 경계 수정.
+- [x] 전체 749/749·최종 관련 21/21·lint·타입·build, 공개 브라우저 18개와 최신 desktop/mobile 시각 점검 통과. 3002 미리보기 최신 build 연결.
+- [x] 새 견적/기존 견적의 시작 화면 진입 구조·연락처만 사전 입력은 후속 51번에서 구현했다. 로그인 유지 정책을 추가하지 않으며 실제 이메일/운영 제공자·배포 인수는 별도다.
+
+**2026-10-13 KCP 주석 디자인 보정:** [47번 후속 항목](47-kcp-landing-ui-ux-content-plan.md)과 [실행 기록](../verification/2026-10-13-kcp-design-polish.md).
+
+- [x] Hero 문단/버튼 규격·목차 서체 통일, 작은 흰색 이미지 고지, 카드20px 모서리, Aquanamel 표기, 공정 링크 정렬의6개 주석 반영.
+- [x] 1176/390/320px 실제 화면, 최신 lint·타입·build, production 브라우저16개 시나리오·최종 QA 검토 통과. SSR 검사 DOM 가정과 CSS staleasset 오류를 해결해 재검증.
+
+**2026-10-13 항목별 입력 검증:** [49번 계획](49-field-input-validation.md)과 [검증 기록](../verification/2026-10-13-field-input-validation.md)에 작성/저장 검증과 과거 자료 복구 경계를 정리했다.
+
+- [x] 이메일·호주 전화·주소/우편번호·정수 수량·텍스트·인증 코드·서명·금액/기간의 화면 및 신규 저장 검증.
+- [x] 필드 오류/키보드 focus·잘못된 저장 차단·저장본 parser 분리·복합 오류 교정·변경 취소·불명확한 요청 재시도 보존.
+- [x] 전체 746/746·lint·타입·build, 공개 브라우저 11개·관리자 브라우저 3개 통과. 실제 운영/외부 제공자 인수와 구분.
+- [ ] 회사 Maps 키 준비 후 실제 주소 검색/선택 인수, 운영 배포. 기존 Draft 화면의 별도 브라우저 인수는 미실행.
+
+**2026-10-13 메인 UI·UX 구현·주석 반영 완료:** [48번 계획](48-lk-group-home-ui-ux-plan.md)과 후속 사용자 태그 일곱 항목을 구현했다. 그룹 배경·다섯 서비스/상품 생성 이미지·설명·지역 숫자 제거·검정 원 로고·그룹 표시·새 이메일/시간을 적용했다. 네 Coming soon 항목은 링크 없이 유지하며 Cabinet 상세/견적 경로는 유효하다. [최신 검증 기록](../verification/2026-10-13-lk-home-revision.md)을 따른다.
+
+- [x] H-00: 새 브랜치·구현계획·링크 상태 확인·관련 문서 연결.
+- [x] 후속 태그: 로고 바깥 흰색만 제거·검정 원 유지, 공통 로고와 fixture 경로 갱신. 생성 배경/서비스 이미지와 회사 연락처·표시명 적용.
+- [x] H-01~04: 홈 전용 구조·다섯 항목·글자/간격·지역/생성 컨셉 이미지·회사 정보·연락·고유 metadata 구현. 업무 ServiceId·견적/예약 계약·noindex 유지.
+- [x] H-05: 최종 lint·타입·빌드와 로컬 Chrome 브라우저 12/12 통과. 6개 화면 폭·메뉴/Escape/초점·서버 HTML/JS 없음·200% 글자 확대·가상 응답의 Cabinet→견적 진입, 생성 이미지 로딩·공통 로고·실제 화면 검토 완료.
+- [ ] 실물 휴대폰/Safari·실제 브라우저 200% 확대·정량 성능/검색 성과 인수. 글자 확대 시뮬레이션과 구분.
+- [ ] 운영 공개·색인·canonical/sitemap/구조화 데이터·검색 성과 측정은 별도 단계.
+
+**2026-10-13 KCP 랜딩 UI·UX 구현:** [47번 계획](47-kcp-landing-ui-ux-content-plan.md)과 [검증 기록](../verification/2026-10-13-kcp-landing-ui-ux.md)을 따른다. 서비스 3카드·짧은 공정·범위·FAQ로 압축하고 지역 상세를 홈 `#service-area`로 이전했다. 색상 쇼룸을 제거했으며 공정 3D 모델은 유지한다. 기존 미커밋 견적/메인 변경을 보존하고 커밋·푸시·병합·배포는 수행하지 않았다.
+
+- [x] KCP 반복 본문/섹션 통합, 3개 서비스 카드·5개 FAQ, 글로벌 토큰 기반 글자/여백·반응형 구현.
+- [x] 홈 중앙 데이터 21지역·반경 조건·지도 링크 이전, KCP 지역 한 문장/홈 링크 유지, showroom UI/상태/CSS 제거.
+- [x] 9공정+완성 3D 유지, 진행률/앵커·실제 crossfade·카메라 조정, 첫 하단 버튼 잘림/반복 정적 전환/사전 WebGL 실패 이동 오류 수정.
+- [x] 타임라인 8/8 및 로컬 production 브라우저 16개 시나리오 통과. 모바일/지원 경계·키보드/비교·hash/왕복·reduced-motion·JS 없음·WebGL 초기/컨텍스트 상실 확인.
+- [x] 최신 공유 작업트리 `npm run check` 통과, 최종 모바일 사진 초점/헤더 대비·이미지 로드 재검증 및 QA 시각 검토 완료.
+- [ ] 실제 휴대폰/Safari·실제 200% 브라우저 확대·정량 성능·운영 배포/검색 색인 인수. 글자 확대 시뮬레이션과 구분.
+
+**2026-10-13 견적 UI 개선:** [46번 계획](46-quote-one-page-ui.md)과 [검증 기록](../verification/2026-10-13-quote-one-page-ui.md)을 따른다. 작업 브랜치는 `codex/quote-one-page-ux-20261013`이며 운영 배포·main 통합은 별도다.
+
+- [x] 스크롤 단계 이동을 개별 패널로 전환, 고정 진행·이전/다음·선택 카드·예상 금액 강조.
+- [x] 실제 사진 분석 상태 로딩, 비활성 패널 수명·미저장값·서명·동일 요청 재시도 경계 보존.
+- [x] 전체 주소 입력 10곳 Google Places 공통 연결·단일 고객 주소 저장, 공개 테스트 문구 정리.
+- [x] 전체 자동 검사 733/733·lint·타입·빌드와 로컬 브라우저 6개 시나리오 검증. 운영 DB·AI·메일·Calendar 호출과 구분.
+- [ ] 회사 Google Maps 키·결제·API/referrer 설정 후 실제 dropdown 검색/선택/저장 인수. 사용자 준비 대기.
+
 **2026-10-13 최신 Git 통합:** 44·45번 날짜 선택/예약 절차 개선과 시험 자료 정리·만료 세션 복구를 현재 브랜치 `codex/quote-date-first-flow-20261013`의 `9cc9ba3`에 커밋하고 `main`에 병합했다(`67feded`). 병합 트리는 검증 브랜치와 동일하며 전체 728/728·check 결과를 재사용한다. 회사 원격 `origin`만 사용한다. 아래 “미커밋/점유 유지”는 당시 실행 상태로 보존한다.
 
 - [x] 현재까지 변경사항 56개 파일 커밋, main 무충돌 병합과 검증 코드 동일성 확인.

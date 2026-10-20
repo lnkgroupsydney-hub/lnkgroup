@@ -4,11 +4,13 @@ import { createHash, randomUUID } from 'node:crypto'
 import { readFileSync, readdirSync } from 'node:fs'
 import { PGlite } from '@electric-sql/pglite'
 import { PHOTO_ROLES, type ProvisionalPhotoAnalysis } from './domain/analysis.ts'
-import { calculateEstimatePricing } from './domain/pricing.ts'
+import { calculatePreviousEstimatePricing as calculateEstimatePricing } from './domain/pricing.ts'
 import { BOOKING_ACKNOWLEDGMENT_TEXT, validateBookingSignature, type LiveBookingState, type LiveBookingDeliveryClaim } from './domain/booking-flow.ts'
 const db = new PGlite()
 await db.exec('create role anon;create role authenticated;create role service_role bypassrls;')
 for (const name of readdirSync(new URL('../../../supabase/migrations/', import.meta.url)).filter(n => n.endsWith('.sql')).sort()) await db.exec(readFileSync(new URL(`../../../supabase/migrations/${name}`, import.meta.url),'utf8'))
+// These root-created fixtures retain their historical v2 request policy.
+await db.exec('alter table public.lk_quote_requests alter column pricing_version drop default')
 const tables = (await db.query<{tablename:string}>("select tablename from pg_tables where schemaname='public' and tablename like 'lk_%'")).rows.map(x=>x.tablename)
 const companyId='lk-group', target={accountSub:'company-sub',calendarId:'lnkgroupsydney@gmail.com'}, email='alice@example.invalid', ownerHash='a'.repeat(64)
 const service={serviceId:'cabinet-painting',intent:'full-repainting',surfaces:['doors','drawers'],doorCount:8,drawerCount:3,material:'',colourPreference:''}

@@ -1,0 +1,30 @@
+    },
+    {
+      "name": "Provisional schedule onClick blocks invalid time and notes",
+      "result": "passed",
+      "evidence": {
+        "invalidPostRequests": 0,
+        "notesUnicodeLfTabAndComparisonPreserved": true,
+        "validSchedulePosts": 1,
+        "revision": 2
+      }
+    },
+    {
+      "name": "Company currency and changing date minimum reject then recover",
+      "result": "passed",
+      "evidence": {
+        "rejectedAmounts": 5,
+        "invalidPutRequests": 0,
+        "acceptedCents": 180001,
+        "dateMinFeedbackRecoveredWithoutEditingEnd": true,
+        "validPutRequests": 1
+      }
+    }
+  ],
+  "pageErrors": [],
+  "deniedExternalRequests": [],
+  "notExecuted": [
+    "Real staff Auth, customer/company persistence and Google services",
+    "Real company proposal publication or confirmation"
+  ]
+}

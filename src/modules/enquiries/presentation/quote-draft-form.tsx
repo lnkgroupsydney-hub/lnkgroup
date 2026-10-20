@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { QUOTE_PROGRESS, validateQuoteDraft, type QuoteDraft, type QuoteDraftInput } from "../domain/quote-draft";
+import { QUOTE_PROGRESS, validateQuoteDraft, parseQuoteDraft, type QuoteDraft, type QuoteDraftInput } from "../domain/quote-draft";
 import { DemoQuoteFlow, loadDemoConfiguration } from "./demo-quote-flow";
 import type { DemoSubmissionStatus } from "../domain/demo-submission";
 import type { QuotePhotoManifestEntry } from "../domain/quote-photos";
@@ -9,6 +9,7 @@ import { QuotePhotoUpload } from "./quote-photo-upload";
 import { mergeSelectedAddress, type AddressKind, type AddressSelection } from "@/shared/address";
 import { AddressAutocompleteInput } from "@/shared/ui/address-autocomplete-input";
 import { quoteApiPath } from "./quote-workspace";
+import { ValidatedInput, ValidatedTextarea, getFieldValidationError, reportSectionValidity, type FieldValidationOptions } from "@/shared/ui/validated-input";
 import "./enquiry-form.css";
 
 type Values = {
@@ -31,7 +32,7 @@ function parseDraft(value: unknown): QuoteDraft {
   if (!record(value) || typeof value.id !== "string" || !value.id || !Number.isInteger(value.revision) || Number(value.revision) < 1 || typeof value.savedAt !== "string" || !Number.isFinite(Date.parse(value.savedAt))) {
     throw new Error("The server did not confirm a saved draft. Keep your entries and retry.");
   }
-  return { id:value.id, revision:Number(value.revision), savedAt:value.savedAt, payload:validateQuoteDraft(value.payload) };
+  return { id:value.id, revision:Number(value.revision), savedAt:value.savedAt, payload:parseQuoteDraft(value.payload) };
 }
 async function request(path: string, init: RequestInit = {}): Promise<Record<string, unknown>> {
   const response = await fetch(quoteApiPath(path), { ...init, credentials:"same-origin", cache:"no-store", signal:AbortSignal.timeout(25_000) });
@@ -110,19 +111,28 @@ export function QuoteDraftForm() {
   }
   function validate(): FieldErrors {
     const next: FieldErrors = {};
-    if (!values.name.trim()) next.name = "Enter your name.";
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email.trim())) next.email = "Enter a valid email address.";
-    if (!values.siteAddress.trim()) next.siteAddress = "Enter the site address.";
-    if (!values.suburb.trim()) next.suburb = "Enter the suburb.";
-    if (!/^\d{4}$/.test(values.postcode.trim())) next.postcode = "Enter a four-digit postcode.";
+    const rules: Partial<Record<Field, FieldValidationOptions>> = {
+      name: { validationLabel: 'your name', required: true, requireLetter: true, maxLength: 120 },
+      email: { validation: 'email', required: true, maxLength: 254 }, phone: { validation: 'phone', maxLength: 40 },
+      siteAddress: { validationLabel: 'the site address', required: true, requireLetter: true, maxLength: 240 },
+      suburb: { validationLabel: 'your suburb', required: true, requireLetter: true, maxLength: 100 },
+      postcode: { validation: 'postcode', required: true, maxLength: 4 },
+      details: { validationLabel: 'project details', multiline: true, maxLength: 3000 },
+      ...(step === 1 || draft?.payload.service ? {
+        doorCount: { validation: 'count', min: 0, max: 500 }, drawerCount: { validation: 'count', min: 0, max: 500 },
+        material: { validationLabel: 'cabinet material', maxLength: 100 }, colourPreference: { validationLabel: 'colour or finish', maxLength: 100 },
+      } : {}),
+    };
+    for (const [field, rule] of Object.entries(rules) as [Field, FieldValidationOptions][]) {
+      const message = getFieldValidationError(String(values[field] ?? ''), rule);
+      if (message) next[field] = message;
+    }
     if (!values.consent) next.consent = "Confirm permission to save your details.";
     if (step === 1) {
       if (values.serviceId !== "cabinet-painting") next.serviceId = "Select Kitchen Cabinet Painting.";
       if (!values.intent) next.intent = "Choose what you would like to do.";
       if (!values.surfaces.length) next.surfaces = "Choose a surface or Not sure yet.";
-      for (const field of ["doorCount","drawerCount"] as const) {
-        if (values[field] && (!/^\d+$/.test(values[field]) || Number(values[field]) > 500)) next[field] = "Enter a whole number from 0 to 500, or leave blank.";
-      }
+
     }
     return next;
   }
@@ -149,19 +159,24 @@ export function QuoteDraftForm() {
     const nextErrors = validate();
     if (Object.keys(nextErrors).length) {
       setErrors(nextErrors);
+      const contactField = Object.keys(nextErrors).find(field => ['name', 'email', 'phone', 'siteAddress', 'suburb', 'postcode', 'details', 'consent'].includes(field));
+      setStep(contactField ? 0 : 1);
       window.requestAnimationFrame(() => {
-        const first = Object.keys(nextErrors)[0];
+        reportSectionValidity(document.getElementById("draft-details-form"));
+        const first = contactField ?? Object.keys(nextErrors)[0];
         const element = document.getElementById(`draft-${first}`) ?? document.querySelector<HTMLInputElement>(`[name="${first}"]`);
         (element ?? errorRef.current)?.focus();
       });
       return;
     }
+    if (!reportSectionValidity(event.currentTarget)) return;
     const payload: QuoteDraftInput = {
       contact:{ name:values.name, email:values.email, phone:values.phone, siteAddress:values.siteAddress, suburb:values.suburb, postcode:values.postcode, details:values.details, consent:true },
-      service:step === 0 ? draft?.payload.service ?? null : { serviceId:"cabinet-painting", intent:values.intent, surfaces:values.surfaces, doorCount:values.doorCount === "" ? null : Number(values.doorCount), drawerCount:values.drawerCount === "" ? null : Number(values.drawerCount), material:values.material, colourPreference:values.colourPreference },
+      service:step === 1 || draft?.payload.service ? { serviceId:"cabinet-painting", intent:values.intent, surfaces:values.surfaces, doorCount:values.doorCount === "" ? null : Number(values.doorCount), drawerCount:values.drawerCount === "" ? null : Number(values.drawerCount), material:values.material, colourPreference:values.colourPreference } : null,
     };
     setBusy(true); setError(""); setNotice("");
     try {
+      validateQuoteDraft(payload);
       const body = await request("/api/quote/draft", { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ expectedRevision:draft?.revision ?? 0, payload }) });
       const saved = parseDraft(body.draft);
       if (saved.revision < (draft?.revision ?? 0) || (draft && saved.id !== draft.id) || JSON.stringify(saved.payload) !== JSON.stringify(validateQuoteDraft(payload))) {
@@ -179,7 +194,7 @@ export function QuoteDraftForm() {
       window.requestAnimationFrame(() => errorRef.current?.focus());
     } finally { setBusy(false); }
   }
-  const fieldProps = (field: Field) => ({ id:`draft-${field}`, "aria-invalid":Boolean(errors[field]), "aria-describedby":errors[field] ? `draft-${field}-error` : undefined });
+  const fieldProps = (field: Field) => ({ id:`draft-${field}`, "aria-invalid":Boolean(errors[field]), "aria-describedby":errors[field] && ["consent", "serviceId", "intent", "surfaces"].includes(field) ? `draft-${field}-error` : undefined });
   const fieldError = (field: Field) => errors[field] ? <span className="enquiry-error" id={`draft-${field}-error`}>{errors[field]}</span> : null;
   const progress = demoEnabled ? ["Your details","Service details","Photos","Demo quote","Start date","Review & sign","Submitted"] : QUOTE_PROGRESS;
   const addressContext = JSON.stringify([values.siteAddress, values.suburb, values.postcode]);
@@ -211,22 +226,22 @@ export function QuoteDraftForm() {
         if (!saved || saved.id !== draft.id) throw new Error("Your saved draft could not be restored. Refresh this page before editing.");
         setDraft(saved); setValues(restoredValues(saved)); setDemoEnabled(demo.enabled); setRecipientEmail(demo.recipientEmail); setSubmission(demo.submission);
         setStep(demo.submission ? 6 : 1); setNotice("The latest saved details have been loaded. Review them before making changes."); focusHeading();
-      }} /> : step >= 3 && draft ? <DemoQuoteFlow key={`${draft.id}:${draft.revision}`} draft={draft} photoReferences={photoReferences} recipientEmail={recipientEmail} initialSubmission={submission} onEdit={() => { setStep(1); setNotice(""); }} onEditPhotos={() => { setStep(2); setNotice(""); }} onProgress={setStep} /> : <form onSubmit={save} noValidate>
+      }} /> : step >= 3 && draft ? <DemoQuoteFlow key={`${draft.id}:${draft.revision}`} draft={draft} photoReferences={photoReferences} recipientEmail={recipientEmail} initialSubmission={submission} onEdit={() => { setStep(1); setNotice(""); }} onEditPhotos={() => { setStep(2); setNotice(""); }} onProgress={setStep} /> : <form id="draft-details-form" onSubmit={save} noValidate>
         <fieldset className="quote-draft-fields" disabled={!ready || busy}>
           {step === 0 ? <div className="enquiry-step">
             <h2 ref={headingRef} tabIndex={-1}>1. Your details</h2>
             <p>Required fields are marked *. Your saved draft is available in this browser for up to 24 hours. It has not been sent for company review.</p>
             <div className="enquiry-grid">
-              <label>Your name *<input {...fieldProps("name")} autoComplete="name" maxLength={120} value={values.name} onChange={event => update("name",event.target.value)} />{fieldError("name")}</label>
-              <label>Email *<input {...fieldProps("email")} type="email" autoComplete="email" maxLength={254} value={values.email} onChange={event => update("email",event.target.value)} />{fieldError("email")}</label>
-              <label>Phone <span className="enquiry-hint">Optional</span><input {...fieldProps("phone")} type="tel" autoComplete="tel" maxLength={40} value={values.phone} onChange={event => update("phone",event.target.value)} /></label>
-              <div className="address-field"><label htmlFor="draft-siteAddress">Site address *</label><AddressAutocompleteInput {...fieldProps("siteAddress")} kind="street" addressContext={addressContext} onAddressSelect={selectAddress} autoComplete="street-address" maxLength={240} value={values.siteAddress} onChange={event => update("siteAddress",event.target.value)} />{fieldError("siteAddress")}</div>
-              <div className="address-field"><label htmlFor="draft-suburb">Suburb *</label><AddressAutocompleteInput {...fieldProps("suburb")} kind="suburb" addressContext={addressContext} onAddressSelect={selectAddress} autoComplete="address-level2" maxLength={100} value={values.suburb} onChange={event => update("suburb",event.target.value)} />{fieldError("suburb")}</div>
-              <div className="address-field"><label htmlFor="draft-postcode">Postcode *</label><AddressAutocompleteInput {...fieldProps("postcode")} kind="postcode" addressContext={addressContext} onAddressSelect={selectAddress} inputMode="numeric" autoComplete="postal-code" maxLength={4} value={values.postcode} onChange={event => update("postcode",event.target.value)} />{fieldError("postcode")}</div>
+              <label>Your name *<ValidatedInput validationLabel="your name" requireLetter required {...fieldProps("name")} autoComplete="name" maxLength={120} value={values.name} onChange={event => update("name",event.target.value)} /></label>
+              <label>Email *<ValidatedInput validationLabel="your email" validation="email" required {...fieldProps("email")} type="email" autoComplete="email" maxLength={254} value={values.email} onChange={event => update("email",event.target.value)} /></label>
+              <label>Phone <span className="enquiry-hint">Optional</span><ValidatedInput validationLabel="your phone number" validation="phone" {...fieldProps("phone")} type="tel" autoComplete="tel" maxLength={40} value={values.phone} onChange={event => update("phone",event.target.value)} /></label>
+              <div className="address-field"><label htmlFor="draft-siteAddress">Site address *</label><AddressAutocompleteInput {...fieldProps("siteAddress")} required kind="street" addressContext={addressContext} onAddressSelect={selectAddress} autoComplete="street-address" maxLength={240} value={values.siteAddress} onChange={event => update("siteAddress",event.target.value)} /></div>
+              <div className="address-field"><label htmlFor="draft-suburb">Suburb *</label><AddressAutocompleteInput {...fieldProps("suburb")} required kind="suburb" addressContext={addressContext} onAddressSelect={selectAddress} autoComplete="address-level2" maxLength={100} value={values.suburb} onChange={event => update("suburb",event.target.value)} /></div>
+              <div className="address-field"><label htmlFor="draft-postcode">Postcode *</label><AddressAutocompleteInput {...fieldProps("postcode")} required kind="postcode" addressContext={addressContext} onAddressSelect={selectAddress} inputMode="numeric" autoComplete="postal-code" maxLength={4} value={values.postcode} onChange={event => update("postcode",event.target.value)} /></div>
             </div>
             <p className="enquiry-hint">When address suggestions are available, your search text is sent to Google. You can also enter your address manually. Check any unit or apartment number; the team will confirm service availability.</p>
             {demoEnabled && <p className="enquiry-hint">For this demonstration, use {recipientEmail} as the email address. The trial email service can only send to that company account.</p>}
-            <label>Project details <span className="enquiry-hint">Optional</span><textarea {...fieldProps("details")} rows={4} maxLength={3000} value={values.details} onChange={event => update("details",event.target.value)} /></label>
+            <label>Project details <span className="enquiry-hint">Optional</span><ValidatedTextarea validationLabel="project details" {...fieldProps("details")} rows={4} maxLength={3000} value={values.details} onChange={event => update("details",event.target.value)} /></label>
             <label className="enquiry-confirm"><input {...fieldProps("consent")} type="checkbox" checked={values.consent} onChange={event => update("consent",event.target.checked)} /> I agree to L&K Group saving these details privately to prepare my quote draft. *</label>{fieldError("consent")}
           </div> : <div className="enquiry-step">
             <h2 ref={headingRef} tabIndex={-1}>2. Service details</h2>
@@ -235,10 +250,10 @@ export function QuoteDraftForm() {
             <fieldset><legend>What would you like to do? *</legend><div className="enquiry-options">{INTENTS.map(([value,label]) => <label key={value}><input {...fieldProps("intent")} id={`draft-intent-${value}`} name="intent" type="radio" checked={values.intent === value} onChange={() => update("intent",value)} /> {label}</label>)}</div>{fieldError("intent")}</fieldset>
             <fieldset><legend>Which surfaces are involved? *</legend><div className="enquiry-options">{SURFACES.map(([value,label]) => <label key={value}><input {...fieldProps("surfaces")} id={`draft-surfaces-${value}`} name="surfaces" type="checkbox" checked={values.surfaces.includes(value)} onChange={() => toggleSurface(value)} /> {label}</label>)}</div>{fieldError("surfaces")}</fieldset>
             <div className="enquiry-grid">
-              <label>Cabinet doors <span className="enquiry-hint">Leave blank if unknown</span><input {...fieldProps("doorCount")} type="number" min="0" max="500" step="1" value={values.doorCount} onChange={event => update("doorCount",event.target.value)} />{fieldError("doorCount")}</label>
-              <label>Drawer fronts <span className="enquiry-hint">Leave blank if unknown</span><input {...fieldProps("drawerCount")} type="number" min="0" max="500" step="1" value={values.drawerCount} onChange={event => update("drawerCount",event.target.value)} />{fieldError("drawerCount")}</label>
-              <label>Material <span className="enquiry-hint">Optional; leave blank if unknown</span><input {...fieldProps("material")} maxLength={100} value={values.material} onChange={event => update("material",event.target.value)} /></label>
-              <label>Colour or finish idea <span className="enquiry-hint">Optional</span><input {...fieldProps("colourPreference")} maxLength={100} value={values.colourPreference} onChange={event => update("colourPreference",event.target.value)} /></label>
+              <label>Cabinet doors <span className="enquiry-hint">Leave blank if unknown</span><ValidatedInput validationLabel="cabinet doors" validation="count" {...fieldProps("doorCount")} type="text" inputMode="numeric" min="0" max="500" value={values.doorCount} onChange={event => update("doorCount",event.target.value)} /></label>
+              <label>Drawer fronts <span className="enquiry-hint">Leave blank if unknown</span><ValidatedInput validationLabel="drawer fronts" validation="count" {...fieldProps("drawerCount")} type="text" inputMode="numeric" min="0" max="500" value={values.drawerCount} onChange={event => update("drawerCount",event.target.value)} /></label>
+              <label>Material <span className="enquiry-hint">Optional; leave blank if unknown</span><ValidatedInput validationLabel="cabinet material" {...fieldProps("material")} maxLength={100} value={values.material} onChange={event => update("material",event.target.value)} /></label>
+              <label>Colour or finish idea <span className="enquiry-hint">Optional</span><ValidatedInput validationLabel="colour or finish" {...fieldProps("colourPreference")} maxLength={100} value={values.colourPreference} onChange={event => update("colourPreference",event.target.value)} /></label>
             </div>
             <p className="enquiry-notice">Save these service details to add photos privately. Photos are optional for company review. AI assessment is not performed in this demonstration.</p>
           </div>}

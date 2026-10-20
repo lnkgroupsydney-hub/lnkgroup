@@ -1,0 +1,65 @@
+{
+  "date": "2026-10-13",
+  "method": "Built-in image_gen; service and hero PNG outputs encoded as WebP quality84 without resizing or content edits. Transparent PNG copied unchanged.",
+  "purpose": "Illustrative homepage assets, not real client project or actual product SKU photography.",
+  "assets": [
+    {
+      "key": "logo",
+      "prompt": "Use case: background-extraction. Asset type: existing L&K Group company logo PNG, transparent outside only. Image 1 is the EDIT TARGET: original company logo. Remove ONLY the white area OUTSIDE the black circular disc. Keep the entire solid BLACK circular disc/background opaque; black inside the circle is an essential part of the original logo. Preserve the original gold ring, exact gold L&K monogram, exact word GROUP, shapes, gold highlights and layout. Do not remove any black pixels within the circle. Do not redesign, add, recolour or retouch the gold artwork. Clean circular cutout with transparent outer corners, no white halo. Keep the circle centrally aligned, image square.",
+      "source": "/Users/jimee/.codex/generated_images/01a13326-3409-73e3-b734-5895dc832db7/exec-3b70caab-39a8-4972-99ed-cb86ebd67481.png",
+      "selected": true,
+      "output": "public/images/lk-group-logo-circle-transparent.png",
+      "note": "Black circular disc retained; only exterior white removed"
+    },
+    {
+      "key": "hero",
+      "prompt": "Use case: photorealistic-natural. Asset type: wide website hero BACKGROUND for L&K Group, a Sydney local company offering residential painting, existing cabinet painting, handyman care, paint touch-up kits and kimchi. Primary request: a tasteful realistic editorial scene suggesting a well-cared-for home and everyday life, not a collage. Scene: airy Australian suburban home in warm afternoon natural light, living area opens into a neat kitchen with muted sage painted existing cabinets, warm oak accents, linen furnishings. On a modest kitchen table at the RIGHT side are a discreet plain paint sample/touch-up pot and small brush next to a closed tidy maintenance toolbox; a simple small bowl of red cabbage kimchi on a separate dining place setting suggests everyday food, with believable separation from maintenance supplies. Left HALF is uncluttered quiet neutral wall and soft shadow space suitable for readable overlaid website heading. No people, no text, no labels, no brand logos, no watermark, no renovation before/after, no luxurious mansion, no Sydney landmarks. Cohesive ivory, warm timber, slate and sage tones. Photorealistic architectural/lifestyle photography, restrained and trustworthy, rich real materials. Landscape 16:9 or wider composition, room details and table grouped to the right so they survive a mobile crop.",
+      "source": "/Users/jimee/.codex/generated_images/01a13326-3409-73e3-b734-5895dc832db7/exec-cfcebc48-cb1b-4ca4-8617-33d5c39661c6.png",
+      "selected": false,
+      "output": "public/images/home/group-home-hero.webp",
+      "note": "Initial draft, replaced by heroFinal"
+    },
+    {
+      "key": "residential",
+      "prompt": "Use case: photorealistic-natural. Asset type: landscape 3:2 editorial website service concept photograph for L&K Group in Sydney. Cohesive warm natural window light, ivory, slate, muted sage and warm oak palette, believable everyday Australian suburban home, restrained premium photography, real material texture, clean unfussy composition. No text, labels, logos, watermark, before-and-after, price, certification, branding, or identifiable people. This is illustrative concept imagery, not a claimed completed client project. Primary request: Residential Painting. A spacious but modest sunny living room with freshly painted warm off-white walls, crisp painted skirting and subtle pale sage accent wall; warm wood floor, a quiet sofa and natural linen. One unbranded small paint roller and tray sit neatly on a protected drop sheet at far side, showing careful home painting. Focus on walls, surface quality and house painting rather than kitchen cabinets. Landscape 3:2.",
+      "source": "/Users/jimee/.codex/generated_images/01a13326-3409-73e3-b734-5895dc832db7/exec-722971f0-c41a-49ea-8ccb-da72b79518b5.png",
+      "selected": true,
+      "output": "public/images/home/residential-painting.webp"
+    },
+    {
+      "key": "cabinet",
+      "prompt": "Use case: photorealistic-natural. Asset type: landscape 3:2 editorial website service concept photograph for L&K Group in Sydney. Cohesive warm natural window light, ivory, slate, muted sage and warm oak palette, believable everyday Australian suburban home, restrained premium photography, real material texture, clean unfussy composition. No text, labels, logos, watermark, before-and-after, price, certification, branding, or identifiable people. This is illustrative concept imagery, not a claimed completed client project. Primary request: Kitchen Cabinet Painting. An existing modest Australian kitchen with beautifully repainted muted sage-green shaker cabinet doors and drawer fronts, existing countertop and simple brushed metal handles, warm timber details and a little natural light. An inviting straight-on three-quarter composition clearly shows painted door surfaces and drawer fronts. Emphasise a refreshed existing kitchen, no construction, no new cabinetry installation, no unrelated painting tools. Landscape 3:2.",
+      "source": "/Users/jimee/.codex/generated_images/01a13326-3409-73e3-b734-5895dc832db7/exec-f01be5b3-79c7-4211-b707-67647705e5ff.png",
+      "selected": true,
+      "output": "public/images/home/cabinet-painting.webp"
+    },
+    {
+      "key": "handyman",
+      "prompt": "Use case: photorealistic-natural. Asset type: landscape 3:2 editorial website service concept photograph for L&K Group in Sydney. Cohesive warm natural window light, ivory, slate, muted sage and warm oak palette, believable everyday Australian suburban home, restrained premium photography, real material texture, clean unfussy composition. No text, labels, logos, watermark, before-and-after, price, certification, branding, or identifiable people. This is illustrative concept imagery, not a claimed completed client project. Primary request: Handyman Services. A believable close-up of two anonymous competent adult hands adjusting a real conventional interior door hinge using a manual screwdriver, with a small tidy toolbox set on the nearby floor. Frame hands, screwdriver tip engaging a hinge screw and painted timber door/frame clearly; fingers and screwdriver physically plausible. No face, power-tool danger, no electrical or plumbing work, no building construction. Focus on practical small home repair and attention to detail. Landscape 3:2.",
+      "source": "/Users/jimee/.codex/generated_images/01a13326-3409-73e3-b734-5895dc832db7/exec-d057d21a-dbd8-4ddb-b224-6aefe14d3218.png",
+      "selected": true,
+      "output": "public/images/home/handyman.webp"
+    },
+    {
+      "key": "touchup",
+      "prompt": "Use case: photorealistic-natural. Asset type: landscape 3:2 editorial website service concept photograph for L&K Group in Sydney. Cohesive warm natural window light, ivory, slate, muted sage and warm oak palette, believable everyday Australian suburban home, restrained premium photography, real material texture, clean unfussy composition. No text, labels, logos, watermark, before-and-after, price, certification, branding, or identifiable people. This is illustrative concept imagery, not a claimed completed client project. Primary request: Paint Touch-up Kits. Clean still life on a warm oak work surface in a home: a small plain unlabelled lidded paint pot with a natural white paint swatch, one compact brush, a small foam roller and a folded protective cloth neatly arranged. Neutral wall background, enough breathing room around objects. All containers blank, no printed packaging, no amounts or kit promises, no food in scene. It is a generic product category concept, not a representation of actual SKU contents. Landscape 3:2.",
+      "source": "/Users/jimee/.codex/generated_images/01a13326-3409-73e3-b734-5895dc832db7/exec-44bab538-a618-455e-82f2-0175b19c058a.png",
+      "selected": true,
+      "output": "public/images/home/touch-up-kits.webp"
+    },
+    {
+      "key": "kimchi",
+      "prompt": "Use case: photorealistic-natural. Asset type: landscape 3:2 editorial website service concept photograph for L&K Group in Sydney. Cohesive warm natural window light, ivory, slate, muted sage and warm oak palette, believable everyday Australian suburban home, restrained premium photography, real material texture, clean unfussy composition. No text, labels, logos, watermark, before-and-after, price, certification, branding, or identifiable people. This is illustrative concept imagery, not a claimed completed client project. Primary request: Kimchi. Editorial food photograph of appetising red napa-cabbage kimchi with believable layered cabbage leaves, chilli seasoning and natural moist texture in a simple ivory ceramic bowl on a warm wooden dining table. A simple plain closed glass jar of kimchi in soft background, clean linen napkin and chopsticks. No raw cooking ingredients implying exact recipe, no labels, no people, no paint products or workshop props. Contemporary calm food photography, the kimchi itself is main subject, natural window light. Landscape 3:2.",
+      "source": "/Users/jimee/.codex/generated_images/01a13326-3409-73e3-b734-5895dc832db7/exec-60c6d224-3206-471a-a382-0f007c501c1e.png",
+      "selected": true,
+      "output": "public/images/home/kimchi.webp"
+    },
+    {
+      "key": "heroFinal",
+      "selected": true,
+      "prompt": "Use case: precise-object-edit. Asset type: L&K Group website hero background. Input image 1 is the exact EDIT TARGET. Keep the room architecture, warm afternoon light, sage kitchen, timber, furnishings and natural editorial photography unchanged. Remove ONLY the paint pot, paintbrush and black toolbox from the dining table and fill their positions with clean uninterrupted wood surface. Keep the bowl of kimchi, its woven placemat and linen napkin as a natural everyday meal setting. The dining area must be a welcoming everyday home, not a workshop. Preserve quiet space on the left for website copy. No new objects, no text or branding. Final wide landscape photo, identical framing and perspective.",
+      "source": "/Users/jimee/.codex/generated_images/01a13326-3409-73e3-b734-5895dc832db7/exec-8b28917a-9949-45ee-8140-966bb4bf2f03.png",
+      "output": "public/images/home/group-home-hero.webp"
+    }
+  ]
+}

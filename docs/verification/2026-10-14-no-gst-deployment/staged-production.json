@@ -1,0 +1,18 @@
+{
+  "id": "dpl_8Ge3JKqxqig7Dp2szmsAzzQ7wJae",
+  "url": "lnkgroup-33u5onafc-lnkgroupsydney-8702.vercel.app",
+  "readyState": "READY",
+  "readySubstate": "STAGED",
+  "target": "production",
+  "gitSource": {
+    "type": "github",
+    "repoId": 1399672806,
+    "ref": "codex/gst-production-20261014",
+    "sha": "ee064e38fd54ebb257a5d36460886ec7f9d1a5f7"
+  },
+  "alias": [
+    "lnkgroup-lnkgroupsydney-8702.vercel.app",
+    "lnkgroup-git-codex-gst-production-20261014-lnkgroupsydney-8702.vercel.app"
+  ],
+  "autoAssignCustomDomains": false
+}

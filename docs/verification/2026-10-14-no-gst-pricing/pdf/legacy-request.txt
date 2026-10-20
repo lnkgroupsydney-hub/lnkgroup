@@ -1,0 +1,68 @@
+L&K GROUP / BOOKING REQUEST RECEIPT
+Booking request received
+NONBINDING REQUEST - Pending company confirmation. This does not reserve the date,
+authorise work, create a contract or require payment.
+REQUEST / SUBMISSION
+REQUEST-SYNTHETIC / 00000000-0000-4000-8000-000000000008
+SUBMITTED AND ACKNOWLEDGED (SYDNEY)
+13 Oct 2026, 1:00:00 pm AEDT
+CUSTOMER
+Synthetic customer
+VERIFIED EMAIL / PHONE
+verified@example.invalid
+SITE ADDRESS
+1 Synthetic Street, Test, 2000
+PROJECT DETAILS
+Synthetic only
+SERVICE
+Kitchen Cabinet Painting - existing cabinets
+REQUESTED WORK / SURFACES
+full-repainting / doors
+MATERIAL / COLOUR PREFERENCE
+Not specified
+REQUESTED TAKE-OFF DATE AND TIME (SYDNEY; NOT RESERVED)
+2026-10-20 09:00
+Frozen provisional painting estimate
+ESTIMATED CABINET DOOR PREPARATION AND PAINTING
+10 x AUD 150.00 = AUD 1500.00
+SUBTOTAL / GST / TOTAL
+AUD 1500.00 / AUD 150.00 / AUD 1650.00
+PRICING BASIS
+lk-sydney-cabinet-v2-20261011; AI estimated doors 10, drawer fronts 0; whole_project
+ESTIMATE NOTICE
+Provisional photo-based estimate. Final scope and price require site confirmation.
+SITE CONFIRMATION / LIMITATIONS
+Confirm exact quantities, condition and final scope on site.
+EXCLUDED WORK
+No additional exclusions were listed in the saved estimate. Hidden conditions and final scope still require
+site confirmation.
+REQUEST-SYNTHETIC | NONBINDING REQUEST | 1 / 2
+
+L&K GROUP / BOOKING REQUEST RECEIPT
+SAVED ANALYSIS / INPUT REVISION
+00000000-0000-4000-8000-000000000010 / 1
+PHOTO EVIDENCE
+1 private photos. Photo files and private access URLs are not attached.
+PHOTO IDENTIFIER / ROLE / CONTENT SHA-256
+00000000-0000-4000-8000-000000000011 / overview
+dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
+Booking request acknowledgment
+I acknowledge the provisional photo-based painting estimate and request the take-off date and Sydney
+time shown here. I agree that the company may assign the installation date and time and notify me in the
+booking confirmation email. Additional damage found on site may increase the price; any additional work
+and cost will be discussed before proceeding. No date is held until company confirmation. This request is
+not a contract, work authorisation or payment obligation.
+ACKNOWLEDGMENT VERSION
+live-booking-request-ack-v2
+SIGNED NAME / METHOD
+Synthetic customer / typed
+FROZEN SNAPSHOT SHA-256
+bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+SIGNED CONTENT SHA-256 (SNAPSHOT AND SIGNATURE)
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+The company will confirm your take-off appointment and assign the installation appointment by email. More extensive
+damage may increase the price after an on-site inspection; additional work and cost will be discussed before
+proceeding. No payment is due.
+Unsupported font characters appear as [U+code point]. Original saved data remains unchanged.
+REQUEST-SYNTHETIC | NONBINDING REQUEST | 2 / 2
+

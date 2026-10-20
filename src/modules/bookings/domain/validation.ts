@@ -1,4 +1,5 @@
 import type {BookingSegment} from './contracts.ts'
+import { isValidText } from '../../../shared/validation/input.ts'
 export class BookingError extends Error {status:number;constructor(status:number,message:string){super(message);this.status=status}}
 export const isRecord=(value:unknown):value is Record<string,unknown>=>!!value&&typeof value==='object'&&!Array.isArray(value)
 export function revision(value:unknown):number {
@@ -14,7 +15,7 @@ export function uuid(value:unknown):string {
   return value
 }
 export function notes(value:unknown):string {
-  if(typeof value!=='string'||value.length>2000||/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/.test(value))throw new BookingError(400,'Use plain text notes up to 2,000 characters.')
+  if(!isValidText(value,{maxLength:2000,multiline:true}))throw new BookingError(400,'Use plain text notes up to 2,000 characters.')
   return value.trim()
 }
 export function validateSegments(value:unknown,now=Date.now()):BookingSegment[] {

@@ -1,0 +1,23 @@
+{
+  "upstream": "http://127.0.0.1:3019",
+  "startedAt": "2026-10-13T02:44:01.203Z",
+  "checks": [
+    {
+      "name": "static-toggle-reduced-motion-and-resize-preserve-reading",
+      "passed": true,
+      "externalBlocked": [],
+      "apiFixtures": [],
+      "pageErrors": [],
+      "failedLocalResources": [],
+      "consoleWarnings": []
+    }
+  ],
+  "isolation": "Fresh Playwright contexts; external requests aborted; every /api request fulfilled locally; no DB, API save/submit, company, AI, mail or Google calls.",
+  "limitations": [
+    "Headless Chrome is not a physical device.",
+    "200% text enlargement is simulated by root font-size; native browser zoom and actual 200% device/browser zoom are not certified.",
+    "No frame-rate, bundle-size, search-ranking or formal accessibility certification."
+  ],
+  "finishedAt": "2026-10-13T02:44:03.302Z",
+  "passed": true
+}

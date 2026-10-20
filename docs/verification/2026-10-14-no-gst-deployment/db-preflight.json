@@ -1,0 +1,13 @@
+{
+  "observedVia": "Company Chrome SQL Editor; read-only aggregate query",
+  "companyProject": "xlqyafthsxallostcqfe",
+  "postgresVersion": "17.11",
+  "quotes": 4,
+  "photos": 13,
+  "analyses": 4,
+  "signedSubmissions": 3,
+  "bookings": 3,
+  "pricingColumnExists": false,
+  "v3ValidatorExists": false,
+  "all3BaselineFunctionProsrcHashesMatch": true
+}

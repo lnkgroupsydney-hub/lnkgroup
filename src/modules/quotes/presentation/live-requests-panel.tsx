@@ -1,12 +1,14 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
+import { ValidatedInput } from '@/shared/ui/validated-input';
 import { LiveCompanyBookingEditor } from '@/modules/bookings/client';
 import { useWorkspaceNavigation } from '@/shared/ui/admin-workspace-state';
 import type { LiveQuoteRequestPage, LiveQuoteRequestDetail, LiveQuoteAudit } from '../index';
 import { LiveRequestDetails } from './request-details';
 import { StaffPhotoWorkspace } from './staff-photo-workspace';
 import type { LiveBookingState } from '../domain/booking-flow';
+import { quotePricingDisplay } from '../domain/pricing-display.ts';
 import { BookingSubmissionSummary } from './booking-flow-panel';
 import { parseBookingState, bookingRequest } from './booking-flow-client';
 import { displayTime, isRecord, liveRequest, LiveRequestError, parseLiveRequest } from './request-client';
@@ -31,7 +33,7 @@ function StaffBookingDetails({ requestId, onAccessLost }: { requestId: string; o
   useEffect(() => { alive.current = true; let cancelled = false; void Promise.resolve().then(()=>{if(!cancelled)return load();}); return()=>{cancelled=true;alive.current=false;controller.current?.abort();}; }, [load]);
   const processing = Boolean(state?.submission && (['pending','sending','retrying'].includes(state.submission.emailStatus) || ['pending','syncing','retrying'].includes(state.submission.calendarStatus)));
   useEffect(()=>{if(!processing)return;const timer=setInterval(()=>void load(),5000);return()=>clearInterval(timer);},[processing,load]);
-  return <section className="lq-booking" aria-label="Customer estimate approval and reservation request"><h4>Customer approval and reservation request</h4>{error && <p className="lq-error" role="alert">{error}</p>}{!state && !error && <p role="status">Loading verified customer and booking request status…</p>}{state && <><p className="lq-notice">{state.verified ? 'Customer email ownership has been verified and this request is linked to verified customer access.' : 'Email ownership has not been verified for this request.'}</p>{state.submission ? <BookingSubmissionSummary submission={state.submission} staff /> : state.approval ? <dl className="lq-details"><div><dt>Estimate approval</dt><dd>{state.approval.stale ? 'Source changed; customer must approve again' : 'Provisional estimate acknowledged'} · {displayTime(state.approval.approvedAt)}</dd></div><div><dt>Approved source</dt><dd>Revision {state.approval.inputRevision} · AI analysis {state.approval.analysisId} · {state.approval.snapshot.photos.length} saved photos</dd></div><div><dt>Preferred start date</dt><dd>{state.approval.preferredDate ?? 'Not selected'} · Company confirmation required; no date held</dd></div><div><dt>Provisional amount</dt><dd>{new Intl.NumberFormat('en-AU',{style:'currency',currency:'AUD'}).format(state.approval.snapshot.pricing.total! / 100)} incl GST</dd></div></dl> : <p>No estimate approval or reservation request has been submitted.</p>}</>}<button type="button" className="secondary" disabled={busy} onClick={()=>void load()}>Refresh approval and receipt status</button></section>;
+  return <section className="lq-booking" aria-label="Customer estimate approval and reservation request"><h4>Customer approval and reservation request</h4>{error && <p className="lq-error" role="alert">{error}</p>}{!state && !error && <p role="status">Loading verified customer and booking request status…</p>}{state && <><p className="lq-notice">{state.verified ? 'Customer email ownership has been verified and this request is linked to verified customer access.' : 'Email ownership has not been verified for this request.'}</p>{state.submission ? <BookingSubmissionSummary submission={state.submission} staff /> : state.approval ? <dl className="lq-details"><div><dt>Estimate approval</dt><dd>{state.approval.stale ? 'Source changed; customer must approve again' : 'Provisional estimate acknowledged'} · {displayTime(state.approval.approvedAt)}</dd></div><div><dt>Approved source</dt><dd>Revision {state.approval.inputRevision} · AI analysis {state.approval.analysisId} · {state.approval.snapshot.photos.length} saved photos</dd></div><div><dt>Preferred start date</dt><dd>{state.approval.preferredDate ?? 'Not selected'} · Company confirmation required; no date held</dd></div><div><dt>Provisional amount</dt><dd>{new Intl.NumberFormat('en-AU',{style:'currency',currency:'AUD'}).format(state.approval.snapshot.pricing.total! / 100)} {quotePricingDisplay(state.approval.snapshot.pricing.pricingVersion).amountSuffix}</dd></div></dl> : <p>No estimate approval or reservation request has been submitted.</p>}</>}<button type="button" className="secondary" disabled={busy} onClick={()=>void load()}>Refresh approval and receipt status</button></section>;
 }
 
 function parsePage(body: Record<string, unknown>): LiveQuoteRequestPage {
@@ -89,7 +91,7 @@ export function LiveQuoteRequestsPanel({ onAccessLost, title = 'Customer quote r
   return <section className="lq-admin admin-card" aria-labelledby="live-requests-title">
     <h2 id="live-requests-title">{title}</h2>
     <p>{description}</p>
-    <form onSubmit={find}><label htmlFor="live-request-search">Find by reference, name, email or address</label><div className="lq-actions"><input id="live-request-search" type="search" maxLength={120} value={search} onChange={e => setSearch(e.target.value)} /><button disabled={listBusy}>Search requests</button><button type="button" className="secondary" disabled={listBusy} onClick={() => { void loadList(query, list?.page ?? 1); if (selected.current) void loadDetail(selected.current); }}>Refresh requests</button></div></form>
+    <form onSubmit={find}><label htmlFor="live-request-search">Find by reference, name, email or address</label><div className="lq-actions"><ValidatedInput validation="text" validationLabel="Request search" id="live-request-search" type="search" maxLength={120} value={search} onChange={e => setSearch(e.target.value)} /><button disabled={listBusy}>Search requests</button><button type="button" className="secondary" disabled={listBusy} onClick={() => { void loadList(query, list?.page ?? 1); if (selected.current) void loadDetail(selected.current); }}>Refresh requests</button></div></form>
     {listBusy && <p role="status">Loading saved requests…</p>}
     {listError && <p className="lq-error" role="alert">{listError}{list ? ' The list below is the last successfully loaded version.' : ''}</p>}
     {list && <>

@@ -1,0 +1,19 @@
+{
+  "id": "dpl_BffN6ygbV7Y9LVBByRHMC6QF5ye2",
+  "url": "lnkgroup-ilyy6dle4-lnkgroupsydney-8702.vercel.app",
+  "readyState": "READY",
+  "readySubstate": "PROMOTED",
+  "target": "production",
+  "gitSource": {
+    "type": "github",
+    "repoId": 1399672806,
+    "ref": "codex/public-search-seo-aeo-20261016",
+    "sha": "59014a0931c237454265a6272c0e463a56ecd7fc"
+  },
+  "alias": [
+    "lnkgroup-lnkgroupsydney-8702.vercel.app",
+    "lnkgroup-git-codex-public-search-seo-cd05f3-lnkgroupsydney-8702.vercel.app"
+  ],
+  "errorCode": null,
+  "errorMessage": null
+}
