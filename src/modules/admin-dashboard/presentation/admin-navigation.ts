@@ -11,6 +11,26 @@ export const adminPages = [
   { id: "settings", href: "/admin/settings", label: "Settings", description: "Manage your session and company connections." },
 ] as const;
 export type AdminPageId = typeof adminPages[number]["id"];
+export const adminNavigationGroups: readonly { label: string; pages: readonly AdminPageId[] }[] = [
+  { label: "Workspace", pages: ["overview", "customers"] },
+  { label: "Work", pages: ["enquiries", "quotes", "schedule", "jobs"] },
+  { label: "Business", pages: ["orders", "inventory", "reports"] },
+  { label: "Administration", pages: ["settings"] },
+];
+
+/** Boundary-aware longest match keeps nested detail routes in their section. */
+export function resolveAdminPage(pathname: string) {
+  const path = pathname.replace(/\/+$/, "") || "/";
+  return adminPages.reduce<(typeof adminPages)[number] | null>((match, page) => {
+    const matches = path === page.href || (page.href !== "/admin" && path.startsWith(`${page.href}/`));
+    return matches && (!match || page.href.length > match.href.length) ? page : match;
+  }, null);
+}
+
+export function isAdminRecordId(value: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+}
+
 const oldHashes: Record<string, string> = {
   "#operations-content": "/admin/enquiries",
   "#customers-heading": "/admin/customers",

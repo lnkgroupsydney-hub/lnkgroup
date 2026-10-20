@@ -1,0 +1,30 @@
+/* EMS aliases inherit the public brand without changing its type scale. */
+.ems-root {
+  --ems-bg: var(--site-background);
+  --ems-surface: var(--site-surface);
+  --ems-ink: var(--site-foreground);
+  --ems-muted: var(--site-muted);
+  --ems-line: var(--site-border);
+  --ems-control-line: var(--site-border-strong);
+  --ems-action: var(--site-action);
+  --ems-on-action: var(--site-on-action);
+  --ems-radius: .75rem;
+  --ems-space: 1.25rem;
+  --ems-text: .9375rem;
+  --ems-small: .8125rem;
+  --ems-title: clamp(1.5rem, 1.35rem + .5vw, 2rem);
+  --ems-sidebar: 14.5rem;
+  --ems-fast: 140ms;
+  --ems-dialog-duration: 200ms;
+  --ems-ease: var(--ease-standard);
+  --ems-popover-z: 5;
+  color: var(--ems-ink);
+  font-family: var(--font-family-sans);
+  font-size: var(--ems-text);
+  line-height: 1.55;
+  background: var(--ems-bg);
+  min-height: 100svh;
+}
+.ems-root *, .ems-root *::before, .ems-root *::after { box-sizing: border-box; }
+.ems-root :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible { outline: 2px solid var(--site-focus); outline-offset: 3px; }
+.ems-root :where([hidden]) { display: none !important; }

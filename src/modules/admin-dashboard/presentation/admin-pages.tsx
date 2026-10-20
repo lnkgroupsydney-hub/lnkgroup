@@ -7,6 +7,7 @@ import { SessionSecurity, useStaffAdmin } from "@/modules/admin-access/client";
 import { OperationsView } from "@/modules/operations/client";
 import { LiveCompanyBookingSchedule } from "@/modules/bookings/client";
 import { WorkspaceLink } from "@/shared/ui/admin-workspace-state";
+import { AdminPanel, AdminStatusBadge } from "@/shared/ui/admin";
 import type { AdminPageId } from "./admin-navigation";
 
 const shortcuts = [
@@ -29,13 +30,13 @@ const preparations = {
   inventory: { title: "Inventory is being prepared", body: "Stock items, quantities, movements and purchasing rules need to be set up before inventory can be tracked here.", href: "/admin", link: "Return to overview" },
   reports: { title: "Reports are being prepared", body: "Reports will use verified company records and defined reporting periods. Sales and job totals are not available yet.", href: "/admin", link: "Return to overview" },
 };
-export function AdminSection({ view }: { view: Exclude<AdminPageId, "overview"> }) {
+export function AdminSection({ view, recordId }: { view: Exclude<AdminPageId, "overview">; recordId?: string }) {
   const { onAccessLost } = useStaffAdmin();
-  if (view === "customers") return <CustomersConsole onSignedOut={onAccessLost} embedded />;
+  if (view === "customers") return <CustomersConsole key={recordId ?? "list"} onSignedOut={onAccessLost} embedded initialCustomerId={recordId} />;
   if (view === "settings") return <div className="admin-settings"><section id="company-connections" aria-labelledby="company-connections-title"><h2 id="company-connections-title" className="admin-section-title">Company connections</h2><OperationsView view="settings" /></section><section aria-labelledby="admin-security-title"><h2 id="admin-security-title" className="admin-section-title">Session security</h2><SessionSecurity onAccessLost={onAccessLost} embedded /></section></div>;
-  if (view === "quotes") return <><LiveQuoteRequestsPanel onAccessLost={onAccessLost} /><details><summary>Previous signed demonstrations</summary><OperationsView view="quotes" /></details></>;
-  if (view === "schedule") return <><LiveCompanyBookingSchedule onAccessLost={onAccessLost} /><details><summary>Previous company demonstration schedules</summary><OperationsView view="schedule" /></details></>;
-  if (view === "enquiries") return <><LiveQuoteRequestsPanel onAccessLost={onAccessLost} title="Website enquiries and reservation requests" description="Saved website details, photos and estimates appear here. Open a request to review the customer’s preferred date, signed reservation request and receipt, then prepare the final work periods and company confirmation." /><section aria-labelledby="gmail-enquiries-title"><h2 id="gmail-enquiries-title" className="admin-section-title">Gmail enquiries and previous demonstrations</h2><OperationsView view={view} /></section></>;
+  if (view === "quotes") return <><LiveQuoteRequestsPanel key={`${view}:${recordId ?? "list"}`} onAccessLost={onAccessLost} requestId={recordId} />{!recordId && <details className="ems-legacy"><summary>Previous signed demonstrations</summary><OperationsView view="quotes" /></details>}</>;
+  if (view === "schedule") return <><LiveCompanyBookingSchedule onAccessLost={onAccessLost} initialRequestId={recordId} />{!recordId && <details className="ems-legacy"><summary>Previous company demonstration schedules</summary><OperationsView view="schedule" /></details>}</>;
+  if (view === "enquiries") return <><LiveQuoteRequestsPanel key={`${view}:${recordId ?? "list"}`} onAccessLost={onAccessLost} requestId={recordId} listPath="/admin/enquiries" title="Website enquiries and reservation requests" description="Review incoming website requests, their saved details and the next step. Open a request for photos, estimates, booking and documents." />{!recordId && <details className="ems-legacy"><summary>Gmail enquiries and previous demonstrations</summary><OperationsView view={view} /></details>}</>;
   const preparation = preparations[view];
-  return <section className="admin-card admin-preparation"><span className="admin-status">Planned</span><Layers3 size={44} strokeWidth={1.4} aria-hidden="true" /><h2>{preparation.title}</h2><p>{preparation.body}</p><WorkspaceLink href={preparation.href} className="admin-primary-link">{preparation.link}<ArrowRight size={17} aria-hidden="true" /></WorkspaceLink></section>;
+  return <AdminPanel className="admin-preparation"><AdminStatusBadge>Planned</AdminStatusBadge><Layers3 size={44} strokeWidth={1.4} aria-hidden="true" /><h2>{preparation.title}</h2><p>{preparation.body}</p><WorkspaceLink href={preparation.href} className="admin-primary-link">{preparation.link}<ArrowRight size={17} aria-hidden="true" /></WorkspaceLink></AdminPanel>;
 }

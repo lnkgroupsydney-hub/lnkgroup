@@ -12,7 +12,7 @@
 .codex/log/
 
 # Dependencies and generated output
-node_modules/
+node_modules
 .next/
 out/
 dist/

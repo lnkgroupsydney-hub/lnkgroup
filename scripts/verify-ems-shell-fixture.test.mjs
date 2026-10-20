@@ -151,6 +151,86 @@ test('synthetic fixture preserves navigation and isolates every API and credenti
     assert.equal(newQuoteState.quoteWorkspaces.length, 1)
     assert.equal((await fetch(`${base}/api/quote/not-approved`)).status, 503)
     assert.equal(forwarded.length, count + 1, 'all customer APIs, documents and photo content stay local')
+    await control({ reset: true })
+    const liveState = await (await fetch(`${base}/__fixture/state`)).json()
+    assert.equal(liveState.liveRequests.length, 3); assert.equal(liveState.liveBookings.length, 3)
+    const upstreamCount = forwarded.length
+    const liveId = liveState.liveRequests[0].id, customerId = liveState.customers[0].id
+    for (const path of [`/admin/customers/${customerId}`, ...['quotes','enquiries','schedule'].map(section => `/admin/${section}/${liveId}`)]) {
+      const response = await fetch(base + path, { headers: { ...credentials, 'next-url': `/admin/quotes/${liveId}` } })
+      assert.equal(response.status, 200); assert.equal(response.headers.get('set-cookie'), null)
+      assert.equal(forwarded.at(-1).headers.cookie, undefined); assert.equal(forwarded.at(-1).headers.authorization, undefined)
+    }
+    const detailPageCount = forwarded.length
+    assert.equal(detailPageCount, upstreamCount + 4)
+    const unknownId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
+    for (const section of ['customers','quotes','enquiries','schedule']) assert.equal((await fetch(`${base}/admin/${section}/${unknownId}`)).status, 404)
+    assert.equal((await fetch(`${base}/admin/quotes/${liveId}`, { headers: { 'next-url': `/admin/quotes/${unknownId}` } })).status, 400)
+    for (const request of liveState.liveRequests) {
+      const detail = await (await fetch(`${base}/api/admin/quote-requests/${request.id}`)).json()
+      assert.equal(detail.request.id, request.id); assert.equal(detail.audit[0].actorType, 'guest')
+      const analysis = await (await fetch(`${base}/api/admin/quote-requests/${request.id}/analysis`)).json()
+      assert.equal(analysis.latest.pricing.pricingVersion, 'lk-sydney-cabinet-v2-20261011')
+      assert.equal(analysis.latest.pricing.total, 242000); assert.equal(analysis.latest.analysis.estimateScope.extent, 'whole_project')
+      const photo = await fetch(base + analysis.photos[0].contentUrl)
+      assert.equal(photo.headers.get('content-type'), 'image/png')
+      const booking = await (await fetch(`${base}/api/admin/quote-requests/${request.id}/booking`)).json()
+      assert.equal(booking.state.submission.requestId, request.id)
+      const company = await (await fetch(`${base}/api/admin/live-bookings?requestId=${request.id}`)).json()
+      assert.equal(company.state.requestId, request.id)
+    }
+    const draftInput = { expectedRevision: 0, idempotencyKey: 'synthetic-draft-replay', amountExGst: 250000, scope: 'Synthetic test scope', adjustmentReason: 'Synthetic test adjustment', segments: [{ kind: 'all_day', startDate: '2026-11-11', endDate: '2026-11-13' }] }
+    const saveCompany = () => fetch(`${base}/api/admin/live-bookings/${liveId}/proposal`, { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify(draftInput) })
+    const firstCompany = await (await saveCompany()).json(), retryCompany = await (await saveCompany()).json()
+    assert.equal(firstCompany.state.revision, 1); assert.equal(firstCompany.state.proposal.total, 275000); assert.deepEqual(retryCompany, firstCompany)
+    await control({ loseNextLinkResponse: true })
+    const linkInput = { idempotencyKey: 'synthetic-link-replay', expectedRevision: 1, action: 'link', sourceType: liveState.records[0].sourceType, sourceId: liveState.records[0].sourceId, reason: 'Synthetic checked classification' }
+    const saveLink = () => fetch(`${base}/api/admin/customers/${customerId}/links`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(linkInput) })
+    assert.equal((await saveLink()).status, 503)
+    const linkedState = await (await fetch(`${base}/__fixture/state`)).json(); assert.equal(linkedState.links.length, 1)
+    assert.equal((await saveLink()).status, 200)
+    const replayedState = await (await fetch(`${base}/__fixture/state`)).json(); assert.deepEqual(replayedState.links, linkedState.links); assert.deepEqual(replayedState.audits, linkedState.audits)
+    const allBookings = await (await fetch(`${base}/api/admin/live-bookings`)).json()
+    assert.equal(allBookings.states[2].booking.status, 'confirmed')
+    const confirmedId = allBookings.states[2].requestId
+    assert.match(await (await fetch(`${base}/api/admin/live-bookings/${confirmedId}/documents/confirmation`)).text(), /SYNTHETIC FIXTURE/)
+    assert.equal((await fetch(`${base}/api/admin/quote-requests/${liveId}/photos/${unknownId}`)).status, 404)
+    assert.equal((await fetch(`${base}/api/admin/live-bookings/${liveId}/documents/confirmation`)).status, 404)
+    await control({ liveAnalysisProcessing: true })
+    assert.equal((await (await fetch(`${base}/api/admin/quote-requests/${liveId}/analysis`)).json()).latest.status, 'running')
+    // R2 HTTP fixture contracts and isolation; real transaction correctness is
+    // covered by the separate customer SQL tests, not these canned responses.
+    const post = (path, input, method = 'POST') => fetch(base + path, { method, headers: { 'content-type': 'application/json', ...credentials }, body: JSON.stringify(input) })
+    const candidateRows = await (await post('/api/admin/customers/candidates', { email: liveState.customers[0].email })).json()
+    assert.equal(candidateRows.candidates[0].customer.id, customerId)
+    const reviewResponse = await post('/api/admin/customers/resolve', { name: 'Synthetic other contact', email: liveState.customers[0].email, idempotencyKey: 'synthetic-review-only' })
+    assert.equal(reviewResponse.status, 409); assert.equal((await reviewResponse.json()).code, 'needs_review')
+    const propertyInput = { label: 'Synthetic Unit 1', address: { line1: 'Synthetic 1 QA Lane', unit: '1', suburb: 'Synthetic suburb', state: 'NSW', postcode: '2000', country: 'AU' }, contactName: null, notes: null }
+    await control({ loseNextMutationResponse: true })
+    const resolvedInput = { name: liveState.customers[0].name, email: liveState.customers[0].email, idempotencyKey: 'synthetic-resolve-replay', decision: { kind: 'existing', customerId, expectedRevision: replayedState.customers.find(c => c.id === customerId).revision, reason: 'Synthetic reviewed person' }, property: propertyInput, source: { type: 'quote_request', id: liveId, expectedSourceRevision: 2, expectedCrmRevision: 0 } }
+    assert.equal((await post('/api/admin/customers/resolve', resolvedInput)).status, 503)
+    const resolved = await (await post('/api/admin/customers/resolve', resolvedInput)).json()
+    assert.equal(resolved.outcome, 'client_reused'); assert.equal(resolved.propertyOutcome, 'property_created'); assert.equal(resolved.crmRevision, 1)
+    assert.deepEqual(await (await post('/api/admin/customers/resolve', resolvedInput)).json(), resolved)
+    const relation = await (await fetch(`${base}/api/admin/customers/quote-requests/${liveId}`)).json()
+    assert.equal(relation.property.id, resolved.property.id)
+    const r2Detail = await (await fetch(`${base}/api/admin/customers/${customerId}`)).json()
+    assert.equal(r2Detail.properties.length, 1); assert.ok(r2Detail.records.some(r => r.sourceType === 'quote_request' && r.sourceId === liveId))
+    assert.deepEqual((await (await fetch(`${base}/api/admin/quote-requests/${liveId}`)).json()).request, liveState.liveRequests[0])
+    const beforeLate = forwarded.length
+    await control({ responseDelays: { [`/api/admin/customers/${customerId}`]: 100 } })
+    const lateR2 = fetch(`${base}/api/admin/customers/${customerId}`, { headers: credentials })
+    await pause(20); await control({ signedOut: true, responseDelays: {} })
+    assert.equal((await lateR2).status, 200)
+    for (const path of ['/api/admin/customers/candidates', '/api/admin/customers/resolve', `/api/admin/customers/${customerId}/properties`, `/api/admin/customers/quote-requests/${liveId}`]) {
+      const response = path.endsWith('/candidates') || path.endsWith('/resolve') ? await post(path, {}) : await fetch(base + path, { headers: credentials })
+      assert.equal(response.status, 401); assert.equal(response.headers.get('x-esn-fixture'), 'synthetic')
+    }
+    assert.equal(forwarded.length, beforeLate, 'R2 API credentials and late captured responses never forward')
+    await control({ signedOut: true })
+    for (const path of ['/api/admin/quote-requests','/api/admin/live-bookings', `/api/admin/quote-requests/${liveId}/analysis`, `/api/admin/live-bookings/${confirmedId}/documents/confirmation`]) assert.equal((await fetch(base + path)).status, 401)
+    assert.equal(forwarded.length, detailPageCount, 'live records, photos, documents, guessed IDs and denied APIs never reach upstream')
+
   } finally {
     fixture.kill('SIGTERM'); if (fixture.exitCode === null) await once(fixture, 'exit')
     await new Promise(resolve => upstream.close(resolve))

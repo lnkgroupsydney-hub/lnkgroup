@@ -1,0 +1,80 @@
+.ems-root .ems-panel, .ems-root .admin-card, .ems-root .staff-session-security { background: var(--ems-surface); border: 1px solid var(--ems-line); border-radius: var(--ems-radius); padding: var(--ems-space); min-width: 0; }
+.ems-root .ems-panel + .ems-panel { margin-top: 1rem; }
+.ems-root .ems-panel h2, .ems-root .admin-card h2 { font-size: 1.125rem; line-height: 1.35; font-weight: 750; margin: 0 0 .875rem; }
+.ems-root .ems-panel h3, .ems-root .staff-session-security h3 { font-size: 1rem; line-height: 1.4; font-weight: 700; margin: 0 0 .625rem; }
+.ems-root .ems-panel p, .ems-root .admin-card p { overflow-wrap: anywhere; }
+.ems-root .admin-card p { margin: .75rem 0 0; color: var(--ems-muted); }
+.ems-root .ems-list { display: grid; list-style: none; padding: 0; margin: 0; }
+.ems-root .ems-record-row { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 1rem 0; border-bottom: 1px solid var(--ems-line); min-width: 0; }
+.ems-root .ems-record-row:last-child { border-bottom: 0; }
+.ems-root .ems-record-main { display: grid; gap: .125rem; min-width: 0; flex: 1; overflow-wrap: anywhere; }
+.ems-root .ems-record-main h3, .ems-root .ems-record-main h4, .ems-root .ems-record-main p { margin: 0 0 .375rem; }
+.ems-root .ems-record-main h4 { font-size: .9375rem; font-weight: 700; }
+.ems-root .ems-record-main a { color: var(--ems-ink); text-underline-offset: .2em; font-weight: 700; }
+.ems-root .ems-record-meta, .ems-root .ems-list-meta { color: var(--ems-muted); font-size: var(--ems-small); overflow-wrap: anywhere; }
+.ems-root .ems-record-meta { display: flex; gap: .375rem 1rem; flex-wrap: wrap; }
+.ems-root .ems-list-meta { margin: 0 0 .75rem; }
+.ems-root .ems-field { display: grid; gap: .375rem; min-width: 0; font-size: var(--ems-small); font-weight: 650; }
+.ems-root .ems-field :where(input:not([type=checkbox]):not([type=radio]),select,textarea), .ems-root :where(input,select,textarea).ems-field { width: 100%; min-height: 3rem; padding: .625rem .75rem; border: 1px solid var(--ems-control-line); border-radius: .5rem; background: var(--ems-surface); color: var(--ems-ink); font: inherit; font-size: 1rem; font-weight: 400; }
+.ems-root .ems-field textarea { min-height: 7rem; resize: vertical; }
+.ems-root .ems-field small { color: var(--ems-muted); font-weight: 400; }
+.ems-root .ems-button, .ems-root .admin-primary-link, .ems-root .admin-dialog-actions button, .ems-root .staff-session-security button { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; min-height: 3rem; border: 1px solid var(--ems-action); border-radius: .5rem; padding: .625rem 1rem; background: var(--ems-action); color: var(--ems-on-action); font-family: inherit; font-size: .875rem; font-weight: 700; line-height: 1.4; text-decoration: none; cursor: pointer; text-align: center; overflow-wrap: anywhere; }
+.ems-root .ems-button--secondary, .ems-root .admin-dialog-actions button:last-child, .ems-root .staff-session-security .staff-session-confirmation button:last-child { background: transparent; border-color: var(--ems-line); color: var(--ems-ink); }
+.ems-root .ems-button--danger { background: transparent; color: var(--ems-ink); border-color: var(--site-border-strong); }
+.ems-root .ems-button:disabled, .ems-root .admin-dialog-actions button:disabled, .ems-root .staff-session-security button:disabled { opacity: .55; cursor: not-allowed; }
+.ems-root .ems-status, .ems-root .admin-status { display: inline-flex; align-items: center; padding: .2rem .5rem; border: 1px solid var(--ems-line); border-radius: .375rem; font-size: .75rem; font-weight: 650; background: var(--ems-bg); color: var(--ems-ink); white-space: normal; }
+.ems-root .ems-status--success { border-style: double; }
+.ems-root .ems-status--warning { border-style: dashed; }
+.ems-root .ems-status--danger { border-color: var(--site-border-strong); }
+.ems-root .ems-empty { padding: 2rem 1rem; text-align: center; }
+.ems-root .ems-empty p { max-width: 60ch; margin: .5rem auto 1rem; color: var(--ems-muted); }
+.ems-root .ems-empty .ems-actions { justify-content: center; }
+.ems-root .ems-feedback { padding: .875rem 1rem; margin-block: 1rem; border: 1px solid var(--ems-line); border-left: 3px solid var(--ems-action); border-radius: .5rem; background: var(--ems-surface); overflow-wrap: anywhere; }
+.ems-root .ems-feedback--error { border-style: dashed; border-left-style: solid; }
+.ems-root .ems-tabs { display: flex; gap: .25rem; overflow-x: auto; max-width: 100%; margin-block: 1rem; border-bottom: 1px solid var(--ems-line); }
+.ems-root .ems-tabs button { flex-shrink: 0; min-height: 3rem; border: 0; border-bottom: 3px solid transparent; padding: .625rem .875rem; background: transparent; color: var(--ems-muted); font: inherit; font-size: .875rem; font-weight: 650; cursor: pointer; }
+.ems-root .ems-tabs button[aria-selected=true] { border-bottom-color: var(--ems-action); color: var(--ems-ink); }
+.ems-root .ems-tabs button:focus-visible { outline-offset: -4px; }
+.ems-root .ems-table-scroll { overflow-x: auto; max-width: 100%; }
+.ems-root .ems-table { width: 100%; border-collapse: collapse; text-align: left; font-size: .875rem; }
+.ems-root .ems-table th, .ems-root .ems-table td { padding: .75rem; border-bottom: 1px solid var(--ems-line); }
+.ems-root .ems-table th { color: var(--ems-muted); font-weight: 650; }
+.ems-root .admin-account { position: relative; }
+.ems-root .admin-account summary { display: flex; align-items: center; gap: .5rem; min-height: 2.75rem; padding: .25rem .625rem .25rem .25rem; border: 1px solid var(--ems-line); border-radius: 2rem; cursor: pointer; list-style: none; }
+.ems-root .admin-account summary::-webkit-details-marker { display: none; }
+.ems-root .admin-avatar { display: grid; place-items: center; width: 2rem; height: 2rem; border-radius: 50%; font-size: .75rem; font-weight: 800; background: var(--site-disabled-surface); }
+.ems-root .admin-account-label { font-size: .8125rem; font-weight: 600; }
+.ems-root .admin-account-panel { position: absolute; z-index: var(--ems-popover-z); right: 0; top: calc(100% + .5rem); width: 18rem; max-width: calc(100vw - 2rem); border: 1px solid var(--ems-line); border-radius: var(--ems-radius); background: var(--ems-surface); padding: .875rem; box-shadow: 0 .5rem 1.5rem color-mix(in srgb,var(--ems-ink) 12%,transparent); transform-origin: top right; }
+.ems-root .admin-account-panel p { overflow-wrap: anywhere; margin: 0 0 .75rem; padding-bottom: .75rem; border-bottom: 1px solid var(--ems-line); font-size: var(--ems-small); }
+.ems-root .admin-account-panel a, .ems-root .admin-account-panel button { display: flex; align-items: center; gap: .625rem; width: 100%; min-height: 2.75rem; border: 0; border-radius: .5rem; padding: .625rem; background: transparent; color: var(--ems-ink); text-decoration: none; text-align: left; font: inherit; font-size: .875rem; cursor: pointer; }
+.ems-root .admin-menu-button, .ems-root .admin-drawer-heading button { align-items: center; justify-content: center; min-width: 2.75rem; min-height: 2.75rem; border: 1px solid var(--ems-line); border-radius: .5rem; color: var(--ems-ink); background: var(--ems-surface); cursor: pointer; }
+.ems-root .admin-mobile-drawer { position: fixed; inset: 0 auto 0 0; margin: 0; width: min(20rem,calc(100vw - 1.5rem)); height: 100svh; max-height: 100svh; border: 0; border-right: 1px solid var(--ems-line); background: var(--ems-surface); color: var(--ems-ink); padding: 1.25rem 1rem; overflow-y: auto; }
+.ems-root .admin-drawer-heading { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1.5rem; }
+.ems-root .admin-drawer-heading strong { font-size: 1.25rem; }
+.ems-root .admin-drawer-heading button { display: inline-flex; }
+.ems-root .ems-dialog, .ems-root .admin-leave-dialog { position: fixed; inset: 0; margin: auto; width: min(40rem,calc(100vw - 2rem)); max-height: calc(100svh - 2rem); overflow-y: auto; border: 1px solid var(--ems-line); border-radius: var(--ems-radius); padding: 1.5rem; background: var(--ems-surface); color: var(--ems-ink); }
+.ems-root .admin-leave-dialog { width: min(30rem,calc(100vw - 2rem)); }
+.ems-root .ems-dialog::backdrop, .ems-root .admin-mobile-drawer::backdrop, .ems-root .admin-leave-dialog::backdrop { background: color-mix(in srgb,var(--ems-ink) 40%,transparent); }
+.ems-root .admin-leave-dialog h2, .ems-root .ems-dialog h2 { font-size: 1.25rem; line-height: 1.4; font-weight: 750; margin: 0 0 .75rem; }
+.ems-root .admin-dialog-actions { display: flex; flex-wrap: wrap; gap: .625rem; margin-top: 1.25rem; }
+.ems-root .admin-text-link { display: flex; align-items: center; gap: .625rem; min-height: 2.75rem; margin-top: .5rem; font-size: .875rem; font-weight: 700; text-decoration: none; color: var(--ems-ink); }
+@media (hover:hover) and (pointer:fine) { .ems-root .ems-button:hover, .ems-root .admin-primary-link:hover, .ems-root .staff-session-security button:hover:not(:disabled) { background: var(--site-action-hover); } .ems-root .ems-button--secondary:hover, .ems-root .staff-session-security .staff-session-confirmation button:last-child:hover:not(:disabled) { background: var(--site-disabled-surface); } .ems-root .admin-nav-list a:not([aria-current]):hover, .ems-root .admin-account-panel a:hover, .ems-root .admin-account-panel button:hover { background: var(--site-disabled-surface); } .ems-root .admin-shortcut:hover { border-color: var(--site-border-strong); } .ems-root .admin-text-link:hover { text-decoration: underline; text-underline-offset: .2em; } }
+@media (max-width: 600px) { .ems-root .ems-record-row { flex-direction: column; align-items: stretch; gap: .75rem; } .ems-root .ems-record-actions { justify-content: flex-start; } .ems-root .ems-panel { --ems-space: 1rem; } .ems-root .ems-tabs button { padding-inline: .625rem; } .ems-root .admin-dialog-actions { flex-direction: column; } }
+
+/* Adapt the existing company editor inside EMS; customer booking styles stay local. */
+.ems-root .live-company-booking input:not([type=checkbox]):not([type=radio]),
+.ems-root .live-company-booking select,
+.ems-root .live-company-booking textarea {
+  min-height: 3rem;
+  font-size: 1rem;
+  border-color: var(--ems-control-line);
+  border-radius: .5rem;
+}
+.ems-root .live-company-booking :where(input, select, textarea):focus-visible {
+  outline: 2px solid var(--site-focus);
+  outline-offset: 3px;
+}
+
+/* Saved references and amounts may be longer than a narrow record card. */
+.ems-root .ems-panel :is(h2, h3, h4) { min-width: 0; overflow-wrap: anywhere; }
+.ems-root .ems-estimate-amount { font-size: clamp(1.5rem, 1.4rem + .4vw, 1.75rem); line-height: 1.3; font-weight: 800; min-width: 0; overflow-wrap: anywhere; }

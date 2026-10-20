@@ -4,16 +4,18 @@ import { randomUUID } from 'node:crypto'
 import { readFileSync, readdirSync } from 'node:fs'
 import { PGlite } from '@electric-sql/pglite'
 import type { Customer, CustomerDetail, CustomerPage, UnlinkedRecordPage } from './domain/contracts.ts'
+import { initializeCustomerFixtureAuth, seedCustomerFixtureStaff } from './infrastructure/customer-test-fixtures.mts'
 const db = new PGlite()
+await initializeCustomerFixtureAuth(db)
 await db.exec('create role anon; create role authenticated; create role service_role bypassrls; create role lk_customers_probe;')
 for (const name of readdirSync(new URL('../../../supabase/migrations/', import.meta.url)).filter(n => n.endsWith('.sql')).sort()) await db.exec(readFileSync(new URL(`../../../supabase/migrations/${name}`, import.meta.url), 'utf8'))
 const tables = (await db.query<{ tablename: string }>("select tablename from pg_tables where schemaname='public' and tablename like 'lk_%'")).rows.map(r => r.tablename)
-beforeEach(async () => { await db.exec(`reset role; truncate ${tables.map(n => `public.${n}`).join(',')}; set role service_role;`) })
+beforeEach(async () => { await db.exec(`reset role; truncate ${tables.map(n => `public.${n}`).join(',')}; set role service_role;`);await seedCustomerFixtureStaff(db,actor) })
 after(() => db.close())
 const actor = { companyId: 'lk-group', actorUserId: randomUUID(), actorSessionId: randomUUID() }
 const code = (expected: string) => (error: unknown) => !!error && typeof error === 'object' && 'code' in error && error.code === expected
 async function rpc<T = Customer>(command: string, args: Record<string, unknown> = {}): Promise<T> { return (await db.query<{ r: T }>('select public.lk_customers_command($1,$2::jsonb) r', [command, JSON.stringify({ ...actor, ...args })])).rows[0].r }
-const create = (args: Record<string, unknown> = {}) => rpc('create', { id: randomUUID(), name: 'Synthetic customer', email: 'same@example.invalid', idempotencyKey: randomUUID(), ...args })
+const create = (args: Record<string, unknown> = {}) => rpc('create', { id: randomUUID(), name: 'Synthetic '+randomUUID(), email: randomUUID()+'@example.invalid', idempotencyKey: randomUUID(), ...args })
 async function enquiry(args: Record<string, unknown> = {}) {
  const id = randomUUID(), payload = { name: 'Synthetic source', email: 'source@example.invalid', siteAddress: 'TEST ONLY', ...args }
  await db.query("insert into public.lk_enquiries(id,reference,source,payload_json,status,revision,calendar_status) values($1,$2,'web',$3,'submitted',1,'pending')", [id, `TEST-${id.slice(0,8)}`, JSON.stringify(payload)])
@@ -31,7 +33,7 @@ const detail = (id: string) => rpc<CustomerDetail>('detail', { id })
 const link = (c: Customer, sourceId: string, sourceType = 'enquiry', args: Record<string, unknown> = {}) => rpc('link', { id:c.id,sourceId,sourceType,reason:'Verified synthetic record',expectedRevision:c.revision,idempotencyKey:randomUUID(),...args })
 
 test('same contact customers remain separate and search is literal with stable pages', async () => {
- const a = await create({ name:'Same Person %' }), b = await create({ name:'Other Person' })
+ const a = await create({ name:'Same Person %',email:'same@example.invalid' }), b = await create({ name:'Other Person',email:'same@example.invalid',decision:{kind:'different_person',reason:'Reviewed different person',reviewedCandidates:[{id:a.id,revision:a.revision}]}})
  assert.notEqual(a.id,b.id); assert.equal((await list()).total,2)
  assert.equal((await rpc<CustomerPage>('list',{q:'%',page:1,pageSize:1})).total,1)
  const one = await rpc<CustomerPage>('list',{q:'same@example.invalid',page:1,pageSize:1}), two = await rpc<CustomerPage>('list',{q:'same@example.invalid',page:2,pageSize:1})
@@ -41,7 +43,8 @@ test('same contact customers remain separate and search is literal with stable p
 test('create retries bind business request and current actor/session without duplicate customers', async () => {
  const key = randomUUID(), args={name:'Retry',idempotencyKey:key,email:null}
  const first = await create(args);assert.deepEqual(await create(args),first)
- for(const changed of [{name:'Different'},{actorUserId:randomUUID()},{actorSessionId:randomUUID()}]) await assert.rejects(create({...args,...changed}),code('LK409'))
+ await assert.rejects(create({...args,name:'Different'}),code('LK409'))
+ for(const changed of [{actorUserId:randomUUID(),actorSessionId:randomUUID()},{actorSessionId:randomUUID()}]) {await seedCustomerFixtureStaff(db,{...actor,...changed});await assert.rejects(create({...args,...changed}),code('LK409'))}
  assert.equal((await list()).total,1);assert.equal((await detail(first.id)).audit.length,1)
 })
 test('link/unlink atomically audit revision, reject stale/conflicting links, and replay original result', async () => {
