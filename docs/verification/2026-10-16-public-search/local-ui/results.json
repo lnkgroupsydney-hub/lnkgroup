@@ -1,0 +1,174 @@
+{
+  "upstream": "http://127.0.0.1:3002",
+  "startedAt": "2026-10-15T20:47:42.469Z",
+  "checks": [
+    {
+      "name": "viewport-320x568",
+      "passed": false,
+      "externalBlocked": [],
+      "apiFixtures": [],
+      "pageErrors": [],
+      "failedLocalResources": [],
+      "consoleWarnings": [],
+      "error": "page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:3002/services/cabinet-painting\nCall log:\n\u001b[2m  - navigating to \"http://127.0.0.1:3002/services/cabinet-painting\", waiting until \"networkidle\"\u001b[22m\n\n    at open (/Users/jimee/.codex/worktrees/public-search-seo-aeo/L&K Group/scripts/verify-kcp-landing-ui.mjs:111:33)\n    at /Users/jimee/.codex/worktrees/public-search-seo-aeo/L&K Group/scripts/verify-kcp-landing-ui.mjs:187:15\n    at scenario (/Users/jimee/.codex/worktrees/public-search-seo-aeo/L&K Group/scripts/verify-kcp-landing-ui.mjs:92:13)\n    at async verifyKcpLanding (/Users/jimee/.codex/worktrees/public-search-seo-aeo/L&K Group/scripts/verify-kcp-landing-ui.mjs:186:7)\n    at async file:///Users/jimee/.codex/worktrees/public-search-seo-aeo/L&K%20Group/scripts/verify-kcp-landing-ui.mjs:438:20"
+    },
+    {
+      "name": "viewport-390x844",
+      "passed": false,
+      "externalBlocked": [],
+      "apiFixtures": [],
+      "pageErrors": [],
+      "failedLocalResources": [],
+      "consoleWarnings": [],
+      "error": "page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:3002/services/cabinet-painting\nCall log:\n\u001b[2m  - navigating to \"http://127.0.0.1:3002/services/cabinet-painting\", waiting until \"networkidle\"\u001b[22m\n\n    at open (/Users/jimee/.codex/worktrees/public-search-seo-aeo/L&K Group/scripts/verify-kcp-landing-ui.mjs:111:33)\n    at /Users/jimee/.codex/worktrees/public-search-seo-aeo/L&K Group/scripts/verify-kcp-landing-ui.mjs:187:15\n    at scenario (/Users/jimee/.codex/worktrees/public-search-seo-aeo/L&K Group/scripts/verify-kcp-landing-ui.mjs:92:13)\n    at async verifyKcpLanding (/Users/jimee/.codex/worktrees/public-search-seo-aeo/L&K Group/scripts/verify-kcp-landing-ui.mjs:186:7)\n    at async file:///Users/jimee/.codex/worktrees/public-search-seo-aeo/L&K%20Group/scripts/verify-kcp-landing-ui.mjs:438:20"
+    },
+    {
+      "name": "viewport-768x1024",
+      "passed": false,
+      "externalBlocked": [],
+      "apiFixtures": [],
+      "pageErrors": [],
+      "failedLocalResources": [],
+      "consoleWarnings": [],
+      "error": "page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:3002/services/cabinet-painting\nCall log:\n\u001b[2m  - navigating to \"http://127.0.0.1:3002/services/cabinet-painting\", waiting until \"networkidle\"\u001b[22m\n\n    at open (/Users/jimee/.codex/worktrees/public-search-seo-aeo/L&K Group/scripts/verify-kcp-landing-ui.mjs:111:33)\n    at /Users/jimee/.codex/worktrees/public-search-seo-aeo/L&K Group/scripts/verify-kcp-landing-ui.mjs:187:15\n    at scenario (/Users/jimee/.codex/worktrees/public-search-seo-aeo/L&K Group/scripts/verify-kcp-landing-ui.mjs:92:13)\n    at async verifyKcpLanding (/Users/jimee/.codex/worktrees/public-search-seo-aeo/L&K Group/scripts/verify-kcp-landing-ui.mjs:186:7)\n    at async file:///Users/jimee/.codex/worktrees/public-search-seo-aeo/L&K%20Group/scripts/verify-kcp-landing-ui.mjs:438:20"
+    },
+    {
+      "name": "viewport-1280x720",
+      "passed": false,
+      "externalBlocked": [],
+      "apiFixtures": [],
+      "pageErrors": [],
+      "failedLocalResources": [],
+      "consoleWarnings": [],
+      "error": "page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:3002/services/cabinet-painting\nCall log:\n\u001b[2m  - navigating to \"http://127.0.0.1:3002/services/cabinet-painting\", waiting until \"networkidle\"\u001b[22m\n\n    at open (/Users/jimee/.codex/worktrees/public-search-seo-aeo/L&K Group/scripts/verify-kcp-landing-ui.mjs:111:33)\n    at /Users/jimee/.codex/worktrees/public-search-seo-aeo/L&K Group/scripts/verify-kcp-landing-ui.mjs:187:15\n    at scenario (/Users/jimee/.codex/worktrees/public-search-seo-aeo/L&K Group/scripts/verify-kcp-landing-ui.mjs:92:13)\n    at async verifyKcpLanding (/Users/jimee/.codex/worktrees/public-search-seo-aeo/L&K Group/scripts/verify-kcp-landing-ui.mjs:186:7)\n    at async file:///Users/jimee/.codex/worktrees/public-search-seo-aeo/L&K%20Group/scripts/verify-kcp-landing-ui.mjs:438:20"
+    },
+    {
+      "name": "viewport-1440x900",
+      "passed": false,
+      "externalBlocked": [],
+      "apiFixtures": [],
+      "pageErrors": [],
+      "failedLocalResources": [],
+      "consoleWarnings": [],
+      "error": "page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:3002/services/cabinet-painting\nCall log:\n\u001b[2m  - navigating to \"http://127.0.0.1:3002/services/cabinet-painting\", waiting until \"networkidle\"\u001b[22m\n\n    at open (/Users/jimee/.codex/worktrees/public-search-seo-aeo/L&K Group/scripts/verify-kcp-landing-ui.mjs:111:33)\n    at /Users/jimee/.codex/worktrees/public-search-seo-aeo/L&K Group/scripts/verify-kcp-landing-ui.mjs:187:15\n    at scenario (/Users/jimee/.codex/worktrees/public-search-seo-aeo/L&K Group/scripts/verify-kcp-landing-ui.mjs:92:13)\n    at async verifyKcpLanding (/Users/jimee/.codex/worktrees/public-search-seo-aeo/L&K Group/scripts/verify-kcp-landing-ui.mjs:186:7)\n    at async file:///Users/jimee/.codex/worktrees/public-search-seo-aeo/L&K%20Group/scripts/verify-kcp-landing-ui.mjs:438:20"
+    },
+    {
+      "name": "viewport-1023x700",
+      "passed": false,
+      "externalBlocked": [],
+      "apiFixtures": [],
+      "pageErrors": [],
+      "failedLocalResources": [],
+      "consoleWarnings": [],
+      "error": "page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:3002/services/cabinet-painting\nCall log:\n\u001b[2m  - navigating to \"http://127.0.0.1:3002/services/cabinet-painting\", waiting until \"networkidle\"\u001b[22m\n\n    at open (/Users/jimee/.codex/worktrees/public-search-seo-aeo/L&K Group/scripts/verify-kcp-landing-ui.mjs:111:33)\n    at /Users/jimee/.codex/worktrees/public-search-seo-aeo/L&K Group/scripts/verify-kcp-landing-ui.mjs:187:15\n    at scenario (/Users/jimee/.codex/worktrees/public-search-seo-aeo/L&K Group/scripts/verify-kcp-landing-ui.mjs:92:13)\n    at async verifyKcpLanding (/Users/jimee/.codex/worktrees/public-search-seo-aeo/L&K Group/scripts/verify-kcp-landing-ui.mjs:186:7)\n    at async file:///Users/jimee/.codex/worktrees/public-search-seo-aeo/L&K%20Group/scripts/verify-kcp-landing-ui.mjs:438:20"
+    },
+    {
+      "name": "viewport-1024x700",
+      "passed": false,
+      "externalBlocked": [],
+      "apiFixtures": [],
+      "pageErrors": [],
+      "failedLocalResources": [],
+      "consoleWarnings": [],
+      "error": "page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:3002/services/cabinet-painting\nCall log:\n\u001b[2m  - navigating to \"http://127.0.0.1:3002/services/cabinet-painting\", waiting until \"networkidle\"\u001b[22m\n\n    at open (/Users/jimee/.codex/worktrees/public-search-seo-aeo/L&K Group/scripts/verify-kcp-landing-ui.mjs:111:33)\n    at /Users/jimee/.codex/worktrees/public-search-seo-aeo/L&K Group/scripts/verify-kcp-landing-ui.mjs:187:15\n    at scenario (/Users/jimee/.codex/worktrees/public-search-seo-aeo/L&K Group/scripts/verify-kcp-landing-ui.mjs:92:13)\n    at async verifyKcpLanding (/Users/jimee/.codex/worktrees/public-search-seo-aeo/L&K Group/scripts/verify-kcp-landing-ui.mjs:186:7)\n    at async file:///Users/jimee/.codex/worktrees/public-search-seo-aeo/L&K%20Group/scripts/verify-kcp-landing-ui.mjs:438:20"
+    },
+    {
+      "name": "viewport-1280x699",
+      "passed": false,
+      "externalBlocked": [],
+      "apiFixtures": [],
+      "pageErrors": [],
+      "failedLocalResources": [],
+      "consoleWarnings": [],
+      "error": "page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:3002/services/cabinet-painting\nCall log:\n\u001b[2m  - navigating to \"http://127.0.0.1:3002/services/cabinet-painting\", waiting until \"networkidle\"\u001b[22m\n\n    at open (/Users/jimee/.codex/worktrees/public-search-seo-aeo/L&K Group/scripts/verify-kcp-landing-ui.mjs:111:33)\n    at /Users/jimee/.codex/worktrees/public-search-seo-aeo/L&K Group/scripts/verify-kcp-landing-ui.mjs:187:15\n    at scenario (/Users/jimee/.codex/worktrees/public-search-seo-aeo/L&K Group/scripts/verify-kcp-landing-ui.mjs:92:13)\n    at async verifyKcpLanding (/Users/jimee/.codex/worktrees/public-search-seo-aeo/L&K Group/scripts/verify-kcp-landing-ui.mjs:186:7)\n    at async file:///Users/jimee/.codex/worktrees/public-search-seo-aeo/L&K%20Group/scripts/verify-kcp-landing-ui.mjs:438:20"
+    },
+    {
+      "name": "viewport-1280x700",
+      "passed": false,
+      "externalBlocked": [],
+      "apiFixtures": [],
+      "pageErrors": [],
+      "failedLocalResources": [],
+      "consoleWarnings": [],
+      "error": "page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:3002/services/cabinet-painting\nCall log:\n\u001b[2m  - navigating to \"http://127.0.0.1:3002/services/cabinet-painting\", waiting until \"networkidle\"\u001b[22m\n\n    at open (/Users/jimee/.codex/worktrees/public-search-seo-aeo/L&K Group/scripts/verify-kcp-landing-ui.mjs:111:33)\n    at /Users/jimee/.codex/worktrees/public-search-seo-aeo/L&K Group/scripts/verify-kcp-landing-ui.mjs:187:15\n    at scenario (/Users/jimee/.codex/worktrees/public-search-seo-aeo/L&K Group/scripts/verify-kcp-landing-ui.mjs:92:13)\n    at async verifyKcpLanding (/Users/jimee/.codex/worktrees/public-search-seo-aeo/L&K Group/scripts/verify-kcp-landing-ui.mjs:186:7)\n    at async file:///Users/jimee/.codex/worktrees/public-search-seo-aeo/L&K%20Group/scripts/verify-kcp-landing-ui.mjs:438:20"
+    },
+    {
+      "name": "server-content-home-region-and-kcp-summary",
+      "passed": false,
+      "externalBlocked": [],
+      "apiFixtures": [],
+      "pageErrors": [],
+      "failedLocalResources": [],
+      "consoleWarnings": [],
+      "error": "TypeError: fetch failed"
+    },
+    {
+      "name": "compare-pointer-keyboard-and-quote-navigation",
+      "passed": false,
+      "externalBlocked": [],
+      "apiFixtures": [],
+      "pageErrors": [],
+      "failedLocalResources": [],
+      "consoleWarnings": [],
+      "error": "page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:3002/services/cabinet-painting\nCall log:\n\u001b[2m  - navigating to \"http://127.0.0.1:3002/services/cabinet-painting\", waiting until \"networkidle\"\u001b[22m\n\n    at open (/Users/jimee/.codex/worktrees/public-search-seo-aeo/L&K Group/scripts/verify-kcp-landing-ui.mjs:111:33)\n    at /Users/jimee/.codex/worktrees/public-search-seo-aeo/L&K Group/scripts/verify-kcp-landing-ui.mjs:270:13\n    at scenario (/Users/jimee/.codex/worktrees/public-search-seo-aeo/L&K Group/scripts/verify-kcp-landing-ui.mjs:92:13)\n    at async verifyKcpLanding (/Users/jimee/.codex/worktrees/public-search-seo-aeo/L&K Group/scripts/verify-kcp-landing-ui.mjs:269:5)\n    at async file:///Users/jimee/.codex/worktrees/public-search-seo-aeo/L&K%20Group/scripts/verify-kcp-landing-ui.mjs:438:20"
+    },
+    {
+      "name": "desktop-steps-hash-fast-scroll-and-crossfade",
+      "passed": false,
+      "externalBlocked": [],
+      "apiFixtures": [],
+      "pageErrors": [],
+      "failedLocalResources": [],
+      "consoleWarnings": [],
+      "error": "page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:3002/services/cabinet-painting\nCall log:\n\u001b[2m  - navigating to \"http://127.0.0.1:3002/services/cabinet-painting\", waiting until \"networkidle\"\u001b[22m\n\n    at open (/Users/jimee/.codex/worktrees/public-search-seo-aeo/L&K Group/scripts/verify-kcp-landing-ui.mjs:111:33)\n    at /Users/jimee/.codex/worktrees/public-search-seo-aeo/L&K Group/scripts/verify-kcp-landing-ui.mjs:297:13\n    at scenario (/Users/jimee/.codex/worktrees/public-search-seo-aeo/L&K Group/scripts/verify-kcp-landing-ui.mjs:92:13)\n    at async verifyKcpLanding (/Users/jimee/.codex/worktrees/public-search-seo-aeo/L&K Group/scripts/verify-kcp-landing-ui.mjs:296:5)\n    at async file:///Users/jimee/.codex/worktrees/public-search-seo-aeo/L&K%20Group/scripts/verify-kcp-landing-ui.mjs:438:20"
+    },
+    {
+      "name": "static-toggle-reduced-motion-and-resize-preserve-reading",
+      "passed": false,
+      "externalBlocked": [],
+      "apiFixtures": [],
+      "pageErrors": [],
+      "failedLocalResources": [],
+      "consoleWarnings": [],
+      "error": "page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:3002/services/cabinet-painting\nCall log:\n\u001b[2m  - navigating to \"http://127.0.0.1:3002/services/cabinet-painting\", waiting until \"networkidle\"\u001b[22m\n\n    at open (/Users/jimee/.codex/worktrees/public-search-seo-aeo/L&K Group/scripts/verify-kcp-landing-ui.mjs:111:33)\n    at /Users/jimee/.codex/worktrees/public-search-seo-aeo/L&K Group/scripts/verify-kcp-landing-ui.mjs:348:13\n    at scenario (/Users/jimee/.codex/worktrees/public-search-seo-aeo/L&K Group/scripts/verify-kcp-landing-ui.mjs:92:13)\n    at async verifyKcpLanding (/Users/jimee/.codex/worktrees/public-search-seo-aeo/L&K Group/scripts/verify-kcp-landing-ui.mjs:347:5)\n    at async file:///Users/jimee/.codex/worktrees/public-search-seo-aeo/L&K%20Group/scripts/verify-kcp-landing-ui.mjs:438:20"
+    },
+    {
+      "name": "reduced-motion-startup-and-text-200-percent-simulation",
+      "passed": false,
+      "externalBlocked": [],
+      "apiFixtures": [],
+      "pageErrors": [],
+      "failedLocalResources": [],
+      "consoleWarnings": [],
+      "error": "page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:3002/services/cabinet-painting\nCall log:\n\u001b[2m  - navigating to \"http://127.0.0.1:3002/services/cabinet-painting\", waiting until \"networkidle\"\u001b[22m\n\n    at open (/Users/jimee/.codex/worktrees/public-search-seo-aeo/L&K Group/scripts/verify-kcp-landing-ui.mjs:111:33)\n    at /Users/jimee/.codex/worktrees/public-search-seo-aeo/L&K Group/scripts/verify-kcp-landing-ui.mjs:373:13\n    at scenario (/Users/jimee/.codex/worktrees/public-search-seo-aeo/L&K Group/scripts/verify-kcp-landing-ui.mjs:92:13)\n    at async verifyKcpLanding (/Users/jimee/.codex/worktrees/public-search-seo-aeo/L&K Group/scripts/verify-kcp-landing-ui.mjs:372:5)\n    at async file:///Users/jimee/.codex/worktrees/public-search-seo-aeo/L&K%20Group/scripts/verify-kcp-landing-ui.mjs:438:20"
+    },
+    {
+      "name": "webgl-unavailable-initial-hash-preserves-reading",
+      "passed": false,
+      "externalBlocked": [],
+      "apiFixtures": [],
+      "pageErrors": [],
+      "failedLocalResources": [],
+      "consoleWarnings": [],
+      "error": "page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:3002/services/cabinet-painting#cabinet-process-prepare\nCall log:\n\u001b[2m  - navigating to \"http://127.0.0.1:3002/services/cabinet-painting#cabinet-process-prepare\", waiting until \"networkidle\"\u001b[22m\n\n    at open (/Users/jimee/.codex/worktrees/public-search-seo-aeo/L&K Group/scripts/verify-kcp-landing-ui.mjs:111:33)\n    at /Users/jimee/.codex/worktrees/public-search-seo-aeo/L&K Group/scripts/verify-kcp-landing-ui.mjs:392:13\n    at async scenario (/Users/jimee/.codex/worktrees/public-search-seo-aeo/L&K Group/scripts/verify-kcp-landing-ui.mjs:92:7)\n    at async verifyKcpLanding (/Users/jimee/.codex/worktrees/public-search-seo-aeo/L&K Group/scripts/verify-kcp-landing-ui.mjs:386:5)\n    at async file:///Users/jimee/.codex/worktrees/public-search-seo-aeo/L&K%20Group/scripts/verify-kcp-landing-ui.mjs:438:20"
+    },
+    {
+      "name": "webgl-context-loss-preserves-current-reading",
+      "passed": false,
+      "externalBlocked": [],
+      "apiFixtures": [],
+      "pageErrors": [],
+      "failedLocalResources": [],
+      "consoleWarnings": [],
+      "error": "page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:3002/services/cabinet-painting\nCall log:\n\u001b[2m  - navigating to \"http://127.0.0.1:3002/services/cabinet-painting\", waiting until \"networkidle\"\u001b[22m\n\n    at open (/Users/jimee/.codex/worktrees/public-search-seo-aeo/L&K Group/scripts/verify-kcp-landing-ui.mjs:111:33)\n    at /Users/jimee/.codex/worktrees/public-search-seo-aeo/L&K Group/scripts/verify-kcp-landing-ui.mjs:411:13\n    at scenario (/Users/jimee/.codex/worktrees/public-search-seo-aeo/L&K Group/scripts/verify-kcp-landing-ui.mjs:92:13)\n    at async verifyKcpLanding (/Users/jimee/.codex/worktrees/public-search-seo-aeo/L&K Group/scripts/verify-kcp-landing-ui.mjs:410:5)\n    at async file:///Users/jimee/.codex/worktrees/public-search-seo-aeo/L&K%20Group/scripts/verify-kcp-landing-ui.mjs:438:20"
+    }
+  ],
+  "isolation": "Fresh Playwright contexts; external requests aborted; every /api request fulfilled locally; no DB, API save/submit, company, AI, mail or Google calls.",
+  "limitations": [
+    "Headless Chrome is not a physical device.",
+    "200% text enlargement is simulated by root font-size; native browser zoom and actual 200% device/browser zoom are not certified.",
+    "No frame-rate, bundle-size, search-ranking or formal accessibility certification."
+  ],
+  "finishedAt": "2026-10-15T20:47:44.750Z",
+  "passed": false
+}
