@@ -1,0 +1,1052 @@
+{
+  "target": "https://www.lnkgroupsydney.com.au",
+  "checkedAt": "2026-10-15T08:00:32.120Z",
+  "documentOnly": false,
+  "checks": [
+    {
+      "width": 1280,
+      "documentStatus": 200,
+      "entryBounds": {
+        "viewport": 1280,
+        "document": 1280,
+        "height": 800,
+        "routeHeader": 1280,
+        "actions": []
+      },
+      "formBounds": {
+        "viewport": 1280,
+        "document": 1280,
+        "height": 800,
+        "routeHeader": 1280,
+        "actions": [
+          {
+            "text": "Save & continue",
+            "left": 1043,
+            "right": 1215
+          }
+        ]
+      },
+      "startingAmount": "A$1,450",
+      "taxStatus": "No GST charged",
+      "startingSummaryVisible": true,
+      "fieldsEmpty": true,
+      "currentRequestNull": true,
+      "savedRecordsExposed": false,
+      "passed": true,
+      "mode": "empty-session-smoke"
+    },
+    {
+      "width": 390,
+      "documentStatus": 200,
+      "entryBounds": {
+        "viewport": 390,
+        "document": 390,
+        "height": 852,
+        "routeHeader": 390,
+        "actions": []
+      },
+      "formBounds": {
+        "viewport": 390,
+        "document": 390,
+        "height": 852,
+        "routeHeader": 390,
+        "actions": [
+          {
+            "text": "Save & continue",
+            "left": 218.84375,
+            "right": 365
+          }
+        ]
+      },
+      "startingAmount": "A$1,450",
+      "taxStatus": "No GST charged",
+      "startingSummaryVisible": false,
+      "fieldsEmpty": true,
+      "currentRequestNull": true,
+      "savedRecordsExposed": false,
+      "passed": true,
+      "mode": "empty-session-smoke"
+    },
+    {
+      "width": 320,
+      "documentStatus": 200,
+      "entryBounds": {
+        "viewport": 320,
+        "document": 320,
+        "height": 852,
+        "routeHeader": 320,
+        "actions": []
+      },
+      "formBounds": {
+        "viewport": 320,
+        "document": 320,
+        "height": 852,
+        "routeHeader": 320,
+        "actions": [
+          {
+            "text": "Save & continue",
+            "left": 169.875,
+            "right": 299.8125
+          }
+        ]
+      },
+      "startingAmount": "A$1,450",
+      "taxStatus": "No GST charged",
+      "startingSummaryVisible": false,
+      "fieldsEmpty": true,
+      "currentRequestNull": true,
+      "savedRecordsExposed": false,
+      "passed": true,
+      "mode": "empty-session-smoke"
+    }
+  ],
+  "requests": [
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/quote/start",
+      "status": 200,
+      "kind": "document-preflight-without-redirects"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/quote/start",
+      "kind": "read"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/media/4c9affa5bc8f420e-s.p.woff2",
+      "kind": "read"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/css/f8d13fe5c50cd9a2.css",
+      "kind": "read"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/css/adeb3ea4e7b754e0.css",
+      "kind": "read"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/css/101fcc9b48fdd196.css",
+      "kind": "read"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/css/33d0b9a9ec1d6f3b.css",
+      "kind": "read"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/css/73a1d71dfc02fe7e.css",
+      "kind": "read"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/chunks/webpack-b1c88e8e71296ea6.js",
+      "kind": "read"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/chunks/4bd1b696-ef441a59c2fc9271.js",
+      "kind": "read"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/chunks/3794-b1705d8a5f144cc2.js",
+      "kind": "read"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/chunks/main-app-9c152079fc57343e.js",
+      "kind": "read"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/chunks/9208-e3018fdbbeea6907.js",
+      "kind": "read"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/chunks/3451-1267e464c80930e4.js",
+      "kind": "read"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/chunks/7682-740107ba64742e90.js",
+      "kind": "read"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/chunks/app/quote/start/page-1dfa02d8be0348c2.js",
+      "kind": "read"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/image",
+      "kind": "read"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/images/lk-group-logo-circle-transparent.png",
+      "kind": "read"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/",
+      "kind": "read"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/",
+      "kind": "read"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/_next/static/chunks/app/page-c73011cf4d95a375.js",
+      "kind": "read"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/api/quote/requests/customer",
+      "status": 200,
+      "kind": "explicit-empty-session-read"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/api/quote/requests",
+      "status": 200,
+      "kind": "explicit-empty-session-read"
+    },
+    {
+      "width": 1280,
+      "method": "POST",
+      "path": "/api/quote/requests/customer/logout",
+      "kind": "empty-session-cookie-transition"
+    },
+    {
+      "width": 1280,
+      "method": "POST",
+      "path": "/api/quote/requests/session",
+      "kind": "empty-session-cookie-transition"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/api/quote/requests",
+      "kind": "read"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/api/quote/requests/customer",
+      "kind": "read"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/api/quote/requests/customer",
+      "kind": "read"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/api/quote/requests/customer",
+      "kind": "read"
+    },
+    {
+      "width": 1280,
+      "method": "GET",
+      "path": "/api/quote/requests",
+      "status": 200,
+      "kind": "explicit-empty-session-read"
+    },
+    {
+      "width": 390,
+      "method": "GET",
+      "path": "/quote/start",
+      "status": 200,
+      "kind": "document-preflight-without-redirects"
+    },
+    {
+      "width": 390,
+      "method": "GET",
+      "path": "/quote/start",
+      "kind": "read"
+    },
+    {
+      "width": 390,
+      "method": "GET",
+      "path": "/_next/static/media/4c9affa5bc8f420e-s.p.woff2",
+      "kind": "read"
+    },
+    {
+      "width": 390,
+      "method": "GET",
+      "path": "/_next/static/css/f8d13fe5c50cd9a2.css",
+      "kind": "read"
+    },
+    {
+      "width": 390,
+      "method": "GET",
+      "path": "/_next/static/css/adeb3ea4e7b754e0.css",
+      "kind": "read"
+    },
+    {
+      "width": 390,
+      "method": "GET",
+      "path": "/_next/static/css/101fcc9b48fdd196.css",
+      "kind": "read"
+    },
+    {
+      "width": 390,
+      "method": "GET",
+      "path": "/_next/static/css/33d0b9a9ec1d6f3b.css",
+      "kind": "read"
+    },
+    {
+      "width": 390,
+      "method": "GET",
+      "path": "/_next/static/css/73a1d71dfc02fe7e.css",
+      "kind": "read"
+    },
+    {
+      "width": 390,
+      "method": "GET",
+      "path": "/_next/static/chunks/webpack-b1c88e8e71296ea6.js",
+      "kind": "read"
+    },
+    {
+      "width": 390,
+      "method": "GET",
+      "path": "/_next/static/chunks/4bd1b696-ef441a59c2fc9271.js",
+      "kind": "read"
+    },
+    {
+      "width": 390,
+      "method": "GET",
+      "path": "/_next/static/chunks/3794-b1705d8a5f144cc2.js",
+      "kind": "read"
+    },
+    {
+      "width": 390,
+      "method": "GET",
+      "path": "/_next/static/chunks/main-app-9c152079fc57343e.js",
+      "kind": "read"
+    },
+    {
+      "width": 390,
+      "method": "GET",
+      "path": "/_next/static/chunks/9208-e3018fdbbeea6907.js",
+      "kind": "read"
+    },
+    {
+      "width": 390,
+      "method": "GET",
+      "path": "/_next/static/chunks/3451-1267e464c80930e4.js",
+      "kind": "read"
+    },
+    {
+      "width": 390,
+      "method": "GET",
+      "path": "/_next/static/chunks/7682-740107ba64742e90.js",
+      "kind": "read"
+    },
+    {
+      "width": 390,
+      "method": "GET",
+      "path": "/_next/static/chunks/app/quote/start/page-1dfa02d8be0348c2.js",
+      "kind": "read"
+    },
+    {
+      "width": 390,
+      "method": "GET",
+      "path": "/_next/image",
+      "kind": "read"
+    },
+    {
+      "width": 390,
+      "method": "GET",
+      "path": "/",
+      "kind": "read"
+    },
+    {
+      "width": 390,
+      "method": "GET",
+      "path": "/images/lk-group-logo-circle-transparent.png",
+      "kind": "read"
+    },
+    {
+      "width": 390,
+      "method": "GET",
+      "path": "/",
+      "kind": "read"
+    },
+    {
+      "width": 390,
+      "method": "GET",
+      "path": "/_next/static/chunks/app/page-c73011cf4d95a375.js",
+      "kind": "read"
+    },
+    {
+      "width": 390,
+      "method": "GET",
+      "path": "/api/quote/requests/customer",
+      "status": 200,
+      "kind": "explicit-empty-session-read"
+    },
+    {
+      "width": 390,
+      "method": "GET",
+      "path": "/api/quote/requests",
+      "status": 200,
+      "kind": "explicit-empty-session-read"
+    },
+    {
+      "width": 390,
+      "method": "POST",
+      "path": "/api/quote/requests/customer/logout",
+      "kind": "empty-session-cookie-transition"
+    },
+    {
+      "width": 390,
+      "method": "POST",
+      "path": "/api/quote/requests/session",
+      "kind": "empty-session-cookie-transition"
+    },
+    {
+      "width": 390,
+      "method": "GET",
+      "path": "/api/quote/requests",
+      "kind": "read"
+    },
+    {
+      "width": 390,
+      "method": "GET",
+      "path": "/api/quote/requests/customer",
+      "kind": "read"
+    },
+    {
+      "width": 390,
+      "method": "GET",
+      "path": "/api/quote/requests/customer",
+      "kind": "read"
+    },
+    {
+      "width": 390,
+      "method": "GET",
+      "path": "/api/quote/requests/customer",
+      "kind": "read"
+    },
+    {
+      "width": 390,
+      "method": "GET",
+      "path": "/api/quote/requests",
+      "status": 200,
+      "kind": "explicit-empty-session-read"
+    },
+    {
+      "width": 320,
+      "method": "GET",
+      "path": "/quote/start",
+      "status": 200,
+      "kind": "document-preflight-without-redirects"
+    },
+    {
+      "width": 320,
+      "method": "GET",
+      "path": "/quote/start",
+      "kind": "read"
+    },
+    {
+      "width": 320,
+      "method": "GET",
+      "path": "/_next/static/media/4c9affa5bc8f420e-s.p.woff2",
+      "kind": "read"
+    },
+    {
+      "width": 320,
+      "method": "GET",
+      "path": "/_next/static/css/f8d13fe5c50cd9a2.css",
+      "kind": "read"
+    },
+    {
+      "width": 320,
+      "method": "GET",
+      "path": "/_next/static/css/adeb3ea4e7b754e0.css",
+      "kind": "read"
+    },
+    {
+      "width": 320,
+      "method": "GET",
+      "path": "/_next/static/css/101fcc9b48fdd196.css",
+      "kind": "read"
+    },
+    {
+      "width": 320,
+      "method": "GET",
+      "path": "/_next/static/css/33d0b9a9ec1d6f3b.css",
+      "kind": "read"
+    },
+    {
+      "width": 320,
+      "method": "GET",
+      "path": "/_next/static/css/73a1d71dfc02fe7e.css",
+      "kind": "read"
+    },
+    {
+      "width": 320,
+      "method": "GET",
+      "path": "/_next/static/chunks/webpack-b1c88e8e71296ea6.js",
+      "kind": "read"
+    },
+    {
+      "width": 320,
+      "method": "GET",
+      "path": "/_next/static/chunks/4bd1b696-ef441a59c2fc9271.js",
+      "kind": "read"
+    },
+    {
+      "width": 320,
+      "method": "GET",
+      "path": "/_next/static/chunks/3794-b1705d8a5f144cc2.js",
+      "kind": "read"
+    },
+    {
+      "width": 320,
+      "method": "GET",
+      "path": "/_next/static/chunks/main-app-9c152079fc57343e.js",
+      "kind": "read"
+    },
+    {
+      "width": 320,
+      "method": "GET",
+      "path": "/_next/static/chunks/9208-e3018fdbbeea6907.js",
+      "kind": "read"
+    },
+    {
+      "width": 320,
+      "method": "GET",
+      "path": "/_next/static/chunks/3451-1267e464c80930e4.js",
+      "kind": "read"
+    },
+    {
+      "width": 320,
+      "method": "GET",
+      "path": "/_next/static/chunks/7682-740107ba64742e90.js",
+      "kind": "read"
+    },
+    {
+      "width": 320,
+      "method": "GET",
+      "path": "/_next/static/chunks/app/quote/start/page-1dfa02d8be0348c2.js",
+      "kind": "read"
+    },
+    {
+      "width": 320,
+      "method": "GET",
+      "path": "/_next/image",
+      "kind": "read"
+    },
+    {
+      "width": 320,
+      "method": "GET",
+      "path": "/",
+      "kind": "read"
+    },
+    {
+      "width": 320,
+      "method": "GET",
+      "path": "/images/lk-group-logo-circle-transparent.png",
+      "kind": "read"
+    },
+    {
+      "width": 320,
+      "method": "GET",
+      "path": "/",
+      "kind": "read"
+    },
+    {
+      "width": 320,
+      "method": "GET",
+      "path": "/_next/static/chunks/app/page-c73011cf4d95a375.js",
+      "kind": "read"
+    },
+    {
+      "width": 320,
+      "method": "GET",
+      "path": "/api/quote/requests/customer",
+      "status": 200,
+      "kind": "explicit-empty-session-read"
+    },
+    {
+      "width": 320,
+      "method": "GET",
+      "path": "/api/quote/requests",
+      "status": 200,
+      "kind": "explicit-empty-session-read"
+    },
+    {
+      "width": 320,
+      "method": "POST",
+      "path": "/api/quote/requests/customer/logout",
+      "kind": "empty-session-cookie-transition"
+    },
+    {
+      "width": 320,
+      "method": "POST",
+      "path": "/api/quote/requests/session",
+      "kind": "empty-session-cookie-transition"
+    },
+    {
+      "width": 320,
+      "method": "GET",
+      "path": "/api/quote/requests",
+      "kind": "read"
+    },
+    {
+      "width": 320,
+      "method": "GET",
+      "path": "/api/quote/requests/customer",
+      "kind": "read"
+    },
+    {
+      "width": 320,
+      "method": "GET",
+      "path": "/api/quote/requests/customer",
+      "kind": "read"
+    },
+    {
+      "width": 320,
+      "method": "GET",
+      "path": "/api/quote/requests/customer",
+      "kind": "read"
+    },
+    {
+      "width": 320,
+      "method": "GET",
+      "path": "/api/quote/requests",
+      "status": 200,
+      "kind": "explicit-empty-session-read"
+    }
+  ],
+  "responses": [
+    {
+      "width": 1280,
+      "path": "/quote/start",
+      "status": 200
+    },
+    {
+      "width": 1280,
+      "path": "/_next/static/media/4c9affa5bc8f420e-s.p.woff2",
+      "status": 200
+    },
+    {
+      "width": 1280,
+      "path": "/_next/static/chunks/3451-1267e464c80930e4.js",
+      "status": 200
+    },
+    {
+      "width": 1280,
+      "path": "/_next/static/chunks/webpack-b1c88e8e71296ea6.js",
+      "status": 200
+    },
+    {
+      "width": 1280,
+      "path": "/_next/static/css/73a1d71dfc02fe7e.css",
+      "status": 200
+    },
+    {
+      "width": 1280,
+      "path": "/_next/static/css/adeb3ea4e7b754e0.css",
+      "status": 200
+    },
+    {
+      "width": 1280,
+      "path": "/_next/static/chunks/9208-e3018fdbbeea6907.js",
+      "status": 200
+    },
+    {
+      "width": 1280,
+      "path": "/_next/static/css/101fcc9b48fdd196.css",
+      "status": 200
+    },
+    {
+      "width": 1280,
+      "path": "/_next/static/chunks/main-app-9c152079fc57343e.js",
+      "status": 200
+    },
+    {
+      "width": 1280,
+      "path": "/_next/static/chunks/app/quote/start/page-1dfa02d8be0348c2.js",
+      "status": 200
+    },
+    {
+      "width": 1280,
+      "path": "/_next/static/chunks/3794-b1705d8a5f144cc2.js",
+      "status": 200
+    },
+    {
+      "width": 1280,
+      "path": "/_next/static/css/33d0b9a9ec1d6f3b.css",
+      "status": 200
+    },
+    {
+      "width": 1280,
+      "path": "/_next/static/chunks/7682-740107ba64742e90.js",
+      "status": 200
+    },
+    {
+      "width": 1280,
+      "path": "/_next/static/chunks/4bd1b696-ef441a59c2fc9271.js",
+      "status": 200
+    },
+    {
+      "width": 1280,
+      "path": "/_next/static/css/f8d13fe5c50cd9a2.css",
+      "status": 200
+    },
+    {
+      "width": 1280,
+      "path": "/_next/image",
+      "status": 200
+    },
+    {
+      "width": 1280,
+      "path": "/images/lk-group-logo-circle-transparent.png",
+      "status": 200
+    },
+    {
+      "width": 1280,
+      "path": "/",
+      "status": 200
+    },
+    {
+      "width": 1280,
+      "path": "/",
+      "status": 200
+    },
+    {
+      "width": 1280,
+      "path": "/_next/static/chunks/app/page-c73011cf4d95a375.js",
+      "status": 200
+    },
+    {
+      "width": 1280,
+      "path": "/api/quote/requests/customer/logout",
+      "status": 200
+    },
+    {
+      "width": 1280,
+      "path": "/api/quote/requests/session",
+      "status": 200
+    },
+    {
+      "width": 1280,
+      "path": "/api/quote/requests",
+      "status": 200
+    },
+    {
+      "width": 1280,
+      "path": "/api/quote/requests/customer",
+      "status": 200
+    },
+    {
+      "width": 1280,
+      "path": "/api/quote/requests/customer",
+      "status": 200
+    },
+    {
+      "width": 1280,
+      "path": "/api/quote/requests/customer",
+      "status": 200
+    },
+    {
+      "width": 390,
+      "path": "/quote/start",
+      "status": 200
+    },
+    {
+      "width": 390,
+      "path": "/_next/static/css/adeb3ea4e7b754e0.css",
+      "status": 200
+    },
+    {
+      "width": 390,
+      "path": "/_next/static/chunks/webpack-b1c88e8e71296ea6.js",
+      "status": 200
+    },
+    {
+      "width": 390,
+      "path": "/_next/static/css/f8d13fe5c50cd9a2.css",
+      "status": 200
+    },
+    {
+      "width": 390,
+      "path": "/_next/static/media/4c9affa5bc8f420e-s.p.woff2",
+      "status": 200
+    },
+    {
+      "width": 390,
+      "path": "/_next/static/chunks/main-app-9c152079fc57343e.js",
+      "status": 200
+    },
+    {
+      "width": 390,
+      "path": "/_next/static/chunks/3451-1267e464c80930e4.js",
+      "status": 200
+    },
+    {
+      "width": 390,
+      "path": "/_next/static/chunks/app/quote/start/page-1dfa02d8be0348c2.js",
+      "status": 200
+    },
+    {
+      "width": 390,
+      "path": "/_next/static/css/101fcc9b48fdd196.css",
+      "status": 200
+    },
+    {
+      "width": 390,
+      "path": "/_next/static/chunks/3794-b1705d8a5f144cc2.js",
+      "status": 200
+    },
+    {
+      "width": 390,
+      "path": "/_next/static/css/33d0b9a9ec1d6f3b.css",
+      "status": 200
+    },
+    {
+      "width": 390,
+      "path": "/_next/static/css/73a1d71dfc02fe7e.css",
+      "status": 200
+    },
+    {
+      "width": 390,
+      "path": "/_next/static/chunks/7682-740107ba64742e90.js",
+      "status": 200
+    },
+    {
+      "width": 390,
+      "path": "/_next/static/chunks/9208-e3018fdbbeea6907.js",
+      "status": 200
+    },
+    {
+      "width": 390,
+      "path": "/_next/static/chunks/4bd1b696-ef441a59c2fc9271.js",
+      "status": 200
+    },
+    {
+      "width": 390,
+      "path": "/_next/image",
+      "status": 200
+    },
+    {
+      "width": 390,
+      "path": "/images/lk-group-logo-circle-transparent.png",
+      "status": 200
+    },
+    {
+      "width": 390,
+      "path": "/",
+      "status": 200
+    },
+    {
+      "width": 390,
+      "path": "/",
+      "status": 200
+    },
+    {
+      "width": 390,
+      "path": "/_next/static/chunks/app/page-c73011cf4d95a375.js",
+      "status": 200
+    },
+    {
+      "width": 390,
+      "path": "/api/quote/requests/customer/logout",
+      "status": 200
+    },
+    {
+      "width": 390,
+      "path": "/api/quote/requests/session",
+      "status": 200
+    },
+    {
+      "width": 390,
+      "path": "/api/quote/requests",
+      "status": 200
+    },
+    {
+      "width": 390,
+      "path": "/api/quote/requests/customer",
+      "status": 200
+    },
+    {
+      "width": 390,
+      "path": "/api/quote/requests/customer",
+      "status": 200
+    },
+    {
+      "width": 320,
+      "path": "/quote/start",
+      "status": 200
+    },
+    {
+      "width": 320,
+      "path": "/_next/static/css/73a1d71dfc02fe7e.css",
+      "status": 200
+    },
+    {
+      "width": 320,
+      "path": "/_next/static/css/f8d13fe5c50cd9a2.css",
+      "status": 200
+    },
+    {
+      "width": 320,
+      "path": "/_next/static/css/33d0b9a9ec1d6f3b.css",
+      "status": 200
+    },
+    {
+      "width": 320,
+      "path": "/_next/static/chunks/3794-b1705d8a5f144cc2.js",
+      "status": 200
+    },
+    {
+      "width": 320,
+      "path": "/_next/static/chunks/3451-1267e464c80930e4.js",
+      "status": 200
+    },
+    {
+      "width": 320,
+      "path": "/_next/static/css/101fcc9b48fdd196.css",
+      "status": 200
+    },
+    {
+      "width": 320,
+      "path": "/_next/static/css/adeb3ea4e7b754e0.css",
+      "status": 200
+    },
+    {
+      "width": 320,
+      "path": "/_next/static/chunks/main-app-9c152079fc57343e.js",
+      "status": 200
+    },
+    {
+      "width": 320,
+      "path": "/_next/static/chunks/app/quote/start/page-1dfa02d8be0348c2.js",
+      "status": 200
+    },
+    {
+      "width": 320,
+      "path": "/_next/static/chunks/9208-e3018fdbbeea6907.js",
+      "status": 200
+    },
+    {
+      "width": 320,
+      "path": "/_next/static/chunks/webpack-b1c88e8e71296ea6.js",
+      "status": 200
+    },
+    {
+      "width": 320,
+      "path": "/_next/static/media/4c9affa5bc8f420e-s.p.woff2",
+      "status": 200
+    },
+    {
+      "width": 320,
+      "path": "/_next/static/chunks/4bd1b696-ef441a59c2fc9271.js",
+      "status": 200
+    },
+    {
+      "width": 320,
+      "path": "/_next/static/chunks/7682-740107ba64742e90.js",
+      "status": 200
+    },
+    {
+      "width": 320,
+      "path": "/_next/image",
+      "status": 200
+    },
+    {
+      "width": 320,
+      "path": "/images/lk-group-logo-circle-transparent.png",
+      "status": 200
+    },
+    {
+      "width": 320,
+      "path": "/",
+      "status": 200
+    },
+    {
+      "width": 320,
+      "path": "/",
+      "status": 200
+    },
+    {
+      "width": 320,
+      "path": "/_next/static/chunks/app/page-c73011cf4d95a375.js",
+      "status": 200
+    },
+    {
+      "width": 320,
+      "path": "/api/quote/requests/customer/logout",
+      "status": 200
+    },
+    {
+      "width": 320,
+      "path": "/api/quote/requests/session",
+      "status": 200
+    },
+    {
+      "width": 320,
+      "path": "/api/quote/requests",
+      "status": 200
+    },
+    {
+      "width": 320,
+      "path": "/api/quote/requests/customer",
+      "status": 200
+    },
+    {
+      "width": 320,
+      "path": "/api/quote/requests/customer",
+      "status": 200
+    },
+    {
+      "width": 320,
+      "path": "/api/quote/requests/customer",
+      "status": 200
+    }
+  ],
+  "errors": [],
+  "httpFailures": [],
+  "blocked": [],
+  "limits": [
+    "No contact input was entered or saved. No photos, AI, email, booking, admin or Google calls were permitted.",
+    "Existing customer data and confirmed bookings were not opened. Their preservation is covered separately by migration/database evidence and isolated local fixtures.",
+    "For mobile, the starting-price summary remains hidden in the existing sidebar layout; the deployed DOM policy is checked without claiming visible mobile estimate totals."
+  ]
+}
