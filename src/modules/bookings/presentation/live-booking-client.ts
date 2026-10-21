@@ -27,7 +27,7 @@ export function parseCompanyState(body: Record<string, unknown>, requestId: stri
   if (record(value.submission.snapshot) && value.submission.snapshot.version === BOOKING_SIMPLE_ACK_VERSION && proposals.some(item => item.confirmationBasis !== 'signed_request')) throw new Error('The signed booking request was mixed with an earlier proposal workflow.');
   if (proposal && !proposals.some(p => p.id === proposal.id && p.hash === proposal.hash)) throw new Error('The proposal history does not match the current version.');
   if (value.acceptance !== null && (!record(value.acceptance) || typeof value.acceptance.proposalId !== 'string' || typeof value.acceptance.proposalHash !== 'string' || !validDate(value.acceptance.acceptedAt) || !record(value.acceptance.signature) || typeof value.acceptance.signature.name !== 'string' || value.acceptance.acknowledgmentVersion !== COMPANY_BOOKING_ACK_VERSION)) throw new Error('The company proposal acknowledgment could not be verified.');
-  if (value.booking !== null && (!record(value.booking) || !['confirming','confirmed','review_required'].includes(String(value.booking.status)) || typeof value.booking.proposalId !== 'string' || typeof value.booking.proposalHash !== 'string' || !Array.isArray(value.booking.events))) throw new Error('The confirmation status could not be verified.');
+  if (value.booking !== null && (!record(value.booking) || !['confirming','confirmed','review_required','cancel_pending','cancelled'].includes(String(value.booking.status)) || typeof value.booking.proposalId !== 'string' || typeof value.booking.proposalHash !== 'string' || !Array.isArray(value.booking.events))) throw new Error('The confirmation status could not be verified.');
   if (record(value.booking) && value.booking.confirmationBasis != null && !['signed_request','customer_proposal'].includes(String(value.booking.confirmationBasis))) throw new Error('The saved booking confirmation basis is invalid.');
   for(const linked of [value.acceptance,value.booking]) if(record(linked)&&!proposals.some(p=>p.id===linked.proposalId&&p.hash===linked.proposalHash)) throw new Error('A saved confirmation points to another company proposal. Refresh its current status.');
   if (proposal?.confirmationBasis === 'signed_request') {
@@ -74,7 +74,7 @@ export function companyPeriodSummary(proposal: LiveCompanyProposal) {
 export function currentAcceptance(state: LiveCompanyBookingState) { return Boolean(state.proposal && state.acceptance?.proposalId === state.proposal.id && state.acceptance.proposalHash === state.proposal.hash); }
 export function companyProcessingRetryable(state: LiveCompanyBookingState) {
   const retryable=(status:string)=>['pending','sending','retrying','outcome_unknown'].includes(status);
-  if(state.booking?.status==='review_required')return false;
+  if(state.booking&&['review_required','cancel_pending','cancelled'].includes(state.booking.status))return false;
   if(state.booking)return state.booking.status==='confirming'||retryable(state.booking.emailStatus);
   return Boolean(state.proposal?.confirmationBasis!=='signed_request'&&state.proposal?.status==='published'&&retryable(state.proposal.emailStatus)||currentAcceptance(state)&&state.acceptance&&retryable(state.acceptance.emailStatus));
 }

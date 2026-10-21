@@ -5,8 +5,12 @@
 .customers-contact dd{margin:0;overflow-wrap:anywhere}
 .customers-console :is(p,h2,h3,h4,summary){overflow-wrap:anywhere}
 .customers-console :is(h2,h3)[tabindex="-1"]:focus{outline:none}
-.customers-console .customers-checkbox{display:flex;align-items:start;gap:.65rem}
-.customers-checkbox input{flex:none;width:1.1rem;height:1.1rem;margin-top:.2rem}
+.ems-root .customers-checkbox{display:flex;align-items:start;gap:.65rem}
+.ems-root .customers-checkbox input{flex:none;width:1.1rem;height:1.1rem;min-height:0;margin-top:.2rem;padding:0}
+.ems-root .customers-entered-property{margin:0 0 .75rem;padding:.75rem 1rem;border:1px dashed var(--ems-line);border-radius:.5rem;background:var(--ems-bg);overflow-wrap:anywhere}
+.ems-root .customers-entered-property :is(h4,p){margin:0 0 .25rem}
+.ems-root .customers-entered-property h4{font-size:.875rem;font-weight:700}
+.ems-root .customers-review .ems-record-main>.ems-status{justify-self:start}
 .customers-audit{list-style:decimal;padding-left:1.25rem}
 @media(max-width:390px){.customers-contact>div{grid-template-columns:1fr;gap:.1rem}}
 

@@ -87,6 +87,154 @@ test('atomic quote resolution links one customer and property; source-only retri
  assert.equal((await db.query<{n:number}>('select count(*)::int n from public.lk_customer_record_links')).rows[0].n,0)
  const other=await create();await assert.rejects(rpc('resolve',{...args,idempotencyKey:key(),decision:{kind:'existing',customerId:other.id,expectedRevision:1,reason:'Reviewed'}}),code('LK409'))
 })
+
+test('quote property review API is write-free; same-key existing selection preserves source and replays the immutable receipt',async()=>{
+ const c=await create(),first=await rpc<{customer:Customer;property:CustomerProperty}>('property_create',{id:c.id,...property('1'),...metadata(1)})
+ const second=await rpc<{customer:Customer;property:CustomerProperty}>('property_create',{id:c.id,...property('2'),...metadata(first.customer.revision)})
+ const id=await quote(),args={name:'Quote Client',email:'quote@example.invalid',decision:{kind:'existing',customerId:c.id,expectedRevision:second.customer.revision,reason:'Reviewed existing client'},property:property(),source:{type:'quote_request',id,expectedSourceRevision:1,expectedCrmRevision:0},idempotencyKey:key()}
+ const api=createCustomerApi({authorize:async()=>({companyId:actor.companyId,userId:actor.actorUserId,sessionId:actor.actorSessionId}),baseUrl:()=> 'http://localhost',store:{command:async<T>(command:string,input:Record<string,unknown>):Promise<T>=>{
+  try{return(await db.query<{r:T}>('select public.lk_customers_command($1,$2::jsonb) r',[command,JSON.stringify(input)])).rows[0].r}
+  catch(error){if(code('LK409')(error))throw new CustomerError(409,'Conflict.');if(code('LK400')(error))throw new CustomerError(400,'Invalid request.');throw error}
+ }}})
+ const request=(value:unknown)=>new Request('http://localhost/api/admin/customers/resolve',{method:'POST',headers:{origin:'http://localhost','content-type':'application/json'},body:JSON.stringify(value)})
+ const snapshot=async()=>Promise.all(['lk_customers','lk_customer_properties','lk_customer_commands','lk_customer_activity','lk_quote_requests','lk_quote_request_access'].map(async table=>(await db.query(`select to_jsonb(t) row from public.${table} t order by to_jsonb(t)::text`)).rows))
+ const before=await snapshot(),quoteBefore=(await db.query<Record<string,unknown>>('select * from public.lk_quote_requests where id=$1',[id])).rows[0]
+ const review=await api.resolve(request(args));assert.equal(review.status,409)
+ const body=await review.json();assert.equal(body.code,'needs_property_review');assert.deepEqual(new Set(body.properties.map((p:CustomerProperty)=>p.id)),new Set([first.property.id,second.property.id]));assert.equal(body.properties.length,2)
+ assert.deepEqual(await snapshot(),before,'candidate review or cancel without another POST writes nothing')
+ const confirmed={...args,property:undefined,propertyId:first.property.id,expectedPropertyRevision:first.property.revision},response=await api.resolve(request(confirmed));assert.equal(response.status,200)
+ const saved=await response.json() as ResolveCustomerResult;assert.equal(saved.property?.id,first.property.id);assert.equal(saved.propertyOutcome,'property_reused');assert.equal(saved.crmRevision,1)
+ assert.equal((await detail(c.id)).properties.length,2)
+ const quoteAfter=(await db.query<Record<string,unknown>>('select * from public.lk_quote_requests where id=$1',[id])).rows[0]
+ for(const column of Object.keys(quoteBefore))if(!['customer_id','property_id','crm_revision'].includes(column))assert.deepEqual(quoteAfter[column],quoteBefore[column],column)
+ assert.deepEqual((await snapshot())[5],before[5],'CRM linkage cannot grant or change customer access')
+ await rpc('property_update',{id:c.id,propertyId:first.property.id,...property('1'),label:'Changed later',...metadata(first.property.revision)})
+ const replay=await api.resolve(request(confirmed));assert.equal(replay.status,200);assert.deepEqual(await replay.json(),saved)
+ const changed=await api.resolve(request({...confirmed,propertyId:second.property.id}));assert.equal(changed.status,409,'same key cannot select another property after commit')
+})
+
+test('quote different-property review validates reason, full candidate revisions and frozen source before same-key creation',async()=>{
+ const c=await create(),first=await rpc<{customer:Customer;property:CustomerProperty}>('property_create',{id:c.id,...property('1'),...metadata(1)})
+ const second=await rpc<{customer:Customer;property:CustomerProperty}>('property_create',{id:c.id,...property('2'),...metadata(first.customer.revision)})
+ const id=await quote(),args={name:'Quote Client',email:'quote@example.invalid',decision:{kind:'existing',customerId:c.id,expectedRevision:second.customer.revision,reason:'Reviewed existing client'},property:property(),source:{type:'quote_request',id,expectedSourceRevision:1,expectedCrmRevision:0},idempotencyKey:key()}
+ const api=createCustomerApi({authorize:async()=>({companyId:actor.companyId,userId:actor.actorUserId,sessionId:actor.actorSessionId}),baseUrl:()=> 'http://localhost',store:{command:async<T>(command:string,input:Record<string,unknown>):Promise<T>=>{
+  try{return(await db.query<{r:T}>('select public.lk_customers_command($1,$2::jsonb) r',[command,JSON.stringify(input)])).rows[0].r}
+  catch(error){if(code('LK409')(error))throw new CustomerError(409,'Conflict.');if(code('LK400')(error))throw new CustomerError(400,'Invalid request.');throw error}
+ }}})
+ const request=(value:unknown)=>new Request('http://localhost/api/admin/customers/resolve',{method:'POST',headers:{origin:'http://localhost','content-type':'application/json'},body:JSON.stringify(value)})
+ const before=(await db.query<Record<string,unknown>>('select * from public.lk_quote_requests where id=$1',[id])).rows[0],clientBefore=await detail(c.id)
+ const review=await api.resolve(request(args));assert.equal(review.status,409)
+ const body=await review.json(),decision={kind:'different_property',reason:'Reviewed all addresses and verified a separate property',reviewedProperties:body.properties.map((p:CustomerProperty)=>({id:p.id,revision:p.revision}))}
+ assert.deepEqual(new Set(decision.reviewedProperties.map((p:{id:string})=>p.id)),new Set([first.property.id,second.property.id]))
+ for(const reason of ['', ' ', 'x'.repeat(501),'bad\u0000reason'])assert.equal((await api.resolve(request({...args,propertyDecision:{...decision,reason}}))).status,400)
+ for(const reviewedProperties of [decision.reviewedProperties.slice(1),decision.reviewedProperties.map((p:{id:string;revision:number})=>({...p,revision:p.revision+1}))]){
+  const stale=await api.resolve(request({...args,propertyDecision:{...decision,reviewedProperties}}));assert.equal(stale.status,409);assert.equal((await stale.json()).code,'needs_property_review')
+ }
+ assert.equal((await api.resolve(request({...args,source:{...args.source,expectedSourceRevision:2},propertyDecision:decision}))).status,409)
+ assert.equal((await api.resolve(request({...args,source:{...args.source,expectedCrmRevision:1},propertyDecision:decision}))).status,409)
+ assert.deepEqual(await detail(c.id),clientBefore)
+ assert.deepEqual((await db.query('select * from public.lk_quote_requests where id=$1',[id])).rows[0],before)
+ assert.equal((await db.query<{n:number}>('select count(*)::int n from public.lk_customer_commands where idempotency_key=$1',[args.idempotencyKey])).rows[0].n,0)
+ const confirmed={...args,propertyDecision:decision},response=await api.resolve(request(confirmed));assert.equal(response.status,200)
+ const saved=await response.json() as ResolveCustomerResult;assert.equal(saved.propertyOutcome,'property_created');assert.equal(saved.crmRevision,1);assert.ok(![first.property.id,second.property.id].includes(saved.property!.id))
+ assert.equal((await detail(c.id)).properties.length,3)
+ const after=(await db.query<Record<string,unknown>>('select * from public.lk_quote_requests where id=$1',[id])).rows[0]
+ for(const column of Object.keys(before))if(!['customer_id','property_id','crm_revision'].includes(column))assert.deepEqual(after[column],before[column],column)
+ const replay=await api.resolve(request(confirmed));assert.equal(replay.status,200);assert.deepEqual(await replay.json(),saved)
+ assert.equal((await detail(c.id)).properties.length,3)
+})
+
+test('linked quote review rejects a concurrently edited property with original client and property revisions and no writes',async()=>{
+ const c=await create(),site=await rpc<{customer:Customer;property:CustomerProperty}>('property_create',{id:c.id,...property('1'),...metadata(1)})
+ const id=await quote(),source={type:'quote_request',id,expectedSourceRevision:1,expectedCrmRevision:0}
+ const linked=await rpc<ResolveCustomerResult>('resolve',{name:'Quote Client',email:'quote@example.invalid',decision:{kind:'existing',customerId:c.id,expectedRevision:site.customer.revision,reason:'Reviewed existing client'},source,idempotencyKey:key()})
+ const input={name:'Quote Client',email:'quote@example.invalid',decision:{kind:'existing',customerId:c.id,expectedRevision:linked.customer.revision,reason:'Reviewed existing client'},property:property(),source:{...source,expectedCrmRevision:linked.crmRevision},idempotencyKey:key()}
+ const review=await rpc<{outcome:string;properties:CustomerProperty[]}>('resolve',input);assert.equal(review.outcome,'needs_property_review');assert.equal(review.properties[0].id,site.property.id)
+ await rpc('property_update',{id:c.id,propertyId:site.property.id,...property('2'),label:'Changed during review',...metadata(site.property.revision)})
+ const before=await detail(c.id),quoteBefore=(await db.query('select * from public.lk_quote_requests where id=$1',[id])).rows[0]
+ assert.equal(before.properties.find(p=>p.id===site.property.id)?.address.unit,'2')
+ const confirmed={...input,property:undefined,propertyId:site.property.id,expectedPropertyRevision:site.property.revision}
+ await assert.rejects(rpc('resolve',confirmed),code('LK409'))
+ assert.deepEqual(await detail(c.id),before);assert.deepEqual((await db.query('select * from public.lk_quote_requests where id=$1',[id])).rows[0],quoteBefore)
+ assert.equal((await db.query<{n:number}>('select count(*)::int n from public.lk_customer_commands where idempotency_key=$1',[input.idempotencyKey])).rows[0].n,0)
+})
+
+test('existing customer revision guards apply equally to linked and unlinked quotes before any new property or receipt',async()=>{
+ const c=await create(),id=await quote(),source={type:'quote_request',id,expectedSourceRevision:1,expectedCrmRevision:0}
+ const args={name:'Quote Client',email:'quote@example.invalid',decision:{kind:'existing',customerId:c.id,expectedRevision:c.revision,reason:'Reviewed existing client'},source,idempotencyKey:key()}
+ const linked=await rpc<ResolveCustomerResult>('resolve',args)
+ for(const target of [id,await quote()]){
+  for(const expectedRevision of [c.revision,2147483648,Number.MAX_SAFE_INTEGER]){
+   const stale={...args,decision:{...args.decision,expectedRevision},idempotencyKey:key(),property:property('3'),source:{...source,id:target,expectedCrmRevision:target===id?linked.crmRevision:0}}
+   const before=await detail(c.id),quoteBefore=(await db.query('select * from public.lk_quote_requests where id=$1',[target])).rows[0]
+   await assert.rejects(rpc('resolve',stale),code('LK409'))
+   assert.deepEqual(await detail(c.id),before);assert.deepEqual((await db.query('select * from public.lk_quote_requests where id=$1',[target])).rows[0],quoteBefore)
+   assert.equal((await db.query<{n:number}>('select count(*)::int n from public.lk_customer_commands where idempotency_key=$1',[stale.idempotencyKey])).rows[0].n,0)
+  }
+ }
+})
+
+test('selected-property revision is independently required with a fresh customer revision or auto reuse',async()=>{
+ const c=await create(),site=await rpc<{customer:Customer;property:CustomerProperty}>('property_create',{id:c.id,...property('1'),...metadata(1)})
+ const id=await quote(),source={type:'quote_request',id,expectedSourceRevision:1,expectedCrmRevision:0}
+ const linked=await rpc<ResolveCustomerResult>('resolve',{name:'Quote Client',email:'quote@example.invalid',decision:{kind:'existing',customerId:c.id,expectedRevision:site.customer.revision,reason:'Reviewed existing client'},source,idempotencyKey:key()})
+ const edited=await rpc<{customer:Customer;property:CustomerProperty}>('property_update',{id:c.id,propertyId:site.property.id,...property('1'),label:'Edited before selection',...metadata(1)})
+ const original=(await db.query('select * from public.lk_quote_requests where id=$1',[id])).rows[0]
+ for(const decision of [{kind:'existing',customerId:c.id,expectedRevision:edited.customer.revision,reason:'Reviewed latest client'},{kind:'auto'}]){
+  for(const expectedPropertyRevision of [undefined,site.property.revision,2147483648,Number.MAX_SAFE_INTEGER]){
+   const input={name:'Quote Client',email:'quote@example.invalid',decision,propertyId:site.property.id,...(expectedPropertyRevision!==undefined?{expectedPropertyRevision}:{}),source:{...source,expectedCrmRevision:linked.crmRevision},idempotencyKey:key()}
+   await assert.rejects(rpc('resolve',input),code('LK409'))
+   assert.deepEqual((await db.query('select * from public.lk_quote_requests where id=$1',[id])).rows[0],original)
+   assert.equal((await db.query<{n:number}>('select count(*)::int n from public.lk_customer_commands where idempotency_key=$1',[input.idempotencyKey])).rows[0].n,0)
+  }
+ }
+ const api=createCustomerApi({authorize:async()=>({companyId:actor.companyId,userId:actor.actorUserId,sessionId:actor.actorSessionId}),baseUrl:()=> 'http://localhost',store:{command:async<T>(command:string,input:Record<string,unknown>):Promise<T>=>{
+  try{return(await db.query<{r:T}>('select public.lk_customers_command($1,$2::jsonb) r',[command,JSON.stringify(input)])).rows[0].r}
+  catch(error){if(code('LK409')(error))throw new CustomerError(409,'Conflict.');throw error}
+ }}})
+ for(const expectedPropertyRevision of [2147483648,Number.MAX_SAFE_INTEGER]){
+  const input={name:'Quote Client',email:'quote@example.invalid',decision:{kind:'auto'},propertyId:site.property.id,expectedPropertyRevision,source:{...source,expectedCrmRevision:linked.crmRevision},idempotencyKey:key()}
+  const response=await api.resolve(new Request('http://localhost/api/admin/customers/resolve',{method:'POST',headers:{origin:'http://localhost','content-type':'application/json'},body:JSON.stringify(input)}))
+  assert.equal(response.status,409);assert.equal((await response.json()).code,'conflict')
+  assert.deepEqual((await db.query('select * from public.lk_quote_requests where id=$1',[id])).rows[0],original)
+  assert.equal((await db.query<{n:number}>('select count(*)::int n from public.lk_customer_commands where idempotency_key=$1',[input.idempotencyKey])).rows[0].n,0)
+ }
+ const confirmed={name:'Quote Client',email:'quote@example.invalid',decision:{kind:'existing',customerId:c.id,expectedRevision:edited.customer.revision,reason:'Reviewed latest client'},propertyId:site.property.id,expectedPropertyRevision:edited.property.revision,source:{...source,expectedCrmRevision:linked.crmRevision},idempotencyKey:key()}
+ const saved=await rpc<ResolveCustomerResult>('resolve',confirmed);assert.equal(saved.property?.id,site.property.id);assert.equal(saved.property?.revision,edited.property.revision)
+ await rpc('property_update',{id:c.id,propertyId:site.property.id,...property('1'),label:'Edited after save',...metadata(edited.property.revision)})
+ assert.deepEqual(await rpc('resolve',confirmed),saved)
+ await assert.rejects(rpc('resolve',{...confirmed,expectedPropertyRevision:edited.property.revision+1}),code('LK409'))
+})
+
+test('pre-guard selected-property receipts replay unchanged through the API after the migration without synthesizing a revision',async()=>{
+ const original=readFileSync(new URL('../../../supabase/migrations/20261013032527_ems_customer_properties_crm.sql',import.meta.url),'utf8')
+ const start=original.indexOf('create function public.lk_customers_command('),end=original.indexOf('end;$$;',start)+'end;$$;'.length
+ const legacy=original.slice(start,end).replace('create function public.lk_customers_command(','create or replace function public.lk_customers_command(')
+ const guardName=readdirSync(new URL('../../../supabase/migrations/',import.meta.url)).find(name=>name.endsWith('_ems_customer_resolve_revision_guard.sql'));assert.ok(guardName)
+ const guard=readFileSync(new URL('../../../supabase/migrations/'+guardName,import.meta.url),'utf8')
+ let guarded=false,captured:Record<string,unknown>={}
+ try{
+  await db.exec('reset role;'+legacy+';set role service_role;')
+  const c=await create(),site=await rpc<{customer:Customer;property:CustomerProperty}>('property_create',{id:c.id,...property('1'),...metadata(1)})
+  const id=await quote(),input={name:'Quote Client',email:'quote@example.invalid',decision:{kind:'existing',customerId:c.id,expectedRevision:site.customer.revision,reason:'Reviewed existing client'},propertyId:site.property.id,source:{type:'quote_request',id,expectedSourceRevision:1,expectedCrmRevision:0},idempotencyKey:key()}
+  const api=createCustomerApi({authorize:async()=>({companyId:actor.companyId,userId:actor.actorUserId,sessionId:actor.actorSessionId}),baseUrl:()=> 'http://localhost',store:{command:async<T>(command:string,args:Record<string,unknown>):Promise<T>=>{
+   captured=args
+   try{return(await db.query<{r:T}>('select public.lk_customers_command($1,$2::jsonb) r',[command,JSON.stringify(args)])).rows[0].r}
+   catch(error){if(code('LK409')(error))throw new CustomerError(409,'Conflict.');throw error}
+  }}})
+  const request=(value:unknown)=>new Request('http://localhost/api/admin/customers/resolve',{method:'POST',headers:{origin:'http://localhost','content-type':'application/json'},body:JSON.stringify(value)})
+  const created=await api.resolve(request(input));assert.equal(created.status,200);const receipt=await created.json()
+  assert.equal('expectedPropertyRevision' in captured,false)
+  const before=(await db.query('select * from public.lk_customer_commands where idempotency_key=$1',[input.idempotencyKey])).rows[0]
+  await db.exec('reset role;'+guard+'set role service_role;');guarded=true
+  const replay=await api.resolve(request(input));assert.equal(replay.status,200);assert.deepEqual(await replay.json(),receipt);assert.equal('expectedPropertyRevision' in captured,false)
+  assert.deepEqual((await db.query('select * from public.lk_customer_commands where idempotency_key=$1',[input.idempotencyKey])).rows[0],before)
+  const fresh={...input,decision:{...input.decision,expectedRevision:receipt.customer.revision},source:{...input.source,expectedCrmRevision:receipt.crmRevision},idempotencyKey:key()}
+  assert.equal((await api.resolve(request(fresh))).status,409,'only an existing matching receipt may omit the property revision')
+  const security=(await db.query<{prosecdef:boolean;proconfig:string[];public_access:boolean;anon_access:boolean;authenticated_access:boolean;service_access:boolean}>("select p.prosecdef,p.proconfig,has_function_privilege('anon',p.oid,'execute') anon_access,has_function_privilege('authenticated',p.oid,'execute') authenticated_access,has_function_privilege('service_role',p.oid,'execute') service_access from pg_proc p where p.oid='public.lk_customers_command(text,jsonb)'::regprocedure")).rows[0]
+  assert.equal(security.prosecdef,false);assert.deepEqual(security.proconfig,['search_path=""']);assert.equal(security.anon_access,false);assert.equal(security.authenticated_access,false);assert.equal(security.service_access,true)
+ }finally{if(!guarded)await db.exec('reset role;'+guard+'set role service_role;')}
+})
 test('first source link requires matching active verified email and current content revision; CRM relation read is staff scoped',async()=>{
  const id=await quote('pending@example.invalid','Pending',false),args={name:'Pending',email:'pending@example.invalid',source:{type:'quote_request',id,expectedSourceRevision:1,expectedCrmRevision:0},idempotencyKey:key()}
  await assert.rejects(rpc('resolve',args),code('LK409'))

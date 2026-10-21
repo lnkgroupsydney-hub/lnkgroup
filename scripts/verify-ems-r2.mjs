@@ -51,6 +51,21 @@ async function propertyForm(page, { unit = '1', label = 'Synthetic Unit 1', addr
 async function saved(page) { await page.getByRole('status').filter({ hasText: /Changes saved|existing property was reused/ }).waitFor() }
 async function cancelDraft(page) { await button(page, 'Cancel').click(); await button(page, 'Discard and continue').click() }
 async function sourceSnapshot() { const data = await state(); return { records: data.records, requests: data.liveRequests, analysis: data.liveAnalysis, bookings: data.liveBookings } }
+const crmSnapshot = value => ({ customers: value.customers, properties: value.properties, relations: value.crmRelations, audits: value.audits, receipts: value.attemptCount })
+const resolveAttempts = value => value.commandAttempts.filter(command => command.path === '/api/admin/customers/resolve').map(command => command.input)
+async function startQuotePropertyReview(page) {
+  await control({ seedQuotePropertyReview: true })
+  const initial = await state(), request = initial.liveRequests[0], customer = initial.customers[1]
+  await goto(page, `/admin/quotes/${request.id}`); await shell(page); await tab(page, 'Client & property').click(); await button(page, 'Save client relation').waitFor()
+  await page.getByLabel('Find another existing client', { exact: true }).fill(customer.name); await button(page, 'Find existing client').click(); await page.getByLabel('Existing client', { exact: true }).selectOption(customer.id)
+  await page.getByLabel('Review reason (required)', { exact: true }).fill('Synthetic client identity reviewed')
+  await page.getByLabel('Property', { exact: true }).selectOption('new')
+  for (const [name, value] of [['Property label', 'Synthetic entered review site'], ['Street address', '10 Synthetic Review Street'], ['Unit / apartment', ''], ['Suburb', 'Synthetic suburb'], ['State', 'NSW'], ['Postcode', '2000']]) await page.getByLabel(name, { exact: true }).fill(value)
+  const original = await sourceSnapshot()
+  await button(page, 'Save client relation').click(); await page.getByRole('heading', { name: 'Nothing was saved yet: check the property', exact: true }).waitFor()
+  assert.deepEqual(crmSnapshot(await state()), crmSnapshot(initial), 'Candidate review must not write CRM data or a receipt')
+  return { initial, request, customer, original, candidates: initial.properties.filter(p => p.customerId === customer.id).sort((a, b) => a.id.localeCompare(b.id)) }
+}
 try {
   await scenario('Client candidates block insert and existing selection reuses a customer', async page => {
     const before = await state(), existing = before.customers[1]
@@ -161,7 +176,7 @@ try {
   await scenario('Unknown quote CRM save blocks navigation and retries identical payload and key', async page => {
     const before=await state(), original=await sourceSnapshot(), request=before.liveRequests[0]; await goto(page,`/admin/quotes/${request.id}`); await shell(page); await tab(page,'Client & property').click(); await button(page,'Save client relation').waitFor(); await page.getByLabel('Property',{exact:true}).selectOption('new')
     for(const[name,value]of [['Property label','Synthetic uncertain CRM property'],['Street address','Synthetic uncertain CRM site'],['Suburb','Synthetic suburb'],['State','NSW'],['Postcode','2000']]) await page.getByLabel(name,{exact:true}).fill(value)
-    await control({loseNextCrmResponse:true}); await button(page,'Save client relation').click(); await page.getByText('The result is unknown. Retry the same saved details to recover the result without creating another client or property.',{exact:true}).waitFor(); assert.equal(await page.getByLabel('Property label',{exact:true}).isDisabled(),true)
+    await control({loseNextCrmResponse:true}); await button(page,'Save client relation').click(); await page.getByRole('heading',{name:'Result unknown',exact:true}).waitFor(); assert.equal(await page.getByLabel('Property label',{exact:true}).isDisabled(),true)
     await page.locator('nav a[href="/admin/customers"]').first().click(); await page.getByRole('heading',{name:'A request is still in progress',exact:true}).waitFor(); assert.equal(await button(page,'Discard and continue').isDisabled(),true); await button(page,'Return to form').click(); await button(page,'Retry unchanged client relation').click(); await page.getByText('Client created and linked. The original quote and customer access were preserved.',{exact:true}).waitFor()
     const after=await state(); assert.equal(after.customers.length,before.customers.length+1); assert.equal(after.properties.length,1); assert.deepEqual(after.commandAttempts[0].input,after.commandAttempts[1].input); assert.deepEqual(await sourceSnapshot(),original)
     return { clientCount:1, propertyCount:1, immutableRetry:true, navigationBlocked:true, sourcePreserved:true }
@@ -170,6 +185,52 @@ try {
     const before=await state(), request=before.liveRequests[0], existing=before.customers[1]; await goto(page,`/admin/quotes/${request.id}`); await shell(page); await tab(page,'Client & property').click(); await button(page,'Save client relation').waitFor(); await page.getByLabel('Find another existing client',{exact:true}).fill(existing.name); await button(page,'Find existing client').click(); await page.getByLabel('Existing client',{exact:true}).selectOption(existing.id); await page.getByLabel('Review reason (required)',{exact:true}).fill('Synthetic existing person has another project contact'); await button(page,'Save client relation').click(); await page.getByText('Existing client linked. The original quote and customer access were preserved.',{exact:true}).waitFor()
     const after=await state(); assert.equal(after.customers.length,before.customers.length); assert.equal(after.crmRelations[0][1].customerId,existing.id); return { selectedOutsideCandidates:true, reusedClientId:existing.id, createdClients:0 }
   })
+  await scenario('Quote property review cancel restores input without another POST or CRM write', async page => {
+    const f = await startQuotePropertyReview(page), reviewed = await state(), posts = resolveAttempts(reviewed).length
+    await button(page, 'Cancel review').click(); await button(page, 'Save client relation').waitFor()
+    assert.equal(await page.getByLabel('Property label', { exact: true }).inputValue(), 'Synthetic entered review site')
+    assert.equal(await page.getByLabel('Street address', { exact: true }).inputValue(), '10 Synthetic Review Street'); assert.equal(await page.getByLabel('Unit / apartment', { exact: true }).inputValue(), '')
+    assert.equal(await page.getByLabel('Existing client', { exact: true }).inputValue(), f.customer.id)
+    assert.equal(await page.getByLabel('Review reason (required)', { exact: true }).inputValue(), 'Synthetic client identity reviewed')
+    const after = await state(); assert.equal(resolveAttempts(after).length, posts); assert.deepEqual(crmSnapshot(after), crmSnapshot(f.initial)); assert.deepEqual(await sourceSnapshot(), f.original)
+    return { reviewPosts: posts, cancelPosts: 0, originalFormRestored: true, noWrites: true, sourcePreserved: true }
+  }, [['/api/admin/customers/resolve',409]])
+  await scenario('Quote property review existing selection keeps key and every reviewed revision', async page => {
+    const f = await startQuotePropertyReview(page), property = f.candidates[0]
+    await page.getByRole('button', { name: `Use existing property: ${property.label}, unit ${property.address.unit}`, exact: true }).click()
+    await page.getByText('Existing client linked. The original quote and customer access were preserved.', { exact: true }).waitFor()
+    const after = await state(), [first, selected] = resolveAttempts(after)
+    assert.equal(selected.idempotencyKey, first.idempotencyKey); assert.deepEqual(selected.source, first.source); assert.deepEqual(selected.decision, first.decision)
+    assert.equal(selected.propertyId, property.id); assert.equal(selected.expectedPropertyRevision, property.revision); assert.equal('property' in selected, false); assert.equal('propertyDecision' in selected, false)
+    assert.equal(after.customers.length, f.initial.customers.length); assert.equal(after.properties.length, f.initial.properties.length); assert.equal(after.crmRelations[0][1].propertyId, property.id); assert.deepEqual(await sourceSnapshot(), f.original)
+    return { posts: 2, sameKey: true, sourceAndClientRevisionsPreserved: true, expectedPropertyRevision: property.revision, newProperties: 0 }
+  }, [['/api/admin/customers/resolve',409]])
+  await scenario('Quote property review confirms a separate site with reason and every candidate revision', async page => {
+    const f = await startQuotePropertyReview(page)
+    assert.equal(await button(page, 'Confirm separate property').isDisabled(), true)
+    await page.getByLabel('Property review reason', { exact: true }).fill('Synthetic separate rear building verified against every saved unit')
+    await page.getByLabel('I reviewed every candidate and verified this is a different property.', { exact: true }).check(); await button(page, 'Confirm separate property').click()
+    await page.getByText('Existing client linked. The original quote and customer access were preserved.', { exact: true }).waitFor()
+    const after = await state(), [first, confirmed] = resolveAttempts(after)
+    assert.equal(confirmed.idempotencyKey, first.idempotencyKey); assert.deepEqual(confirmed.source, first.source); assert.deepEqual(confirmed.decision, first.decision); assert.deepEqual(confirmed.property, first.property)
+    assert.equal(confirmed.propertyDecision.kind, 'different_property'); assert.equal(confirmed.propertyDecision.reason, 'Synthetic separate rear building verified against every saved unit')
+    assert.deepEqual(confirmed.propertyDecision.reviewedProperties, f.candidates.map(p => ({ id: p.id, revision: p.revision }))); assert.equal('propertyId' in confirmed, false); assert.equal('expectedPropertyRevision' in confirmed, false)
+    assert.equal(after.properties.length, f.initial.properties.length + 1); assert.equal(after.customers.length, f.initial.customers.length); assert.deepEqual(await sourceSnapshot(), f.original)
+    return { sameKey: true, candidatesReviewed: f.candidates.length, reasonRecorded: true, newProperties: 1, sourcePreserved: true }
+  }, [['/api/admin/customers/resolve',409]])
+  await scenario('Quote property changed in another tab causes property409 comparison and explicit restart', async page => {
+    const f = await startQuotePropertyReview(page), property = f.candidates[0]
+    await control({ mutateProperty: { propertyId: property.id, address: { unit: '3' } } })
+    const changed = await state(); assert.equal(changed.customers.find(c => c.id === f.customer.id).revision, f.customer.revision, 'Keep client revision current to prove the property CAS independently')
+    await page.getByRole('button', { name: `Use existing property: ${property.label}, unit ${property.address.unit}`, exact: true }).click()
+    await page.getByRole('heading', { name: 'The quote or client relation changed', exact: true }).waitFor()
+    const restart = button(page, 'Restart linking from latest'); await restart.waitFor(); await page.waitForFunction(() => [...document.querySelectorAll('button')].some(b => b.textContent === 'Restart linking from latest' && !b.disabled))
+    assert.equal(await page.getByLabel('Property label', { exact: true }).inputValue(), 'Synthetic entered review site')
+    const after = await state(), [first, stale] = resolveAttempts(after); assert.equal(stale.idempotencyKey, first.idempotencyKey); assert.equal(stale.expectedPropertyRevision, property.revision); assert.deepEqual(stale.source, first.source)
+    assert.deepEqual(crmSnapshot(after), crmSnapshot(changed)); assert.deepEqual(await sourceSnapshot(), f.original)
+    await restart.click(); await button(page, 'Save client relation').waitFor(); assert.equal(await page.getByLabel('Existing client', { exact: true }).inputValue().catch(() => ''), '')
+    return { oldPropertyRevision: property.revision, latestPropertyRevision: changed.properties.find(p => p.id === property.id).revision, customerRevisionUnchanged: true, conflictWrites: 0, explicitRestart: true }
+  }, [['/api/admin/customers/resolve',409]])
   await scenario('401 removes client dialog draft and rejects late candidate response', async page => {
     await goto(page,'/admin/customers'); await shell(page); const dialog=await addClient(page,'Synthetic secret draft removed after401'); await dialog.locator('#customer-email').fill((await state()).customers[1].email)
     await control({responseDelays:{'/api/admin/customers/candidates':700}}); await button(dialog,'Review matches').click(); await eventually(v=>count(v,'/api/admin/customers/candidates')===1)

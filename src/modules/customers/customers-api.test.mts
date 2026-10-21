@@ -128,3 +128,15 @@ test('R2 bounded resolve body accepts meaningful combined inputs, exact byte bou
  assert.equal((await f.api.create(make(16384))).status,201);assert.equal((await f.api.create(make(16385))).status,413)
  assert.equal((await f.api.create(post({...create(),name:'bad\ud800'}))).status,400)
 })
+
+test('resolve carries only an explicit positive selected-property revision and keeps legacy receipt requests unchanged',async()=>{
+ const input={...create(),propertyId:randomUUID()},f=fixture()
+ assert.equal((await f.api.resolve(post({...input,expectedPropertyRevision:3}))).status,200)
+ assert.equal(f.calls[0].args.expectedPropertyRevision,3)
+ assert.equal((await f.api.resolve(post(input))).status,200)
+ assert.equal('expectedPropertyRevision' in f.calls[1].args,false,'do not alter legacy receipt fingerprints by adding a default')
+ for(const value of [null,0,-1,1.5,'1',Number.MAX_SAFE_INTEGER+1]){
+  const invalid=fixture();assert.equal((await invalid.api.resolve(post({...input,expectedPropertyRevision:value}))).status,400);assert.equal(invalid.calls.length,0)
+ }
+ const invalid=fixture();assert.equal((await invalid.api.resolve(post({...create(),expectedPropertyRevision:1}))).status,400);assert.equal(invalid.calls.length,0)
+})

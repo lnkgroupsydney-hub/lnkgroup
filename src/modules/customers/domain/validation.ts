@@ -77,6 +77,10 @@ export function validateResolve(value: Record<string,unknown>): ResolveCustomerI
   const result: ResolveCustomerInput = {...(decision.kind === 'existing' ? {...validateCustomerLookup(value),idempotencyKey:key(value.idempotencyKey)} : validateCreateCustomer(value)),decision}
   if(value.property != null) { if(typeof value.property !== 'object' || Array.isArray(value.property)) throw new CustomerError(400,'Invalid property.');result.property=validateProperty(value.property as Record<string,unknown>) }
   if(value.propertyId != null) result.propertyId=customerId(value.propertyId)
+  if('expectedPropertyRevision' in value) {
+    if(!result.propertyId || !Number.isSafeInteger(value.expectedPropertyRevision) || Number(value.expectedPropertyRevision)<1) throw new CustomerError(400,'Invalid property revision.')
+    result.expectedPropertyRevision=Number(value.expectedPropertyRevision)
+  }
   if(value.propertyDecision != null) result.propertyDecision=validatePropertyDecision(value.propertyDecision)
   if(result.property && result.propertyId) throw new CustomerError(400,'Select or create one property.')
   if(value.source != null) {

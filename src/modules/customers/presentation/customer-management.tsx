@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import type { CustomerDetail, CustomerProperty } from "../domain/contracts";
 import { useUnsavedChanges, useWorkspaceDraft, useWorkspaceNavigation } from "@/shared/ui/admin-workspace-state";
 import { AdminEmptyState, AdminStatusBadge } from "@/shared/ui/admin";
@@ -30,7 +30,7 @@ export function CustomerManagement({ detail, tab, disabled, onSaved, onFailure, 
   const [propertyCandidates, setPropertyCandidates] = useState<CustomerProperty[] | null>(null), [differentPropertyConfirmed, setDifferentPropertyConfirmed] = useState(false);
   const propertyHeadings = useRef(new Map<string, HTMLHeadingElement>());
   const saving = useRef(false), alive = useRef(true), accessRevoked = useRef(false), heading = useRef<HTMLHeadingElement>(null);
-  const navigate = useWorkspaceNavigation();
+  const navigate = useWorkspaceNavigation(), fieldBase = useId();
   useEffect(() => { alive.current = true; return () => { alive.current = false; }; }, []);
   useEffect(() => { onLock(Boolean(busy || pending)); return () => onLock(false); }, [busy, pending, onLock]);
   const draftMode = draft?.mode;
@@ -115,9 +115,9 @@ export function CustomerManagement({ detail, tab, disabled, onSaved, onFailure, 
           const fieldName = name as keyof Fields;
           const labels: Partial<Record<keyof Fields, string>> = { name: "Name", email: "Email (optional)", phone: "Phone (optional)", address: "Client address (optional)", label: "Property name", line1: "Street address", unit: "Unit/apartment (optional)", suburb: "Suburb", state: "State", postcode: "Postcode", contactName: "Site contact (optional)", notes: "Site notes (optional)" };
           const limits: Partial<Record<keyof Fields, number>> = { name: 120, email: 254, phone: 80, address: 500, label: 120, line1: 300, unit: 80, suburb: 120, state: 20, postcode: 10, contactName: 120, notes: 2000 };
-          return <label key={name} className="ems-field">{labels[fieldName]}{fieldName === "notes" ? <textarea rows={3} maxLength={limits[fieldName]} value={draft.fields[fieldName]} disabled={locked} onChange={event => field(fieldName, event.target.value)} /> : <input autoComplete="off" type={fieldName === "email" ? "email" : fieldName === "phone" ? "tel" : "text"} maxLength={limits[fieldName]} required={["name", "label", "line1", "suburb", "state", "postcode"].includes(name)} value={draft.fields[fieldName]} disabled={locked} onChange={event => field(fieldName, event.target.value)} />}</label>;
+          return <div key={name} className="ems-field"><label htmlFor={`${fieldBase}-${name}`}>{labels[fieldName]}</label>{fieldName === "notes" ? <textarea id={`${fieldBase}-${name}`} rows={3} maxLength={limits[fieldName]} value={draft.fields[fieldName]} disabled={locked} onChange={event => field(fieldName, event.target.value)} /> : <input id={`${fieldBase}-${name}`} autoComplete="off" type={fieldName === "email" ? "email" : fieldName === "phone" ? "tel" : "text"} maxLength={limits[fieldName]} required={["name", "label", "line1", "suburb", "state", "postcode"].includes(name)} value={draft.fields[fieldName]} disabled={locked} onChange={event => field(fieldName, event.target.value)} />}</div>;
         })}</div>}
-        <label className="ems-field">Reason<textarea required maxLength={500} rows={3} value={draft.reason} disabled={locked} onChange={event => { setDraft({ ...draft, reason: event.target.value }); setDifferentConfirmed(false); setDifferentPropertyConfirmed(false); }} /></label>
+        <div className="ems-field"><label htmlFor={`${fieldBase}-reason`}>Reason</label><textarea id={`${fieldBase}-reason`} required maxLength={500} rows={3} value={draft.reason} disabled={locked} onChange={event => { setDraft({ ...draft, reason: event.target.value }); setDifferentConfirmed(false); setDifferentPropertyConfirmed(false); }} /></div>
         {candidates && <CustomerCandidateReview candidates={candidates} disabled={locked} reason={draft.reason} onReason={reason => setDraft({ ...draft, reason })} confirmed={differentConfirmed} onConfirmed={setDifferentConfirmed} />}
         {propertyCandidates && <CustomerPropertyReview properties={propertyCandidates} disabled={locked} reason={draft.reason} confirmed={differentPropertyConfirmed} onConfirmed={setDifferentPropertyConfirmed} onExisting={draft.mode === "add-property" ? property => {
           discard(); setFilter("all"); setError(""); setNotice(`Existing property selected: ${property.label}. No new record was created.${property.status === "archived" ? " Restore this property before new work uses it." : ""}`);
