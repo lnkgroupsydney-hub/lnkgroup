@@ -1,13 +1,14 @@
 import type { LiveCompanyBookingState } from '../domain/live-contracts';
 
-export type ScheduleStatus = 'requested' | 'draft' | 'published' | 'confirming' | 'confirmed' | 'review_required';
+export type ScheduleStatus = 'requested' | 'draft' | 'published' | 'confirming' | 'confirmed' | 'review_required' | 'cancel_pending' | 'cancelled';
 export const scheduleStatusLabels: Record<ScheduleStatus, string> = {
   requested: 'Awaiting company review', draft: 'Company draft saved', published: 'Company proposal published',
-  confirming: 'Confirmation processing', confirmed: 'Confirmed', review_required: 'Review required',
+  confirming: 'Confirmation processing', confirmed: 'Confirmed', review_required: 'Review required', cancel_pending: 'Cancellation pending · periods held', cancelled: 'Cancelled · periods released',
 };
 
 export function scheduleStatus(state: LiveCompanyBookingState): ScheduleStatus {
   if (state.booking) return state.booking.status;
+  if (state.simpleDraft) return 'draft';
   if (state.proposal) return state.proposal.status;
   return 'requested';
 }

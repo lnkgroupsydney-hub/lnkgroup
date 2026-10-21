@@ -1,5 +1,7 @@
 # 관리자 전용 ESN 계획
 
+**2026-10-21 최신 구현:** R2 현장 후보 검토의 견적 UI 연결과 R3a 문의 관리·직원 견적 초안·예약 초안/취소의 코드·로컬 검증을 완료했다. 전체901/901·보완 회귀11/11·최종 check·Chrome R3a11/R2 20/R1 13, reviewer 필수 수정 0건. 회사 DB 적용·운영 배포·실제 인수, 기존 자료 이관/병합 미리보기와 R3b 이후는 남아 있다. [재개 검증 기록](../verification/2026-10-21-ems-r2-r3a-resume.md)을 최신 상태로 사용하고 아래 날짜별 기록은 보존한다.
+
 **2026-10-13 EMS 커밋 체크포인트:** R1 완료 코드와 R2 고객 중복 검토·복수 프로퍼티·수정/보관/복원·견적 CRM 연결의 현재 구현을 작업 브랜치에 저장한다. [R2 체크포인트](../verification/2026-10-13-ems-r2-customers-properties.md)에 최신 검증과 남은 UI/브라우저 인수를 구분했다. 회사 DB/배포·main 병합·원격 push는 수행하지 않으며, R2 전체 완료 표시는 보류한다.
 
 **2026-10-13 EMS-R1 완료:** [10번 계획](10-2026-10-13-ems-ux-crud-implementation-plan.md)의 공통 CSS/UI·목록/상세·모션을 구현했다. Node 24.14.1/npm 11.11.0에서 **739/739·check·합성 브라우저 13+1+4** 통과, [실행 기록/화면](../verification/2026-10-13-ems-r1-common-ui.md)을 남겼다. 이번 완료는 코드·자동/합성 인수 수준이며 회사 적용·실제 새 UI 인수는 미실행이다. R2 고객 중복/현장·견적 연결과 이후 CRUD/집계는 다음 단계다. 아래 R0 계획·이전 날짜 기록은 최초 작성 시점의 상태로 보존한다.
@@ -66,6 +68,7 @@
 | [08 EMS 대시보드 디자인·적용 계획](08-ems-dashboard-design-and-implementation-plan.md) | 참고 이미지 UX 검토, 글로벌 색상, KPI/그래프 정의, 기존 admin 이관·단계별 인수 |
 | [09 오늘 EMS-D1 순차 구현 계획](09-2026-10-07-admin-shell-implementation-plan.md) | 10월 7일 실행 순서·인증/동기화/입력 보존·D1 구현 및 검증 기록 |
 | [10 EMS 화면·CRUD 순차 구현계획](10-2026-10-13-ems-ux-crud-implementation-plan.md) | 최신 main·Jobber 분석, UI/UX·공통 CSS/모션·고객 중복/현장·전 카테고리 CRUD·R0~R8 순서 |
+| [11 다음 워크트리 인계](11-2026-10-21-next-worktree-handoff.md) | R2·R3a main 병합 후 상태, 미적용 migration, 새 워크트리 시작·검사 명령, 결정 대기와 다음 작업 |
 
 ESN 상세 진행은 [05 진행표](05-progress.md)를 기준으로 갱신하고, 전체 프로젝트의 [기존 TODO](../plans/15-home-cabinet-admin-todo.md)에는 요약을 동기화한다. 기능 범위는 [전체 백로그](../plans/12-implementation-backlog.md), KCP 업무 상태는 [25번](../plans/25-kcp-quote-to-booking-implementation.md)·[32번](../plans/32-client-quote-signature-submission.md)·[33번](../plans/33-admin-booking-confirmation-day-plan.md)·[35번](../plans/35-mobile-booking-private-photo-plan.md)을 보존한다.
 

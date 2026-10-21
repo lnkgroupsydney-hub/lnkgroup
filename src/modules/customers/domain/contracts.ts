@@ -35,7 +35,7 @@ export interface CustomerProperty extends PropertyInput { id: string; companyId:
 export interface CustomerCandidate { customer: Customer; matchedBy: ('email' | 'phone' | 'name')[] }
 export interface CustomerMutation { expectedRevision: number; reason: string; idempotencyKey: string }
 export type CustomerDecision = { kind: 'auto' } | { kind: 'existing'; customerId: string; expectedRevision: number; reason: string } | { kind: 'different_person'; reason: string; reviewedCandidates: { id: string; revision: number }[] }
-export interface ResolveCustomerInput extends CreateCustomerInput { decision?: CustomerDecision; property?: PropertyInput; propertyId?: string; propertyDecision?: PropertyDecision; source?: { type: 'quote_request'; id: string; expectedCrmRevision: number; expectedSourceRevision: number } }
+export interface ResolveCustomerInput extends CreateCustomerInput { decision?: CustomerDecision; property?: PropertyInput; propertyId?: string; expectedPropertyRevision?: number; propertyDecision?: PropertyDecision; source?: { type: 'quote_request'; id: string; expectedCrmRevision: number; expectedSourceRevision: number } }
 export interface ResolveCustomerResult { outcome: 'client_created' | 'client_reused'; customer: Customer; property: CustomerProperty | null; propertyOutcome: 'property_created' | 'property_reused' | null; crmRevision?: number }
 
 export type CustomerResolution = ResolveCustomerResult

@@ -30,6 +30,10 @@
 .ems-root .ems-empty p { max-width: 60ch; margin: .5rem auto 1rem; color: var(--ems-muted); }
 .ems-root .ems-empty .ems-actions { justify-content: center; }
 .ems-root .ems-feedback { padding: .875rem 1rem; margin-block: 1rem; border: 1px solid var(--ems-line); border-left: 3px solid var(--ems-action); border-radius: .5rem; background: var(--ems-surface); overflow-wrap: anywhere; }
+.ems-root .ems-stack { display: grid; gap: 1rem; min-width: 0; }
+.ems-root .ems-fieldset { display: grid; gap: 1rem; min-width: 0; margin: 0 0 1rem; padding: 0; border: 0; }
+.ems-root .ems-fieldset > legend { margin-bottom: .75rem; padding: 0; font-size: .9375rem; font-weight: 700; }
+.ems-root .ems-feedback h4 { font-size: .9375rem; line-height: 1.4; font-weight: 700; margin: 0 0 .375rem; }
 .ems-root .ems-feedback--error { border-style: dashed; border-left-style: solid; }
 .ems-root .ems-tabs { display: flex; gap: .25rem; overflow-x: auto; max-width: 100%; margin-block: 1rem; border-bottom: 1px solid var(--ems-line); }
 .ems-root .ems-tabs button { flex-shrink: 0; min-height: 3rem; border: 0; border-bottom: 3px solid transparent; padding: .625rem .875rem; background: transparent; color: var(--ems-muted); font: inherit; font-size: .875rem; font-weight: 650; cursor: pointer; }

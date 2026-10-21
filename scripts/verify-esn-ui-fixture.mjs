@@ -1,7 +1,7 @@
 // Synthetic loopback UI fixture. Only explicit admin/quote pages and UI static assets
 // are proxied. ALL APIs stay local; Cookie/Authorization/Set-Cookie never forward.
 import http from 'node:http'
-import { randomUUID } from 'node:crypto'
+import { createHash, randomUUID } from 'node:crypto'
 import { parseLiveRequest } from '../src/modules/quotes/presentation/request-client.ts'
 import { parsePhotoWorkspace } from '../src/modules/quotes/presentation/photo-workspace-client.ts'
 import { parseBookingState } from '../src/modules/quotes/presentation/booking-flow-client.ts'
@@ -10,6 +10,13 @@ import { PHOTO_ROLES } from '../src/modules/quotes/domain/analysis.ts'
 import { bookingAcknowledgment } from '../src/modules/quotes/domain/booking-flow.ts'
 import { COMPANY_BOOKING_ACK_VERSION, COMPANY_BOOKING_ACK_TEXT } from '../src/modules/bookings/domain/live-contracts.ts'
 import { parseCompanyState } from '../src/modules/bookings/presentation/live-booking-client.ts'
+import { parseEnquiryList, parseEnquiryDetail, parseEnquiryAssignees, parseWorkReceipt } from '../src/modules/enquiries/presentation/enquiry-management-client.ts'
+import { parseStaffQuoteDraft, parseStaffQuoteList } from '../src/modules/quotes/presentation/staff-quote-client.ts'
+import { parseSimpleBookingManagement, parseSimpleBookingList, parseCancellation } from '../src/modules/bookings/presentation/simple-booking-client.ts'
+import { WorkError, workExact, workId, workMutation, workSearch, workText } from '../src/modules/enquiries/management.ts'
+import { validateStaffQuotePayload } from '../src/modules/quotes/staff-drafts.ts'
+import { simpleDraftInput } from '../src/modules/bookings/simple-management.ts'
+import { sydneyLocalToInstant } from '../src/modules/operations/domain/validation.ts'
 
 const port = Number(process.env.EMS_FIXTURE_PORT ?? 3013)
 const upstreamUrl = new URL(process.env.EMS_FIXTURE_UPSTREAM ?? 'http://127.0.0.1:3002')
@@ -21,7 +28,7 @@ function permittedPage(path) {
   if (adminPages.has(path)) return true
   const detail = path.match(/^\/admin\/(customers|quotes|enquiries|schedule)\/([^/]+)$/)
   if (!detail || !UUID.test(detail[2])) return false
-  return detail[1] === 'customers' ? customers.some(customer => customer.id === detail[2]) : liveRequests.some(request => request.id === detail[2])
+  return detail[1] === 'customers' ? customers.some(customer => customer.id === detail[2]) : liveRequests.some(request => request.id === detail[2]) || detail[1] === 'enquiries' && r3aEnquiries.has(detail[2])
 }
 const publicAssets = new Set(['/favicon.ico', '/images/lk-group-logo-circle-transparent.png'])
 function optimizedPublicLogo(url) {
@@ -34,6 +41,7 @@ function optimizedPublicLogo(url) {
 const authStages = new Set(['signed_out', 'password_change', 'email_verify', 'mfa_enroll', 'mfa_verify', 'ready'])
 const navigationHeaders = ['accept', 'rsc', 'next-router-state-tree', 'next-router-prefetch', 'next-router-segment-prefetch', 'next-url', 'purpose']
 let properties, crmRelations, commandAttempts, customers, records, links, audits, attempts, flags, signedOut, otherSessionCount, authStage, staffRole, emailVerification, requests, enquiries, bookingDetails, consentAttempts, quoteWorkspaces, newQuoteAttempts, liveRequests, liveAnalysis, liveBookings, liveAudits
+let r3aEnquiries, r3aAssignees, r3aStaffDrafts, r3aSimpleDrafts, r3aCancellations, r3aBookingStates, r3aReceipts, r3aAttempts, r3aAudits
 const sleep = ms => new Promise(resolve => setTimeout(resolve, Math.max(0, Math.min(30000, Number(ms) || 0))))
 function session() { return { authenticated: !signedOut && authStage !== 'signed_out', stage: signedOut ? 'signed_out' : authStage, email: 'synthetic-admin@example.invalid', emailVerification, factors: [{ id: 'synthetic-factor', friendlyName: 'Synthetic authenticator' }] } }
 function syntheticBooking(record) {
@@ -87,7 +95,8 @@ function reset() {
   bookingDetails = new Map(records.filter(record => record.sourceType === 'submission').map(record => [record.sourceId, syntheticBooking(record)]))
   enquiries = [{ id: records[1].sourceId, reference: records[1].reference, source: 'gmail', serviceId: 'cabinet-painting', projectIntent: 'refresh', targetSurfaces: ['doors'], suburb: 'Synthetic suburb', postcode: '0000', doorCount: 4, drawerCount: 2, notes: 'Synthetic enquiry only', name: records[1].name, email: records[1].email, phone: records[1].phone, siteAddress: records[1].address, preferredDate: null, acknowledgement: true, senderReviewRequired: true, attachmentCount: 0, status: 'submitted', revision: 1, createdAt: new Date().toISOString(), startAt: null, endAt: null, scheduleNotes: null, calendarStatus: 'pending', calendarError: null, gmail: { threadId: 'synthetic-thread', messages: [{ messageId: 'synthetic-message', receivedAt: new Date().toISOString(), senderName: records[1].name, senderEmail: records[1].email, subject: 'Synthetic cabinet enquiry', bodyText: 'Synthetic imported message. No company Gmail was accessed.', bodyStatus: 'available', attachmentCount: 0 }], historyTruncated: false } }]
   seedLiveRecords()
-  flags = { connected: false, failures: {}, apiDelays: {}, responseDelays: {}, customerAccessStatus: 0, loginNextStage: 'email_verify', customersUnavailable: false, failNextCreate: false, loseNextCreateResponse: false, failNextList: false, failNextDetail: false, conflictNextLink: false, failNextLink: false, loseNextLinkResponse: false, sessionCleanupFail: false, delays: {}, detailDelayMs: 0, liveAnalysisProcessing: false, conflictNextMutation: false, loseNextMutationResponse: false, loseNextCrmResponse: false }
+  seedR3aRecords()
+  flags = { connected: false, failures: {}, apiDelays: {}, responseDelays: {}, customerAccessStatus: 0, loginNextStage: 'email_verify', customersUnavailable: false, failNextCreate: false, loseNextCreateResponse: false, failNextList: false, failNextDetail: false, conflictNextLink: false, failNextLink: false, loseNextLinkResponse: false, sessionCleanupFail: false, delays: {}, detailDelayMs: 0, liveAnalysisProcessing: false, conflictNextMutation: false, loseNextMutationResponse: false, loseNextCrmResponse: false, r3aConflictNext: false, r3aLoseNextResponse: false, r3aCancellationMode: 'pending', r3aActorUserId: actor, r3aActorSessionId: '00000000-0000-4000-8000-000000000002' }
 }
 function seedLiveRecords() {
   const now = new Date().toISOString(), calendarTarget = { accountSub: 'synthetic-account', calendarId: 'synthetic-calendar' }
@@ -122,6 +131,183 @@ function seedLiveRecords() {
     return request
   })
 }
+
+function seedR3aRecords() {
+  r3aEnquiries = new Map(); r3aStaffDrafts = new Map(); r3aSimpleDrafts = new Map(); r3aCancellations = new Map(); r3aBookingStates = new Map(); r3aReceipts = new Map(); r3aAttempts = []; r3aAudits = []
+  r3aAssignees = [{ userId: actor, label: 'Synthetic Owner One' }, { userId: '00000000-0000-4000-8000-000000000003', label: 'Synthetic Admin Two' }]
+  parseEnquiryAssignees({ assignees: r3aAssignees })
+  for (let index = 0; index < 25; index++) {
+    const original = index === 0 ? enquiries[0] : null, id = original?.id ?? randomUUID(), archived = index >= 22, now = new Date(Date.now() - index * 3600000).toISOString()
+    const summary = original ? { name: original.name, email: original.email, phone: original.phone ?? '', siteAddress: original.siteAddress ?? '', details: original.notes ?? '' } : { name: index === 1 ? 'Synthetic ' + 'VeryLongEnquiryName'.repeat(6) : `Synthetic Enquiry ${index + 1}`, email: `enquiry${index + 1}@example.invalid`, phone: 'Synthetic phone — not callable', siteAddress: index === 1 ? 'Synthetic ' + 'LongStreetName '.repeat(10) + 'NSW 2000' : 'Synthetic site address, Sydney NSW 2000', details: 'Synthetic enquiry details only.' }
+    const row = { enquiry: { id, reference: original?.reference ?? `SYN-ENQ-${String(index + 1).padStart(3, '0')}`, source: original?.source ?? (index % 3 === 0 ? 'gmail' : 'web'), status: original?.status ?? 'submitted', revision: original?.revision ?? 1, createdAt: original?.createdAt ?? now, summary }, management: { enquiryId: id, status: archived ? 'archived' : 'active', revision: archived ? 1 : 0, assigneeUserId: index === 1 ? actor : null, archivedAt: archived ? now : null, updatedAt: null }, notes: [], audit: [], canWrite: true }
+    r3aEnquiries.set(id, parseEnquiryDetail(row))
+  }
+  parseEnquiryList({ enquiries: [...r3aEnquiries.values()].map(({ enquiry, management }) => ({ enquiry, management })), total: 25, page: 1, pageSize: 50 })
+  for (const request of liveRequests) parseStaffQuoteDraft({ requestId: request.id, source: request, draft: null, audit: [], canWrite: true })
+  parseStaffQuoteList({ requests: liveRequests.map(request => ({ ...request, staffDraft: null, staffDraftRevision: null })), total: liveRequests.length, page: 1, pageSize: 20 })
+  for (const id of liveBookings.keys()) parseSimpleBookingManagement(r3aManagement(id))
+  parseSimpleBookingList({ states: [...liveBookings.keys()].map(r3aBookingState), canWrite: true })
+}
+function isR3aPath(path) {
+  return path === '/api/admin/quote-requests' || path === '/api/admin/enquiries' || path.startsWith('/api/admin/enquiries/') || /^\/api\/admin\/quote-requests\/[^/]+\/staff-draft(?:\/|$)/.test(path) || /^\/api\/admin\/live-bookings\/[^/]+\/(?:draft|cancel|cancellation|commands)(?:\/|$)/.test(path)
+}
+function r3aPage(rows, search, key) { return { [key]: rows.slice((search.page - 1) * search.pageSize, search.page * search.pageSize), total: rows.length, page: search.page, pageSize: search.pageSize } }
+function r3aFail(res, status, code, error, extra = {}) { if (res.fixtureR3aAttempt) res.fixtureR3aAttempt.outcome = 'not_applied'; return json(res, { error, code, outcome: 'not_applied', ...extra }, status) }
+function r3aActor() { try { return { userId: workId(flags.r3aActorUserId), sessionId: workId(flags.r3aActorSessionId) } } catch { throw new WorkError(403, 'forbidden', 'Synthetic current staff identity is unavailable.') } }
+function canonical(value) { return JSON.stringify(value && typeof value === 'object' ? Array.isArray(value) ? value.map(item => JSON.parse(canonical(item))) : Object.fromEntries(Object.keys(value).sort().map(key => [key, JSON.parse(canonical(value[key]))])) : value) }
+function r3aAudit(kind, id, action, mutation, before, revision, details = {}) {
+  const staff = r3aActor(), audit = { id: randomUUID(), entityType: kind, entityId: id, action, actorUserId: staff.userId, actorSessionId: staff.sessionId, reason: mutation.reason, priorRevision: before, revision, details, createdAt: new Date().toISOString() }
+  r3aAudits.unshift(audit); return audit
+}
+function r3aBookingState(id) {
+  if (!liveBookings.has(id)) return null
+  advanceR3aCancellation(id)
+  return { ...structuredClone(r3aBookingStates.get(id) ?? liveBookings.get(id)), simpleDraft: structuredClone(r3aSimpleDrafts.get(id) ?? null), cancellation: structuredClone(r3aCancellations.get(id) ?? null) }
+}
+function r3aManagement(id) { const state = r3aBookingState(id); return state ? { state, draft: state.simpleDraft, cancellation: state.cancellation, canWrite: true } : null }
+function advanceR3aCancellation(id) {
+  const current = r3aCancellations.get(id)
+  if (!current || current.status === 'cancelled' || !['retrying','review_required','complete'].includes(flags?.r3aCancellationMode)) return
+  const cancellation = structuredClone(current), state = structuredClone(r3aBookingStates.get(id)), complete = flags.r3aCancellationMode === 'complete'
+  cancellation.status = complete ? 'cancelled' : flags.r3aCancellationMode
+  cancellation.errorCode = complete ? null : cancellation.status === 'retrying' ? 'calendar_outcome_unknown' : 'calendar_changed'
+  cancellation.verifiedDeletedEvents = complete ? 2 : 1; cancellation.occupancyHeld = !complete
+  cancellation.cancelledAt = complete ? new Date().toISOString() : null
+  state.booking.status = complete ? 'cancelled' : 'cancel_pending'; state.booking.occupancyHeld = !complete
+  state.booking.error = complete ? 'Synthetic cancellation complete; visits released.' : 'Synthetic cancellation incomplete; both visits remain held.'
+  if (complete) state.revision++
+  parseCancellation(cancellation); parseCompanyState({ state }, id)
+  r3aCancellations.set(id, cancellation); r3aBookingStates.set(id, state)
+}
+function r3aStaffDetail(id) { const source = liveRequests.find(request => request.id === id); return source ? parseStaffQuoteDraft({ requestId: id, source: structuredClone(source), draft: structuredClone(r3aStaffDrafts.get(id) ?? null), audit: r3aAudits.filter(item => item.entityType === 'staff_quote_draft' && item.entityId === id), canWrite: true }) : null }
+function r3aRevision(kind, id) { return kind === 'enquiry' ? r3aEnquiries.get(id).management.revision : kind === 'staff_quote_draft' ? r3aStaffDrafts.get(id)?.revision ?? 0 : r3aBookingState(id).revision }
+function r3aBump(kind, id) {
+  if (kind === 'enquiry') { const row = structuredClone(r3aEnquiries.get(id)); row.management.revision++; row.management.updatedAt = new Date().toISOString(); r3aEnquiries.set(id, row); return }
+  if (kind === 'staff_quote_draft') {
+    const source = liveRequests.find(request => request.id === id), prior = r3aStaffDrafts.get(id), now = new Date().toISOString()
+    const contact = Object.fromEntries(Object.entries(source.payload.contact).filter(([key]) => key !== 'consent')); contact.phone = ''
+    const payload = prior?.payload ?? validateStaffQuotePayload({ contact, service: source.payload.service, internalNotes: 'Synthetic concurrent staff edit.' })
+    const draft = { requestId: id, revision: (prior?.revision ?? 0) + 1, status: 'draft', sourceRevisionAtCreation: prior?.sourceRevisionAtCreation ?? source.revision, payload, createdBy: prior?.createdBy ?? actor, updatedBy: actor, createdAt: prior?.createdAt ?? now, updatedAt: now }
+    parseStaffQuoteDraft({ requestId: id, source, draft, audit: [], canWrite: true }); r3aStaffDrafts.set(id, draft); return
+  }
+  const state = r3aBookingState(id); state.revision++
+  if (!state.booking) r3aSimpleDrafts.set(id, { requestId: id, submissionId: state.submission.id, signedSnapshotHash: state.submission.signedContentHash, revision: state.revision, savedBy: actor, savedAt: new Date().toISOString(), takeOffEndLocal: null, installStartLocal: null, installEndLocal: null, companyNote: 'Synthetic concurrent draft.' })
+  r3aBookingStates.set(id, state)
+}
+function r3aReceipt(req, res, kind, id, key, retry = false) {
+  workId(key); const staff = r3aActor(), prior = r3aReceipts.get(`${kind}:${id}:${key}`)
+  if (!prior || prior.actorUserId !== staff.userId || prior.actorSessionId !== staff.sessionId || retry && prior.receipt.action !== 'booking_cancel') return r3aFail(res, 404, 'not_found', 'Synthetic command not found.')
+  const progress = kind === 'simple_booking' && prior.receipt.action === 'booking_cancel' ? r3aManagement(id).cancellation : null
+  if (req.fixtureR3aAttempt) Object.assign(req.fixtureR3aAttempt, { outcome: 'committed', replay: true })
+  return json(res, { receipt: structuredClone(prior.receipt), ...(!retry && progress ? { progress } : {}) }, retry ? 202 : 200)
+}
+function r3aMutation(req, res, kind, id, action, value, apply, status = 200) {
+  const staff = r3aActor(), key = `${kind}:${id}:${value.idempotencyKey}`, signature = createHash('sha256').update(canonical({ path: req.url.split('?')[0], action, value })).digest('hex'), prior = r3aReceipts.get(key)
+  if (prior) {
+    if (prior.signature !== signature || prior.actorUserId !== staff.userId || prior.actorSessionId !== staff.sessionId) return r3aFail(res, 409, 'idempotency_conflict', 'Synthetic key belongs to different details or staff session.')
+    if (req.fixtureR3aAttempt) Object.assign(req.fixtureR3aAttempt, { outcome: 'committed', replay: true })
+    return json(res, { receipt: structuredClone(prior.receipt) }, prior.status)
+  }
+  if (flags.r3aConflictNext) { flags.r3aConflictNext = false; r3aBump(kind, id); return r3aFail(res, 409, 'revision_conflict', 'Synthetic change by another staff member. Reload and compare.', { currentRevision: r3aRevision(kind, id) }) }
+  if (value.expectedRevision !== r3aRevision(kind, id)) return r3aFail(res, 409, 'revision_conflict', 'Synthetic aggregate revision changed.', { currentRevision: r3aRevision(kind, id) })
+  const result = apply(), receipt = parseWorkReceipt({ idempotencyKey: value.idempotencyKey, entityType: kind, entityId: id, action, revision: result.revision, committedAt: new Date().toISOString(), ...(result.childId ? { childId: result.childId } : {}) }, value.idempotencyKey, req.url.split('?')[0])
+  r3aReceipts.set(key, { receipt: structuredClone(receipt), status, actorUserId: staff.userId, actorSessionId: staff.sessionId, signature })
+  if (req.fixtureR3aAttempt) Object.assign(req.fixtureR3aAttempt, { outcome: 'committed', replay: false })
+  if (flags.r3aLoseNextResponse) { flags.r3aLoseNextResponse = false; return json(res, { error: 'Synthetic response lost after commit. Check or retry unchanged details.', code: 'outcome_unknown', outcome: 'unknown' }, 503) }
+  return json(res, { receipt }, status)
+}
+async function handleR3a(req, res, url) {
+  const path = url.pathname
+  if (!isR3aPath(path)) return false
+  try {
+    r3aActor()
+    if (path === '/api/admin/quote-requests' && req.method === 'GET') {
+      const search = workSearch(url.searchParams, ['all','draft','review_requested'], 'all'), saved = url.searchParams.get('staffDraft') ?? 'all'
+      if (!['all','saved','none'].includes(saved)) throw new WorkError(422, 'validation', 'Invalid synthetic staff draft filter.')
+      const rows = liveRequests.filter(request => (search.status === 'all' || request.status === search.status) && (saved === 'all' || r3aStaffDrafts.has(request.id) === (saved === 'saved')) && [request.reference, request.payload.contact.name, request.payload.contact.email, request.payload.contact.siteAddress].some(value => value.toLowerCase().includes(search.q.toLowerCase()))).map(request => ({ ...structuredClone(request), staffDraft: structuredClone(r3aStaffDrafts.get(request.id) ?? null), staffDraftRevision: r3aStaffDrafts.get(request.id)?.revision ?? null })).sort((a,b)=>b.savedAt.localeCompare(a.savedAt)||a.id.localeCompare(b.id))
+      json(res, parseStaffQuoteList(r3aPage(rows, search, 'requests'))); return true
+    }
+    if (path === '/api/admin/enquiries' && req.method === 'GET') {
+      const search = workSearch(url.searchParams, ['active','archived','all'], 'active')
+      const rows = [...r3aEnquiries.values()].filter(row => (search.status === 'all' || row.management.status === search.status) && [row.enquiry.reference, ...Object.values(row.enquiry.summary)].some(value => value.toLowerCase().includes(search.q.toLowerCase()))).sort((a,b)=>b.enquiry.createdAt.localeCompare(a.enquiry.createdAt)||a.enquiry.id.localeCompare(b.enquiry.id)).map(({ enquiry, management }) => ({ enquiry, management }))
+      json(res, parseEnquiryList(r3aPage(rows, search, 'enquiries'))); return true
+    }
+    if (path === '/api/admin/enquiries/assignees' && req.method === 'GET') { json(res, parseEnquiryAssignees({ assignees: r3aAssignees })); return true }
+    const enq = path.match(/^\/api\/admin\/enquiries\/([^/]+)(?:\/(notes|archive|restore|commands)(?:\/([^/]+))?)?$/)
+    if (enq) {
+      const id = workId(enq[1]), row = r3aEnquiries.get(id), sub = enq[2], child = enq[3]
+      if (!row) { r3aFail(res, 404, 'not_found', 'Synthetic enquiry not found.'); return true }
+      if (!sub && req.method === 'GET') { json(res, parseEnquiryDetail(structuredClone(row))); return true }
+      if (sub === 'commands' && req.method === 'GET') { r3aReceipt(req, res, 'enquiry', id, child); return true }
+      const raw = req.fixtureR3aInput ?? await body(req), extra = !sub ? ['assigneeUserId'] : sub === 'notes' ? ['body'] : []
+      workExact(raw, ['expectedRevision','idempotencyKey','reason',...extra]); const value = { ...workMutation(raw), ...(!sub ? { assigneeUserId: raw.assigneeUserId === null ? null : workId(raw.assigneeUserId) } : sub === 'notes' ? { body: workText(raw.body, 3000) } : {}) }
+      const action = !sub ? 'enquiry_assign' : sub === 'notes' ? child ? 'enquiry_note_update' : 'enquiry_note_add' : `enquiry_${sub}`
+      if (!(!sub && req.method === 'PATCH' || sub === 'notes' && ((!child && req.method === 'POST') || child && req.method === 'PATCH') || ['archive','restore'].includes(sub) && req.method === 'POST')) throw new WorkError(422, 'validation', 'Unsupported synthetic enquiry action.')
+      r3aMutation(req, res, 'enquiry', id, action, value, () => {
+        const copy = structuredClone(row), before = copy.management.revision
+        if (sub === 'restore' ? copy.management.status !== 'archived' : copy.management.status !== 'active') throw new WorkError(409, 'state_conflict', 'Synthetic enquiry status does not allow this action.')
+        let childId
+        if (!sub) { if (value.assigneeUserId !== null && !r3aAssignees.some(person => person.userId === value.assigneeUserId)) throw new WorkError(422, 'validation', 'Choose a current synthetic admin.'); copy.management.assigneeUserId = value.assigneeUserId }
+        else if (sub === 'notes') {
+          const now = new Date().toISOString(), staff = r3aActor()
+          if (child) { const note = copy.notes.find(note => note.id === workId(child)); if (!note) throw new WorkError(404, 'not_found', 'Synthetic note belongs to another enquiry.'); Object.assign(note, { body: value.body, updatedBy: staff.userId, updatedAt: now }); childId = note.id }
+          else { childId = randomUUID(); copy.notes.push({ id: childId, enquiryId: id, body: value.body, createdBy: staff.userId, updatedBy: staff.userId, createdAt: now, updatedAt: now }) }
+        } else { copy.management.status = sub === 'archive' ? 'archived' : 'active'; copy.management.archivedAt = sub === 'archive' ? new Date().toISOString() : null }
+        copy.management.revision++; copy.management.updatedAt = new Date().toISOString(); copy.audit.unshift(r3aAudit('enquiry', id, action, value, before, copy.management.revision, { ...(childId ? { noteId: childId } : {}) })); parseEnquiryDetail(copy); r3aEnquiries.set(id, copy)
+        return { revision: copy.management.revision, childId }
+      }, sub === 'notes' && !child ? 201 : 200); return true
+    }
+    const quote = path.match(/^\/api\/admin\/quote-requests\/([^/]+)\/staff-draft(?:\/commands\/([^/]+))?$/)
+    if (quote) {
+      const id = workId(quote[1]), detail = r3aStaffDetail(id)
+      if (!detail) throw new WorkError(404, 'not_found', 'Synthetic quote source not found.')
+      if (quote[2] && req.method === 'GET') { r3aReceipt(req, res, 'staff_quote_draft', id, quote[2]); return true }
+      if (req.method === 'GET') { json(res, detail); return true }
+      if (req.method !== 'PUT' || quote[2]) throw new WorkError(422, 'validation', 'Unsupported synthetic staff draft action.')
+      const raw = req.fixtureR3aInput ?? await body(req); workExact(raw, ['expectedRevision','idempotencyKey','reason','payload']); const value = { ...workMutation(raw), payload: validateStaffQuotePayload(raw.payload) }
+      r3aMutation(req, res, 'staff_quote_draft', id, 'quote_save', value, () => {
+        const prior = r3aStaffDrafts.get(id), now = new Date().toISOString(), staff = r3aActor(), revision = (prior?.revision ?? 0) + 1
+        const draft = { requestId: id, revision, status: 'draft', sourceRevisionAtCreation: prior?.sourceRevisionAtCreation ?? detail.source.revision, payload: value.payload, createdBy: prior?.createdBy ?? staff.userId, updatedBy: staff.userId, createdAt: prior?.createdAt ?? now, updatedAt: now }
+        parseStaffQuoteDraft({ ...detail, draft }); r3aStaffDrafts.set(id, draft); r3aAudit('staff_quote_draft', id, 'quote_save', value, revision - 1, revision); return { revision }
+      }); return true
+    }
+    const booking = path.match(/^\/api\/admin\/live-bookings\/([^/]+)\/(draft|cancel|cancel\/retry|cancellation|commands\/([^/]+))$/)
+    if (booking) {
+      const id = workId(booking[1]), state = r3aBookingState(id), sub = booking[2]
+      if (!state) throw new WorkError(404, 'not_found', 'Synthetic signed booking source not found.')
+      if (sub === 'draft' && req.method === 'GET') { json(res, parseSimpleBookingManagement(r3aManagement(id))); return true }
+      if (sub === 'cancellation' && req.method === 'GET') { json(res, { cancellation: parseCancellation(state.cancellation), revision: state.revision }); return true }
+      if (booking[3] && req.method === 'GET') { r3aReceipt(req, res, 'simple_booking', id, booking[3]); return true }
+      const raw = req.fixtureR3aInput ?? await body(req)
+      if (sub === 'cancel/retry' && req.method === 'POST') { workExact(raw, ['idempotencyKey']); r3aReceipt(req, res, 'simple_booking', id, workId(raw.idempotencyKey), true); return true }
+      if (sub === 'draft' && req.method === 'PUT') {
+        const value = simpleDraftInput(raw, sydneyLocalToInstant)
+        r3aMutation(req, res, 'simple_booking', id, 'booking_save', value, () => {
+          if (state.booking || state.submission.snapshot.version !== 'live-booking-request-ack-v2') throw new WorkError(409, 'state_conflict', 'Synthetic request is not an editable simple booking.')
+          const first = Date.parse(sydneyLocalToInstant(`${state.submission.preferredDate}T${state.submission.preferredTime}`)), end = value.takeOffEndLocal === null ? null : Date.parse(sydneyLocalToInstant(value.takeOffEndLocal)), install = value.installStartLocal === null ? null : Date.parse(sydneyLocalToInstant(value.installStartLocal))
+          if (end !== null && (end <= first || end - first > 90 * 86400000) || install !== null && install < (end ?? first)) throw new WorkError(422, 'validation', 'Synthetic take-off end must follow the signed start.')
+          const revision = state.revision + 1, draft = { requestId: id, submissionId: state.submission.id, signedSnapshotHash: state.submission.signedContentHash, revision, savedBy: r3aActor().userId, savedAt: new Date().toISOString(), takeOffEndLocal: value.takeOffEndLocal, installStartLocal: value.installStartLocal, installEndLocal: value.installEndLocal, companyNote: value.companyNote }
+          const next = { ...state, revision, simpleDraft: draft }; parseSimpleBookingManagement({ state: next, draft, cancellation: state.cancellation, canWrite: true }); r3aSimpleDrafts.set(id, draft); r3aBookingStates.set(id, next); r3aAudit('simple_booking', id, 'booking_save', value, revision - 1, revision); return { revision }
+        }); return true
+      }
+      if (sub === 'cancel' && req.method === 'POST') {
+        workExact(raw, ['expectedRevision','idempotencyKey','reason']); const value = workMutation(raw)
+        r3aMutation(req, res, 'simple_booking', id, 'booking_cancel', value, () => {
+          if (state.cancellation || state.booking?.status !== 'confirmed' || state.booking.confirmationBasis !== 'signed_request' || state.booking.emailStatus !== 'provider_accepted' || state.booking.events.length !== 2 || state.booking.events.some(event => !event.etag || !event.verifiedAt)) throw new WorkError(409, 'booking_busy', 'Synthetic booking is not fully ready for cancellation.')
+          const cancellation = parseCancellation({ id: randomUUID(), requestId: id, bookingId: state.booking.id, status: 'pending', requestedAt: new Date().toISOString(), requestedBy: r3aActor().userId, cancelledAt: null, errorCode: null, occupancyHeld: true, totalEvents: 2, verifiedDeletedEvents: 0 }), next = structuredClone(state)
+          next.revision++; Object.assign(next.booking, { status: 'cancel_pending', occupancyHeld: true, error: 'Synthetic cancellation pending; both visits remain held.' }); next.cancellation = cancellation
+          parseSimpleBookingManagement({ state: next, draft: next.simpleDraft, cancellation, canWrite: true }); r3aCancellations.set(id, cancellation); r3aBookingStates.set(id, next); r3aAudit('simple_booking', id, 'booking_cancel', value, state.revision, next.revision, { cancellationId: cancellation.id }); return { revision: next.revision, childId: cancellation.id }
+        }, 202); return true
+      }
+    }
+    r3aFail(res, 404, 'not_found', 'Synthetic R3a route not found.'); return true
+  } catch (error) {
+    if (req.fixtureR3aAttempt) req.fixtureR3aAttempt.outcome = 'not_applied'
+    if (error instanceof WorkError) { r3aFail(res, error.status, error.code, error.message); return true }
+    throw error
+  }
+}
+
 reset()
 function json(res, value, status = 200) {
   const payload = JSON.stringify(value), send = () => { if (!res.destroyed) { res.writeHead(status, { 'Content-Type': 'application/json', 'X-ESN-Fixture': 'synthetic', 'Cache-Control': 'private, no-store', Vary: 'Cookie' }); res.end(payload) } }
@@ -130,8 +316,8 @@ function json(res, value, status = 200) {
   // is lost while waiting. This exercises the client's stale-response guard.
   if (delay) setTimeout(send, delay); else send()
 }
-async function body(req) {
-  let value = ''; for await (const chunk of req) { value += chunk; if (value.length > 8192) throw new Error('Fixture input too large') }
+async function body(req, max = 8192) {
+  let value = ''; for await (const chunk of req) { value += chunk; if (max === 8192 ? value.length > max : Buffer.byteLength(value) > max) { if (max === 8192) throw new Error('Fixture input too large'); throw new WorkError(413, 'request_too_large', 'Fixture input too large') } }
   return value ? JSON.parse(value) : {}
 }
 function page(rows, url, key) {
@@ -140,6 +326,12 @@ function page(rows, url, key) {
 }
 async function handleApi(req, res, url) {
   const path = url.pathname
+  if (isR3aPath(path) && ['POST','PUT','PATCH'].includes(req.method)) {
+    req.fixtureR3aInput = await body(req, 32768)
+    req.fixtureR3aAttempt = { path, method: req.method, input: structuredClone(req.fixtureR3aInput), actorUserId: flags.r3aActorUserId, actorSessionId: flags.r3aActorSessionId, at: Date.now(), outcome: 'received' }
+    res.fixtureR3aAttempt = req.fixtureR3aAttempt
+    r3aAttempts.push(req.fixtureR3aAttempt)
+  }
   if (path === '/api/quote/booking/consent' && req.method === 'POST') { req.fixtureConsent = await body(req); consentAttempts.push(structuredClone(req.fixtureConsent)) }
   if (path === '/api/quote/draft/session/new' && req.method === 'POST') { req.fixtureNewQuote = await body(req); newQuoteAttempts.push(structuredClone(req.fixtureNewQuote)) }
   await sleep(flags.apiDelays[path])
@@ -147,7 +339,10 @@ async function handleApi(req, res, url) {
   if (injected) {
     const status = Number(typeof injected === 'object' ? injected.status : injected)
     if (typeof injected === 'object' && injected.once) delete flags.failures[path]
-    return json(res, { error: `Synthetic HTTP ${status} failure. No company request occurred.` }, status >= 400 && status <= 599 ? status : 503)
+    const failure = { error: `Synthetic HTTP ${status} failure. No company request occurred.` }
+    if (typeof injected === 'object') for (const key of ['error','code','outcome','fields','currentRevision']) if (Object.hasOwn(injected, key)) failure[key] = injected[key]
+    if (req.fixtureR3aAttempt) req.fixtureR3aAttempt.outcome = failure.outcome === 'not_applied' ? 'not_applied' : 'unknown'
+    return json(res, failure, status >= 400 && status <= 599 ? status : 503)
   }
   if (path.startsWith('/api/quote/')) {
     if ([401, 403].includes(flags.customerAccessStatus)) return json(res, { error: 'Synthetic customer access is unavailable.' }, flags.customerAccessStatus)
@@ -205,6 +400,7 @@ async function handleApi(req, res, url) {
   if (path === '/api/admin-auth/mfa/enroll' && req.method === 'POST') return json(res, { factorId: 'synthetic-factor', qrCode: '<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120"><rect width="120" height="120" fill="white"/><text x="8" y="60">SYNTHETIC</text></svg>', secret: 'SYNTHETIC-SETUP-ONLY' })
   if ((path === '/api/admin-auth/email/verify' || path === '/api/admin-auth/mfa/verify') && req.method === 'POST') { const value = await body(req); if (value.code !== '123456') return json(res, { error: 'Synthetic code is 123456.' }, 400); authStage = 'ready'; return json(res, session()) }
   if (signedOut || authStage !== 'ready') return json(res, { error: 'Synthetic administrator verification required.' }, signedOut || authStage === 'signed_out' ? 401 : 403)
+  if (await handleR3a(req, res, url)) return
   if (path === '/api/admin-auth/sessions') return json(res, { current: { expiresAt: Date.now() + 3600000 }, otherSessionCount, otherSessions: Array.from({ length: otherSessionCount }, (_, i) => ({ expiresAt: Date.now() + 600000 + i * 100000 })), truncated: false })
   if (path === '/api/admin-auth/sessions/revoke-others') {
     const removedSessionCount = otherSessionCount; otherSessionCount = 0
@@ -261,10 +457,6 @@ async function handleApi(req, res, url) {
     }
     return json(res, { error: 'Synthetic booking action not supported. Nothing was forwarded.' }, 503)
   }
-  if (path === '/api/admin/quote-requests' && req.method === 'GET') {
-    const q = (url.searchParams.get('q') ?? '').toLowerCase()
-    return json(res, page(liveRequests.filter(request => [request.reference, ...Object.values(request.payload.contact)].some(value => typeof value === 'string' && value.toLowerCase().includes(q))), url, 'requests'))
-  }
   const liveRoute = path.match(/^\/api\/admin\/quote-requests\/([^/]+)(?:\/(analysis|booking|photos\/([^/]+)|booking\/documents\/receipt))?$/)
   if (liveRoute && req.method === 'GET') {
     const request = liveRequests.find(request => request.id === liveRoute[1])
@@ -288,7 +480,7 @@ async function handleApi(req, res, url) {
   }
   if (path === '/api/admin/live-bookings' && req.method === 'GET') {
     const id = url.searchParams.get('requestId')
-    return json(res, id ? { state: liveBookings.get(id) ?? null } : { states: [...liveBookings.values()] })
+    return json(res, id ? { state: r3aBookingState(id) } : parseSimpleBookingList({ states: [...liveBookings.keys()].map(r3aBookingState), canWrite: true }))
   }
   const liveDraft = path.match(/^\/api\/admin\/live-bookings\/([^/]+)\/proposal$/)
   if (liveDraft && req.method === 'PUT') {
@@ -369,7 +561,33 @@ function candidatesFor(value, omit) {
 function linkedQuoteRecords(customerId, propertyId) {
   return liveRequests.filter(r => crmRelations.get(r.id)?.customerId === customerId && (!propertyId || crmRelations.get(r.id)?.propertyId === propertyId)).map(r => ({ sourceType: 'quote_request', sourceId: r.id, reference: r.reference, name: r.payload.contact.name, email: r.payload.contact.email, phone: r.payload.contact.phone, address: r.payload.contact.siteAddress, createdAt: r.createdAt, status: r.status, photos: liveAnalysis.get(r.id).photos.map(p => ({ id: p.id, url: p.contentUrl })), relatedEnquiryIds: [], booking: null, links: { detail: `/admin/quotes/${r.id}`, quotePdf: null, agreementPdf: `/api/admin/quote-requests/${r.id}/booking/documents/receipt`, photos: null } }))
 }
-function propertyKey(value) { return ['line1','unit','suburb','state','postcode','country'].map(k => String(value.address[k] || '').trim().toLowerCase().replace(/\s+/g, ' ')).join('|') }
+const normalizedAddressText = value => String(value || '').trim().toLowerCase().replace(/\s+/g, ' ')
+function normalizedStreet(value) {
+  const suffixes = { st: 'street', rd: 'road', ave: 'avenue', dr: 'drive', ct: 'court', ln: 'lane', pl: 'place', cres: 'crescent', tce: 'terrace', pde: 'parade', hwy: 'highway' }
+  return normalizedAddressText(value).replace(/\s+(st|rd|ave|dr|ct|ln|pl|cres|tce|pde|hwy)\.?$/, (_, suffix) => ` ${suffixes[suffix]}`)
+}
+function propertyKey(value) { return ['line1','unit','suburb','state','postcode','country'].map(k => k === 'line1' ? normalizedStreet(value.address[k]) : normalizedAddressText(value.address[k] || (k === 'country' ? 'AU' : ''))).join('|') }
+function weakPropertyParts(address) {
+  let street = normalizedAddressText(address.line1), unit = normalizedAddressText(address.unit) || null
+  const inline = street.match(/^(?:unit|apartment|apt|flat|#)\s*([a-z0-9-]+)(?:\s*[,/]\s*|\s+)([0-9].*)$/) || street.match(/^([a-z0-9-]+)\/([0-9].*)$/)
+  const conflicting = Boolean(inline && unit && unit !== inline[1])
+  if (inline) { street = inline[2]; unit ||= inline[1] }
+  return { street: normalizedStreet(street), unit, conflicting, postcode: String(address.postcode || '').trim() }
+}
+function propertyCandidates(customerId, input) {
+  const proposed = weakPropertyParts(input.address)
+  return properties.filter(p => {
+    if (p.customerId !== customerId || propertyKey(p) === propertyKey(input)) return false
+    const previous = weakPropertyParts(p.address)
+    return previous.street === proposed.street && previous.postcode === proposed.postcode && (!previous.unit || !proposed.unit || previous.unit === proposed.unit || previous.conflicting || proposed.conflicting)
+  }).sort((a, b) => a.id.localeCompare(b.id))
+}
+function reviewedPropertiesMatch(matches, decision) {
+  if (decision?.kind !== 'different_property' || typeof decision.reason !== 'string' || !decision.reason.trim() || decision.reason.trim().length > 500 || /[\u0000-\u001f\u007f]/.test(decision.reason) || !Array.isArray(decision.reviewedProperties)) return false
+  const reviewed = decision.reviewedProperties
+  if (!reviewed.every(p => p && typeof p === 'object' && !Array.isArray(p) && typeof p.id === 'string' && Number.isSafeInteger(p.revision) && p.revision > 0)) return false
+  return reviewed.length === matches.length && new Set(reviewed.map(p => p.id)).size === reviewed.length && matches.every(p => reviewed.some(item => item.id === p.id && item.revision === p.revision))
+}
 function saveProperty(customerId, input) {
   const prior = properties.find(p => p.customerId === customerId && propertyKey(p) === propertyKey(input))
   if (prior) return { property: prior, propertyOutcome: 'property_reused' }
@@ -400,26 +618,48 @@ async function handleR2(req, res, url) {
     const value = await body(req), key = `resolve:${value.idempotencyKey}`, prior = attempts.get(key)
     commandAttempts.push({ path, method: req.method, input: structuredClone(value) })
     if (prior) { json(res, prior.signature === JSON.stringify(value) ? prior.result : { error: 'Synthetic immutable command conflict.' }, prior.signature === JSON.stringify(value) ? prior.status : 409); return true }
-    if (value.source) {
-      const request = liveRequests.find(r => r.id === value.source.id), relation = crmRelations.get(value.source.id)
-      if (!request || request.revision !== value.source.expectedSourceRevision || (relation?.crmRevision || 0) !== value.source.expectedCrmRevision) { json(res, { error: 'Synthetic source or CRM relation changed.' }, 409); return true }
-    }
+    const request = value.source && liveRequests.find(r => r.id === value.source.id), relation = value.source && crmRelations.get(value.source.id)
+    if (value.source && (!request || request.revision !== value.source.expectedSourceRevision)) { json(res, { error: 'Synthetic source changed.', code: 'conflict' }, 409); return true }
     const matches = candidatesFor(value), decision = value.decision || { kind: 'auto' }
-    if (matches.length && decision.kind === 'auto') { json(res, { error: 'Review matching clients before saving.', code: 'needs_review', candidates: matches }, 409); return true }
-    let c
-    if (decision.kind === 'existing') {
+    if (relation?.customerId && (decision.kind === 'different_person' || decision.kind === 'existing' && decision.customerId !== relation.customerId)) { json(res, { error: 'Synthetic quote already belongs to another client.', code: 'conflict' }, 409); return true }
+    if (!relation?.customerId && matches.length && decision.kind === 'auto') { json(res, { error: 'Review matching clients before saving.', code: 'needs_review', candidates: matches }, 409); return true }
+    let c, created = false
+    if (relation?.customerId) c = customers.find(c => c.id === relation.customerId)
+    else if (decision.kind === 'existing') {
       c = customers.find(c => c.id === decision.customerId)
-      if (!c || c.revision !== decision.expectedRevision || c.status === 'archived') { json(res, { error: 'Synthetic selected client changed or is archived.' }, 409); return true }
     } else {
-      if (matches.length && (!decision.reason?.trim() || !matches.every(({ customer }) => decision.reviewedCandidates?.some(v => v.id === customer.id && v.revision === customer.revision)))) { json(res, { error: 'Review every current candidate.', code: 'needs_review', candidates: matches }, 409); return true }
-      c = { ...customer(value.name), email: value.email || null, phone: value.phone || null, address: value.address || null }; customers.unshift(c); addAudit(c, 'create', decision.reason)
+      if (matches.length && (!decision.reason?.trim() || decision.reviewedCandidates?.length !== matches.length || !matches.every(({ customer }) => decision.reviewedCandidates?.some(v => v.id === customer.id && v.revision === customer.revision)))) { json(res, { error: 'Review every current candidate.', code: 'needs_review', candidates: matches }, 409); return true }
+      c = { ...customer(value.name), email: value.email || null, phone: value.phone || null, address: value.address || null }; created = true
     }
+    if (!c || decision.kind === 'existing' && c.revision !== decision.expectedRevision || c.status === 'archived') { json(res, { error: 'Synthetic selected client changed or is archived.', code: 'conflict' }, 409); return true }
+    if (value.property && value.propertyId) { json(res, { error: 'Select or create one property.', code: 'validation' }, 400); return true }
     let propertyResult = { property: null, propertyOutcome: null }
-    if (value.property) propertyResult = saveProperty(c.id, value.property)
-    else if (value.propertyId) propertyResult = { property: properties.find(p => p.id === value.propertyId && p.customerId === c.id) || null, propertyOutcome: 'property_reused' }
-    const result = { outcome: decision.kind === 'existing' ? 'client_reused' : 'client_created', customer: c, ...propertyResult }
+    let newProperty = false
+    if (value.propertyId) {
+      const property = properties.find(p => p.id === value.propertyId && p.customerId === c.id)
+      if (!property) { json(res, { error: 'Synthetic property not found for client.', code: 'notfound' }, 404); return true }
+      if (value.expectedPropertyRevision !== property.revision || property.status !== 'active') { json(res, { error: 'Property changed. Refresh and compare again.', code: 'conflict' }, 409); return true }
+      propertyResult = { property, propertyOutcome: 'property_reused' }
+    } else if (value.property) {
+      const property = properties.find(p => p.customerId === c.id && propertyKey(p) === propertyKey(value.property))
+      if (property?.status === 'archived') { json(res, { error: 'Restore the matching property before linking.', code: 'conflict' }, 409); return true }
+      if (property) propertyResult = { property, propertyOutcome: 'property_reused' }
+      else {
+        const matches = propertyCandidates(c.id, value.property)
+        if (matches.length && !reviewedPropertiesMatch(matches, value.propertyDecision)) { json(res, { error: 'Review matching properties before saving.', code: 'needs_property_review', properties: matches }, 409); return true }
+        newProperty = true
+      }
+    } else if (relation?.propertyId) propertyResult = { property: properties.find(p => p.id === relation.propertyId) || null, propertyOutcome: 'property_reused' }
+    if (relation?.propertyId && (newProperty || propertyResult.property && propertyResult.property.id !== relation.propertyId)) { json(res, { error: 'Synthetic quote already belongs to another property.', code: 'conflict' }, 409); return true }
+    const relationChanged = Boolean(value.source && (relation?.customerId !== c.id || newProperty || (propertyResult.property && relation?.propertyId !== propertyResult.property.id)))
+    if (relationChanged && (relation?.crmRevision || 0) !== value.source.expectedCrmRevision) { json(res, { error: 'Synthetic CRM relation changed.', code: 'conflict' }, 409); return true }
+    // Commit only after every possible review/conflict; rejected requests leave no partial client/property/audit.
+    if (created) { customers.unshift(c); addAudit(c, 'create', decision.reason) }
+    if (newProperty) propertyResult = saveProperty(c.id, value.property)
+    if (!created && (newProperty || relationChanged)) { c.revision++; c.updatedAt = new Date().toISOString() }
+    const result = { outcome: created ? 'client_created' : 'client_reused', customer: c, ...propertyResult }
     if (value.source) {
-      const crmRevision = value.source.expectedCrmRevision + 1
+      const crmRevision = (relation?.crmRevision || 0) + (relationChanged ? 1 : 0)
       crmRelations.set(value.source.id, { customerId: c.id, propertyId: propertyResult.property?.id || null, crmRevision }); result.crmRevision = crmRevision; addAudit(c, 'resolve', decision.reason, value.source)
     }
     if (flags.loseNextCreateResponse || value.source && flags.loseNextCrmResponse) { flags.loseNextCreateResponse = false; flags.loseNextCrmResponse = false; flags.loseNextMutationResponse = true }
@@ -471,6 +711,15 @@ const server = http.createServer(async (req, res) => {
         const update = typeof value.mutateLiveQuote === 'object' ? value.mutateLiveQuote : {}, request = liveRequests.find(r => r.id === update.requestId) || liveRequests[0]
         request.revision++; request.savedAt = new Date().toISOString(); Object.assign(request.payload.contact, { name: 'Synthetic changed quote contact', email: 'synthetic-changed@example.invalid', siteAddress: 'Synthetic changed quote site', ...(update.contact || {}) })
       }
+      if (value.seedQuotePropertyReview) {
+        const c = customers[1]
+        for (const unit of ['1', '2']) saveProperty(c.id, { label: `Synthetic review unit ${unit}`, address: { line1: '10 Synthetic Review Street', unit, suburb: 'Synthetic suburb', state: 'NSW', postcode: '2000', country: 'AU' } })
+      }
+      if (value.mutateProperty) {
+        const update = value.mutateProperty, p = properties.find(p => p.id === update.propertyId)
+        if (!p) return json(res, { error: 'Synthetic property control requires an existing property.' }, 400)
+        p.address = { ...p.address, ...(update.address || {}) }; p.revision++; p.updatedAt = new Date().toISOString()
+      }
       if (value.customerLegacyV1) { customerDetail().submission.snapshot.version = 'kcp-demo-v1'; delete customerDetail().submission.snapshot.photos }
       if (value.newCustomerProposal) addCustomerProposal()
       if (value.customerEmailAccepted) {
@@ -488,7 +737,7 @@ const server = http.createServer(async (req, res) => {
       if ('otherSessionCount' in value) otherSessionCount = Math.max(0, Math.min(50, Number(value.otherSessionCount)))
       return json(res, { synthetic: true, flags, signedOut, authStage, staffRole, otherSessionCount })
     }
-    if (url.pathname === '/__fixture/state') return json(res, { synthetic: true, flags, signedOut, authStage, staffRole, otherSessionCount, customers, properties, crmRelations: [...crmRelations], commandAttempts, records, enquiries, liveRequests, liveAnalysis: [...liveAnalysis.values()], liveBookings: [...liveBookings.values()], bookings: [...bookingDetails.values()], requests, consentAttempts, newQuoteAttempts, quoteWorkspaces: [...quoteWorkspaces], links: [...links], audits: [...audits], attemptCount: attempts.size })
+    if (url.pathname === '/__fixture/state') return json(res, { synthetic: true, flags, signedOut, authStage, staffRole, otherSessionCount, customers, properties, crmRelations: [...crmRelations], commandAttempts, records, enquiries, liveRequests, liveAnalysis: [...liveAnalysis.values()], liveBookings: [...liveBookings.values()], bookings: [...bookingDetails.values()], requests, consentAttempts, newQuoteAttempts, quoteWorkspaces: [...quoteWorkspaces], links: [...links], audits: [...audits], attemptCount: attempts.size, r3aEnquiries: [...r3aEnquiries.values()], r3aAssignees, r3aStaffDrafts: [...r3aStaffDrafts.values()], r3aSimpleDrafts: [...r3aSimpleDrafts.values()], r3aCancellations: [...r3aCancellations.values()], r3aBookingStates: [...liveBookings.keys()].map(r3aBookingState), r3aReceipts: [...r3aReceipts.values()], r3aAttempts, r3aAudits })
     if (url.pathname.startsWith('/api/')) { res.fixtureApiPath = url.pathname; requests.push({ path: url.pathname, query: url.search, requestId: typeof req.headers['x-lk-quote-request-id'] === 'string' ? req.headers['x-lk-quote-request-id'] : null, method: req.method, at: Date.now() }); return await handleApi(req, res, url) }
     if (!['GET', 'HEAD'].includes(req.method) || !(permittedPage(url.pathname) || url.pathname.startsWith('/_next/static/') || publicAssets.has(url.pathname) || optimizedPublicLogo(url))) return json(res, { error: 'Synthetic fixture only proxies approved admin/quote pages and explicit UI static assets.' }, 404)
     const forwarded = {}
