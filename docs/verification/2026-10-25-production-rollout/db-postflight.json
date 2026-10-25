@@ -1,0 +1,19 @@
+{
+  "checkedAt": "2026-10-25",
+  "project": "xlqyafthsxallostcqfe",
+  "rows": [
+    {
+      "anon_auth_grants": 0,
+      "company_bookings": 3,
+      "customers": 0,
+      "lk_tables": 66,
+      "m1": true,
+      "m2": true,
+      "m4": true,
+      "m5": true,
+      "quote_requests": 4,
+      "rls_off": 0,
+      "submissions": 3
+    }
+  ]
+}

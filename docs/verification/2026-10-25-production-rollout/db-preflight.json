@@ -1,0 +1,23 @@
+{
+  "checkedAt": "2026-10-25",
+  "project": "xlqyafthsxallostcqfe",
+  "rows": [
+    {
+      "approx_counts": {
+        "lk_customers": 0,
+        "lk_enquiries": 0,
+        "lk_live_company_bookings": 3,
+        "lk_live_quote_approvals": 3,
+        "lk_live_quote_photos": 13,
+        "lk_live_quote_submissions": 3,
+        "lk_quote_photos": 0,
+        "lk_quote_requests": 4
+      },
+      "company_bookings": 3,
+      "customers": 0,
+      "quote_requests": 4,
+      "rls_off": 0,
+      "submissions": 3
+    }
+  ]
+}
