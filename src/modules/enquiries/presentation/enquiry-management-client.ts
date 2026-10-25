@@ -1,17 +1,18 @@
 import { workId, workObject, type WorkMutation, type WorkReceipt, type EnquiryDetail, type EnquiryRow } from '../management.ts'
 export type WorkPhase = 'idle' | 'loading' | 'saving' | 'saved' | 'empty' | 'error' | 'unknown' | 'conflict' | 'access_lost'
-const workFields = ['expectedRevision','reason','assigneeUserId','body','payload.contact.name','payload.contact.email','payload.contact.phone','payload.contact.siteAddress','payload.contact.suburb','payload.contact.postcode','payload.contact.details','payload.service','payload.service.serviceId','payload.service.intent','payload.service.surfaces','payload.service.doorCount','payload.service.drawerCount','payload.service.material','payload.service.colourPreference','payload.internalNotes','takeOffEndLocal','installStartLocal','installEndLocal','companyNote'] as const
-export type WorkField = typeof workFields[number]
+const workFields = ['revisionId','payload.quantities.doorCount','payload.quantities.drawerCount','payload.quantities.moderateRepair','payload.extraItems','payload.customerNote','expectedRevision','reason','assigneeUserId','body','payload.contact.name','payload.contact.email','payload.contact.phone','payload.contact.siteAddress','payload.contact.suburb','payload.contact.postcode','payload.contact.details','payload.service','payload.service.serviceId','payload.service.intent','payload.service.surfaces','payload.service.doorCount','payload.service.drawerCount','payload.service.material','payload.service.colourPreference','payload.internalNotes','takeOffEndLocal','installStartLocal','installEndLocal','companyNote'] as const
+export type WorkField = typeof workFields[number] | `payload.extraItems.${number}` | `payload.extraItems.${number}.${'id'|'description'|'amountCents'|'reason'}` | 'acknowledged' | 'acknowledgmentVersion' | 'signature'
 export type WorkFieldErrors = Partial<Record<WorkField, string>>
 export type WorkClientError = { status: number; error: string; code: string; outcome: 'not_applied' | 'unknown'; currentRevision?: number; fields: WorkFieldErrors | null }
-export type WorkClientState<T> = { phase: WorkPhase; data: T | null; input: Record<string, unknown> | null; receipt: WorkReceipt | null; error: string | null; code: string | null; currentRevision?: number; fields: WorkFieldErrors | null }
+export type WorkClientState<T> = { status?: number; phase: WorkPhase; data: T | null; input: Record<string, unknown> | null; receipt: WorkReceipt | null; error: string | null; code: string | null; currentRevision?: number; fields: WorkFieldErrors | null }
 type Pending = { path: string; method: string; body: Record<string, unknown> }
 function fieldErrors(value: unknown): WorkFieldErrors | null {
   try {
     if (!value || typeof value !== 'object' || ![Object.prototype, null].includes(Object.getPrototypeOf(value)) || Reflect.ownKeys(value).length > 32) return null
     const result = Object.create(null) as WorkFieldErrors, descriptors = Object.getOwnPropertyDescriptors(value)
     let length = 0
-    for (const field of workFields) {
+    const fields = [...workFields, ...Object.keys(descriptors).filter(field => /^(?:payload\.extraItems\.(?:[0-9]|[12][0-9])(?:\.(?:id|description|amountCents|reason))?|acknowledged|acknowledgmentVersion|signature)$/.test(field))] as WorkField[]
+    for (const field of fields) {
       if (!Object.hasOwn(descriptors, field)) continue
       const property = descriptors[field]
       if (!property?.enumerable || !Object.hasOwn(property, 'value') || typeof property.value !== 'string' || /[\u0000-\u001f\u007f-\u009f]/.test(property.value)) continue
@@ -34,36 +35,41 @@ export class CurrentWorkClient<T> {
   private request: typeof fetch
   private key: () => string
   private parse: (value: unknown) => T
-  constructor(parse: (value: unknown) => T, request?: typeof fetch, key: () => string = () => crypto.randomUUID()) {
+  private receiptScope?: { entityId: string; entityType: WorkReceipt['entityType'] }
+  constructor(parse: (value: unknown) => T, request?: typeof fetch, key: () => string = () => crypto.randomUUID(), receiptScope?: { entityId: string; entityType: WorkReceipt['entityType'] }) {
     this.parse = parse
+    this.receiptScope = receiptScope
     this.request = request ? (input, init) => request(input, init) : (input, init) => globalThis.fetch(input, init)
     this.key = key
   }
+  lifetime(): number { return this.generation }
   snapshot(): WorkClientState<T> { return structuredClone(this.state) }
   pendingRequest(): Pending | null { return this.pending ? structuredClone(this.pending) : null }
   clear() { this.generation++; this.readGeneration++; this.readController?.abort(); this.pending = null; this.hadUnknown = false; this.state = { phase: 'idle', data: null, input: null, receipt: null, error: null, code: null, fields: null } }
-  private clearResult() { this.state.receipt = null; this.state.error = null; this.state.code = null; this.state.fields = null; delete this.state.currentRevision }
+  private clearResult() { this.state.receipt = null; this.state.error = null; this.state.code = null; this.state.fields = null; delete this.state.currentRevision; delete this.state.status }
   private unknown() { this.hadUnknown = true; this.clearResult(); this.state.phase = 'unknown'; this.state.code = 'outcome_unknown'; this.state.error = 'The saved result is unknown. Check or retry the unchanged request.' }
-  private accessLost() { this.clear(); this.state.phase = 'access_lost'; this.state.error = 'Staff access changed. Sign in again before continuing.' }
+  accessLost() { this.clear(); this.state.phase = 'access_lost'; this.state.error = 'Staff access changed. Sign in again before continuing.' }
   async read(path: string) {
     if (this.state.phase === 'access_lost') return this.snapshot()
     const generation = this.generation, lane = ++this.readGeneration
     this.readController?.abort(); this.readController = new AbortController()
     const current = () => generation === this.generation && lane === this.readGeneration
-    if (!this.pending) this.state.phase = 'loading'
+    let status: number | undefined
+    if (!this.pending) { this.state.phase = 'loading'; delete this.state.status }
     try {
       const response = await this.request(path, { credentials: 'same-origin', cache: 'no-store', signal: this.readController.signal })
       if (!current()) return this.snapshot()
-      if (response.status === 401 || response.status === 403) { this.accessLost(); return this.snapshot() }
+      if (response.status === 401 || response.status === 403) { this.accessLost(); this.state.status = response.status; return this.snapshot() }
+      status = response.status
       const body: unknown = await response.json()
       if (!current()) return this.snapshot()
       if (!response.ok) throw new Error('The saved record could not be loaded. Retry the read.')
       this.state.data = this.parse(body)
       if (!this.pending) this.state.phase = this.state.data === null ? 'empty' : 'idle'
-    } catch (error) { if (current() && !this.pending) { this.state.phase = 'error'; this.state.error = error instanceof Error ? error.message : 'The saved record could not be loaded.' } }
+    } catch (error) { if (current() && !this.pending) { this.state.phase = 'error'; this.state.status = status; this.state.error = error instanceof Error ? error.message : 'The saved record could not be loaded.' } }
     return this.snapshot()
   }
-  async mutate(path: string, method: string, input: Omit<WorkMutation, 'idempotencyKey'> & Record<string, unknown>) {
+  async mutate(path: string, method: string, input: Record<string, unknown>) {
     if (this.state.phase === 'access_lost') return this.snapshot()
     if (this.pending) throw new Error('Check or retry the unchanged pending request before starting another save.')
     this.generation++; this.hadUnknown = false
@@ -104,7 +110,7 @@ export class CurrentWorkClient<T> {
         this.state.error = failure.error + (definite && response.status === 503 && this.hadUnknown ? ' The previous save is still unconfirmed. Check or retry the unchanged request.' : ''); this.state.code = failure.code; this.state.fields = failure.fields
         return this.snapshot()
       }
-      const receipt = parseWorkReceipt(raw.receipt, String(pending.body.idempotencyKey), pending.path)
+      const receipt = parseWorkReceipt(raw.receipt, String(pending.body.idempotencyKey), pending.path, this.receiptScope)
       this.clearResult(); this.state.receipt = receipt
       this.generation++; this.pending = null; this.hadUnknown = false; this.state.phase = 'saved'
     } catch { if (generation === this.generation) this.unknown() }
@@ -122,18 +128,19 @@ export class CurrentWorkClient<T> {
       if (!response.ok) throw new Error()
       const body = workObject(await response.json())
       if (!current()) return this.snapshot()
-      const receipt = parseWorkReceipt(body.receipt, key, pending.path)
+      const receipt = parseWorkReceipt(body.receipt, key, pending.path, this.receiptScope)
       this.clearResult(); this.state.receipt = receipt
       this.generation++; this.pending = null; this.hadUnknown = false; this.state.phase = 'saved'
     } catch { if (current()) this.unknown() }
     return this.snapshot()
   }
 }
-export function parseWorkReceipt(value: unknown, key?: string, path?: string): WorkReceipt {
+export function parseWorkReceipt(value: unknown, key?: string, path?: string, scope?: { entityId: string; entityType: WorkReceipt['entityType'] }): WorkReceipt {
   const raw = workObject(value)
-  if (key && raw.idempotencyKey !== key || !['enquiry','staff_quote_draft','simple_booking'].includes(String(raw.entityType)) || typeof raw.action !== 'string' || !Number.isSafeInteger(raw.revision) || Number(raw.revision) < 1 || typeof raw.committedAt !== 'string' || !Number.isFinite(Date.parse(raw.committedAt))) throw new Error('The saved receipt could not be verified.')
+  if (key && raw.idempotencyKey !== key || !['enquiry','staff_quote_draft','simple_booking','company_revision'].includes(String(raw.entityType)) || typeof raw.action !== 'string' || !Number.isSafeInteger(raw.revision) || Number(raw.revision) < 1 || typeof raw.committedAt !== 'string' || !Number.isFinite(Date.parse(raw.committedAt))) throw new Error('The saved receipt could not be verified.')
   const expected = path?.match(/\/(enquiries|quote-requests|live-bookings)\/([a-f0-9-]{36})(?:\/|$)/i)
-  if (expected && (raw.entityId !== expected[2] || raw.entityType !== ({ enquiries: 'enquiry', 'quote-requests': 'staff_quote_draft', 'live-bookings': 'simple_booking' } as Record<string,string>)[expected[1]])) throw new Error('The receipt belongs to another record.')
+  if (expected && (raw.entityId !== expected[2] || raw.entityType !== (path?.includes('/company-revisions') ? 'company_revision' : ({ enquiries: 'enquiry', 'quote-requests': 'staff_quote_draft', 'live-bookings': 'simple_booking' } as Record<string,string>)[expected[1]]))) throw new Error('The receipt belongs to another record.')
+  if (scope && (raw.entityId !== scope.entityId || raw.entityType !== scope.entityType)) throw new Error('The receipt belongs to another record.')
   workId(raw.idempotencyKey); workId(raw.entityId); if (raw.childId !== undefined) workId(raw.childId)
   return raw as WorkReceipt
 }

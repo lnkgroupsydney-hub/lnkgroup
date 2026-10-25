@@ -43,3 +43,6 @@
 .ems-root .staff-draft-surfaces>legend{font-size:var(--ems-small);font-weight:650;margin-bottom:.25rem}
 .ems-root .ems-field .staff-draft-field-error{color:var(--ems-ink);font-weight:650;font-size:var(--ems-small)}
 .ems-root .staff-draft [aria-invalid=true]{border-color:var(--site-border-strong);border-width:2px}
+/* D1: customer values kept from the original request are marked separately from save errors. */
+.ems-root .ems-field .staff-draft-source-note{display:block;padding:.35rem .5rem;border-left:3px dashed var(--site-border-strong);background:var(--ems-bg);color:var(--ems-ink);font-weight:500;font-size:var(--ems-small)}
+.ems-root .staff-draft-source-issues ul{margin:.5rem 0 0;padding-left:1.2rem;display:grid;gap:.25rem}

@@ -61,7 +61,7 @@ type Eligibility = { allowed: true } | { allowed: false; reason: string; next: s
 export function cancelEligibility(state: LiveCompanyBookingState): Eligibility {
   const booking = state.booking;
   if (!booking) return { allowed: false, reason: 'This booking is not confirmed.', next: 'Unconfirmed drafts are changed by saving a new draft.' };
-  if (booking.confirmationBasis !== 'signed_request') return { allowed: false, reason: 'This booking was confirmed with the earlier company proposal process. Cancelling it in the workspace is not available.', next: 'Keep the booking as it is and ask the company owner how it should be handled.' };
+  if (booking.confirmationBasis !== 'signed_request' && booking.confirmationBasis !== 'accepted_revision') return { allowed: false, reason: 'This booking was confirmed with the earlier company proposal process. Cancelling it in the workspace is not available.', next: 'Keep the booking as it is and ask the company owner how it should be handled.' };
   if (booking.status === 'confirming') return { allowed: false, reason: 'Confirmation is still processing.', next: 'Cancellation becomes available after both Google Calendar visits are verified and the confirmation email is accepted. Refresh the status, or retry pending booking processing if it stops.' };
   if (booking.status === 'review_required') return { allowed: false, reason: 'Company calendar review is required first.', next: 'Recheck the confirmed Google visits. Cancellation can start only after the booking is confirmed again.' };
   if (booking.status !== 'confirmed') return { allowed: false, reason: 'Cancellation has already started.', next: 'Follow its progress below.' };

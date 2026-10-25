@@ -10,6 +10,7 @@ import { LiveRequestDetails } from './request-details';
 import { StaffPhotoWorkspace } from './staff-photo-workspace';
 import { QuoteClientLinker } from './quote-client-linker';
 import { StaffQuoteDraftEditor } from './staff-quote-draft-editor';
+import { CompanyRevisionPanel, useCompanyRevisionGate } from './company-revision-panel';
 import { parseStaffQuoteList } from './staff-quote-client';
 import type { LiveBookingState } from '../domain/booking-flow';
 import { quotePricingDisplay } from '../domain/pricing-display.ts';
@@ -40,6 +41,12 @@ function StaffBookingDetails({ requestId, onAccessLost, active = true }: { reque
   return <section className="lq-booking ems-panel" aria-label="Customer estimate approval and reservation request"><h4>Customer approval and reservation request</h4>{error && <p className="lq-error" role="alert">{error}</p>}{!state && !error && <p role="status">Loading verified customer and booking request status…</p>}{state && <><p className="lq-notice">{state.verified ? 'Customer email ownership has been verified and this request is linked to verified customer access.' : 'Email ownership has not been verified for this request.'}</p>{state.submission ? <BookingSubmissionSummary submission={state.submission} staff /> : state.approval ? <dl className="lq-details"><div><dt>Estimate approval</dt><dd>{state.approval.stale ? 'Source changed; customer must approve again' : 'Provisional estimate acknowledged'} · {displayTime(state.approval.approvedAt)}</dd></div><div><dt>Approved source</dt><dd>Revision {state.approval.inputRevision} · AI analysis {state.approval.analysisId} · {state.approval.snapshot.photos.length} saved photos</dd></div><div><dt>Preferred start date</dt><dd>{state.approval.preferredDate ?? 'Not selected'} · Company confirmation required; no date held</dd></div><div><dt>Provisional amount</dt><dd>{new Intl.NumberFormat('en-AU',{style:'currency',currency:'AUD'}).format(state.approval.snapshot.pricing.total! / 100)} {quotePricingDisplay(state.approval.snapshot.pricing.pricingVersion).amountSuffix}</dd></div></dl> : <p>No estimate approval or reservation request has been submitted.</p>}</>}<button type="button" className="ems-button ems-button--secondary" disabled={busy || !active} onClick={()=>void load()}>Refresh approval and receipt status</button></section>;
 }
 
+/** Booking confirmation with the revised quote state, so staff see why confirmation may be blocked. */
+function RevisionAwareBookingEditor({ requestId, active, onAccessLost, onOpenRevision }: { requestId: string; active: boolean; onAccessLost: () => void; onOpenRevision: () => void }) {
+  const revisionGate = useCompanyRevisionGate(requestId, active, onAccessLost, onOpenRevision);
+  return <LiveCompanyBookingEditor requestId={requestId} active={active} onAccessLost={onAccessLost} revisionGate={revisionGate} />;
+}
+
 function parsePage(body: Record<string, unknown>): LiveQuoteRequestPage {
   if (!Array.isArray(body.requests) || !Number.isSafeInteger(body.total) || Number(body.total) < 0 || !Number.isSafeInteger(body.page) || Number(body.page) < 1 || !Number.isSafeInteger(body.pageSize) || Number(body.pageSize) < 1) throw new Error('The saved request list could not be verified.');
   return { requests: body.requests.map(parseLiveRequest), total: Number(body.total), page: Number(body.page), pageSize: Number(body.pageSize) };
@@ -60,7 +67,7 @@ const requestTabs = [
   { id: 'booking', label: 'Booking' }, { id: 'client', label: 'Client & property' }, { id: 'activity', label: 'Activity' },
 ];
 // Quotes add the staff work copy; the enquiries view keeps its existing tabs.
-const quoteTabs = [...requestTabs.slice(0, 4), { id: 'staff-draft', label: 'Internal draft' }, requestTabs[4]];
+const quoteTabs = [...requestTabs.slice(0, 3), { id: 'company-revision', label: 'Revised quote' }, requestTabs[3], { id: 'staff-draft', label: 'Internal draft' }, requestTabs[4]];
 
 export function LiveQuoteRequestsPanel({ onAccessLost, requestId, listPath = '/admin/quotes', title = 'Customer quote requests', description = 'Saved customer requests and their latest review status.' }: { onAccessLost: () => void; requestId?: string; listPath?: '/admin/quotes' | '/admin/enquiries'; title?: string; description?: string }) {
   const [filters, setFilters] = useWorkspaceDraft<RequestListState>(`live-requests:${listPath}`, initialListState);
@@ -133,6 +140,8 @@ export function LiveQuoteRequestsPanel({ onAccessLost, requestId, listPath = '/a
     void loadList(filters.query, 1, { ...filtersOf(filters), ...patch });
   }
   function chooseTab(id: string) { setTab(id); setVisited(previous => previous.includes(id) ? previous : [...previous, id]); }
+  // In-panel shortcuts move focus to the destination tab so keyboard users are not left on a hidden button.
+  function jumpToTab(id: string) { chooseTab(id); requestAnimationFrame(() => document.querySelector<HTMLElement>(`[role="tab"][id$="-tab-${id}"]`)?.focus()); }
   if (blocked) return <section className="ems-panel"><h2>{title}</h2><p className="ems-feedback" role="alert">Company access ended. Sign in again to view saved requests.</p></section>;
   if (requestId) return <section className="lq-admin ems-panel" aria-labelledby="live-request-detail-title">
     <div className="ems-actions"><WorkspaceLink className="ems-button ems-button--secondary" href={listPath}>Back to {listPath === '/admin/enquiries' ? 'enquiries' : 'quotes'}</WorkspaceLink><button type="button" className="ems-button ems-button--secondary" disabled={detailBusy} onClick={() => void loadDetail(requestId)}>Refresh request</button></div>
@@ -144,7 +153,8 @@ export function LiveQuoteRequestsPanel({ onAccessLost, requestId, listPath = '/a
       <AdminTabs activeId={tab} onChange={chooseTab} items={tabs} label="Request detail sections">{(_activeId, _panelProps, getPanelProps) => tabs.map(({ id }) => <section key={`${detail.request.id}:${id}`} {...getPanelProps(id)}>
         {visited.includes(id) && id === 'summary' && <><StaffPhotoWorkspace requestId={detail.request.id} active={tab === 'summary'} compact onAccessLost={accessLost} /><button className="ems-button ems-button--secondary" type="button" onClick={()=>chooseTab('client')}>Review client and property</button><details><summary>Saved contact and service details</summary><LiveRequestDetails request={detail.request} /></details></>}
         {visited.includes(id) && id === 'photos' && <StaffPhotoWorkspace requestId={detail.request.id} active={tab === 'photos'} onAccessLost={accessLost} />}
-        {visited.includes(id) && id === 'booking' && <><StaffBookingDetails requestId={detail.request.id} active={tab === 'booking'} onAccessLost={accessLost} /><LiveCompanyBookingEditor requestId={detail.request.id} active={tab === 'booking'} onAccessLost={accessLost} /></>}
+        {visited.includes(id) && id === 'booking' && <><StaffBookingDetails requestId={detail.request.id} active={tab === 'booking'} onAccessLost={accessLost} />{quotesView ? <RevisionAwareBookingEditor key={detail.request.id} requestId={detail.request.id} active={tab === 'booking'} onAccessLost={accessLost} onOpenRevision={() => jumpToTab('company-revision')} /> : <LiveCompanyBookingEditor requestId={detail.request.id} active={tab === 'booking'} onAccessLost={accessLost} />}</>}
+        {visited.includes(id) && id === 'company-revision' && <CompanyRevisionPanel key={detail.request.id} requestId={detail.request.id} active={tab === 'company-revision'} onAccessLost={accessLost} onOpenBooking={() => jumpToTab('booking')} />}
         {visited.includes(id) && id === 'client' && <QuoteClientLinker key={detail.request.id} request={detail.request} active={tab === 'client'} onAccessLost={accessLost} />}
         {visited.includes(id) && id === 'staff-draft' && <StaffQuoteDraftEditor key={detail.request.id} requestId={detail.request.id} active={tab === 'staff-draft'} onAccessLost={accessLost} />}
         {visited.includes(id) && id === 'activity' && <><h3>Saved history</h3>{detail.audit.length ? <ol className="lq-audit">{detail.audit.map(item => <li key={item.id}>{item.action === 'request_review' ? 'Company review requested' : 'Details saved'} · Revision {item.revision} · {displayTime(item.createdAt)} (Sydney) · Customer writing session</li>)}</ol> : <p>No history is available.</p>}</>}

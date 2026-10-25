@@ -90,8 +90,12 @@ export function StaffQuoteDraftEditor({ requestId, active, onAccessLost }: { req
 
   const fid = (name: string) => `staff-draft-${name}-${requestId}`;
   const fieldError = (key: string) => writeFailed && phase === 'error' ? work.fields?.[(fieldPaths[key] ?? key) as keyof NonNullable<WorkState['fields']>] : undefined;
-  const invalid = (key: string) => fieldError(key) ? { 'aria-invalid': true, 'aria-describedby': `${fid(key)}-error` } : {};
-  const fieldMessage = (key: string) => { const message = fieldError(key); return message ? <small id={`${fid(key)}-error`} className="staff-draft-field-error">{message}</small> : null; };
+  // D1: customer values that fail today's rules stay as they are until staff change them. They are not save errors.
+  const sourceForm = data ? formFrom(payloadFromSource(data.source)) : null;
+  const formValue = (value: Form | null, key: string) => !value ? undefined : key in value.contact ? value.contact[key as keyof ContactForm] : ({ intent: value.intent, doors: value.doorCount, drawers: value.drawerCount, material: value.material, colour: value.colourPreference, surfaces: value.surfaces.join(',') } as Record<string, string>)[key];
+  const sourceIssue = (key: string) => { const path = key === 'surfaces' ? 'payload.service.surfaces' : fieldPaths[key] ?? key, issue = data?.sourceIssues?.find(item => item.field === path); return issue && formValue(form, key) === formValue(sourceForm, key) ? issue : undefined; };
+  const invalid = (key: string) => { const describedBy = [fieldError(key) ? `${fid(key)}-error` : '', sourceIssue(key) ? `${fid(key)}-source` : ''].filter(Boolean).join(' '); return { ...(fieldError(key) ? { 'aria-invalid': true } : {}), ...(describedBy ? { 'aria-describedby': describedBy } : {}) }; };
+  const fieldMessage = (key: string) => { const message = fieldError(key), issue = sourceIssue(key); return <>{issue && <small id={`${fid(key)}-source`} className="staff-draft-source-note">Customer’s original value: {issue.message} Kept as is in this draft; correct it before a revised quote is sent.</small>}{message && <small id={`${fid(key)}-error`} className="staff-draft-field-error">{message}</small>}</>; };
   const focusSoon = (target: { current: HTMLElement | null }) => requestAnimationFrame(() => target.current?.focus());
   async function afterWrite(snapshot: WorkState, attempted: Form, attemptedRevision: number) {
     if (!apply(snapshot)) return;
@@ -108,7 +112,7 @@ export function StaffQuoteDraftEditor({ requestId, active, onAccessLost }: { req
     event.preventDefault();
     if (!form || locked || conflict || client.pendingRequest() || !data?.canWrite) return;
     const payload = payloadFrom(form);
-    try { validateStaffQuotePayload(payload); }
+    try { validateStaffQuotePayload(payload, data.source.payload); }
     catch (cause) { setValidation(`${cause instanceof Error ? cause.message : 'Check the draft details.'} Correct the field and save again.`); focusSoon(validationRef); return; }
     if (!reason.trim()) { setValidation('Enter a reason for this internal draft change.'); focusSoon(validationRef); return; }
     setValidation(''); setNotice(''); setWriteFailed(false);
@@ -153,6 +157,11 @@ export function StaffQuoteDraftEditor({ requestId, active, onAccessLost }: { req
       <p className="ems-list-meta">{draft ? `Internal draft revision ${draft.revision} · last saved ${displayTime(draft.updatedAt)} (Sydney) · started from customer revision ${draft.sourceRevisionAtCreation}` : 'No internal draft has been saved yet. The form starts from the customer’s saved details.'}</p>
       {draft && source && draft.sourceRevisionAtCreation !== source.revision && <p className="ems-feedback">The customer request changed after this internal draft started (customer revision {draft.sourceRevisionAtCreation} → {source.revision}). Compare the customer details above before relying on this draft.</p>}
       {!data.canWrite && <p className="ems-feedback">You can view this internal draft but cannot change it.</p>}
+      {data.sourceIssues.length > 0 && <div className="ems-feedback staff-draft-source-issues" role="note" aria-labelledby={`staff-draft-source-${requestId}`}>
+        <h4 id={`staff-draft-source-${requestId}`}>The customer’s original request has values that don’t meet the current input rules</h4>
+        <p>They are kept as they are in this internal draft, and you can save the draft without changing them. They must be corrected before a revised quote is sent to the customer. Any field you change is checked against the current rules when you save.</p>
+        <ul>{data.sourceIssues.map(issue => <li key={issue.field}>{pathLabels[issue.field] ?? issue.field}: {issue.message}</li>)}</ul>
+      </div>}
 
       <p ref={noticeRef} tabIndex={-1} role="status" aria-live="polite" className={notice ? 'ems-feedback' : undefined}>{notice}</p>
 

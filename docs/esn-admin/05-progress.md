@@ -1,12 +1,31 @@
 # EMS 진행표와 결정 대기
 
+## 2026-10-22 R3b integrator round 1 보완·최종 합성 인수
+
+- [x] 최초 integrator 판정 **CONDITIONAL**의 M1/M2 및 L1·L2·L4·L5·L6·L7 수정. Critical/High 결함은 없었다.
+- [x] Codex M1b·M2·L4·L5·L6: 원본 subtotal/GST/total·pricingVersion, TS/SQL 동일성·PDF/메일, 철회 후 claim/attempt 차단·미시도 notice cancelled, 읽기 쉬운 문서, 수량 scope·빈 note, private helper EXECUTE 회수. 직전 샌드박스 982개 중 977 pass·5 listen EPERM을 조정자가 밖에서 982/982로 재확인했다.
+- [x] UI M1a·L1·L2·L7·withdrawn 문구: 원본 Subtotal/GST/Total과 회사본 No GST, GST 제거 포함 Difference, Amount in effect 값, 짧은 Version N sent., busy status 중복 제거, 철회 이메일 회신 안내.
+- [x] 이번 최종 단계: fixture의 미시도 cancelled/revision_withdrawn·시도된 retry 증거 보존을 실제 DB DTO와 교차 시험(**8/8**, 소켓 없음). 두 스크립트 node --check 종료 0. `.tsx`·`.css`·`.sql` 보호 해시 보존.
+- [x] 강한 reviewer의 스크립트 필수 수정 2건(철회 dialog 새 문구·cancelled 전체 문단 선택자)을 반영·재확인한 뒤 ready-a를 만들었다. native modal dialog contract 함수·기존 단언은 유지했다.
+- [x] 조정자 샌드박스 밖 **fix1-final round a**: 저장소 lint·typecheck 종료 0, 업무 검사 **984/984**, fail·skip 0. 겹친 실행 중지 후 최종 `repo-a2` 로그를 사용한다.
+- [x] 격리 check(빌드 포함)·준비 종료 0, Chrome **R3b 6/6·R3a 11/11·R1 13/13·R2 20/20**, fail·skip 0, 게이트 종료 0. round b는 필요하지 않았다. 실제 `/quote/start`, GST 화면 셀·철회 발송 기록 0, 필수 화면 3개·JSON을 보존했다.
+- [x] 수정 전 P3 최종 969/969·R3b 6/6과 2026-10-22 재부팅 후 두 라운드 결과는 `history-p3-round2/`에 이력으로 보존했다. 이전 favicon 준비 검사·로고 w48·401 경합·복사본 업무 검사 제외 이유도 검증 문서에 유지한다.
+- [ ] 경미: 아직 회사본이 없으면 Amount in effect는 금액 대신 Booking 탭을 안내한다(StaffDetail originalTotalCents 없음).
+- [ ] 경미: 원본 GST 0 분기는 코드·단위 시험만 확인했으며 screenshot은 없다.
+- [ ] 회사 승인 후 미적용 migration 4개를 **R3a×2 → R3b×2** 순서로 적용하고 배포·실제 직원/고객·OTP·메일/Google 인수.
+- [ ] 할인/음수 항목, 고객 거절·변경 요청, 철회 통지, 확정 예약 variation, 정식 계약 약관·서명 보존 정책 확정([12번 §7](12-2026-10-21-r3b-company-revision-policy.md#7-미결정-사항)).
+
+P2는 `signed_request`와 `accepted_revision` 모두에서 확정 완료·완전한 이벤트 manifest·확정 메일 제공자 수락 후 취소를 허용하는 기존 조건을 표시한다. 실제 Google 삭제 확인 전 점유 해제나 실제 운영 취소 인수는 완료로 표시하지 않는다. [최종 결과·증거·남은 운영 인수](../verification/2026-10-21-ems-r3b.md) · [현재 인계](11-2026-10-21-next-worktree-handoff.md).
+
+고객 원 서명 화면의 $2,420 Including GST는 fixture의 과거 v2 frozen snapshot($2,200 + GST $220) 표시다. 회사본 v3는 no-GST이며 원본은 유지한다. 아래 R2·R3a 및 과거 날짜별 기록은 당시 검증 수준이다.
+
 ## 2026-10-21 R2 잔여·R3a 구현 재개 완료 수준
 
 - [x] 견적의 모호한 현장 후보 검토 연결: 취소/기존 선택/별도 현장 확인·다른 탭 revision 충돌·원본 보존. R2 Chrome **20/20**, R1 회귀 **13/13**.
 - [x] R3a 로컬 코드·합성 인수: 문의 담당/메모/보관·복원, 직원 견적 초안/필터·이력, 단순 예약 서버 초안·수정/취소 worker와 상태 UI. Chrome **11/11**.
 - [x] 문의/견적 재조회 실패의 입력 보호와 최신 revision 재확인, 잘못된 UTF-16 저장 차단. 전체 **901/901** 이후 보완 회귀 **11/11**, 최종 lint·타입·production build와 reviewer 재검토 통과.
 - [ ] 회사 DB migration·배포·실제 직원/Google 삭제/메일 인수와 최신 PostgreSQL 다중 연결 경합.
-- [ ] 기존 자료 dry-run/backfill·고객 병합 영향 미리보기, R3b 회사 견적 개정/문서, R4 이후 집계·새 업무.
+- [ ] 기존 자료 dry-run/backfill·고객 병합 영향 미리보기, R4 이후 집계·새 업무. R3b 회사 견적 개정/문서는 위 2026-10-22 최종 합성 인수 기록으로 갱신했다.
 
 [실행 범위·로그·합성 화면](../verification/2026-10-21-ems-r2-r3a-resume.md). 같은 날 사용자 요청으로 최종 소스를 다시 검증(전체 **903/903**·check·Chrome 11+13+20)하고 로컬 `main`에 병합했다. push·회사 DB 적용·배포는 하지 않았다. 다음 작업은 [11번 인계](11-2026-10-21-next-worktree-handoff.md)에서 시작한다. 아래 기록의 미완료 표시는 각 작성 당시 상태다.
 
