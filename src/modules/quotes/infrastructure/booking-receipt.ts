@@ -94,7 +94,7 @@ export async function createBookingReceiptPdf(source: LiveBookingSubmission): Pr
   field('Service', 'Kitchen Cabinet Painting - existing cabinets')
   field('Requested work / surfaces', `${service.intent} / ${service.surfaces.join(', ')}`)
   field('Material / colour preference', [service.material, service.colourPreference].filter(Boolean).join(' / '))
-  if (s.version === BOOKING_SIMPLE_ACK_VERSION) field('Requested take-off date and time (Sydney; not reserved)', `${source.preferredDate} ${source.preferredTime}`)
+  if (s.version === BOOKING_SIMPLE_ACK_VERSION) field('Requested door-removal (take-off) date and time (Sydney; not reserved)', `${source.preferredDate} ${source.preferredTime}`)
   else field('Preferred start date (not reserved)', source.preferredDate)
   paragraph('Frozen provisional painting estimate', 15); y -= 6
   for (const item of pricing.lineItems) field(item.label, `${item.quantity} x ${money(item.unitAmount)} = ${money(item.amount)}`)
@@ -129,7 +129,7 @@ export async function createBookingReceiptPdf(source: LiveBookingSubmission): Pr
   }
   field('Frozen snapshot SHA-256', source.snapshotHash)
   field('Signed content SHA-256 (snapshot and signature)', source.signedContentHash)
-  paragraph(s.version === BOOKING_SIMPLE_ACK_VERSION ? 'The company will confirm your take-off appointment and assign the installation appointment by email. More extensive damage may increase the price after an on-site inspection; additional work and cost will be discussed before proceeding. No payment is due.' : 'Exact quantities, repairs, final price, duration and legal terms require a later company proposal and separate acceptance. No payment is due.', 9)
+  paragraph(s.version === BOOKING_SIMPLE_ACK_VERSION ? 'The company will confirm your door-removal (take-off) appointment and assign the installation appointment by email. More extensive damage may increase the price after an on-site inspection; additional work and cost will be discussed before proceeding. No payment is due.' : 'Exact quantities, repairs, final price, duration and legal terms require a later company proposal and separate acceptance. No payment is due.', 9)
   paragraph('Unsupported font characters appear as [U+code point]. Original saved data remains unchanged.', 8)
   pdf.getPages().forEach((p, index) => p.drawText(`${source.reference} | NONBINDING REQUEST | ${index + 1} / ${pdf.getPageCount()}`, { x: margin, y: 31, size: 8, font, color: muted }))
   const bytes = await pdf.save({ useObjectStreams: false })
@@ -141,8 +141,8 @@ export async function createFrozenBookingReceipt(source: LiveBookingSubmission, 
   const pdf = await createBookingReceiptPdf(source)
   const pdfBase64 = Buffer.from(pdf.bytes).toString('base64')
   const simple = source.snapshot.version === BOOKING_SIMPLE_ACK_VERSION
-  const selected = simple ? `Requested take-off: ${source.preferredDate} ${source.preferredTime} (Sydney; not reserved)` : `Preferred start date: ${source.preferredDate} (not reserved)`
-  const next = simple ? 'No further online approval is required for the company to schedule these appointments. The company will confirm your take-off appointment and assign the installation appointment by email. Additional damage found on site may increase the price; any additional work and cost will be discussed before proceeding.' : 'Exact quantities, repairs, final scope, price and duration require company review and site confirmation. Final terms and any confirmed booking require a separate proposal and your acceptance.'
+  const selected = simple ? `Requested door-removal (take-off): ${source.preferredDate} ${source.preferredTime} (Sydney; not reserved)` : `Preferred start date: ${source.preferredDate} (not reserved)`
+  const next = simple ? 'No further online approval is required for the company to schedule these appointments. The company will confirm your door-removal (take-off) appointment and assign the installation appointment by email. Additional damage found on site may increase the price; any additional work and cost will be discussed before proceeding.' : 'Exact quantities, repairs, final scope, price and duration require company review and site confirmation. Final terms and any confirmed booking require a separate proposal and your acceptance.'
   const priceNotice = quotePricingDisplay(source.snapshot.pricing.pricingVersion).includesGst ? '' : `Photo-based provisional estimate: AUD ${(source.snapshot.pricing.total! / 100).toFixed(2)}. ${NO_GST_NOTICE}\n\n`
   const text = `L&K Group booking request receipt\n\nReference: ${source.reference}\n${selected}\n\n${priceNotice}Your signed booking request receipt is attached. This is a nonbinding request pending company confirmation. It does not authorise work, create a contract or require payment. ${next}\n\nReply to this email if you need assistance.`
   const payload: LiveBookingEmailPayload = {

@@ -20,7 +20,7 @@ const titles={proposal_notice:'Company price and work schedule proposal',accepta
 const dateTime=(date:string)=>new Intl.DateTimeFormat('en-AU',{dateStyle:'medium',timeStyle:'short',timeZone:'Australia/Sydney'}).format(new Date(date))
 const nextDate=(date:string,days:number)=>new Date(Date.parse(`${date}T00:00:00Z`)+days*86400000).toISOString().slice(0,10)
 export function companyWorkPeriodsText(claim:LiveCompanyWorkerClaim):string {
- return claim.proposal.segments.map((s,i)=>`${i+1}. ${s.purpose==='take_off'?'Take-off: ':s.purpose==='install'?'Installation: ':''}${s.kind==='all_day'?`${s.startDate} to ${nextDate(s.endDate,-1)} inclusive (all day)`:`${dateTime(s.startAt)} to ${dateTime(s.endAt)} (Sydney)`}`).join('\n')
+ return claim.proposal.segments.map((s,i)=>`${i+1}. ${s.purpose==='take_off'?'Door-removal (take-off): ':s.purpose==='install'?'Installation: ':''}${s.kind==='all_day'?`${s.startDate} to ${nextDate(s.endDate,-1)} inclusive (all day)`:`${dateTime(s.startAt)} to ${dateTime(s.endAt)} (Sydney)`}`).join('\n')
 }
 function validate(claim:LiveCompanyWorkerClaim){
  const p=claim.proposal,s=claim.submission.snapshot
@@ -71,7 +71,7 @@ export async function createCompanyBookingMail(claim:LiveCompanyWorkerClaim,send
   paragraph('Original customer booking request',14);y-=6
   paragraph(claim.submission.snapshot.acknowledgment.text);y-=8
   field('Acknowledgment version',claim.submission.snapshot.acknowledgment.version)
-  field('Requested take-off (Sydney)',`${claim.submission.preferredDate} ${claim.submission.preferredTime}`)
+  field('Requested door-removal (take-off) visit (Sydney)',`${claim.submission.preferredDate} ${claim.submission.preferredTime}`)
   field('Request signed at (Sydney)',dateTime(claim.submission.submittedAt))
   field('Originally signed name / method',`${claim.submission.signature.name} / ${claim.submission.signature.method??'drawn'}`)
   field('Original signed content SHA-256',claim.submission.signedContentHash)
@@ -84,7 +84,7 @@ export async function createCompanyBookingMail(claim:LiveCompanyWorkerClaim,send
   if(claim.acceptance.signature.strokes.length){need(145);const boxY=y-110;page!.drawRectangle({x:margin,y:boxY,width:contentWidth,height:100,borderWidth:.6,borderColor:muted});for(const stroke of claim.acceptance.signature.strokes)for(let i=1;i<stroke.length;i++){const a=stroke[i-1],b=stroke[i];page!.drawLine({start:{x:margin+8+a.x*(contentWidth-16),y:boxY+8+(1-a.y)*84},end:{x:margin+8+b.x*(contentWidth-16),y:boxY+8+(1-b.y)*84},thickness:1.3,color:ink})}y=boxY-20}
  }
  if(claim.booking?.status==='confirmed'){field('Confirmed booking',`${claim.booking.id} / version ${claim.booking.version}`);field('Confirmed at (Sydney)',dateTime(claim.booking.confirmedAt!));field('Calendar evidence',`${claim.booking.events.length} independently verified private busy work periods. Provider event IDs and private access URLs are retained in the EMS.`)}
- paragraph(simple?'This document confirms the take-off and installation appointments and records the original photo-based provisional estimate. More extensive damage can increase the price after an on-site inspection; additional work and cost will be discussed before proceeding. It does not issue an invoice, request payment or replace separately approved contractual terms. Photo files and private access URLs are not attached.':'This document records the company proposal and schedule acknowledgment. It does not issue an invoice, request payment or replace separately approved contractual terms. Photo files and private access URLs are not attached.',9)
+ paragraph(simple?'This document confirms the door-removal (take-off) and installation appointments and records the original photo-based provisional estimate. More extensive damage can increase the price after an on-site inspection; additional work and cost will be discussed before proceeding. It does not issue an invoice, request payment or replace separately approved contractual terms. Photo files and private access URLs are not attached.':'This document records the company proposal and schedule acknowledgment. It does not issue an invoice, request payment or replace separately approved contractual terms. Photo files and private access URLs are not attached.',9)
  paragraph('Unsupported font characters appear as [U+code point]. Original saved data remains unchanged.',8)
  pdf.getPages().forEach((page,i)=>page.drawText(`${claim.submission.reference} | COMPANY SCHEDULE | ${i+1} / ${pdf.getPageCount()}`,{x:margin,y:31,font,size:8,color:muted}))
  const bytes=await pdf.save({useObjectStreams:false}),pdfBase64=Buffer.from(bytes).toString('base64'),pdfHash=createHash('sha256').update(bytes).digest('hex')

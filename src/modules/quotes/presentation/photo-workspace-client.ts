@@ -56,6 +56,13 @@ export function validatePhotoFile(file: Pick<File, 'type' | 'size'>): void {
   if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) throw new Error('Choose a JPEG, PNG or WebP photo.');
   if (file.size < 1 || file.size > 10 * 1024 * 1024) throw new Error('Each photo must be between 1 byte and 10 MB.');
 }
+const LOOPBACK_HOSTS = new Set(['127.0.0.1', 'localhost', '[::1]']);
+// Signed uploads must use HTTPS. A local test page served over plain HTTP may
+// upload only to its own loopback origin; production pages are always HTTPS.
+export function isAllowedPhotoUploadUrl(url: URL, page: Pick<Location, 'protocol' | 'hostname' | 'origin'>): boolean {
+  if (url.protocol === 'https:') return true;
+  return url.protocol === 'http:' && page.protocol === 'http:' && LOOPBACK_HOSTS.has(page.hostname) && url.origin === page.origin;
+}
 export function canRequestPhotoAnalysis(workspace: PhotoWorkspace): boolean {
   return workspace.request.status === 'draft' && Boolean(workspace.request.payload.service)
     && workspace.photos.some(photo => photo.state === 'ready') && !workspace.photos.some(photo => photo.state === 'uploading')

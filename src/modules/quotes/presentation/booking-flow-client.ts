@@ -52,7 +52,7 @@ function snapshotMatches(value: unknown, requestId: string): value is LiveBookin
 }
 export function parseBookingSubmission(value: unknown, requestId: string): LiveBookingSubmission {
   if (!isRecord(value) || value.requestId !== requestId || typeof value.id !== 'string' || typeof value.reference !== 'string' || !dateValid(value.preferredDate) || typeof value.submittedAt !== 'string' || !Number.isFinite(Date.parse(value.submittedAt)) || typeof value.receiptReady !== 'boolean' || !['pending','sending','provider_accepted','retrying','failed','outcome_unknown','manual_review'].includes(String(value.emailStatus)) || !['not_required','blocked','pending','syncing','synced','retrying','conflict','manual_review'].includes(String(value.calendarStatus)) || !snapshotMatches(value.snapshot, requestId)) throw new Error('The saved booking request receipt could not be verified. Check its saved status.');
-  if (value.snapshot.preferredDate !== undefined && value.snapshot.preferredDate !== value.preferredDate || value.snapshot.version === BOOKING_SIMPLE_ACK_VERSION && (!bookingTimeValid(value.preferredTime) || value.preferredTime !== value.snapshot.preferredTime || value.calendarStatus !== 'not_required')) throw new Error('The saved take-off date and time did not match the signed request.');
+  if (value.snapshot.preferredDate !== undefined && value.snapshot.preferredDate !== value.preferredDate || value.snapshot.version === BOOKING_SIMPLE_ACK_VERSION && (!bookingTimeValid(value.preferredTime) || value.preferredTime !== value.snapshot.preferredTime || value.calendarStatus !== 'not_required')) throw new Error('The saved door-removal date and time did not match the signed request.');
   parseBookingSignature(value.signature);
   return value as unknown as LiveBookingSubmission;
 }
@@ -74,7 +74,7 @@ export type BookingAttempt = { path: string; method: string; body: string; revie
 /** The visible Continue button chains the existing safe commands. Each uncertain
  * write keeps its own original idempotency key; only its confirmed result advances. */
 export function bookingPreparationAttempt(state: LiveBookingState, analysisId: string, expectedRevision: number, selection: BookingPreparationSelection, key: string): BookingAttempt {
-  if (!dateValid(selection.date) || !bookingTimeValid(selection.time) || !selection.availabilityRevision || state.submission) throw new Error('Choose an available take-off date and enter a valid Sydney time.');
+  if (!dateValid(selection.date) || !bookingTimeValid(selection.time) || !selection.availabilityRevision || state.submission) throw new Error('Choose an available door-removal date and enter a valid Sydney time.');
   const approval = state.approval;
   if (!approval || approval.stale || approval.analysisId !== analysisId || approval.inputRevision !== expectedRevision || approval.snapshot.version !== BOOKING_SIMPLE_ACK_VERSION) return { path: '/api/quote/requests/booking/approve', method: 'POST', body: JSON.stringify({ analysisId, expectedRevision, idempotencyKey: key }), preparation: { ...selection, analysisId, expectedRevision } };
   return bookingDateAttempt(approval.id, { ...selection, analysisId, expectedRevision }, key);
@@ -87,7 +87,7 @@ export function bookingPreparationNext(attempt: BookingAttempt, state: LiveBooki
   const approval = state.approval, selection = attempt.preparation;
   if (!approval || approval.stale || approval.snapshot.version !== BOOKING_SIMPLE_ACK_VERSION || approval.analysisId !== selection.analysisId || approval.inputRevision !== selection.expectedRevision) throw new Error('The saved estimate changed. Refresh its status before signing.');
   if (attempt.path.endsWith('/approve')) return bookingDateAttempt(approval.id, selection, key);
-  if (!attempt.path.endsWith('/date') || approval.preferredDate !== selection.date || approval.preferredTime !== selection.time) throw new Error('Your saved take-off date and time did not match this selection. Refresh before signing.');
+  if (!attempt.path.endsWith('/date') || approval.preferredDate !== selection.date || approval.preferredTime !== selection.time) throw new Error('Your saved door-removal date and time did not match this selection. Refresh before signing.');
   return { path: '/api/quote/requests/booking/review', method: 'POST', body: JSON.stringify({ approvalId: approval.id, selectionRevision: approval.selectionRevision }), review: { approvalId: approval.id, selectionRevision: approval.selectionRevision, selection: { date: selection.date, time: selection.time } } };
 }
 export function parseBookingAvailability(body: Record<string, unknown>, month: string): LiveBookingAvailability {

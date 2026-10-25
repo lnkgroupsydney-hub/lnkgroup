@@ -85,7 +85,7 @@ export function bookingDate(value: unknown): string {
   return value
 }
 export function bookingTime(value: unknown): string {
-  if (typeof value !== 'string' || !/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value)) throw new QuoteRequestError(400, 'Choose a valid Sydney take-off time.')
+  if (typeof value !== 'string' || !/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value)) throw new QuoteRequestError(400, 'Choose a valid Sydney door-removal time.')
   return value
 }
 export function validateBookingSignature(value: unknown): LiveBookingSignature {

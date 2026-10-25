@@ -42,7 +42,7 @@ test('Calendar and DB confirmation precede receipt freeze, persisted send attemp
 test('one company confirmation sends take-off and installation with the original request signature and provisional amount',async()=>{
  const h=harness();h.setClaim(signedRequestClaim());const r=await processCompanyBookingOutbox(undefined,h.deps)
  assert.equal(r.confirmed,1);assert.equal(r.accepted,1);assert.equal(h.claim().acceptance,null)
- const p=JSON.parse(h.payloads[0]);assert.match(p.text,/Take-off:/);assert.match(p.text,/Installation:/);assert.match(p.text,/provisional estimate: AUD 1650.00/)
+ const p=JSON.parse(h.payloads[0]);assert.match(p.text,/Door-removal \(take-off\):/);assert.match(p.text,/Installation:/);assert.match(p.text,/provisional estimate: AUD 1650.00/)
  assert.match(p.text,/additional work and cost will be discussed/i);assert.match(p.text,/No further online approval/);assert.doesNotMatch(p.text,/Final company amount|review the saved proposal/)
  assert.ok(h.commands.indexOf('finish_calendar')<h.commands.indexOf('email_attempt'));assert.ok(validCompanyBookingMail(h.claim().frozenMail,h.claim()))
 })

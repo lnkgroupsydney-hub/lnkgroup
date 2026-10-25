@@ -46,6 +46,33 @@
   --hero-veil-start: 0.9;
   --hero-veil-mid: 0.7;
   --hero-veil-end: 0.04;
+
+  /* Raw "Painted Cabinet" palette (docs/plans/55 §3.2). Screens consume it
+     only through semantic aliases such as the Quote route's --quote-*. */
+  --palette-greige-wall: #f2eee7;
+  --palette-shaker-white: #fbf9f4;
+  --palette-marble: #e8e3da;
+  --palette-oak-mist: #d9d2c6;
+  --palette-slate-line: #6e7a80;
+  --palette-charcoal-ink: #23303a;
+  --palette-pewter: #4f5b62;
+  --palette-slate-blue: #3d5566;
+  --palette-slate-blue-deep: #2f4554;
+  --palette-slate-mist: #e3e9ec;
+  --palette-brass: #b08d57;
+  --palette-brass-deep: #7a5a2b;
+  --palette-brass-tint: #f3ebdd;
+  --palette-brass-light: #d9bc86;
+  --palette-sage: #55705a;
+  --palette-sage-tint: #e6ede3;
+  --palette-sage-text: #4a6350;
+  --palette-clay-red: #9b2c24;
+  --palette-clay-tint: #f8e9e6;
+  --palette-natural-oak: #c49a6c;
+  /* Earlier quote/EMS error and ink values, kept for staff screens that share
+     the quote stylesheet so their appearance does not change. */
+  --palette-legacy-error: #8f2525;
+  --palette-legacy-ink: #1d2522;
 }
 
 @theme inline {

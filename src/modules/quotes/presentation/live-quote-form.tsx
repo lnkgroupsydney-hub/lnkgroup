@@ -1,7 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
-import { ArrowLeft, ArrowRight, CalendarDays, Camera, Check, ClipboardCheck, Mail, MapPin, Paintbrush, PenLine, ShieldCheck, UserRound } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
+import { ArrowLeft, ArrowRight, CalendarDays, Camera, Check, ClipboardCheck, ChevronDown, ExternalLink, FolderOpen, Lightbulb, Mail, MapPin, Palette, Paintbrush, PenLine, Plus, ShieldCheck, Sparkles, Tag, UserRound, type LucideIcon } from 'lucide-react';
 import { validateQuoteDraft, type QuoteDraftInput } from '../../enquiries/domain';
 import { AddressAutocompleteInput } from '@/shared/ui/address-autocomplete-input';
 import { ValidatedInput, ValidatedTextarea, getFieldValidationError, reportSectionValidity, type FieldValidationOptions } from '@/shared/ui/validated-input';
@@ -17,6 +17,10 @@ import { CustomerAccessPanel } from './customer-access-panel';
 import { CUSTOMER_ACCESS_CHANGED, CUSTOMER_ACCESS_CHANNEL, CUSTOMER_NEW_QUOTE_STARTED, QuoteEntryTransitionError, isPendingFirstSave, pendingFirstSaveMatches, startNewQuote, checkNewQuoteSession, resumeBrowserDraft, readCustomerAccess, type BrowserDraftSummary, type QuoteContactPrefill } from './customer-access-client';
 import { LegacyQuoteRecovery } from './legacy-quote-recovery';
 import { SavedPhotoAnalysis } from './saved-photo-analysis';
+import { QuoteMenu } from './quote-menu';
+import { QuoteProgress } from './quote-progress';
+import { QuoteEntry } from './quote-entry';
+import { formatQuoteAmount } from './quote-money';
 import { liveRequest, parseLiveRequest, LiveRequestError, intentLabels, surfaceLabels, withWritingSessionLock, isRecord } from './request-client';
 import './live-quote.css';
 
@@ -41,9 +45,11 @@ const STAGES = [
   { title: 'Your cabinets', description: 'Choose what to refresh', icon: Paintbrush },
   { title: 'Add photos', description: 'Show us your cabinets', icon: Camera },
   { title: 'Your estimate', description: 'Review the painting scope', icon: ClipboardCheck },
-  { title: 'Choose a visit', description: 'Your take-off date & time', icon: CalendarDays },
+  { title: 'Pick a visit', description: 'Door-removal date & time', icon: CalendarDays },
   { title: 'Sign & submit', description: 'Send your booking request', icon: PenLine },
 ] as const;
+const INTENT_ICONS: Record<string, LucideIcon> = { 'full-repainting': Paintbrush, 'partial-touch-ups': Sparkles, 'colour-change': Palette, advice: Lightbulb };
+const SERVICE_PAGE = '/services/cabinet-painting';
 function valuesOf(request: LiveQuoteRequest): Values {
   const { contact, service } = request.payload;
   return { ...EMPTY, ...contact, ...(service ?? {}), doorCount: service?.doorCount == null ? '' : String(service.doorCount), drawerCount: service?.drawerCount == null ? '' : String(service.drawerCount) };
@@ -59,7 +65,7 @@ async function loadSaved(legacyRecoveryMode = false) {
   });
 }
 
-export function LiveQuoteForm({ legacyRecoveryMode = false, companyBaseUrl = '' }: { legacyRecoveryMode?: boolean; companyBaseUrl?: string }) {
+export function LiveQuoteForm({ legacyRecoveryMode = false, companyBaseUrl = '', brand }: { legacyRecoveryMode?: boolean; companyBaseUrl?: string; brand?: ReactNode }) {
   const [entry, setEntry] = useState<'choice' | 'new' | 'saved'>(legacyRecoveryMode ? 'new' : 'choice');
   const [freshBaseline, setFreshBaseline] = useState<Values>(EMPTY);
   const [newStartConfirmation, setNewStartConfirmation] = useState(false), [entryUncertain, setEntryUncertain] = useState(false), [entryPeerConflict, setEntryPeerConflict] = useState(false), [resumeConfirmation, setResumeConfirmation] = useState(false), [browserDraft, setBrowserDraft] = useState<BrowserDraftSummary | null>(null);
@@ -71,14 +77,14 @@ export function LiveQuoteForm({ legacyRecoveryMode = false, companyBaseUrl = '' 
   const [bookingBusy, setBookingBusy] = useState(false), [bookingReadOnly, setBookingReadOnly] = useState(false), [latestAnalysis, setLatestAnalysis] = useState<PublicAnalysisJob | null>(null);
   const [authBusy, setAuthBusy] = useState(false), [photoBusy, setPhotoBusy] = useState(false), [verifiedEmail, setVerifiedEmail] = useState<string | null>(null);
   const [accessOpen, setAccessOpen] = useState(false), [accessVersion, setAccessVersion] = useState(0), [accessConflict, setAccessConflict] = useState(false);
-  const [bookingActions, setBookingActions] = useState<HTMLDivElement | null>(null);
+  const [bookingActions, setBookingActions] = useState<HTMLDivElement | null>(null), [photoActions, setPhotoActions] = useState<HTMLDivElement | null>(null);
   const [entryVersion, setEntryVersion] = useState(0), [entryTransitioning, setEntryTransitioning] = useState(false);
   const [entryTabId] = useState(() => crypto.randomUUID());
   const sessionBlocked = useRef(false);
   const initial = useRef<Promise<LiveQuoteRequest | null> | null>(null), alive = useRef(false), changing = useRef(false);
   const generation = useRef(0);
   const heading = useRef<HTMLHeadingElement>(null), errorBox = useRef<HTMLDivElement>(null);
-  const viewport = useRef<HTMLDivElement>(null);
+  const viewport = useRef<HTMLDivElement>(null), actionBar = useRef<HTMLElement>(null), reviewEstimate = useRef<HTMLButtonElement>(null);
   const accessReturn = useRef<{ requestId: string | null; step: number } | null>(null);
   const journeyPosition = useRef<{ requestId: string | null; step: number }>({ requestId: null, step: 0 });
   useEffect(() => { journeyPosition.current = { requestId: saved?.id ?? null, step }; }, [saved?.id, step]);
@@ -98,18 +104,32 @@ export function LiveQuoteForm({ legacyRecoveryMode = false, companyBaseUrl = '' 
     return () => { cancelled = true; alive.current = false; };
   }, [legacyRecoveryMode]);
   useEffect(() => { if (error) errorBox.current?.focus({ preventScroll: true }); }, [error]);
-  useEffect(() => { viewport.current?.scrollTo({ top: 0, behavior: 'instant' }); heading.current?.focus({ preventScroll: true }); }, [step, accessOpen]);
+  // Desktop scrolls inside the stage viewport; 700px and below scroll the document.
+  useEffect(() => { viewport.current?.scrollTo({ top: 0, behavior: 'instant' }); window.scrollTo({ top: 0, behavior: 'instant' }); heading.current?.focus({ preventScroll: true }); }, [step, accessOpen, entry]);
+  // Mobile scrolls the document behind a sticky action bar; publish its live height so
+  // focus and scrollIntoView keep the focused field above it (CSS scroll-padding).
+  useEffect(() => {
+    const bar = actionBar.current, root = document.documentElement;
+    if (!bar) return;
+    const observer = new ResizeObserver(() => root.style.setProperty('--quote-bar-h', `${Math.ceil(bar.getBoundingClientRect().height)}px`));
+    observer.observe(bar);
+    return () => { observer.disconnect(); root.style.removeProperty('--quote-bar-h'); };
+  }, [entry]);
+  // The photo action (portal) disappears when its analysis finishes; if keyboard focus fell to
+  // <body>, move it to the button that replaced it in the same bar position.
+  const photoEstimateReady = latestAnalysis?.status === 'succeeded' && !latestAnalysis.stale;
   function update<K extends keyof Values>(key: K, value: Values[K]) {
-    setValues(current => ({ ...current, [key]: value })); setNotice('Your changes are not saved yet.'); setError('');
+    // The action bar shows the unsaved state; typing does not announce a notice.
+    setValues(current => ({ ...current, [key]: value })); setNotice(''); setError('');
   }
   function selectAddress(selection: AddressSelection, kind: AddressKind) {
-    setValues(current => ({ ...current, ...mergeSelectedAddress(current, selection, kind) })); setNotice('Address changes are not saved yet.');
+    setValues(current => ({ ...current, ...mergeSelectedAddress(current, selection, kind) })); setNotice('');
   }
   function go(next: number) { setStep(next); setAccessOpen(false); setNotice(''); }
-  const bookingStageChanged = useCallback((stage: 'date' | 'sign' | 'complete') => { if (entry !== 'new' || changing.current || sessionBlocked.current) return; setStep(stage === 'complete' ? 6 : stage === 'sign' ? 5 : 4); setAccessOpen(false); }, [entry]);
+  const bookingStageChanged = useCallback((stage: 'date' | 'sign' | 'complete') => { if (entry !== 'new' || changing.current || sessionBlocked.current) return; setStep(stage === 'complete' ? 6 : stage === 'sign' ? 5 : 4); setAccessOpen(false); setNotice(''); }, [entry]);
   const recoverBooking = useCallback((target: 'photos' | 'email') => {
     if (target === 'email' && !saved) { accessReturn.current = journeyPosition.current; setAccessOpen(true); return; }
-    setStep(target === 'email' ? 4 : 2); setAccessOpen(false);
+    setStep(target === 'email' ? 4 : 2); setAccessOpen(false); setNotice('');
     if (target === 'email') requestAnimationFrame(() => document.querySelector<HTMLElement>('#quote-email-access [data-quote-access-heading]')?.focus({ preventScroll: true }));
   }, [saved]);
   const bookingVerified = useCallback(() => { setAccessVersion(current => current + 1); }, []);
@@ -131,7 +151,7 @@ export function LiveQuoteForm({ legacyRecoveryMode = false, companyBaseUrl = '' 
       const value = await loadSaved(legacyRecoveryMode); if (!alive.current || version !== generation.current) return;
       adopt(value);
       if (value) setNotice('Latest saved details loaded.');
-      else { setStep(0); setNotice('A new writing session is ready. The entries still shown here have not been saved in this session.'); }
+      else { setStep(0); setNotice('We started a fresh session. Your entries on screen haven’t been saved yet.'); }
     } catch (cause) { if (alive.current && version === generation.current) setError(cause instanceof Error ? cause.message : 'Could not load saved details.'); }
     finally { changing.current = false; if (alive.current) setBusy(false); }
   }
@@ -248,7 +268,7 @@ export function LiveQuoteForm({ legacyRecoveryMode = false, companyBaseUrl = '' 
   function restoreCustomerRequest(request: LiveQuoteRequest) {
     if (changing.current) return;
     if (saved?.id === request.id && (hasUnsavedChanges || bookingDirty || photoDirty || entryPeerConflict)) {
-      if (request.revision !== saved.revision) { if (!pending && !photoBusy && !bookingBusy) setConflict(true); setError('The saved revision changed. Your current entries and unconfirmed requests are still here. Retry an unconfirmed request before replacing its details.'); }
+      if (request.revision !== saved.revision) { if (!pending && !photoBusy && !bookingBusy) setConflict(true); setError('This quote was updated somewhere else. Your entries are still here — review the latest version before saving again.'); }
       generation.current++; sessionBlocked.current = false; setEntryUncertain(false); setEntryPeerConflict(false); setAccessConflict(false); setAccessVersion(current => current + 1); setAccessOpen(false); setEntry('new'); setNotice('You are continuing this quote with your current entries.'); return;
     }
     if (sessionBlocked.current && (hasUnsavedChanges || bookingDirty || photoDirty)) { setError('Keep or explicitly discard your current changes before opening another quote.'); return; }
@@ -260,7 +280,8 @@ export function LiveQuoteForm({ legacyRecoveryMode = false, companyBaseUrl = '' 
   }
   function confirmBookingRequest(request: LiveQuoteRequest) {
     if (!saved || request.id !== saved.id || request.revision !== saved.revision) { setError('This quote changed during email verification. Your current entries are still here.'); return; }
-    setAccessConflict(false); setNotice('Email verified. Choose your preferred visit.');
+    // The email panel shows its own verified notice; avoid a duplicate page notice.
+    setAccessConflict(false); setNotice('');
   }
   function clearPrivateAccess(reason?: 'explicit-identity') {
     if ((sessionBlocked.current || changing.current) && reason !== 'explicit-identity') return;
@@ -275,35 +296,73 @@ export function LiveQuoteForm({ legacyRecoveryMode = false, companyBaseUrl = '' 
   const estimateDisplay = quotePricingDisplay(estimateReady ? latestAnalysis!.pricing!.pricingVersion : saved ? saved.pricingVersion ?? PREVIOUS_QUOTE_PRICING_VERSION : QUOTE_PRICING_VERSION);
   const interactionLocked = locked || authBusy || photoBusy || bookingBusy;
   const navigationLocked = interactionLocked || hasUnsavedChanges;
+  // Runs again once the bar unlocks after the analysis read finishes (a disabled button cannot take focus).
+  useEffect(() => {
+    if (step !== 2 || !photoEstimateReady || navigationLocked) return;
+    const active = document.activeElement;
+    if (!active || active === document.body) reviewEstimate.current?.focus({ preventScroll: true });
+  }, [step, photoEstimateReady, navigationLocked]);
   const stage = STAGES[Math.min(step, 5)];
-  const StageIcon = step === 6 ? Check : stage.icon;
-  if (entry === 'choice') return <div className="lq-page lq-journey"><div className="lq-shell"><section className="lq-card lq-entry" aria-labelledby="quote-entry-title"><p className="lq-kicker">Kitchen Cabinet Painting</p><h1 id="quote-entry-title">How can we help with your kitchen?</h1><p>Start a painting quote, or open your saved quotes and booking requests.</p><div className="lq-entry-cards"><button aria-label="Start a new quote" type="button" disabled={busy || entryUncertain} onClick={requestNewQuote}><Paintbrush aria-hidden="true" /><strong>Start a new quote</strong><span>Tell us about a new project. Your saved quotes stay separate.</span><ArrowRight aria-hidden="true" /></button><button aria-label="View quotes & bookings" type="button" disabled={busy || entryUncertain} onClick={openEmailAccess}><CalendarDays aria-hidden="true" /><strong>View quotes &amp; bookings</strong><span>Use your email to open a saved quote or booking request.</span><ArrowRight aria-hidden="true" /></button></div>{newStartConfirmation && newStartDialog}{entryRecovery}{error && <p className="lq-error" role="alert">{error}</p>}{busy && <p role="status">Opening your quote session…</p>}<p className="lq-muted"><ShieldCheck size={16} aria-hidden="true" /> Your details and photos stay private.</p></section></div></div>;
-  return <div className="lq-page lq-journey"><div className="lq-shell">
+  const StageIcon = accessOpen ? Mail : step === 6 ? Check : stage.icon;
+  const estimateTotal = estimateReady ? formatQuoteAmount(latestAnalysis!.pricing!.total!) : null;
+  const priceLabel = <>{estimateTotal ? `Estimate ${estimateTotal}` : `From ${estimateDisplay.startingAmount}`}<span className="lq-chip-long"> · {estimateDisplay.taxStatus}</span></>;
+  const exitLink = <a href={SERVICE_PAGE} className="quote-exit"><ArrowLeft size={16} aria-hidden="true" />Back to service</a>;
+  const header = (center: ReactNode, actions: ReactNode) => <header className="quote-route-header"><div className="quote-route-header-inner">{brand}<p className="quote-header-step">{center}</p><div className="quote-header-actions">{actions}</div></div></header>;
+  if (entry === 'choice') return <>
+    {header(null, exitLink)}
+    <main id="main-content" tabIndex={-1} className="quote-route-main"><div className="lq-page lq-journey lq-journey-entry"><div className="lq-shell">
+      <QuoteEntry disabled={busy || entryUncertain} startingAmount={estimateDisplay.startingAmount} taxStatus={estimateDisplay.taxStatus} onStart={requestNewQuote} onView={openEmailAccess}>{newStartConfirmation && newStartDialog}{entryRecovery}{error && <p className="lq-error" role="alert">{error}</p>}{busy && <p role="status">Opening your quote session…</p>}</QuoteEntry>
+    </div></div></main>
+  </>;
+  // Same conditions as the earlier disabled progress buttons; the reason is shown instead of a silent disabled state.
+  function lockReason(index: number) {
+    if (index === 5) return 'Opens after you pick a visit';
+    if ((index === 1 && !saved) || (index >= 2 && !saved?.payload.service) || (index === 4 && !estimateReady)) return 'Complete the previous step first';
+    if (legacyRecoveryMode || bookingReadOnly) return 'Locked after your request was sent';
+    if (hasUnsavedChanges) return 'Save or discard your changes first';
+    if (navigationLocked) return 'Please wait…';
+    return null;
+  }
+  const emailVerified = Boolean(saved && verifiedEmail && verifiedEmail.toLowerCase() === saved.payload.contact.email.toLowerCase());
+  const emailProgress = !saved?.payload.service || legacyRecoveryMode ? null : emailVerified || step > 4 ? 'done' : step === 4 && !accessOpen ? 'current' : 'todo';
+  const photoEstimateCurrent = photoEstimateReady;
+  const photoAnalysisAvailable = saved?.status === 'draft' && !bookingReadOnly;
+  const headerStep = accessOpen ? 'Saved quotes' : step === 6 ? 'Request received' : `Step ${step + 1} of ${STAGES.length} · ${stage.title}`;
+  const saveState = busy ? 'Saving…' : hasUnsavedChanges ? 'Unsaved changes' : saved ? 'Saved privately' : 'Private quote';
+  const secondaryActions = !accessOpen && !legacyRecoveryMode && step < 4 ? <>
+    {hasUnsavedChanges && (!locked || (accessConflict && !busy && !pending && !conflict && !expired && !bookingReadOnly)) && <button type="button" className="lq-text-button secondary" disabled={authBusy || photoBusy} onClick={() => { setValues(saved ? valuesOf(saved) : freshBaseline); if (!saved) setAccessConflict(false); setNotice('Unsaved changes discarded.'); }}>Discard changes</button>}
+    {step === 2 && !photoEstimateCurrent && photoAnalysisAvailable && <button type="button" className="lq-text-button secondary" disabled={navigationLocked} onClick={() => go(3)}>Ask the team to review instead</button>}
+  </> : null;
+  return <>
+    {header(headerStep, legacyRecoveryMode ? exitLink : <QuoteMenu label="My quotes" icon={<FolderOpen size={17} aria-hidden="true" />} items={[
+      { key: 'new', label: 'Start a new quote', icon: <Plus size={17} aria-hidden="true" />, disabled: busy || authBusy || photoBusy || bookingBusy || Boolean(pending) || entryUncertain, onSelect: requestNewQuote },
+      { key: 'saved', label: accessOpen ? 'Back to quote' : 'View quotes & bookings', icon: <Mail size={17} aria-hidden="true" />, disabled: busy || photoInFlight || (bookingInFlight && !accessConflict) || (Boolean(pending) && !entryPeerConflict), onSelect: () => accessOpen ? closeEmailAccess() : openEmailAccess() },
+      { key: 'service', label: 'Back to service page', icon: <ExternalLink size={17} aria-hidden="true" />, href: SERVICE_PAGE },
+    ]} />)}
+    <main id="main-content" tabIndex={-1} className="quote-route-main"><div className="lq-page lq-journey"><div className="lq-shell">
     <section className="lq-card" aria-labelledby="live-quote-title">
-      <header className="lq-workspace-header">
-        <div><p className="lq-kicker">Kitchen Cabinet Painting</p><h1 id="live-quote-title">Let’s refresh your kitchen.</h1></div>
-        {!legacyRecoveryMode && <div className="lq-entry-actions"><button type="button" className="secondary lq-access-toggle" disabled={busy || authBusy || photoBusy || bookingBusy || Boolean(pending) || entryUncertain} onClick={requestNewQuote}>Start a new quote</button><button type="button" className="secondary lq-access-toggle" aria-expanded={accessOpen} aria-controls="quote-email-access" disabled={busy || photoInFlight || (bookingInFlight && !accessConflict) || (Boolean(pending) && !entryPeerConflict)} onClick={() => accessOpen ? closeEmailAccess() : openEmailAccess()}><Mail size={17} aria-hidden="true" />{accessOpen ? 'Back to quote' : 'View quotes & bookings'}</button></div>}
-      </header>
+      <h1 id="live-quote-title" className="lq-sr-only">Kitchen Cabinet Painting quote</h1>
       <div className="lq-workspace-layout">
         <aside className="lq-journey-sidebar" aria-label="Quote progress and summary">
-          <p className="lq-sidebar-title">Your quote, step by step</p>
-          <ol className="lq-progress" aria-label="Request progress">{STAGES.map(({ title, description, icon: Icon }, index) => <li key={title} aria-current={!accessOpen && step === index ? 'step' : undefined} data-complete={step > index || undefined}><button type="button" disabled={navigationLocked || legacyRecoveryMode || bookingReadOnly || index === 5 || (index === 1 && !saved) || (index >= 2 && !saved?.payload.service) || (index === 4 && !estimateReady)} onClick={() => go(index)}><span className="lq-step-symbol">{step > index ? <Check size={16} aria-hidden="true" /> : <Icon size={17} aria-hidden="true" />}</span><span><strong>{title}</strong><small>{description}</small></span></button></li>)}</ol>
-          <div className="lq-project-summary"><div className="lq-summary-icon"><Paintbrush size={22} aria-hidden="true" /></div><p className="lq-kicker">Existing cabinet painting</p><strong className="lq-summary-price">{estimateReady ? new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD', minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(latestAnalysis!.pricing!.total! / 100) : `From ${estimateDisplay.startingAmount}`}</strong><span>{estimateDisplay.taxStatus}{estimateReady ? ' · photo-based estimate' : ' · starting price'}</span><p>Final scope and price are confirmed on site.</p>{saved && <><hr /><p className="lq-summary-name"><UserRound size={15} aria-hidden="true" />{saved.payload.contact.name}</p><p className="lq-summary-address"><MapPin size={15} aria-hidden="true" />{saved.payload.contact.suburb} {saved.payload.contact.postcode}</p><small>Reference {saved.reference}</small></>}</div>
-          <p className="lq-private-note"><ShieldCheck size={16} aria-hidden="true" />Your details and photos stay private.</p>
+          <QuoteProgress stages={STAGES} step={step} accessOpen={accessOpen} lockReason={lockReason} onSelect={go} email={emailProgress} />
+          <div className="lq-project-summary"><p className="lq-kicker">Existing cabinet painting</p><strong className="lq-summary-price">{estimateTotal ?? `From ${estimateDisplay.startingAmount}`}</strong><span>{estimateDisplay.taxStatus}{estimateReady ? ' · photo-based estimate' : ' · starting price'}</span><p>Final scope and price are confirmed on site.</p>{saved && <><hr /><p className="lq-summary-name"><UserRound size={15} aria-hidden="true" />{saved.payload.contact.name}</p><p className="lq-summary-address"><MapPin size={15} aria-hidden="true" />{saved.payload.contact.suburb} {saved.payload.contact.postcode}</p><small>Reference {saved.reference}</small></>}</div>
+          <p className="lq-private-note"><ShieldCheck size={16} aria-hidden="true" />Your details and photos stay private. Bookings need company confirmation.</p>
         </aside>
         <div className="lq-workspace-main">
-          <div className="lq-stage-top"><span className="lq-stage-icon"><StageIcon size={23} aria-hidden="true" /></span><div><p className="lq-kicker">{accessOpen ? 'Secure email access' : step === 6 ? 'Request received' : `Step ${step + 1} of ${STAGES.length}`}</p><h2 ref={heading} tabIndex={-1}>{accessOpen ? 'Open a saved quote' : step === 6 ? 'Your booking request is saved' : stage.title}</h2></div><span className="lq-save-state"><ShieldCheck size={14} aria-hidden="true" />{busy ? 'Saving…' : hasUnsavedChanges ? 'Unsaved changes' : saved ? 'Saved privately' : 'Private quote'}</span></div>
+          <div className="lq-stage-top"><span className="lq-stage-icon"><StageIcon size={22} aria-hidden="true" /></span><div><h2 ref={heading} tabIndex={-1}>{accessOpen ? 'Open a saved quote' : step === 6 ? 'Your booking request is saved' : stage.title}</h2><p className="lq-stage-description">{accessOpen ? 'Secure email access' : step === 6 ? 'The company confirms your visits next' : stage.description}</p></div></div>
           <div className="lq-stage-scroll" ref={viewport} data-quote-viewport>
             {!ready && !error && <p role="status">Opening your private request…</p>}
             {error && <div className="lq-error" ref={errorBox} tabIndex={-1} role="alert"><p>{error}</p>
               {conflict && <><p>Your entries are still here. Copy unsaved changes before loading the saved version.</p><button type="button" disabled={busy || entryTransitioning || entryUncertain || entryPeerConflict || Boolean(pending) || photoBusy || bookingBusy} onClick={() => void restore()}>Load latest saved details</button></>}
               {expired && <><p>Your private access has ended. Verify your email to reopen a linked quote.</p><button type="button" className="secondary" onClick={openEmailAccess}>Reopen by email</button></>}
               {!ready && !pending && !expired && <button type="button" disabled={busy} onClick={() => void restore()}>Retry opening request</button>}
+              {/* One message area: an unconfirmed save keeps its retry inside the error box. */}
+              {pending && <><p>Your entries are kept — try saving again once access to this quote is confirmed.</p><button type="button" disabled={busy || entryTransitioning || entryUncertain || entryPeerConflict || accessConflict} onClick={() => void send(pending)}>Try saving again</button></>}
             </div>}
-            {pending && <div className="lq-notice" role="status"><p>The save could not be confirmed. Keep its original request and retry after access to this quote is confirmed.</p><button type="button" disabled={busy || entryTransitioning || entryUncertain || entryPeerConflict || accessConflict} onClick={() => void send(pending)}>Retry same save</button></div>}
+            {pending && !error && <div className="lq-notice" role="status"><p>We couldn’t confirm your last save. Your entries are kept — try saving again once access to this quote is confirmed.</p><button type="button" disabled={busy || entryTransitioning || entryUncertain || entryPeerConflict || accessConflict} onClick={() => void send(pending)}>Try saving again</button></div>}
             {entryRecovery}
             {newStartConfirmation && newStartDialog}
-            {notice && <p className="lq-status" role="status" aria-live="polite">{notice}</p>}
+            {notice && !error && <p className="lq-status" role="status" aria-live="polite">{notice}</p>}
             {accessConflict && !accessOpen && step !== 4 && <p className="lq-notice" role="alert">Another saved quote is active in another tab. Your current entries are still here. Open saved quote to choose which quote to continue.</p>}
             {expired && !error && <div className="lq-notice"><p>Your private access has ended.</p><button type="button" onClick={openEmailAccess}>Reopen by email</button></div>}
             {!legacyRecoveryMode && <div id="quote-email-access" hidden={!accessOpen && step !== 4}><CustomerAccessPanel pendingProtected={Boolean(pending) || photoBusy || bookingBusy} key={entryVersion} originTabId={entryTabId} selectionRequired={accessOpen} onStartNew={requestNewQuote} mode={accessOpen ? 'manage' : 'booking'} active={accessOpen || step === 4} request={saved} disabled={busy || photoInFlight || (bookingInFlight && !accessConflict && verifiedEmail !== null) || (Boolean(pending) && !entryPeerConflict)} hasUnsavedChanges={hasUnsavedChanges || (accessOpen && (bookingDirty || photoDirty))} onRestored={accessOpen ? restoreCustomerRequest : confirmBookingRequest} onPrivateAccessLost={clearPrivateAccess} onBookingVerified={bookingVerified} onRequestConflict={setAccessConflict} onSignedOut={customerSignedOut} onIdentityChange={setVerifiedEmail} onBusyChange={setAuthBusy} /></div>}
@@ -321,13 +380,13 @@ export function LiveQuoteForm({ legacyRecoveryMode = false, companyBaseUrl = '' 
                     <div><label htmlFor="live-site">Street address *</label><AddressAutocompleteInput id="live-site" required kind="street" addressContext={addressContext} onAddressSelect={selectAddress} autoComplete="street-address" maxLength={240} value={values.siteAddress} onChange={e => update('siteAddress', e.target.value)} /></div>
                     <div className="lq-grid"><div><label htmlFor="live-suburb">Suburb *</label><AddressAutocompleteInput id="live-suburb" required kind="suburb" addressContext={addressContext} onAddressSelect={selectAddress} autoComplete="address-level2" maxLength={100} value={values.suburb} onChange={e => update('suburb', e.target.value)} /></div><div><label htmlFor="live-postcode">Postcode *</label><AddressAutocompleteInput id="live-postcode" required kind="postcode" addressContext={addressContext} onAddressSelect={selectAddress} autoComplete="postal-code" maxLength={4} pattern="[0-9]{4}" inputMode="numeric" value={values.postcode} onChange={e => update('postcode', e.target.value)} /></div></div>
                   </div>
-                  <details className="lq-optional-details"><summary>Add project notes <span>Optional</span></summary><label>Anything we should know?<ValidatedTextarea id="live-details" validationLabel="project notes" rows={3} maxLength={3000} value={values.details} onChange={e => update('details', e.target.value)} /></label></details>
+                  <details className="lq-optional-details"><summary><span className="lq-summary-label">Add project notes</span><span className="lq-summary-hint">Optional</span><ChevronIcon /></summary><label>Anything we should know?<ValidatedTextarea id="live-details" validationLabel="project notes" rows={3} maxLength={3000} value={values.details} onChange={e => update('details', e.target.value)} /></label></details>
                   <label className="lq-option lq-consent"><input required type="checkbox" checked={values.consent} onChange={e => update('consent', e.target.checked)} /><span>I agree to L&amp;K Group privately saving my details to prepare and review this quote. *</span></label>
                   <p className="lq-muted">You can save and reopen this quote by verifying your email. Until then, access in this browser lasts up to 24 hours.</p>
                 </> : <>
                   <p className="lq-step-intro">Choose the finish you have in mind. We’ll assess your <strong>existing cabinets</strong> from your photos.</p>
-                  <fieldset><legend>What would you like to do? *</legend><div className="lq-options lq-selection-cards">{Object.entries(intentLabels).map(([value, label]) => <label className="lq-option" key={value} data-selected={values.intent === value || undefined}><input required type="radio" name="live-intent" value={value} checked={values.intent === value} onChange={() => update('intent', value)} /><Paintbrush size={21} aria-hidden="true" /><span>{label}</span></label>)}</div></fieldset>
-                  <fieldset><legend>Which surfaces are involved? *</legend><div className="lq-options lq-selection-cards">{Object.entries(surfaceLabels).map(([value, label]) => <label className="lq-option" key={value} data-selected={values.surfaces.includes(value) || undefined}><input type="checkbox" checked={values.surfaces.includes(value)} onChange={() => update('surfaces', values.surfaces.includes(value) ? values.surfaces.filter(x => x !== value) : value === 'unknown' ? ['unknown'] : [...values.surfaces.filter(x => x !== 'unknown'), value])} /><span>{label}</span></label>)}</div></fieldset>
+                  <fieldset><legend>What would you like to do? *</legend><div className="lq-options lq-selection-cards">{Object.entries(intentLabels).map(([value, label]) => { const IntentIcon = INTENT_ICONS[value] ?? Paintbrush; return <label className="lq-option" key={value} data-selected={values.intent === value || undefined}><input required type="radio" name="live-intent" value={value} checked={values.intent === value} onChange={() => update('intent', value)} /><IntentIcon size={21} aria-hidden="true" /><span>{label}</span><span className="lq-selected-badge" aria-hidden="true"><Check size={13} /></span></label>; })}</div></fieldset>
+                  <fieldset><legend>Which surfaces are involved? *</legend><div className="lq-options lq-selection-cards">{Object.entries(surfaceLabels).map(([value, label]) => <label className="lq-option" key={value} data-selected={values.surfaces.includes(value) || undefined}><input type="checkbox" checked={values.surfaces.includes(value)} onChange={() => update('surfaces', values.surfaces.includes(value) ? values.surfaces.filter(x => x !== value) : value === 'unknown' ? ['unknown'] : [...values.surfaces.filter(x => x !== 'unknown'), value])} /><span>{label}</span><span className="lq-selected-badge" aria-hidden="true"><Check size={13} /></span></label>)}</div></fieldset>
                   <div className="lq-help-card"><Camera size={23} aria-hidden="true" /><div><strong>Not sure of the quantities?</strong><p id="ai-quantity-help">Leave the counts blank. We’ll estimate from your photos and confirm the exact scope on site.</p></div></div>
                   <div className="lq-grid">
                     <label>Cabinet doors <span className="lq-optional">Optional</span><ValidatedInput validation="count" type="text" inputMode="numeric" min={0} max={500} aria-describedby="ai-quantity-help" value={values.doorCount} onChange={e => update('doorCount', e.target.value)} /></label>
@@ -338,28 +397,34 @@ export function LiveQuoteForm({ legacyRecoveryMode = false, companyBaseUrl = '' 
                 </>}
               </fieldset></form>}
               {saved?.payload.service && !expired && <>
-                <div data-quote-step={2} hidden={step !== 2}><LivePhotoWorkspace onDirtyChange={setPhotoDirty} sessionBlocked={entryTransitioning || entryUncertain || entryPeerConflict} onInFlightChange={setPhotoInFlight} key={saved.id} request={saved} readOnly={bookingReadOnly} onAnalysisChange={setLatestAnalysis} disabled={locked || authBusy || bookingBusy || hasUnsavedChanges || step !== 2 || accessOpen} onBusyChange={setPhotoBusy} onSaved={value => { if (value.id === saved.id && value.revision >= saved.revision) { setSaved(value); setValues(current => JSON.stringify(current) === JSON.stringify(valuesOf(saved)) ? valuesOf(value) : current); } }} onAccessLost={() => { clearPrivateAccess(); setError('Your private access has ended. Verify your email to reopen this quote.'); }} /></div>
+                <div data-quote-step={2} hidden={step !== 2}><LivePhotoWorkspace onDirtyChange={setPhotoDirty} sessionBlocked={entryTransitioning || entryUncertain || entryPeerConflict} onInFlightChange={setPhotoInFlight} key={saved.id} request={saved} readOnly={bookingReadOnly} onAnalysisChange={setLatestAnalysis} disabled={locked || authBusy || bookingBusy || hasUnsavedChanges || step !== 2 || accessOpen} actionContainer={step === 2 && !accessOpen ? photoActions : null} onBusyChange={setPhotoBusy} onSaved={value => { if (value.id === saved.id && value.revision >= saved.revision) { setSaved(value); setValues(current => JSON.stringify(current) === JSON.stringify(valuesOf(saved)) ? valuesOf(value) : current); } }} onAccessLost={() => { clearPrivateAccess(); setError('Your private access has ended. Verify your email to reopen this quote.'); }} /></div>
                 <div data-quote-step={3} hidden={step !== 3}>
-                  <p className="lq-step-intro">Your photo-based painting estimate. Review the scope before choosing your preferred visit.</p>
-                  {estimateReady ? <div className="lq-estimate-hero"><span className="lq-estimate-badge"><Check size={14} aria-hidden="true" />Estimate ready</span><p className="lq-kicker">Estimated painting amount</p><strong>{new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD' }).format(latestAnalysis!.pricing!.total! / 100)}</strong><span>{estimateDisplay.taxStatus}</span><p>Final quantities, condition and price are confirmed on site. Additional damage may increase the price; extra work and costs will be discussed before proceeding.</p></div> : <div className="lq-help-card"><ClipboardCheck size={25} aria-hidden="true" /><div><strong>We need a little more information</strong><p>{latestAnalysis?.stale ? 'Your details or photos changed. Analyse the current photos for an updated estimate.' : 'Add the requested photos or ask our team to review your project.'}</p></div></div>}
-                  {latestAnalysis && <details className="lq-optional-details"><summary>View assessment and price breakdown</summary><SavedPhotoAnalysis job={latestAnalysis} /></details>}
+                  <p className="lq-step-intro">Your photo-based painting estimate. Review the scope before picking your preferred visit.</p>
+                  {estimateReady ? <div className="lq-estimate-hero"><span className="lq-estimate-badge"><Check size={14} aria-hidden="true" />Estimate ready</span><p className="lq-estimate-label">Estimated painting amount</p><strong>{estimateTotal}</strong><span className="lq-estimate-tax">{estimateDisplay.taxStatus}</span><p className="lq-estimate-note">Final quantities, condition and price are confirmed on site.</p><p className="lq-estimate-note lq-estimate-extra"><ClipboardCheck size={16} aria-hidden="true" /><span>Additional damage may increase the price; extra work and costs will be discussed before proceeding.</span></p></div> : <div className="lq-help-card"><ClipboardCheck size={25} aria-hidden="true" /><div><strong>We need a little more information</strong><p>{latestAnalysis?.stale ? 'Your details or photos changed. Analyse the current photos for an updated estimate.' : 'Add the requested photos or ask our team to review your project.'}</p></div></div>}
+                  {latestAnalysis && <details className="lq-optional-details"><summary><span className="lq-summary-label">View assessment and price breakdown</span><ChevronIcon /></summary><SavedPhotoAnalysis job={latestAnalysis} /></details>}
                   {!estimateReady && saved.status === 'draft' && <button type="button" disabled={navigationLocked} onClick={requestReview}>{busy ? 'Sending…' : 'Ask our team to review'}</button>}
                   {saved.status === 'review_requested' && <p className="lq-notice">Your estimate review request is with our team. You can request a visit when a current numeric estimate is ready.</p>}
-                  <details className="lq-optional-details"><summary>View saved project details</summary><LiveRequestDetails request={saved} /></details>
+                  <details className="lq-optional-details"><summary><span className="lq-summary-label">View saved project details</span><ChevronIcon /></summary><LiveRequestDetails request={saved} /></details>
                 </div>
                 <div data-quote-step={step >= 4 ? step : 4} hidden={step < 4}><BookingFlowPanel onInFlightChange={setBookingInFlight} sessionBlocked={entryTransitioning || entryUncertain || entryPeerConflict} onDirtyChange={setBookingDirty} key={saved.id} accessVersion={accessVersion} request={saved} latest={latestAnalysis} verifiedEmail={verifiedEmail} view={step === 6 ? 'complete' : step === 5 ? 'sign' : 'date'} active={step >= 4 && !accessOpen} actionContainer={bookingActions} disabled={busy || authBusy || photoBusy || hasUnsavedChanges || conflict || accessConflict || expired || Boolean(pending)} onStageChange={bookingStageChanged} onRecovery={recoverBooking} onBusyChange={setBookingBusy} onReadOnlyChange={setBookingReadOnly} onAccessLost={() => { clearPrivateAccess(); setError('Your verified access has ended. Verify your email to reopen this quote.'); }} /></div>
               </>}
             </>}
             </div>
+            <p className="lq-private-note lq-private-note-inline"><ShieldCheck size={16} aria-hidden="true" />Your details and photos stay private. Bookings need company confirmation.</p>
           </div>
-          <footer className="lq-stage-actions">
-            {accessOpen ? <><span className="lq-muted"><ShieldCheck size={15} aria-hidden="true" />Email verification keeps access to your saved quote.</span><button key="close-saved-quote-management" type="button" className="secondary" disabled={authBusy} onClick={event => { event.preventDefault(); closeEmailAccess(); }}>Back to quote</button></> : legacyRecoveryMode ? <span className="lq-muted">Reopen your quote on the company website.</span> : step < 4 ? <>
-              <div>{step > 0 && <button type="button" className="secondary" disabled={navigationLocked} data-quote-back onClick={() => go(step - 1)}><ArrowLeft size={17} aria-hidden="true" />Back</button>}{hasUnsavedChanges && (!locked || (accessConflict && !busy && !pending && !conflict && !expired && !bookingReadOnly)) && <button type="button" className="lq-text-button secondary" disabled={authBusy || photoBusy} onClick={() => { setValues(saved ? valuesOf(saved) : freshBaseline); if (!saved) setAccessConflict(false); setNotice('Unsaved changes discarded.'); }}>Discard changes</button>}</div>
-              {step < 2 ? <button data-quote-next type="submit" form="quote-details-form" disabled={interactionLocked}>{busy ? 'Saving…' : 'Save & continue'}<ArrowRight size={17} aria-hidden="true" /></button> : step === 2 ? <button type="button" disabled={navigationLocked} data-quote-next onClick={() => go(3)}>{latestAnalysis?.status === 'succeeded' && !latestAnalysis.stale ? 'Review estimate' : 'Request team review'}<ArrowRight size={17} aria-hidden="true" /></button> : <button type="button" disabled={navigationLocked || !estimateReady} data-quote-next onClick={() => go(4)}>Choose a visit<ArrowRight size={17} aria-hidden="true" /></button>}
-            </> : <><button type="button" className="secondary" disabled={busy || authBusy || photoBusy || bookingBusy} onClick={() => step === 6 ? openEmailAccess() : step === 5 ? bookingStageChanged('date') : go(3)}>{step === 6 ? <Mail size={17} aria-hidden="true" /> : <ArrowLeft size={17} aria-hidden="true" />}{step === 6 ? 'Manage saved quote' : step === 5 ? 'Change visit' : 'Back to estimate'}</button><div className="lq-booking-action-slot" ref={setBookingActions} /></>}
+          <footer className="lq-stage-actions" ref={actionBar}>
+            {!accessOpen && step < 6 && !legacyRecoveryMode && <div className="lq-action-meta"><p className="lq-price-chip"><Tag size={15} aria-hidden="true" /><span>{priceLabel}<span className="lq-chip-short">{estimateDisplay.includesGst ? ' · incl GST' : ' · No GST'}</span></span></p>
+            <span className="lq-save-state" data-state={busy ? 'saving' : hasUnsavedChanges ? 'unsaved' : 'saved'}><span className="lq-save-dot" aria-hidden="true" /><span className="lq-save-long">{saveState}</span><span className="lq-save-short">{busy ? 'Saving…' : hasUnsavedChanges ? 'Unsaved' : saved ? 'Saved' : 'Private'}</span></span></div>}
+            {accessOpen ? <><span className="lq-muted lq-action-note"><ShieldCheck size={15} aria-hidden="true" />Email verification keeps access to your saved quote.</span><div className="lq-action-primary"><button key="close-saved-quote-management" type="button" className="secondary" disabled={authBusy} onClick={event => { event.preventDefault(); closeEmailAccess(); }}>Back to quote</button></div></> : legacyRecoveryMode ? <span className="lq-muted lq-action-note">Reopen your quote on the company website.</span> : step < 4 ? <>
+              <div className="lq-action-back">{step > 0 && <button type="button" className="secondary" disabled={navigationLocked} data-quote-back onClick={() => go(step - 1)}><ArrowLeft size={17} aria-hidden="true" />Back</button>}</div>
+              <div className="lq-action-secondary">{secondaryActions}</div>
+              <div className="lq-action-primary">{step < 2 ? <button data-quote-next type="submit" form="quote-details-form" disabled={interactionLocked}>{busy ? 'Saving…' : 'Save & continue'}<ArrowRight size={17} aria-hidden="true" /></button> : step === 2 ? (photoEstimateCurrent || !photoAnalysisAvailable ? <button ref={reviewEstimate} type="button" disabled={navigationLocked} data-quote-next onClick={() => go(3)}>Review estimate<ArrowRight size={17} aria-hidden="true" /></button> : <div className="lq-photo-action-slot" ref={setPhotoActions} />) : <button type="button" disabled={navigationLocked || !estimateReady} data-quote-next onClick={() => go(4)}>Pick a visit<ArrowRight size={17} aria-hidden="true" /></button>}</div>
+            </> : <><div className="lq-action-back"><button type="button" className="secondary" disabled={busy || authBusy || photoBusy || bookingBusy} onClick={() => step === 6 ? openEmailAccess() : step === 5 ? bookingStageChanged('date') : go(3)}>{step === 6 ? <Mail size={17} aria-hidden="true" /> : <ArrowLeft size={17} aria-hidden="true" />}{step === 6 ? <span>Manage<span className="lq-label-extra"> saved quote</span></span> : step === 5 ? 'Change visit' : <span>Back<span className="lq-label-extra"> to estimate</span></span>}</button></div><div className="lq-action-primary lq-booking-action-slot" ref={setBookingActions} /></>}
           </footer>
         </div>
       </div>
     </section>
-  </div></div>;
+  </div></div></main>
+  </>;
 }
+function ChevronIcon() { return <ChevronDown className="lq-summary-chevron" size={18} aria-hidden="true" />; }

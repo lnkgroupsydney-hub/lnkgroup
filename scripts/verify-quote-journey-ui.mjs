@@ -10,6 +10,7 @@ import { PHOTO_ROLES, PHOTO_ANALYSIS_SCHEMA_VERSION, validatePhotoAnalysis } fro
 import { calculateEstimatePricing } from '../src/modules/quotes/domain/pricing.ts'
 import { bookingAcknowledgment, validateBookingSignature } from '../src/modules/quotes/domain/booking-flow.ts'
 import { parsePhotoWorkspace } from '../src/modules/quotes/presentation/photo-workspace-client.ts'
+import { formatQuoteAmount } from '../src/modules/quotes/presentation/quote-money.ts'
 import { bookingMonthDates, shiftBookingMonth, sydneyToday, parseBookingState, parseBookingReview } from '../src/modules/quotes/presentation/booking-flow-client.ts'
 
 const photoId = '205f3d74-69e5-4cbe-b4b4-31d4a382cfad'
@@ -140,6 +141,61 @@ function playwrightPackage() {
 }
 const contact = { name: 'Synthetic Quote Customer', email: 'quote-ui@example.invalid', siteAddress: '12A Example Road', suburb: 'Ermington', postcode: '2115' }
 
+// Entry cards stay direct; an active quote exposes the same actions in My quotes.
+export async function quoteEntryAction(page, name) {
+  const menu = page.getByRole('button', { name: 'My quotes', exact: true }).and(page.locator('[aria-haspopup="menu"]'))
+  const card = page.getByRole('button', { name, exact: true })
+  await menu.or(card).first().waitFor()
+  if (await menu.isVisible()) {
+    if (await menu.getAttribute('aria-expanded') !== 'true') await menu.click()
+    await menu.and(page.locator('[aria-expanded="true"]')).waitFor()
+    return page.getByRole('menu', { name: 'My quotes', exact: true }).getByRole('menuitem', { name, exact: true })
+  }
+  return card
+}
+
+export async function quoteEntryActionDisabled(page, name) {
+  const action = await quoteEntryAction(page, name)
+  try { return await action.isDisabled() }
+  finally {
+    const menu = page.getByRole('button', { name: 'My quotes', exact: true })
+    if (await menu.isVisible()) {
+      await page.keyboard.press('Escape')
+      assert.equal(await menu.getAttribute('aria-expanded'), 'false', 'Inspecting a menu action must leave the menu closed')
+    }
+  }
+}
+
+async function quoteProgressButton(page, index) {
+  if (page.viewportSize().width <= 700) {
+    const toggle = page.getByRole('button', { name: /^Step \d of 6 ·/ }).and(page.locator('.lq-progress-toggle'))
+    await toggle.waitFor()
+    if (await toggle.getAttribute('aria-expanded') !== 'true') await toggle.click()
+    assert.equal(await toggle.getAttribute('aria-expanded'), 'true')
+  }
+  return page.locator('.lq-progress button').nth(index)
+}
+
+export async function quoteViewport(page) {
+  if (page.viewportSize().width <= 700) {
+    const size = await page.evaluate(() => {
+      const next = document.querySelector('[data-quote-next]')
+      // A received quote has Manage saved quote instead of a next-step button.
+      const action = next ?? [...document.querySelectorAll('button')].find(button => button.textContent.trim() === 'Manage saved quote')
+      const bar = action?.closest('.lq-stage-actions')
+      const rect = bar?.getBoundingClientRect()
+      return { width: innerWidth, height: innerHeight, bodyWidth: document.scrollingElement?.scrollWidth, panels: document.querySelectorAll('[data-quote-step]:not([hidden])').length, bar: rect ? { top: rect.top, bottom: rect.bottom, width: rect.width } : null }
+    })
+    assert.ok(size.bodyWidth <= size.width, `Horizontal overflow: ${size.bodyWidth}/${size.width}`)
+    assert.ok(size.bar, 'The primary action must belong to the bottom action bar')
+    assert.ok(size.bar.top >= 0 && size.bar.bottom <= size.height && size.bar.width > 0, `Bottom action bar outside viewport: ${JSON.stringify(size.bar)}/${size.height}`)
+    assert.equal(size.panels, 1, 'Exactly one step must be active, regardless of document scroll position')
+    return
+  }
+  const size = await page.evaluate(() => ({ windowY: scrollY, bodyHeight: document.documentElement.scrollHeight, height: innerHeight, width: innerWidth, bodyWidth: document.documentElement.scrollWidth, panels: [...document.querySelectorAll('[data-quote-step]')].filter(el => el.getBoundingClientRect().height > 0 && getComputedStyle(el).visibility !== 'hidden').length }))
+  assert.equal(size.windowY, 0); assert.ok(size.bodyHeight <= size.height + 1, `Document grew to ${size.bodyHeight}/${size.height}`); assert.ok(size.bodyWidth <= size.width + 1); assert.equal(size.panels, 1)
+}
+
 export async function verifyQuoteJourney({ upstream = 'http://127.0.0.1:3002', port = 3017 } = {}) {
   const fixture = await createLiveQuoteFixture({ upstream, port, customerAuth: true })
   const { chromium } = playwrightPackage()
@@ -164,7 +220,7 @@ export async function verifyQuoteJourney({ upstream = 'http://127.0.0.1:3002', p
       await page.goto(`${fixture.base}/quote/start?service=cabinet-painting&mode=live`)
       await page.getByRole('button', { name: 'Start a new quote', exact: true }).waitFor()
       if (!options.entry) {
-        await page.getByRole('button', { name: 'Start a new quote', exact: true }).click()
+        await (await quoteEntryAction(page, 'Start a new quote')).click()
         await page.getByRole('textbox', { name: /Your name|Full name/, exact: false }).first().waitFor()
       }
       await run(page, context, overlay)
@@ -187,7 +243,7 @@ export async function verifyQuoteJourney({ upstream = 'http://127.0.0.1:3002', p
   }
   async function reloadQuote(page) {
     await page.reload()
-    await page.getByRole('button', { name: 'View quotes & bookings', exact: true }).click()
+    await (await quoteEntryAction(page, 'View quotes & bookings')).click()
     const draft = page.getByRole('button', { name: 'Continue this browser draft', exact: true })
     const linked = page.locator('.lq-customer-list').getByRole('button', { name: 'Open saved quote', exact: true }).first()
     const ended = page.getByText(/private access has ended|writing access ended|Synthetic customer access ended/, { exact: false }).first()
@@ -199,7 +255,7 @@ export async function verifyQuoteJourney({ upstream = 'http://127.0.0.1:3002', p
   async function panel(page, number) {
     // The visit's auth card is a sibling of its empty calendar container until
     // verified. Check the visible stage heading rather than that empty box.
-    if (number === 4) await page.getByRole('heading', { name: 'Choose a visit', exact: true }).waitFor()
+    if (number === 4) await page.getByRole('heading', { name: 'Pick a visit', exact: true }).waitFor()
     else await page.locator(`[data-quote-step="${number}"]:visible`).waitFor()
     await page.evaluate(() => new Promise(resolve => requestAnimationFrame(resolve)))
   }
@@ -223,10 +279,6 @@ export async function verifyQuoteJourney({ upstream = 'http://127.0.0.1:3002', p
   }
   async function accessBroadcast(page) {
     await page.evaluate(() => { const channel = new BroadcastChannel('lk-live-quote-access'); channel.postMessage('access-changed'); channel.close() })
-  }
-  async function fixedViewport(page) {
-    const size = await page.evaluate(() => ({ windowY: scrollY, bodyHeight: document.documentElement.scrollHeight, height: innerHeight, width: innerWidth, bodyWidth: document.documentElement.scrollWidth, panels: [...document.querySelectorAll('[data-quote-step]')].filter(el => el.getBoundingClientRect().height > 0 && getComputedStyle(el).visibility !== 'hidden').length }))
-    assert.equal(size.windowY, 0); assert.ok(size.bodyHeight <= size.height + 1, `Document grew to ${size.bodyHeight}/${size.height}`); assert.ok(size.bodyWidth <= size.width + 1); assert.equal(size.panels, 1)
   }
   try {
     await scenario('contact validation preserves invalid typing and paste, connects inline errors and blocks save', { width: 1280, height: 800 }, async (page, context) => {
@@ -333,7 +385,7 @@ export async function verifyQuoteJourney({ upstream = 'http://127.0.0.1:3002', p
       await reloadQuote(page); await panel(page, 2)
       const saves = []
       page.on('request', request => { if (request.method() === 'PUT' && new URL(request.url()).pathname === '/api/quote/requests') saves.push(request.postData()) })
-      await page.locator('.lq-progress button').nth(1).click(); await panel(page, 1)
+      await (await quoteProgressButton(page, 1)).click(); await panel(page, 1)
       await forward(page); await panel(page, 0)
       const phone = page.locator('#live-phone')
       assert.equal(await phone.inputValue(), '+1 202 555 0123')
@@ -352,7 +404,7 @@ export async function verifyQuoteJourney({ upstream = 'http://127.0.0.1:3002', p
       assert.equal(saves.length, 1)
       assert.equal(state.requests[0].payload.contact.phone, '0491 570 159')
       assert.equal(state.requests[0].payload.service.material, 'Corrected oak')
-      await page.locator('.lq-progress button').first().click(); await panel(page, 0)
+      await (await quoteProgressButton(page, 0)).click(); await panel(page, 0)
       await phone.fill('call Lisa'); await phone.press('Tab')
       assert.equal(await phone.getAttribute('aria-invalid'), 'true')
       await page.getByRole('button', { name: 'Discard changes', exact: true }).click()
@@ -363,10 +415,10 @@ export async function verifyQuoteJourney({ upstream = 'http://127.0.0.1:3002', p
     await scenario('contact lost response retries same save; service and back preserve fields', { width: 1280, height: 800 }, async (page, context) => {
       await context.request.post(`${fixture.base}/__fixture/control`, { data: { loseNextSaveResponse: true } })
       await fillContact(page); await forward(page)
-      await page.getByRole('button', { name: /Retry same save/ }).click(); await panel(page, 1)
+      await page.getByRole('button', { name: /Try saving again/ }).click(); await panel(page, 1)
       const state = await (await context.request.get(`${fixture.base}/__fixture/state`)).json(), saves = state.calls.filter(call => call.command === 'save')
       assert.equal(state.requests.length, 1); assert.equal(saves.length, 2); assert.equal(saves[0].idempotencyKey, saves[1].idempotencyKey)
-      await saveCabinets(page); await fixedViewport(page)
+      await saveCabinets(page); await quoteViewport(page)
       await page.locator('[data-quote-back]:visible').click(); await panel(page, 1)
       assert.equal(await page.getByRole('radio', { name: /Full cabinet repainting/ }).isChecked(), true)
       await page.locator('[data-quote-back]:visible').click(); await panel(page, 0)
@@ -374,17 +426,17 @@ export async function verifyQuoteJourney({ upstream = 'http://127.0.0.1:3002', p
       assert.equal(await page.locator('#live-site').inputValue(), contact.siteAddress)
       await page.screenshot({ path: '/tmp/quote-one-page-desktop.png' })
     })
-    await scenario('320px keyboard, long details, one panel, fixed outer scroll', { width: 320, height: 568 }, async page => {
+    await scenario('320px keyboard, long details, one active panel and visible fixed actions', { width: 320, height: 568 }, async page => {
       await fillContact(page)
       await page.getByText('Add project notes', { exact: false }).click()
       const details = page.locator('#quote-details-form textarea')
       const longNote = 'A long retained project note. '.repeat(70).trim()
       await details.fill(longNote); await details.press('Tab')
-      await fixedViewport(page); await forward(page); await panel(page, 1)
+      await quoteViewport(page); await forward(page); await panel(page, 1)
       await page.locator('[data-quote-back]:visible').click(); await panel(page, 0)
       await page.getByText('Add project notes', { exact: false }).click()
       assert.equal(await details.inputValue(), longNote)
-      await fixedViewport(page)
+      await quoteViewport(page)
       await page.screenshot({ path: '/tmp/quote-one-page-mobile.png' })
     })
     await scenario('409 preserves unsaved entries and access loss clears private view', { width: 1280, height: 800 }, async (page, context, overlay) => {
@@ -402,14 +454,16 @@ export async function verifyQuoteJourney({ upstream = 'http://127.0.0.1:3002', p
     })
     await scenario('queued/running/stale/failed/uncertain keep photo work and recovery controls', { width: 1280, height: 800 }, async (page, context, overlay) => {
       await saveContact(page); await saveCabinets(page)
-      await forward(page); await panel(page, 3)
+      await page.getByRole('button', { name: 'Ask the team to review instead', exact: true }).click(); await panel(page, 3)
       assert.equal(await page.getByRole('button', { name: 'Ask our team to review', exact: true }).isEnabled(), true)
       assert.equal(await page.locator('[data-quote-next]:visible').isEnabled(), false, 'A missing numeric estimate must block date selection')
       overlay.flags.analysisStatus = 'queued'; await reloadQuote(page); await panel(page, 2)
       await page.getByText('Your analysis is queued', { exact: true }).waitFor()
-      assert.equal(await page.getByRole('button', { name: /Analys(e|ing) photos/ }).isEnabled(), false)
+      assert.equal(await page.locator('[data-quote-next]:visible').filter({ hasText: /^Analysing photos…$/ }).isEnabled(), false)
       overlay.flags.analysisStatus = 'running'; await reloadQuote(page); await panel(page, 2)
       await page.getByText('AI is reviewing your cabinets…', { exact: true }).waitFor()
+      assert.equal(await page.locator('[data-quote-next]:visible').innerText(), 'Analysing photos…')
+      assert.equal(await page.locator('[data-quote-next]:visible').isDisabled(), true)
       assert.equal(await page.locator('input[name="booking-signature-name"]:visible').count(), 0)
       overlay.flags.analysisStatus = 'succeeded'; overlay.flags.stale = true; await reloadQuote(page); await panel(page, 2)
       await page.getByText('Earlier photo assessment — details changed', { exact: true }).waitFor()
@@ -417,25 +471,26 @@ export async function verifyQuoteJourney({ upstream = 'http://127.0.0.1:3002', p
       for (const [status, text] of [['failed', 'Your analysis could not be completed'], ['uncertain', 'Let’s check your analysis status']]) {
         overlay.flags.analysisStatus = status; overlay.flags.stale = false; await reloadQuote(page); await panel(page, 2)
         await page.getByText(text, { exact: true }).waitFor()
+        await page.locator('[data-quote-next]:visible').getByText('Try a new photo analysis', { exact: true }).waitFor()
         assert.equal(await page.getByRole('button', { name: 'Check saved status', exact: true }).isEnabled(), true)
         assert.equal(await page.getByRole('img', { name: /uploaded for this request/ }).count(), 1)
-        await forward(page); await panel(page, 3)
+        await page.getByRole('button', { name: 'Ask the team to review instead', exact: true }).click(); await panel(page, 3)
         assert.equal(await page.getByRole('button', { name: 'Ask our team to review', exact: true }).isEnabled(), true)
         assert.equal(await page.locator('[data-quote-next]:visible').isEnabled(), false)
       }
-      await fixedViewport(page)
+      await quoteViewport(page)
     })
     await scenario('late hidden photo read cannot erase unsaved contact edits', { width: 1280, height: 800 }, async (page, context, overlay) => {
       await saveContact(page); await saveCabinets(page)
       overlay.flags.analysisDelayMs = 1200
       const lateRead = page.waitForResponse(response => new URL(response.url()).pathname === '/api/quote/requests/analysis')
       await reloadQuote(page); await panel(page, 2)
-      await page.locator('.lq-progress button').first().click(); await panel(page, 0)
+      await (await quoteProgressButton(page, 0)).click(); await panel(page, 0)
       await page.getByLabel(/Your name|Full name/).first().fill('Unsaved contact correction')
       await lateRead; await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))))
       assert.equal(await page.getByLabel(/Your name|Full name/).first().inputValue(), 'Unsaved contact correction')
-      assert.equal(await page.locator('.lq-progress button').nth(2).isEnabled(), false, 'Unsaved edits must be saved before opening analysis or booking')
-      await fixedViewport(page)
+      assert.equal(await (await quoteProgressButton(page, 2)).isEnabled(), false, 'Unsaved edits must be saved before opening analysis or booking')
+      await quoteViewport(page)
     })
     await scenario('booking email verification binds the new quote once and never opens an older quote for the same email', { width: 1280, height: 800 }, async (page, context, overlay) => {
       overlay.flags.includeOlderOnVerify = true
@@ -454,7 +509,7 @@ export async function verifyQuoteJourney({ upstream = 'http://127.0.0.1:3002', p
       const state = await (await context.request.get(`${fixture.base}/__fixture/state`)).json()
       assert.equal(state.requests[0].id, quote.id); assert.equal(state.requests[0].revision, quote.revision)
       assert.equal(await page.locator('.lq-project-summary').innerText().then(text => text.includes(quote.reference)), true)
-      assert.equal(await page.getByRole('heading', { name: 'Choose a visit', exact: true }).count(), 1)
+      assert.equal(await page.getByRole('heading', { name: 'Pick a visit', exact: true }).count(), 1)
       assert.equal(await page.getByText(/Your photo estimate is ready/).count() > 0, true)
       assert.equal(overlay.syntheticCalls.filter(call => call.path.endsWith('/customer/select')).length, 0)
       await page.getByRole('button', { name: 'Back to estimate', exact: true }).click(); await panel(page, 3)
@@ -472,7 +527,7 @@ export async function verifyQuoteJourney({ upstream = 'http://127.0.0.1:3002', p
       await page.getByRole('button', { name: /available to request only/ }).first().waitFor()
       assert.equal(overlay.customerSends.length, 0)
       overlay.flags.accessMode = 'unlinked'
-      await page.getByRole('button', { name: 'View quotes & bookings', exact: true }).click()
+      await (await quoteEntryAction(page, 'View quotes & bookings')).click()
       await page.getByText('No quotes have been linked', { exact: false }).waitFor()
       await page.getByRole('button', { name: 'Back to quote', exact: true }).last().click(); await panel(page, 4)
       await verifyBookingEmail(page)
@@ -484,7 +539,7 @@ export async function verifyQuoteJourney({ upstream = 'http://127.0.0.1:3002', p
       const quote = (await (await context.request.get(`${fixture.base}/__fixture/state`)).json()).requests[0]
       overlay.flags.verifyDifferentRequest = true; await verifyBookingEmail(page)
       await page.getByText('The code did not confirm access to this quote.', { exact: false }).waitFor()
-      assert.equal(await page.getByRole('heading', { name: 'Choose a visit', exact: true }).count(), 1)
+      assert.equal(await page.getByRole('heading', { name: 'Pick a visit', exact: true }).count(), 1)
       assert.ok((await page.locator('.lq-project-summary').innerText()).includes(quote.reference))
       assert.equal(await page.getByRole('button', { name: /available to request only/ }).count(), 0)
       assert.equal(overlay.syntheticCalls.filter(call => call.path.endsWith('/customer/select')).length, 0)
@@ -494,20 +549,20 @@ export async function verifyQuoteJourney({ upstream = 'http://127.0.0.1:3002', p
       overlay.flags.verifyDelayMs = 500; overlay.flags.verifyDifferentRequest = true
       const response = page.waitForResponse(item => new URL(item.url()).pathname.endsWith('/customer/verify'))
       await verifyBookingEmail(page)
-      await page.getByRole('button', { name: 'View quotes & bookings', exact: true }).click()
+      await (await quoteEntryAction(page, 'View quotes & bookings')).click()
       await response; await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))))
       assert.equal(await page.locator('input[name="customer-email"]:visible').count(), 1)
       assert.equal(await page.getByText('The code did not confirm access', { exact: false }).count(), 0)
       await page.getByRole('button', { name: 'Back to quote', exact: true }).last().click(); await panel(page, 4)
       await page.getByRole('button', { name: 'Back to estimate', exact: true }).click(); await panel(page, 3)
-      await page.locator('.lq-progress button').first().click(); await panel(page, 0)
+      await (await quoteProgressButton(page, 0)).click(); await panel(page, 0)
       const name = page.locator('#live-name'); await name.fill('Unsaved current quote correction')
       overlay.flags.accessMode = 'other-linked'; await accessBroadcast(page)
       await page.getByText('Another saved quote is active', { exact: false }).first().waitFor()
       assert.equal(await name.inputValue(), 'Unsaved current quote correction')
       assert.equal(await page.locator('[data-quote-step="0"]:visible').count(), 1)
       assert.equal(await page.locator('[data-quote-next]:visible').isEnabled(), false)
-      await page.getByRole('button', { name: 'View quotes & bookings', exact: true }).click()
+      await (await quoteEntryAction(page, 'View quotes & bookings')).click()
       await page.getByRole('button', { name: 'Continue this quote', exact: true }).click()
       await page.getByText('You are continuing this quote.', { exact: false }).waitFor()
       const savesBeforeClosing = (await (await context.request.get(`${fixture.base}/__fixture/state`)).json()).calls.filter(call => call.command === 'save').length
@@ -578,7 +633,7 @@ export async function verifyQuoteJourney({ upstream = 'http://127.0.0.1:3002', p
         await new Promise(resolve => setTimeout(resolve, 75))
         return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ request: { ...original, id: overlay.olderId, reference: 'RQ-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA', payload: { ...original.payload, contact: { ...original.payload.contact, name: 'Older linked customer' } } } }) })
       })
-      await page.getByRole('button', { name: 'View quotes & bookings', exact: true }).click()
+      await (await quoteEntryAction(page, 'View quotes & bookings')).click()
       await page.locator('.lq-customer-list').getByRole('button', { name: 'Open saved quote', exact: true }).click()
       await panel(page, 2)
       assert.ok((await page.locator('.lq-project-summary').innerText()).includes('Older linked customer'))
@@ -586,11 +641,14 @@ export async function verifyQuoteJourney({ upstream = 'http://127.0.0.1:3002', p
     })
     await scenario('photo estimate, date, typed signature, lost-submit retry and reload receipt', { width: 393, height: 852 }, async (page, context, overlay) => {
       await saveContact(page); await saveCabinets(page)
+      await page.locator('[data-quote-next]:visible').and(page.getByRole('button', { name: 'Get my photo estimate', exact: true })).waitFor()
+      assert.equal(await page.locator('[data-quote-next]:visible').isDisabled(), true, 'AI consent is required before analysis')
       await page.getByRole('checkbox', { name: /agree to sending these photos/ }).check()
-      await page.getByRole('button', { name: /Analyse photos/ }).click()
+      await page.locator('[data-quote-next]:visible').filter({ hasText: /^Get my photo estimate$/ }).click()
       await page.getByText(/Your photo estimate is ready/).waitFor()
+      assert.equal(await page.locator('[data-quote-next]:visible').innerText(), 'Review estimate')
       await page.screenshot({ path: '/tmp/quote-one-page-photos.png' })
-      await forward(page); await panel(page, 3); await fixedViewport(page)
+      await forward(page); await panel(page, 3); await quoteViewport(page)
       await page.screenshot({ path: '/tmp/quote-one-page-estimate.png' })
       await forward(page); await panel(page, 4)
       await page.getByRole('button', { name: 'Send verification code', exact: true }).click()
@@ -604,9 +662,12 @@ export async function verifyQuoteJourney({ upstream = 'http://127.0.0.1:3002', p
       overlay.flags.bookingReadFailure = false
       await page.getByRole('button', { name: 'Check saved request status', exact: true }).first().click()
       const date = page.getByRole('button', { name: /available to request only/ }).first(); await date.click()
-      await page.locator('input[name="booking-preferred-time"]').fill('10:30')
+      await page.getByText('Your preferred door-removal visit', { exact: true }).waitFor()
+      await page.getByLabel('Door-removal time (Sydney) *', { exact: true }).fill('10:30')
+      await page.getByText('Selected door-removal visit:', { exact: false }).waitFor()
       await page.screenshot({ path: '/tmp/quote-one-page-date.png' })
       await page.getByRole('button', { name: 'Continue to sign', exact: true }).click(); await panel(page, 5)
+      await page.getByText('Door-removal date and time:', { exact: false }).waitFor()
       await page.locator('input[name="booking-signature-name"]').fill(contact.name)
       await page.getByRole('radio', { name: /Use my typed full name/ }).check(); await page.locator('input[name="booking-acknowledged"]').check()
       await page.getByRole('radio', { name: 'Draw signature', exact: true }).check()
@@ -629,26 +690,28 @@ export async function verifyQuoteJourney({ upstream = 'http://127.0.0.1:3002', p
       overlay.flags.reviewLifetimeMs = 600_000
       await forward(page); await panel(page, 4)
       await page.getByRole('button', { name: 'Continue to sign', exact: true }).click(); await panel(page, 5)
+      await page.getByText('Door-removal date and time:', { exact: false }).waitFor()
       await page.locator('input[name="booking-signature-name"]').fill(contact.name)
       await page.getByRole('radio', { name: /Use my typed full name/ }).check(); await page.locator('input[name="booking-acknowledged"]').check()
       await page.screenshot({ path: '/tmp/quote-one-page-sign.png' })
       overlay.flags.submitLoss = true
-      await page.getByRole('button', { name: /Submit booking request/ }).click()
+      await page.getByRole('button', { name: 'Submit booking request', exact: true }).click()
       await page.getByRole('button', { name: 'Retry same request', exact: true }).click(); await panel(page, 6)
       assert.equal(overlay.submitAttempts.length, 2); assert.equal(overlay.submitAttempts[0], overlay.submitAttempts[1])
       assert.equal(new Set(overlay.reviewProofs).size, overlay.reviewProofs.length)
       assert.equal(overlay.submission.signature.method, 'typed'); assert.equal(overlay.submission.preferredTime, '11:00')
-      await reloadQuote(page); await panel(page, 6); await fixedViewport(page)
+      await reloadQuote(page); await panel(page, 6); await quoteViewport(page)
       const highlights = page.locator('.lq-receipt-highlights')
+      await highlights.getByText('Requested door-removal visit', { exact: true }).waitFor()
       assert.equal(await highlights.locator(':scope > div').count(), 3)
-      assert.equal(await highlights.locator('strong').first().innerText(), new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD' }).format(overlay.submission.snapshot.pricing.total / 100))
+      assert.equal(await highlights.locator('strong').first().innerText(), formatQuoteAmount(overlay.submission.snapshot.pricing.total))
       assert.ok((await highlights.innerText()).includes(overlay.submission.reference))
       assert.ok((await highlights.innerText()).includes(overlay.submission.preferredTime))
       const receiptDetails = page.locator('details').filter({ has: page.locator('summary', { hasText: 'Receipt and delivery details' }) })
       assert.equal(await receiptDetails.evaluate(element => element.open), false)
       await receiptDetails.locator('summary').click()
       assert.ok((await receiptDetails.innerText()).includes(overlay.submission.signature.name))
-      await receiptDetails.locator('summary').click(); await fixedViewport(page)
+      await receiptDetails.locator('summary').click(); await quoteViewport(page)
       await page.locator('[data-quote-viewport]').evaluate(element => element.scrollTo({ top: 0, behavior: 'instant' }))
       await page.evaluate(() => new Promise(resolve => requestAnimationFrame(resolve)))
       await page.screenshot({ path: '/tmp/quote-one-page-complete.png' })
@@ -664,7 +727,7 @@ export async function verifyQuoteJourney({ upstream = 'http://127.0.0.1:3002', p
         if (route.request().headers()['x-lk-quote-request-id'] === overlay.olderId && overlay.flags.olderRequest) return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ request: overlay.flags.olderRequest }) })
         const response = await route.fetch(); return route.fulfill({ response })
       })
-      await page.getByRole('button', { name: 'View quotes & bookings', exact: true }).click()
+      await (await quoteEntryAction(page, 'View quotes & bookings')).click()
       await page.getByRole('button', { name: 'Verify email and keep this quote', exact: true }).click()
       await page.locator('input[name="customer-code"]').fill('123456'); await page.getByRole('button', { name: 'Verify code', exact: true }).click()
       await page.locator('.lq-customer-list').getByRole('button', { name: 'Open saved quote', exact: true }).click()
@@ -674,7 +737,7 @@ export async function verifyQuoteJourney({ upstream = 'http://127.0.0.1:3002', p
       overlay.flags.primaryRequest = primary
       overlay.flags.olderRequest = { ...primary, id: overlay.olderId, reference: 'RQ-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA', payload: { ...primary.payload, contact: { ...primary.payload.contact, name: 'Earlier submitted customer' } } }
       overlay.flags.accessMode = 'other-linked'
-      await page.getByRole('button', { name: 'View quotes & bookings', exact: true }).click()
+      await (await quoteEntryAction(page, 'View quotes & bookings')).click()
       await page.locator('.lq-customer-list li').filter({ hasText: 'RQ-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA' }).getByRole('button', { name: 'Open saved quote', exact: true }).click()
       await panel(page, 6)
       await page.getByText('REQUEST-SYNTHETIC-OLDER', { exact: true }).first().waitFor()
@@ -686,7 +749,7 @@ export async function verifyQuoteJourney({ upstream = 'http://127.0.0.1:3002', p
       await page.getByRole('button', { name: 'Refresh receipt status', exact: true }).click()
       overlay.flags.accessMode = 'linked-with-older'; await accessBroadcast(page)
       await page.getByText('Another saved quote is active', { exact: false }).first().waitFor()
-      await page.getByRole('button', { name: 'View quotes & bookings', exact: true }).click()
+      await (await quoteEntryAction(page, 'View quotes & bookings')).click()
       await page.locator('.lq-customer-list li').filter({ hasText: primary.reference }).getByRole('button', { name: 'Open saved quote', exact: true }).click()
       await panel(page, 6); await oldRead
       assert.ok((await page.locator('.lq-project-summary').innerText()).includes(primary.reference))

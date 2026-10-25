@@ -99,6 +99,8 @@
 - [x] 전체 자동 검사 733/733·lint·타입·빌드와 로컬 브라우저 6개 시나리오 검증. 운영 DB·AI·메일·Calendar 호출과 구분.
 - [ ] 회사 Google Maps 키·결제·API/referrer 설정 후 실제 dropdown 검색/선택/저장 인수. 사용자 준비 대기.
 
+**2026-10-25 Quote UI refresh (Painted Cabinet):** [55번 분석·구현 계획](55-quote-ui-ux-analysis-and-cabinet-palette.md) · [검증 기록](../verification/2026-10-25-quote-ui-refresh.md). phase 2a lint·typecheck·test:live-quotes(358/358)·test:operations(773/773)·build 통과. phase 2c coordinator local browser gates entry 16/16, photo 6/6, journey 18/18, GST 8/8 통과(48 scenarios). GST는 첫 local server에서 staff-auth 환경 플래그 누락으로 404가 발생해 플래그를 설정한 서버에서 재실행했다. 최신 script lint/최종 lint 결과는 최종 검증 표를 따른다. 자동 gate는 통과했으나 실제 iOS/Android·스크린리더·PDF 시각·실제 메일 인수는 미완료. 미커밋·미배포.
+
 **2026-10-13 최신 Git 통합:** 44·45번 날짜 선택/예약 절차 개선과 시험 자료 정리·만료 세션 복구를 현재 브랜치 `codex/quote-date-first-flow-20261013`의 `9cc9ba3`에 커밋하고 `main`에 병합했다(`67feded`). 병합 트리는 검증 브랜치와 동일하며 전체 728/728·check 결과를 재사용한다. 회사 원격 `origin`만 사용한다. 아래 “미커밋/점유 유지”는 당시 실행 상태로 보존한다.
 
 - [x] 현재까지 변경사항 56개 파일 커밋, main 무충돌 병합과 검증 코드 동일성 확인.

@@ -92,7 +92,7 @@ test('single-signature request freezes take-off time and installation delegation
   const source = submission(); source.preferredTime = '10:30'; source.snapshot.preferredTime = '10:30'
   source.snapshot.version = BOOKING_SIMPLE_ACK_VERSION; source.snapshot.acknowledgment = bookingAcknowledgment(); source.calendarStatus = 'not_required'
   const receipt = await createFrozenBookingReceipt(source, sender)
-  assert.ok(validFrozenBookingReceipt(receipt, source)); assert.match(receipt.payload.text, /2026-11-01 10:30 \(Sydney/)
+  assert.ok(validFrozenBookingReceipt(receipt, source)); assert.match(receipt.payload.text, /Requested door-removal \(take-off\): 2026-11-01 10:30 \(Sydney/)
   assert.match(receipt.payload.text, /No further online approval/); assert.doesNotMatch(receipt.payload.text, /separate proposal and your acceptance/)
   for (const change of [s => { s.preferredTime = '11:30' }, s => { s.snapshot.preferredTime = null }, s => { s.preferredTime = '24:00'; s.snapshot.preferredTime = '24:00' }]) {
     const changed = structuredClone(source); change(changed); await assert.rejects(createBookingReceiptPdf(changed))

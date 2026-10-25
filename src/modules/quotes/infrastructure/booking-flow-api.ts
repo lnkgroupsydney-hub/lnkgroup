@@ -97,7 +97,7 @@ export function createLiveBookingApi(deps: LiveBookingApiDependencies) {
       const timeArgs = simple ? { preferredTime } : {}
       const replay = await flow.command<LiveBookingState | null>(current, 'replay', { operation: 'date', approvalId, preferredDate, ...timeArgs, idempotencyKey, availabilityRevision: row.availabilityRevision })
       if (replay) return json({ state: replay })
-      if (simple && Date.parse(sydneyLocalToInstant(`${preferredDate}T${preferredTime}`)) <= deps.now()) throw new QuoteRequestError(409, 'Choose a future Sydney take-off date and time.')
+      if (simple && Date.parse(sydneyLocalToInstant(`${preferredDate}T${preferredTime}`)) <= deps.now()) throw new QuoteRequestError(409, 'Choose a future Sydney door-removal date and time.')
       const dateCheck = await deps.dateCheck(preferredDate, row.availabilityRevision)
       return json({ state: await flow.command<LiveBookingState>(current, 'date', { approvalId, preferredDate, ...timeArgs, idempotencyKey, availabilityRevision: row.availabilityRevision, dateCheck }) })
     }),

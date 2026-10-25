@@ -5,7 +5,7 @@ import { createRequire } from 'node:module'
 import { pathToFileURL } from 'node:url'
 import { randomUUID } from 'node:crypto'
 import { createLiveQuoteFixture } from './verify-live-quote-fixture.mjs'
-import { attachJourneyOverlay } from './verify-quote-journey-ui.mjs'
+import { attachJourneyOverlay, quoteEntryAction } from './verify-quote-journey-ui.mjs'
 
 const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aX1kAAAAASUVORK5CYII=', 'base64')
 const photoId = 'c7907719-387c-4830-a160-f6eb0febfcd1'
@@ -67,7 +67,7 @@ export async function verifyQuoteEntryPhoto({ upstream = 'http://127.0.0.1:3005'
         await api('/api/quote/requests/customer/send', { email: payload.contact.email, requestId: a.id, expectedRevision: a.revision })
         await api('/api/quote/requests/customer/verify', { token: '12345678' })
         await page.goto(`${fixture.base}/quote/start?service=cabinet-painting&mode=live`)
-        await page.getByRole('button', { name: 'View quotes & bookings', exact: true }).click()
+        await (await quoteEntryAction(page, 'View quotes & bookings')).click()
         await page.locator('.lq-customer-list').getByRole('button', { name: 'Open saved quote', exact: true }).click()
         await page.locator('[data-quote-step="2"]:visible').waitFor()
         await page.getByText('Missing views or no visible damage?', { exact: true }).click()
@@ -78,7 +78,7 @@ export async function verifyQuoteEntryPhoto({ upstream = 'http://127.0.0.1:3005'
         const localOptions = async () => ({ consent: await page.locator('input[name="live-photo-ai-consent"]').isChecked(), upper: await page.locator('input[name="live-photo-upper-none"]').isChecked(), damage: await page.locator('input[name="live-photo-no-damage"]').isChecked() })
         if (phase === 'process') {
           await page.getByRole('checkbox', { name: /I agree to sending these photos/ }).check()
-          await page.getByRole('button', { name: 'Analyse photos & get estimate', exact: true }).click()
+          await page.locator('[data-quote-next]:visible').filter({ hasText: /^Get my photo estimate$/ }).click()
         } else await page.getByRole('button', { name: 'Save photo privately', exact: true }).click()
         await Promise.race([entered.promise, new Promise((_, reject) => setTimeout(() => reject(new Error('Target photo request was not started')), 15_000))])
         const originalOptions = await localOptions()
@@ -114,7 +114,7 @@ export async function verifyQuoteEntryPhoto({ upstream = 'http://127.0.0.1:3005'
         await api('/__fixture/control', { expireCustomerSendCooldown: true })
         await api('/api/quote/requests/customer/send', { email: payload.contact.email })
         await api('/api/quote/requests/customer/verify', { token: '12345678' })
-        await page.getByRole('button', { name: 'View quotes & bookings', exact: true }).click()
+        await (await quoteEntryAction(page, 'View quotes & bookings')).click()
         await page.getByRole('button', { name: 'Refresh saved quotes', exact: true }).click()
         await page.locator('.lq-customer-list').getByRole('button', { name: 'Open saved quote', exact: true }).click()
         await page.locator('[data-quote-step="2"]:visible').waitFor()

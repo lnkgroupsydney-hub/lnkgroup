@@ -14,9 +14,12 @@ const pages = new Set(['/quote/start', '/admin', '/admin/quotes'])
 const assets = new Set(['/favicon.ico', '/images/lk-group-logo-circle-transparent.png'])
 const navigationHeaders = ['accept', 'rsc', 'next-router-state-tree', 'next-router-prefetch', 'next-router-segment-prefetch', 'next-url', 'purpose']
 function logo(url) {
+  const image = url.searchParams.get('url')
+  const widths = image === '/images/lk-group-logo-circle-transparent.png' ? ['48', '64', '96', '128', '256']
+    : image === '/images/home/cabinet-painting.webp' ? ['640', '750', '828', '1080', '1200', '1920', '2048', '3840'] : []
   return url.pathname === '/_next/image' && url.searchParams.size === 3
-    && url.searchParams.getAll('url').length === 1 && url.searchParams.get('url') === '/images/lk-group-logo-circle-transparent.png'
-    && url.searchParams.getAll('w').length === 1 && ['96', '128', '256'].includes(url.searchParams.get('w'))
+    && url.searchParams.getAll('url').length === 1 && widths.length > 0
+    && url.searchParams.getAll('w').length === 1 && widths.includes(url.searchParams.get('w'))
     && url.searchParams.getAll('q').length === 1 && url.searchParams.get('q') === '75'
 }
 function json(value, status = 200) { return Response.json(value, { status, headers: { 'cache-control': 'private, no-store', vary: 'Cookie', 'x-live-quote-fixture': 'synthetic' } }) }

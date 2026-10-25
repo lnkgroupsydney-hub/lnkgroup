@@ -3,13 +3,16 @@
 import assert from 'node:assert/strict'
 import { createRequire } from 'node:module'
 import { randomUUID } from 'node:crypto'
-import { fileURLToPath } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
+import { resolve } from 'node:path'
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { quoteEntryAction } from './verify-quote-journey-ui.mjs'
 import { createLiveQuoteFixture } from './verify-live-quote-fixture.mjs'
 import { PHOTO_ROLES, PHOTO_ANALYSIS_SCHEMA_VERSION, validatePhotoAnalysis } from '../src/modules/quotes/domain/analysis.ts'
 import { calculateEstimatePricing, calculatePreviousEstimatePricing, calculateLegacyEstimatePricing } from '../src/modules/quotes/domain/pricing.ts'
 import { BOOKING_ACKNOWLEDGMENT_VERSION, bookingAcknowledgment, validateBookingSignature } from '../src/modules/quotes/domain/booking-flow.ts'
 import { parsePhotoWorkspace } from '../src/modules/quotes/presentation/photo-workspace-client.ts'
+import { formatQuoteAmount } from '../src/modules/quotes/presentation/quote-money.ts'
 import { bookingMonthDates, shiftBookingMonth, sydneyToday, parseBookingState } from '../src/modules/quotes/presentation/booking-flow-client.ts'
 import { COMPANY_BOOKING_ACK_VERSION, COMPANY_BOOKING_ACK_TEXT, COMPANY_BOOKING_SITE_DAMAGE_NOTE } from '../src/modules/bookings/domain/live-contracts.ts'
 import { parseCompanyState } from '../src/modules/bookings/presentation/live-booking-client.ts'
@@ -17,7 +20,8 @@ import { companyClaim } from '../src/modules/bookings/live-test-data.mts'
 import { validateReceiptSource } from '../src/modules/quotes/infrastructure/booking-receipt.ts'
 import { sydneyLocalToInstant } from '../src/modules/operations/domain/validation.ts'
 
-const out = new URL('../docs/verification/2026-10-14-no-gst-pricing/', import.meta.url)
+const repoRoot = fileURLToPath(new URL('../', import.meta.url))
+const out = pathToFileURL(resolve(repoRoot, process.env.QUOTE_UI_SHOT_DIR ?? 'docs/verification/2026-10-14-no-gst-pricing/') + '/')
 mkdirSync(out, { recursive: true })
 const photoId = '205f3d74-69e5-4cbe-b4b4-31d4a382cfad', jobId = '7332878e-3cb6-4986-a579-865b0244bce7'
 const now = () => new Date().toISOString(), future = () => new Date(Date.now() + 600_000).toISOString()
@@ -120,11 +124,12 @@ async function layout(page, name) {
   layouts.push({ name, ...measure })
   await page.screenshot({ path: fileURLToPath(new URL(`${name}.png`, out)) })
 }
-async function totalAt(page, selector, expected, variant) {
+async function totalAt(page, selector, expected, variant, customer = false) {
   const box = page.locator(selector).filter({ visible: true }).first()
   await box.waitFor()
   const text = await box.innerText()
-  assert.ok(text.includes(money(expected)) || expected % 100 === 0 && text.includes(money(expected).replace(/\.00$/, '')), `Expected ${money(expected)} in ${text}`)
+  if (customer) assert.ok(text.includes(formatQuoteAmount(expected)), `Expected ${formatQuoteAmount(expected)} in ${text}`)
+  else assert.ok(text.includes(money(expected)) || expected % 100 === 0 && text.includes(money(expected).replace(/\.00$/, '')), `Expected ${money(expected)} in ${text}`)
   assert.match(text, variant === 'new' ? /No GST charged|GST not charged|Not charged/i : /GST/i)
   if (variant === 'new') assert.doesNotMatch(text, /including GST|incl GST|GST \(10%\)/i)
 }
@@ -155,12 +160,12 @@ async function scenario(variant, counts, viewport, archived = false) {
     await forward(); await step(2)
     // Freeze an explicit historical saved request only after its service is saved.
     await overlay.quote()
-    await page.getByRole('checkbox', { name: /agree to sending these photos/ }).check(); await page.getByRole('button', { name: /Analyse photos/ }).click()
+    await page.getByRole('checkbox', { name: /agree to sending these photos/ }).check(); await page.locator('[data-quote-next]:visible').filter({ hasText: /^Get my photo estimate$/ }).click()
     await page.getByText(/Your photo estimate is ready/).waitFor()
     await forward(); await step(3)
     if (variant === 'v1') await page.getByText('View assessment and price breakdown', { exact: true }).click()
     const pricing = overlay.workspace(await overlay.quote()).latest.pricing, expected = pricing.total
-    await totalAt(page, '[data-quote-step="3"]', expected, variant); await layout(page, `${name}-estimate`)
+    await totalAt(page, '[data-quote-step="3"]', expected, variant, true); await layout(page, `${name}-estimate`)
     {
       if (variant !== 'v1') await page.getByText('View assessment and price breakdown', { exact: true }).click()
       const table = page.locator('[data-quote-step="3"] .lq-price-table')
@@ -180,9 +185,9 @@ async function scenario(variant, counts, viewport, archived = false) {
     }
     if (variant === 'v1') {
       const preserved = JSON.stringify(pricing)
-      await page.reload(); await page.getByRole('button', { name: 'View quotes & bookings', exact: true }).click()
+      await page.reload(); await (await quoteEntryAction(page, 'View quotes & bookings')).click()
       await page.getByRole('button', { name: 'Continue this browser draft', exact: true }).click(); await step(2)
-      await forward(); await step(3); await page.getByText('View assessment and price breakdown', { exact: true }).click(); await totalAt(page, '[data-quote-step="3"]', expected, variant)
+      await forward(); await step(3); await page.getByText('View assessment and price breakdown', { exact: true }).click(); await totalAt(page, '[data-quote-step="3"]', expected, variant, true)
       await page.goto(`${fixture.base}/admin/quotes`); await page.getByRole('button', { name: /View request/ }).first().click()
       await page.locator('.lq-admin-detail').getByText('Estimated total (incl GST)', { exact: true }).waitFor()
       await totalAt(page, '.lq-admin-detail', expected, variant); await layout(page, `${name}-ems`)
@@ -192,20 +197,20 @@ async function scenario(variant, counts, viewport, archived = false) {
       console.log(`PASS ${name}`)
       return
     }
-    await forward(); await page.getByRole('heading', { name: 'Choose a visit', exact: true }).waitFor()
+    await forward(); await page.getByRole('heading', { name: 'Pick a visit', exact: true }).waitFor()
     await page.getByRole('button', { name: 'Send verification code', exact: true }).click(); await page.locator('input[name="customer-code"]').fill('123456'); await page.getByRole('button', { name: 'Verify code', exact: true }).click()
     await page.getByRole('button', { name: /available to request only/ }).first().click(); await page.locator('input[name="booking-preferred-time"]').fill('10:30')
     await page.getByRole('button', { name: 'Continue to sign', exact: true }).click(); await step(5)
-    await totalAt(page, '[data-quote-step="5"]', expected, variant)
+    await totalAt(page, '[data-quote-step="5"]', expected, variant, true)
     await page.locator('input[name="booking-signature-name"]').fill(contact.name); await page.getByRole('radio', { name: /Use my typed full name/ }).check(); await page.locator('input[name="booking-acknowledged"]').check()
     await layout(page, `${name}-signature`)
-    await page.getByRole('button', { name: /Submit booking request/ }).focus(); await page.keyboard.press('Enter'); await step(6)
+    await page.getByRole('button', { name: 'Submit booking request', exact: true }).focus(); await page.keyboard.press('Enter'); await step(6)
     if (archived) overlay.seedArchivedAcknowledgment()
     const frozen = JSON.stringify(overlay.submission)
     assert.equal(overlay.submission.snapshot.pricing.total, expected); assert.equal(overlay.submission.snapshot.pricing.tax, variant === 'new' ? 0 : expected / 11)
-    await totalAt(page, '[data-quote-step="6"]', expected, variant); await layout(page, `${name}-receipt`)
-    await page.reload(); await page.getByRole('button', { name: 'View quotes & bookings', exact: true }).click(); await page.locator('.lq-customer-list').getByRole('button', { name: 'Open saved quote', exact: true }).first().click(); await step(6)
-    await totalAt(page, '[data-quote-step="6"]', expected, variant); assert.equal(JSON.stringify(overlay.submission), frozen, 'Saved booking snapshot and signature preserved on reload')
+    await totalAt(page, '[data-quote-step="6"]', expected, variant, true); await layout(page, `${name}-receipt`)
+    await page.reload(); await (await quoteEntryAction(page, 'View quotes & bookings')).click(); await page.locator('.lq-customer-list').getByRole('button', { name: 'Open saved quote', exact: true }).first().click(); await step(6)
+    await totalAt(page, '[data-quote-step="6"]', expected, variant, true); assert.equal(JSON.stringify(overlay.submission), frozen, 'Saved booking snapshot and signature preserved on reload')
     await page.goto(`${fixture.base}/admin/quotes`)
     await page.getByRole('button', { name: /View request/ }).first().click(); await page.locator('.lq-admin-detail').waitFor()
     await page.getByRole('heading', { name: 'Company booking review and confirmation', exact: true }).waitFor()

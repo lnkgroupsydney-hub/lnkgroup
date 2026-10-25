@@ -4,6 +4,7 @@ import assert from 'node:assert/strict'
 import { createRequire } from 'node:module'
 import { mkdirSync, writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
+import { quoteEntryAction } from './verify-quote-journey-ui.mjs'
 
 const supplied = process.env.GST_SMOKE_URL
 assert.ok(supplied, 'The release owner must supply GST_SMOKE_URL; do not infer an external target.')
@@ -67,7 +68,7 @@ try {
       const response = await page.goto(`${target.origin}/quote/start`, { waitUntil: 'networkidle' })
       assert.equal(response.status(), 200)
       assert.equal(new URL(page.url()).origin, target.origin, 'Deployment protection or a redirect changed the requested origin.')
-      await page.getByRole('heading', { name: 'How can we help with your kitchen?', exact: true }).waitFor()
+      await page.getByRole('heading', { name: 'Let’s refresh your kitchen.', exact: true }).waitFor()
       await page.getByRole('button', { name: 'Start a new quote', exact: true }).waitFor()
       await page.getByRole('button', { name: 'View quotes & bookings', exact: true }).waitFor()
       const entryBounds = await screenshot(page, `${width}-entry`)
@@ -95,11 +96,11 @@ try {
       }
       await page.locator('#live-name').focus(); await page.keyboard.press('Tab')
       assert.equal(await page.evaluate(() => document.activeElement?.id), 'live-email')
-      await page.getByRole('button', { name: 'View quotes & bookings', exact: true }).click()
+      await (await quoteEntryAction(page, 'View quotes & bookings')).click()
       await page.locator('#quote-email-access:visible').waitFor()
       assert.equal(await page.locator('.lq-customer-list button').count(), 0, 'An unauthenticated fresh browser must not expose saved records.')
       await screenshot(page, `${width}-saved-entry-empty`)
-      await page.locator('.lq-workspace-header').getByRole('button', { name: 'Back to quote', exact: true }).click()
+      await page.locator('.lq-stage-actions').getByRole('button', { name: 'Back to quote', exact: true }).click()
       await page.locator('[data-quote-step="0"]:visible').waitFor()
       await emptyRead(context, '/api/quote/requests', width)
       assert.deepEqual(scopeErrors, [])

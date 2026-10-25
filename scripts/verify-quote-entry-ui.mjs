@@ -4,7 +4,7 @@ import { randomUUID } from 'node:crypto'
 import { createRequire } from 'node:module'
 import { pathToFileURL } from 'node:url'
 import { createLiveQuoteFixture } from './verify-live-quote-fixture.mjs'
-import { attachJourneyOverlay } from './verify-quote-journey-ui.mjs'
+import { attachJourneyOverlay, quoteEntryAction, quoteEntryActionDisabled, quoteViewport } from './verify-quote-journey-ui.mjs'
 
 const contact = { name: 'Synthetic returning customer', email: 'returning@example.invalid', phone: '0412 345 678', siteAddress: '1 Existing Street', suburb: 'Ermington', postcode: '2115', details: 'Existing project notes', consent: true }
 const service = { serviceId: 'cabinet-painting', intent: 'full-repainting', surfaces: ['doors'], doorCount: 8, drawerCount: 3, material: 'Existing timber', colourPreference: 'Existing white' }
@@ -16,7 +16,7 @@ export async function verifyQuoteEntry({ upstream = 'http://127.0.0.1:3005', por
   const require = createRequire(import.meta.url)
   let playwright
   try { playwright = require('playwright') } catch { playwright = require('/Users/jimee/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright') }
-  const browser = await playwright.chromium.launch({ headless: true, channel: 'chrome' })
+  const browser = await playwright.chromium.launch({ headless: true, channel: 'chrome' }).catch(async error => { await fixture.close(); throw error })
   const checks = [], pageErrors = [], warnings = [], screenshots = []
   async function scenario(name, run) {
     if (process.env.QUOTE_UI_ENTRY_SCENARIO && !name.includes(process.env.QUOTE_UI_ENTRY_SCENARIO)) return
@@ -45,7 +45,7 @@ export async function verifyQuoteEntry({ upstream = 'http://127.0.0.1:3005', por
     }
     async function navigate() { await page.goto(`${fixture.base}/quote/start?mode=live`); await page.getByRole('button', { name: 'Start a new quote', exact: true }).waitFor() }
     async function openSaved(request) {
-      await page.getByRole('button', { name: 'View quotes & bookings', exact: true }).click()
+      await (await quoteEntryAction(page, 'View quotes & bookings')).click()
       const list = request ? page.locator('.lq-customer-list li').filter({ hasText: request.reference }) : page.locator('.lq-customer-list')
       await list.getByRole('button', { name: 'Open saved quote', exact: true }).first().click()
     }
@@ -58,7 +58,7 @@ export async function verifyQuoteEntry({ upstream = 'http://127.0.0.1:3005', por
     async function reopen(request) {
       await api('/__fixture/control', { expireCustomerSendCooldown: true })
       await authenticate(request, false)
-      await page.getByRole('button', { name: 'View quotes & bookings', exact: true }).click()
+      await (await quoteEntryAction(page, 'View quotes & bookings')).click()
       await page.getByRole('button', { name: 'Refresh saved quotes', exact: true }).click()
       await page.locator('.lq-customer-list li').filter({ hasText: request.reference }).getByRole('button', { name: 'Open saved quote', exact: true }).click()
     }
@@ -67,7 +67,7 @@ export async function verifyQuoteEntry({ upstream = 'http://127.0.0.1:3005', por
       overlay.flags.analysisStatus = 'succeeded'
       await openSaved(); await page.getByText('Your photo estimate is ready', { exact: true }).waitFor()
       await page.getByRole('button', { name: 'Review estimate', exact: false }).click()
-      await page.getByRole('button', { name: 'Choose a visit', exact: true }).last().click()
+      await page.getByRole('button', { name: 'Pick a visit', exact: true }).last().click()
       await page.getByRole('button', { name: /available to request only/ }).first().click()
       await page.locator('input[name="booking-preferred-time"]').fill('10:30')
     }
@@ -89,14 +89,14 @@ export async function verifyQuoteEntry({ upstream = 'http://127.0.0.1:3005', por
       await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))))
       assert.equal(await page.locator('.quote-route-shell').count(), 1)
       await capture('quote-entry-mobile')
-      assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth))
+      assert.ok(await page.evaluate(() => document.scrollingElement.scrollWidth <= innerWidth))
       await page.getByRole('button', { name: 'Start a new quote', exact: true }).focus(); await page.keyboard.press('Enter')
-      await page.locator('#live-name').waitFor(); assert.equal(await page.locator('#live-email').inputValue(), '')
+      await page.locator('#live-name').waitFor(); assert.equal(await page.locator('#live-email').inputValue(), ''); await quoteViewport(page)
     })
     await scenario('authorized contact-only prefill creates distinct B and preserves actual A', async ({ page, navigate, seed, state, capture, api }) => {
       const a = await seed(); const before = await api(`/api/admin/quote-requests/${a.id}`)
       await navigate(); assert.equal(await page.locator('.lq-project-summary').count(), 0)
-      await page.getByRole('button', { name: 'Start a new quote', exact: true }).click(); await page.locator('#live-name').waitFor()
+      await (await quoteEntryAction(page, 'Start a new quote')).click(); await page.locator('#live-name').waitFor()
       for (const [id, value] of [['live-name', contact.name], ['live-email', contact.email], ['live-phone', contact.phone]]) assert.equal(await page.locator(`#${id}`).inputValue(), value)
       for (const id of ['live-site', 'live-suburb', 'live-postcode', 'live-details']) assert.equal(await page.locator(`#${id}`).inputValue(), '')
       assert.equal(await page.getByRole('checkbox', { name: /privately saving my details/ }).isChecked(), false)
@@ -114,7 +114,7 @@ export async function verifyQuoteEntry({ upstream = 'http://127.0.0.1:3005', por
     })
     await scenario('saved current A opens only after explicit list selection', async ({ page, navigate, seed }) => {
       const a = await seed(); await navigate(); assert.equal(await page.locator('[data-quote-step]').count(), 0)
-      await page.getByRole('button', { name: 'View quotes & bookings', exact: true }).click()
+      await (await quoteEntryAction(page, 'View quotes & bookings')).click()
       const open = page.locator('.lq-customer-list').getByRole('button', { name: 'Open saved quote', exact: true }); await open.waitFor(); assert.equal(await open.isEnabled(), true)
       assert.equal(await page.locator('.lq-project-summary').getByText(a.reference, { exact: false }).count(), 0)
       await open.click(); await page.locator('[data-quote-step="2"]:visible').waitFor()
@@ -122,7 +122,7 @@ export async function verifyQuoteEntry({ upstream = 'http://127.0.0.1:3005', por
     })
     await scenario('unlinked guest is protected and exact browser draft resumes without email', async ({ page, navigate, seed, state, api }) => {
       const a = await seed(false, false); const before = await api(`/api/admin/quote-requests/${a.id}`)
-      await navigate(); await page.getByRole('button', { name: 'Start a new quote', exact: true }).click()
+      await navigate(); await (await quoteEntryAction(page, 'Start a new quote')).click()
       const resume = page.getByRole('button', { name: 'Continue this browser draft', exact: true }); await resume.waitFor()
       assert.equal(await page.locator('#live-name').count(), 0); assert.equal((await state()).customerAuth.providerCalls.send, 0)
       await resume.click(); await page.locator('[data-quote-step="1"]:visible').waitFor()
@@ -135,7 +135,7 @@ export async function verifyQuoteEntry({ upstream = 'http://127.0.0.1:3005', por
       const b = (await api('/api/quote/requests', { expectedRevision: 0, idempotencyKey: randomUUID(), storageConsent: true, payload: { contact: { ...contact, name: 'Unlinked browser project', email: 'browser@example.invalid' }, service: null } }, 'PUT')).request
       await api('/__fixture/control', { expireCustomerSendCooldown: true }); await authenticate(a, false)
       const before = (await state()).requests
-      await navigate(); await page.getByRole('button', { name: 'Start a new quote', exact: true }).click()
+      await navigate(); await (await quoteEntryAction(page, 'Start a new quote')).click()
       await page.getByRole('button', { name: 'Continue this browser draft', exact: true }).waitFor()
       assert.ok((await page.getByRole('status').allTextContents()).some(text => text.includes(b.reference)))
       await page.getByRole('button', { name: 'Continue this browser draft', exact: true }).click(); await page.locator('[data-quote-step="1"]:visible').waitFor()
@@ -165,12 +165,12 @@ export async function verifyQuoteEntry({ upstream = 'http://127.0.0.1:3005', por
         return route.continue()
       })
       await page.locator('[data-quote-next]:visible').click(); await entered.promise; await peerStart(); gate.resolve()
-      const retry = page.getByRole('button', { name: 'Retry same save', exact: true }); await retry.waitFor()
-      assert.equal(await retry.isDisabled(), true); assert.equal(await page.getByRole('button', { name: 'Start a new quote', exact: true }).isDisabled(), true)
+      const retry = page.getByRole('button', { name: 'Try saving again', exact: true }); await retry.waitFor()
+      assert.equal(await retry.isDisabled(), true); assert.equal(await quoteEntryActionDisabled(page, 'Start a new quote'), true)
       await eventually(async () => assert.equal(await page.getByRole('button', { name: 'Check quote session', exact: true }).isEnabled(), true))
       await page.getByRole('button', { name: 'Check quote session', exact: true }).click(); await page.getByText('Your session was checked.', { exact: false }).waitFor()
       assert.equal(attempts.length, 1); assert.equal(await page.locator('#live-name').inputValue(), 'Pending preserved name')
-      await page.getByRole('button', { name: 'View quotes & bookings', exact: true }).click()
+      await (await quoteEntryAction(page, 'View quotes & bookings')).click()
       await page.locator('input[name="customer-email"]').fill('different@example.invalid')
       const sends = (await state()).customerAuth.providerCalls.send
       await page.getByRole('button', { name: 'Send email verification code', exact: true }).click()
@@ -178,7 +178,7 @@ export async function verifyQuoteEntry({ upstream = 'http://127.0.0.1:3005', por
       assert.equal((await state()).customerAuth.providerCalls.send, sends)
       await page.getByRole('button', { name: 'Back to quote', exact: true }).first().click()
       await api('/__fixture/control', { expireCustomerSendCooldown: true }); await authenticate(a, false)
-      await page.getByRole('button', { name: 'View quotes & bookings', exact: true }).click(); await page.getByRole('button', { name: 'Refresh saved quotes', exact: true }).click()
+      await (await quoteEntryAction(page, 'View quotes & bookings')).click(); await page.getByRole('button', { name: 'Refresh saved quotes', exact: true }).click()
       assert.equal(await page.locator('.lq-customer-list li').filter({ hasText: b.reference }).getByRole('button', { name: 'Open saved quote', exact: true }).isDisabled(), true)
       await page.locator('.lq-customer-list li').filter({ hasText: a.reference }).getByRole('button', { name: 'Open saved quote', exact: true }).click()
       await eventually(async () => assert.equal(await retry.isEnabled(), true)); await retry.click()
@@ -186,7 +186,7 @@ export async function verifyQuoteEntry({ upstream = 'http://127.0.0.1:3005', por
       assert.equal((await state()).requests.find(item => item.id === a.id).payload.contact.name, 'Pending preserved name')
     })
     await scenario('first PUT completed after peer empty-session start associates exact B and replays original key', async ({ page, context, navigate, peerStart, state }) => {
-      await navigate(); await page.getByRole('button', { name: 'Start a new quote', exact: true }).click(); await page.locator('#live-name').waitFor()
+      await navigate(); await (await quoteEntryAction(page, 'Start a new quote')).click(); await page.locator('#live-name').waitFor()
       for (const [id, value] of [['live-name', contact.name], ['live-email', contact.email], ['live-site', contact.siteAddress], ['live-suburb', contact.suburb], ['live-postcode', contact.postcode]]) await page.locator(`#${id}`).fill(value)
       await page.getByRole('checkbox', { name: /privately saving my details/ }).check()
       const entered = deferred(), gate = deferred(), attempts = []
@@ -201,7 +201,7 @@ export async function verifyQuoteEntry({ upstream = 'http://127.0.0.1:3005', por
       await eventually(async () => assert.equal(await page.getByRole('button', { name: 'Check quote session', exact: true }).isEnabled(), true))
       await page.getByRole('button', { name: 'Check quote session', exact: true }).click()
       await page.getByRole('button', { name: 'Continue this browser draft', exact: true }).click()
-      const retry = page.getByRole('button', { name: 'Retry same save', exact: true }); await eventually(async () => assert.equal(await retry.isEnabled(), true)); await retry.click()
+      const retry = page.getByRole('button', { name: 'Try saving again', exact: true }); await eventually(async () => assert.equal(await retry.isEnabled(), true)); await retry.click()
       await page.locator('[data-quote-step="1"]:visible').waitFor()
       const all = (await state()).requests; assert.equal(all.length, 1); assert.equal(all[0].revision, 1)
       assert.equal(attempts[0].body, attempts[1].body); assert.equal(attempts[0].id, undefined); assert.equal(attempts[1].id, all[0].id)
@@ -210,10 +210,10 @@ export async function verifyQuoteEntry({ upstream = 'http://127.0.0.1:3005', por
       const a = await seed(); await navigate(); await visit()
       await page.getByRole('button', { name: 'Continue to sign', exact: true }).click(); await page.locator('input[name="booking-signature-name"]').waitFor()
       await page.locator('input[name="booking-signature-name"]').fill('Kept signature name'); await page.getByRole('radio', { name: /Use my typed full name/ }).check(); await page.locator('input[name="booking-acknowledged"]').check()
-      await page.getByRole('button', { name: 'Start a new quote', exact: true }).click(); await page.getByRole('button', { name: 'Continue editing', exact: true }).click()
+      await (await quoteEntryAction(page, 'Start a new quote')).click(); await page.getByRole('button', { name: 'Continue editing', exact: true }).click()
       assert.equal(await page.locator('input[name="booking-signature-name"]').inputValue(), 'Kept signature name'); assert.equal(await page.locator('input[name="booking-acknowledged"]').isChecked(), true)
       assert.equal(await page.locator('input[name="booking-preferred-time"]').inputValue(), '10:30')
-      await page.getByRole('button', { name: 'Start a new quote', exact: true }).click(); await page.getByRole('button', { name: 'Discard changes & start new quote', exact: true }).click()
+      await (await quoteEntryAction(page, 'Start a new quote')).click(); await page.getByRole('button', { name: 'Discard changes & start new quote', exact: true }).click()
       await page.locator('#live-name').waitFor(); assert.equal(await page.locator('#live-site').inputValue(), '')
       assert.equal(await page.locator('input[name="booking-signature-name"]').count(), 0); assert.equal((await state()).requests[0].id, a.id)
     })
@@ -233,7 +233,7 @@ export async function verifyQuoteEntry({ upstream = 'http://127.0.0.1:3005', por
       const saved = await page.evaluate(async id => (await fetch('/api/quote/requests/booking', { headers: { 'x-lk-quote-request-id': id } })).json(), a.id)
       await context.route(`${fixture.base}/api/quote/requests/booking`, async route => { await new Promise(resolve => setTimeout(resolve, 250)); return route.fulfill({ json: saved }) })
       await page.reload(); await openSaved(a); await page.getByText('Your photo estimate is ready', { exact: true }).waitFor()
-      await page.getByRole('button', { name: 'Review estimate', exact: false }).click(); await page.getByRole('button', { name: 'Choose a visit', exact: true }).last().click()
+      await page.getByRole('button', { name: 'Review estimate', exact: false }).click(); await page.getByRole('button', { name: 'Pick a visit', exact: true }).last().click()
       await eventually(async () => assert.equal(await page.locator('input[name="booking-preferred-time"]').inputValue(), '10:30'))
       assert.equal(await page.getByRole('button', { name: 'Send verification code', exact: true }).count(), 0)
     })
@@ -244,9 +244,9 @@ export async function verifyQuoteEntry({ upstream = 'http://127.0.0.1:3005', por
       saved.state.approval.selectionRevision++; saved.state.approval.preferredTime = '11:30'
       await context.route(`${fixture.base}/api/quote/requests/booking`, route => route.fulfill({ json: saved }))
       await openSaved(a)
-      await page.getByRole('heading', { name: 'Choose a visit', exact: true }).waitFor()
+      await page.getByRole('heading', { name: 'Pick a visit', exact: true }).waitFor()
       await page.getByText('Your saved visit changed or its review expired.', { exact: false }).waitFor()
-      assert.equal(await page.getByRole('button', { name: /Submit booking request/ }).count(), 0)
+      assert.equal(await page.getByRole('button', { name: 'Submit booking request', exact: true }).count(), 0)
     })
     await scenario('aborted late availability 401 preserves raw signature and dirty visit', async ({ page, navigate, seed, visit, peerStart, reopen }) => {
       const a = await seed(); await navigate(); await visit(); await page.getByRole('button', { name: 'Continue to sign', exact: true }).click()
@@ -278,7 +278,7 @@ export async function verifyQuoteEntry({ upstream = 'http://127.0.0.1:3005', por
     await scenario('receipt PDF finishing after peer start releases busy for metadata recovery', async ({ page, context, navigate, seed, visit, peerStart }) => {
       await seed(); await navigate(); await visit(); await page.getByRole('button', { name: 'Continue to sign', exact: true }).click()
       await page.locator('input[name="booking-signature-name"]').fill(contact.name); await page.getByRole('radio', { name: /Use my typed full name/ }).check(); await page.locator('input[name="booking-acknowledged"]').check()
-      await page.getByRole('button', { name: /Submit booking request/ }).click(); await page.locator('.lq-receipt-highlights').waitFor()
+      await page.getByRole('button', { name: 'Submit booking request', exact: true }).click(); await page.locator('.lq-receipt-highlights').waitFor()
       const entered = deferred(), gate = deferred()
       await context.route(`${fixture.base}/api/quote/requests/booking/documents/receipt`, async route => { entered.resolve(); await gate.promise; return route.fulfill({ contentType: 'application/pdf', body: '%PDF-1.4\n%%EOF' }) })
       await page.getByRole('button', { name: 'Download saved receipt PDF', exact: true }).click(); await entered.promise; await peerStart()
@@ -296,7 +296,7 @@ export async function verifyQuoteEntry({ upstream = 'http://127.0.0.1:3005', por
       await navigate(); await openSaved(); await page.locator('[data-quote-step="1"]:visible').waitFor(); await page.getByRole('button', { name: 'Back', exact: true }).click()
       const entered = deferred(), gate = deferred()
       await context.route(`${fixture.base}/api/quote/requests/customer/logout`, async route => { const response = await route.fetch(); entered.resolve(); await gate.promise; return route.fulfill({ response }) })
-      await page.getByRole('button', { name: 'Start a new quote', exact: true }).click(); await entered.promise; await page.waitForTimeout(1700)
+      await (await quoteEntryAction(page, 'Start a new quote')).click(); await entered.promise; await page.waitForTimeout(1700)
       assert.equal(await page.locator('#live-name').inputValue(), contact.name); assert.equal(await page.locator('#live-site').inputValue(), contact.siteAddress)
       gate.resolve(); await eventually(async () => assert.equal(await page.locator('#live-site').inputValue(), ''))
       assert.equal(await page.locator('#live-name').inputValue(), contact.name)
@@ -309,9 +309,9 @@ export async function verifyQuoteEntry({ upstream = 'http://127.0.0.1:3005', por
         logoutCalls++; const response = await route.fetch()
         return route.fulfill({ response, status: 503, contentType: 'application/json', body: JSON.stringify({ error: 'Synthetic uncertain new session.' }) })
       })
-      await page.getByRole('button', { name: 'Start a new quote', exact: true }).click()
+      await (await quoteEntryAction(page, 'Start a new quote')).click()
       await page.getByRole('button', { name: 'Check quote session', exact: true }).waitFor(); assert.equal(await page.locator('#live-name').inputValue(), contact.name)
-      assert.equal(await page.getByRole('button', { name: 'Start a new quote', exact: true }).isDisabled(), true)
+      assert.equal(await quoteEntryActionDisabled(page, 'Start a new quote'), true)
       await page.getByRole('button', { name: 'Check quote session', exact: true }).click(); await eventually(async () => assert.equal(await page.locator('#live-name').inputValue(), ''))
       assert.equal(logoutCalls, 1); assert.equal((await state()).requests.length, 1)
     })

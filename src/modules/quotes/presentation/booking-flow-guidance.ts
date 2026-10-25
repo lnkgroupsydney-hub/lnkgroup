@@ -4,7 +4,7 @@ interface BookingGuidanceInput {
   calendarError: string; calendarBusy: boolean; availabilityExpired: boolean;
 }
 export function bookingFlowGuidance(input: BookingGuidanceInput): { message: string; target: 'photos' | 'email' | 'status' | 'calendar' | null } {
-  if (input.submitted) return { message: 'Your signed request is saved. The company will review your take-off visit, assign the installation visit and email your booking confirmation.', target: null };
+  if (input.submitted) return { message: 'Your signed request is saved. The company will review your door-removal visit, assign the installation visit and email your booking confirmation.', target: null };
   if (!input.latest) return { message: 'Dates open after a current photo estimate is saved. Upload the required cabinet views and analyse the saved photos first.', target: 'photos' };
   if (input.latest.stale) return { message: 'The service details or photos changed after this analysis. Reopen the photo workspace if needed, then analyse the current saved photos before approving a date.', target: 'photos' };
   if (['queued', 'running'].includes(input.latest.status)) return { message: 'Your saved photo analysis is still processing. Date selection opens after a numeric estimate is ready.', target: 'photos' };
@@ -15,7 +15,7 @@ export function bookingFlowGuidance(input: BookingGuidanceInput): { message: str
   if (input.calendarError) return { message: 'The company calendar could not be fully checked. Refresh availability below to retry; unchecked dates stay unavailable.', target: 'calendar' };
   if (input.availabilityExpired) return { message: 'The calendar check has expired. Refresh availability before choosing a new date. An existing signature review keeps its own expiry and is checked again on submission.', target: 'calendar' };
   if (input.calendarBusy) return { message: 'Checking the complete company calendar. Available dates will open when this check finishes.', target: null };
-  return { message: 'Choose an available take-off date and Sydney time, continue to sign, then submit once. The company assigns the installation visit and sends booking confirmation.', target: null };
+  return { message: 'Choose an available door-removal date and Sydney time, continue to sign, then submit once. The company assigns the installation visit and sends booking confirmation.', target: null };
 }
 export function shouldRefreshBookingAvailability(input: { expired: boolean; showCalendar: boolean; disabled: boolean; busy: boolean; calendarBusy: boolean; pending: boolean; reviewing: boolean; calendarError: string }) {
   return input.expired && input.showCalendar && !input.disabled && !input.busy && !input.calendarBusy && !input.pending && !input.reviewing && !input.calendarError;

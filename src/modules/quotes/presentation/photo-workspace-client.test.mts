@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { parsePhotoWorkspace, canRequestPhotoAnalysis, validatePhotoFile, photoAnalysisRequestBody } from './photo-workspace-client.ts';
+import { parsePhotoWorkspace, canRequestPhotoAnalysis, validatePhotoFile, photoAnalysisRequestBody, isAllowedPhotoUploadUrl } from './photo-workspace-client.ts';
 import { calculateEstimatePricing, calculatePreviousEstimatePricing, calculateLegacyEstimatePricing, pendingCompanyPricing, QUOTE_PRICING_VERSION } from '../domain/pricing.ts';
 import { PHOTO_ROLES, type PhotoAnalysis, type ProvisionalPhotoAnalysis } from '../domain/analysis.ts';
 import type { ServiceDetails } from '../domain/contracts.ts';
@@ -121,4 +121,12 @@ test('workspace restores mixed historical and AI-quantity results without replac
   assert.throws(() => parsePhotoWorkspace({ ...payload, jobs: [previous, invalid], latest: invalid }, id), /does not match/);
   const noEvidence = { ...current, analysis: previous.analysis };
   assert.throws(() => parsePhotoWorkspace({ ...payload, jobs: [noEvidence], latest: noEvidence }, id), /missing its AI quantity evidence/);
+});
+test('photo uploads require HTTPS except same-origin loopback test pages', () => {
+  const local = { protocol: 'http:', hostname: '127.0.0.1', origin: 'http://127.0.0.1:3002' };
+  assert.equal(isAllowedPhotoUploadUrl(new URL('https://storage.example.invalid/upload'), { protocol: 'https:', hostname: 'www.example.invalid', origin: 'https://www.example.invalid' }), true);
+  assert.equal(isAllowedPhotoUploadUrl(new URL('http://127.0.0.1:3002/__demo/upload/a'), local), true);
+  assert.equal(isAllowedPhotoUploadUrl(new URL('http://127.0.0.1:9999/__demo/upload/a'), local), false);
+  assert.equal(isAllowedPhotoUploadUrl(new URL('http://storage.example.invalid/upload'), local), false);
+  assert.equal(isAllowedPhotoUploadUrl(new URL('http://www.example.invalid/upload'), { protocol: 'http:', hostname: 'www.example.invalid', origin: 'http://www.example.invalid' }), false);
 });

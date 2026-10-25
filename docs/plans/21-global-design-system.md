@@ -36,6 +36,8 @@ Hero gradient 초기 지점은 좌측 0%, 중간 42%, 우측 78%다. 모바일�
 
 검정·금색 회사 로고는 원본을 사용한다. 금색 UI 테마와 여러 서비스별 새 강조색은 이번 범위에 추가하지 않는다.
 
+**2026-10-25 결정 — Quote 전용 Painted Cabinet 예외:** 사용자 확인에 따라 [55번 Quote UI·UX 계획](55-quote-ui-ux-analysis-and-cabinet-palette.md) §3.2의 Painted Cabinet 팔레트를 Quote 화면에만 적용한다. `src/shared/styles/tokens.css`에는 `--palette-*` 원시 토큰을 두고, `.quote-route-shell` 안에서만 `--quote-*` 의미 별칭으로 사용한다. 홈·KCP·EMS 색상과 기존 `--site-*` 값은 유지한다. 이 결정은 앞선 “서비스별 새 강조색을 추가하지 않는다”는 원칙의 Quote 한정 예외다.
+
 ## 3. 서체와 굵기
 
 [Manrope](https://fonts.google.com/specimen/Manrope)를 영문 UI의 공통 서체로 사용한다. 적용 시 공식 배포 파일과 라이선스를 함께 보관하고, variable WOFF2 한 파일 또는 검증된 필요한 weight 파일로 구성한다. 공식 Latin variable WOFF2 24,576 B와 OFL 라이선스를 확보해 로컬에 저장했다. 파일 출처·SHA-256은 폰트 디렉터리 README에 있다.
