@@ -18,6 +18,9 @@ import { readLiveBookingAvailability, assertLiveBookingDate, resolveLiveCalendar
 import { processLiveBookingDelivery } from '../src/modules/quotes/booking-delivery.ts'
 import { PHOTO_ROLES } from '../src/modules/quotes/domain/analysis.ts'
 import { QuoteRequestError } from '../src/modules/quotes/domain/contracts.ts'
+import { createCompanyRevisionApi } from '../src/modules/quotes/infrastructure/company-revision-api.ts'
+import { createCompanyRevisionMail } from '../src/modules/quotes/infrastructure/company-revision-receipt.ts'
+import { WorkError } from '../src/modules/enquiries/management.ts'
 
 const port = Number(process.env.QUOTE_DEMO_PORT ?? 3002)
 const upstream = new URL(process.env.QUOTE_DEMO_UPSTREAM ?? 'http://127.0.0.1:3006')
@@ -28,7 +31,7 @@ if (upstream.hostname !== '127.0.0.1' || Number(upstream.port) === port) throw n
 const log = message => process.stdout.write(`[quote-demo] ${message}\n`)
 
 const db = new PGlite()
-await db.exec('create role anon; create role authenticated; create role service_role bypassrls; create schema storage; create table storage.buckets(id text primary key,name text,public boolean,file_size_limit bigint,allowed_mime_types text[]);')
+await db.exec('create role anon; create role authenticated; create role service_role bypassrls; create schema storage; create table storage.buckets(id text primary key,name text,public boolean,file_size_limit bigint,allowed_mime_types text[]); create schema auth; create table auth.sessions(id uuid primary key,user_id uuid not null,not_after timestamptz); grant usage on schema auth to service_role; grant select,insert on auth.sessions to service_role;')
 for (const name of readdirSync(new URL('../supabase/migrations/', import.meta.url)).filter(name => name.endsWith('.sql')).sort()) {
   await db.exec(readFileSync(new URL(`../supabase/migrations/${name}`, import.meta.url), 'utf8'))
 }
@@ -56,6 +59,8 @@ const provider = {
     const hex = createHash('sha256').update(`local-demo-customer:${email}`).digest('hex')
     const identity = { userId: `${hex.slice(0, 8)}-${hex.slice(8, 12)}-4${hex.slice(13, 16)}-a${hex.slice(17, 20)}-${hex.slice(20, 32)}`, email, authSessionId: randomUUID(), accessToken: randomUUID(), expiresAt: Date.now() + 3500000 }
     identities.set(identity.accessToken, identity)
+    // Customer sessions are checked against Supabase Auth sessions, as in production.
+    await db.query('insert into auth.sessions(id,user_id) values($1,$2)', [identity.authSessionId, identity.userId])
     return identity
   },
   async identity(token) {
@@ -130,6 +135,16 @@ const booking = createLiveBookingApi({ access: requests.access, store: bookingSt
   dateCheck: (date, revision) => assertLiveBookingDate(date, revision, calendarPorts),
   enqueue: id => setTimeout(() => { processLiveBookingDelivery(id, delivery).then(result => log(`booking receipt delivery: ${JSON.stringify(result)}`)).catch(error => log(`booking delivery failed: ${error.message}`)) }, 300) })
 
+// Company revised quotes (customer side): the real API; the company publishes none in this demo.
+const revisionStore = { async command(command, args) {
+  try { return (await db.query('select public.lk_quote_company_revision_command($1,$2::jsonb) result', [command, JSON.stringify(args)])).rows[0].result }
+  catch (error) { const status = { ...sqlStatus, LK422: 422 }[error.code]; if (!status) log(`company revision storage failed (${command}): ${error.code ?? ''} ${error.message}`); throw new WorkError(status ?? 503, status ? 'validation' : 'unavailable', status ? error.message : 'Local demo storage is unavailable.') }
+} }
+const revisions = createCompanyRevisionApi({ store: revisionStore, now: Date.now, key: () => '9a'.repeat(32), baseUrl: () => base, enabled: () => true,
+  staff: async () => { throw new WorkError(403, 'forbidden', 'Staff access is not part of the local customer demo.') },
+  readOwner: req => requests.access.readOwner(req), writeOwner: req => requests.access.writeOwner(req), mail: createCompanyRevisionMail,
+  enqueue: requestId => log(`company revision mail kept local for ${requestId}`) })
+
 const json = (value, status = 200) => Response.json(value, { status, headers: { 'cache-control': 'private, no-store' } })
 async function body(req, max) {
   const chunks = []; let size = 0
@@ -170,6 +185,10 @@ function route(method, path, req) {
   if (path === `${r}/booking/submit` && method === 'POST') return booking.submit(req)
   if (path === `${r}/booking/retry` && method === 'POST') return booking.retry(req)
   if (path === `${r}/booking/documents/receipt` && method === 'GET') return booking.receipt(req)
+  if (path === `${r}/company-revision` && method === 'GET') return revisions.customerState(req)
+  if (path === `${r}/company-revision/review` && method === 'POST') return revisions.review(req)
+  if (path === `${r}/company-revision/accept` && method === 'POST') return revisions.accept(req)
+  const revisionKey = id(path, /^\/api\/quote\/requests\/company-revision\/commands\/([^/]+)$/); if (revisionKey && method === 'GET') return revisions.customerReceipt(req, revisionKey)
   // The company has not confirmed a schedule in the local demo yet.
   if (path === `${r}/company-booking` && method === 'GET') return json({ state: null })
   if (path === '/api/address/config' && method === 'GET') return json({ configured: false, enabled: false })

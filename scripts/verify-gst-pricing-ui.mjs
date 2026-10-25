@@ -19,6 +19,8 @@ import { parseCompanyState } from '../src/modules/bookings/presentation/live-boo
 import { companyClaim } from '../src/modules/bookings/live-test-data.mts'
 import { validateReceiptSource } from '../src/modules/quotes/infrastructure/booking-receipt.ts'
 import { sydneyLocalToInstant } from '../src/modules/operations/domain/validation.ts'
+import { COMPANY_REVISION_ACK } from '../src/modules/quotes/domain/company-revision.ts'
+import { staffQuoteSourceIssues } from '../src/modules/quotes/domain/staff-draft.ts'
 
 const repoRoot = fileURLToPath(new URL('../', import.meta.url))
 const out = pathToFileURL(resolve(repoRoot, process.env.QUOTE_UI_SHOT_DIR ?? 'docs/verification/2026-10-14-no-gst-pricing/') + '/')
@@ -77,7 +79,7 @@ async function overlayFor(context, base, variant, counts) {
     if (path.endsWith('/customer/logout') && ['start-new', 'resume-browser-draft'].includes(req.postDataJSON()?.intent)) return route.continue()
     if (path === '/_next/image') return route.fulfill({ status: 200, contentType: 'image/png', body: readFileSync(new URL('../public/images/lk-group-logo-circle-transparent.png', import.meta.url)) })
     const staff = path.startsWith('/api/admin/quote-requests/')
-    const synthetic = staff || path === '/api/admin/live-bookings' || path.startsWith('/api/quote/requests/customer') || path.startsWith('/api/quote/requests/analysis') || path.startsWith('/api/quote/requests/photos') || path.startsWith('/api/quote/requests/booking') || path.startsWith('/api/quote/requests/company-booking') || variant !== 'new' && path === '/api/quote/requests' && req.method() === 'GET'
+    const synthetic = staff || path === '/api/admin/live-bookings' || path === '/api/admin/quote-requests' || path.startsWith('/api/quote/requests/company-revision') || path.startsWith('/api/quote/requests/customer') || path.startsWith('/api/quote/requests/analysis') || path.startsWith('/api/quote/requests/photos') || path.startsWith('/api/quote/requests/booking') || path.startsWith('/api/quote/requests/company-booking') || variant !== 'new' && path === '/api/quote/requests' && req.method() === 'GET'
     if (!synthetic) return route.continue()
     const reply = body => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(body) })
     try {
@@ -88,6 +90,11 @@ async function overlayFor(context, base, variant, counts) {
       if (path.endsWith('/customer/logout')) { verified = false; return reply({ ready: true }) }
       if (path.includes('/customer')) return reply({ customer: verified && request ? { email: request.payload.contact.email, expiresAt: future() } : null, requests: verified && request ? [{ id: request.id, reference: request.reference, revision: request.revision, status: request.status, savedAt: request.savedAt }] : [], currentRequestId: verified && request ? request.id : null })
       if (!request) return reply({ request: null })
+      // EMS R2-R3b reads: staff quote list and company revision state. No revision exists in these pricing scenarios.
+      if (path === '/api/admin/quote-requests') return reply({ requests: [{ ...request, staffDraftRevision: null }], total: 1, page: 1, pageSize: 25 })
+      const revisionBase = { requestId: request.id, revision: 0, current: null, effectiveAccepted: null, acknowledgment: COMPANY_REVISION_ACK }
+      if (path === '/api/quote/requests/company-revision') return reply(revisionBase)
+      if (path.endsWith('/company-revisions')) { const revisionContact = Object.fromEntries(Object.entries(request.payload.contact).filter(([key]) => key !== 'consent')); return reply({ ...revisionBase, eligible: false, eligibilityCode: 'revision_not_eligible', initialPayload: { contact: revisionContact, quantities: { doorCount: request.payload.service?.doorCount ?? 0, drawerCount: request.payload.service?.drawerCount ?? 0, moderateRepair: false }, extraItems: [], customerNote: '' }, sourceIssues: staffQuoteSourceIssues(request.payload), revisions: [], audit: [], canWrite: false }) }
       if (path === '/api/admin/live-bookings') return reply(url.searchParams.has('requestId') ? { state: company(request) } : { states: [] })
       if (path === '/api/quote/requests' || staff && !/\/(analysis|booking|company-booking)$/.test(path)) return reply({ request, audit: [] })
       if (path.endsWith('/content')) return route.fulfill({ status: 200, contentType: 'image/png', body: png })
@@ -188,9 +195,11 @@ async function scenario(variant, counts, viewport, archived = false) {
       await page.reload(); await (await quoteEntryAction(page, 'View quotes & bookings')).click()
       await page.getByRole('button', { name: 'Continue this browser draft', exact: true }).click(); await step(2)
       await forward(); await step(3); await page.getByText('View assessment and price breakdown', { exact: true }).click(); await totalAt(page, '[data-quote-step="3"]', expected, variant, true)
-      await page.goto(`${fixture.base}/admin/quotes`); await page.getByRole('button', { name: /View request/ }).first().click()
-      await page.locator('.lq-admin-detail').getByText('Estimated total (incl GST)', { exact: true }).waitFor()
-      await totalAt(page, '.lq-admin-detail', expected, variant); await layout(page, `${name}-ems`)
+      await page.goto(`${fixture.base}/admin/quotes`); await page.getByRole('link', { name: /View request/ }).first().click()
+      await page.getByRole('tab', { name: 'Photos & estimate', exact: true }).click()
+      await page.locator('[role=tabpanel]:not([hidden]) summary').filter({ hasText: 'Full assessment, price breakdown and photo evidence' }).click()
+      await page.locator('[role=tabpanel]:not([hidden])').getByText('Estimated total (incl GST)', { exact: true }).waitFor()
+      await totalAt(page, '[role=tabpanel]:not([hidden])', expected, variant); await layout(page, `${name}-ems`)
       assert.equal(JSON.stringify(overlay.workspace(await overlay.quote()).latest.pricing), preserved)
       assert.deepEqual(overlay.failures, []); assert.deepEqual(overlay.denied, [])
       checks.push({ name, expectedTotalCents: expected, taxCents: pricing.tax, pricingVersion: pricing.pricingVersion, savedAnalysisPreserved: true, bookingNotApplicable: 'Historical pricing v1 has estimate_ready, not bookable provisional_estimate.', passed: true })
@@ -212,10 +221,10 @@ async function scenario(variant, counts, viewport, archived = false) {
     await page.reload(); await (await quoteEntryAction(page, 'View quotes & bookings')).click(); await page.locator('.lq-customer-list').getByRole('button', { name: 'Open saved quote', exact: true }).first().click(); await step(6)
     await totalAt(page, '[data-quote-step="6"]', expected, variant, true); assert.equal(JSON.stringify(overlay.submission), frozen, 'Saved booking snapshot and signature preserved on reload')
     await page.goto(`${fixture.base}/admin/quotes`)
-    await page.getByRole('button', { name: /View request/ }).first().click(); await page.locator('.lq-admin-detail').waitFor()
+    await page.getByRole('link', { name: /View request/ }).first().click(); await page.getByRole('tab', { name: 'Booking', exact: true }).click()
     await page.getByRole('heading', { name: 'Company booking review and confirmation', exact: true }).waitFor()
     await page.getByRole('heading', { name: archived ? 'Company proposal · Version 1 · Published for customer review' : 'Company booking schedule', exact: true }).waitFor()
-    await totalAt(page, '.lq-admin-detail', expected, variant)
+    await totalAt(page, '[role=tabpanel]:not([hidden])', expected, variant)
     const companyTotal = page.getByRole('region', { name: 'Company booking review and confirmation', exact: true }).locator('.live-company-price')
     assert.match(await companyTotal.innerText(), variant === 'new' ? /no GST charged/ : /including GST/)
     assert.doesNotMatch(await companyTotal.innerText(), /\bgst\b/)

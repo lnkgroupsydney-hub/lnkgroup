@@ -1,0 +1,97 @@
+{
+  "passed": false,
+  "base": "http://127.0.0.1:3136",
+  "checks": [
+    {
+      "path": "/",
+      "method": "GET",
+      "agent": "default",
+      "status": 200,
+      "robots": "index, follow",
+      "cache": "s-maxage=31536000",
+      "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch, Accept-Encoding"
+    },
+    {
+      "path": "/",
+      "method": "GET",
+      "agent": "Googlebot",
+      "status": 200,
+      "robots": "index, follow",
+      "cache": "s-maxage=31536000",
+      "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch, Accept-Encoding"
+    },
+    {
+      "path": "/",
+      "method": "HEAD",
+      "agent": "default",
+      "status": 200,
+      "robots": "index, follow",
+      "cache": "s-maxage=31536000",
+      "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch, Accept-Encoding"
+    },
+    {
+      "path": "/?utm_source=chatgpt.com",
+      "method": "GET",
+      "agent": "default",
+      "status": 200,
+      "robots": "index, follow",
+      "cache": "s-maxage=31536000",
+      "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch, Accept-Encoding"
+    },
+    {
+      "path": "/services/cabinet-painting",
+      "method": "GET",
+      "agent": "default",
+      "status": 200,
+      "robots": "index, follow",
+      "cache": "s-maxage=31536000",
+      "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch, Accept-Encoding"
+    },
+    {
+      "path": "/services/cabinet-painting",
+      "method": "GET",
+      "agent": "Googlebot",
+      "status": 200,
+      "robots": "index, follow",
+      "cache": "s-maxage=31536000",
+      "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch, Accept-Encoding"
+    },
+    {
+      "path": "/services/cabinet-painting",
+      "method": "HEAD",
+      "agent": "default",
+      "status": 200,
+      "robots": "index, follow",
+      "cache": "s-maxage=31536000",
+      "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch, Accept-Encoding"
+    },
+    {
+      "path": "/services/cabinet-painting?utm_source=chatgpt.com",
+      "method": "GET",
+      "agent": "default",
+      "status": 200,
+      "robots": "index, follow",
+      "cache": "s-maxage=31536000",
+      "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch, Accept-Encoding"
+    },
+    {
+      "path": "/admin",
+      "method": "GET",
+      "agent": "default",
+      "status": 200,
+      "robots": "noindex, nofollow",
+      "cache": "private, no-cache, no-store, max-age=0, must-revalidate",
+      "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch, Accept-Encoding"
+    },
+    {
+      "path": "/admin/customers",
+      "method": "GET",
+      "agent": "default",
+      "status": 404,
+      "robots": "noindex, nofollow",
+      "cache": "private, no-cache, no-store, max-age=0, must-revalidate",
+      "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch, Accept-Encoding"
+    }
+  ],
+  "error": "AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n+ actual - expected\n\n+ 'noindex'\n- 'noindex, nofollow'\n          ^\n"
+}

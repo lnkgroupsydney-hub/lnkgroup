@@ -1,1 +1,17 @@
-.customers-console{margin-top:2rem;min-width:0}.customers-console>p{max-width:75ch;margin:1rem 0}.customers-console h3,.customers-console h4,.customers-console h5{margin:1rem 0 .75rem;font-weight:700;line-height:1.4}.customers-console h5{font-size:1rem}.customers-console h3:focus{outline:none}.customers-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem}.customers-search{display:flex;align-items:end;gap:.75rem;flex-wrap:wrap}.customers-search label{flex:1 1 15rem}.customers-search button{margin-bottom:1rem}.customers-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem;list-style:none;padding:0}.customers-cards>li,.customers-source{min-width:0;border:1px solid var(--site-border);padding:1rem;margin-top:1rem}.customers-console p,.customers-console dd,.customers-console h3,.customers-console h4,.customers-console h5{overflow-wrap:anywhere}.customers-contact>div{display:grid;grid-template-columns:5rem minmax(0,1fr);gap:.5rem;margin:.35rem 0}.customers-contact dt{font-weight:650}.customers-contact dd{margin:0}.customers-actions{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;margin:1rem 0}.customers-actions button,.customers-actions a{max-width:100%;white-space:normal;text-align:center}.customers-audit{padding-left:1.25rem}.customers-audit li{border-top:1px solid var(--site-border);padding-top:.8rem}.customers-confirmation{border-color:var(--site-action)}.customers-console label.customers-checkbox{display:flex;align-items:start;gap:.65rem}.customers-checkbox input{min-width:1.1rem;min-height:1.1rem;margin-top:.2rem}.customers-console button:focus-visible,.customers-console a:focus-visible,.customers-console input:focus-visible,.customers-console textarea:focus-visible{outline:3px solid var(--site-action);outline-offset:3px}.customers-console button:active:not(:disabled):not(:focus-visible){transform:scale(.97)}@media(max-width:760px){.customers-form-grid,.customers-cards{grid-template-columns:1fr}}@media(max-width:390px){.customers-contact>div{grid-template-columns:1fr;gap:.1rem}.customers-actions>span{flex-basis:100%}}@media(prefers-reduced-motion:reduce){.customers-console button:active:not(:disabled){transform:none}}
+/* Only customer-specific content; EMS layout and controls live in shared CSS. */
+.customers-console{min-width:0}
+.customers-contact>div{display:grid;grid-template-columns:5rem minmax(0,1fr);gap:.5rem;margin:.35rem 0}
+.customers-contact dt{font-weight:650}
+.customers-contact dd{margin:0;overflow-wrap:anywhere}
+.customers-console :is(p,h2,h3,h4,summary){overflow-wrap:anywhere}
+.customers-console :is(h2,h3)[tabindex="-1"]:focus{outline:none}
+.ems-root .customers-checkbox{display:flex;align-items:start;gap:.65rem}
+.ems-root .customers-checkbox input{flex:none;width:1.1rem;height:1.1rem;min-height:0;margin-top:.2rem;padding:0}
+.ems-root .customers-entered-property{margin:0 0 .75rem;padding:.75rem 1rem;border:1px dashed var(--ems-line);border-radius:.5rem;background:var(--ems-bg);overflow-wrap:anywhere}
+.ems-root .customers-entered-property :is(h4,p){margin:0 0 .25rem}
+.ems-root .customers-entered-property h4{font-size:.875rem;font-weight:700}
+.ems-root .customers-review .ems-record-main>.ems-status{justify-self:start}
+.customers-audit{list-style:decimal;padding-left:1.25rem}
+@media(max-width:390px){.customers-contact>div{grid-template-columns:1fr;gap:.1rem}}
+
+.ems-root.customers-standalone{min-height:0}

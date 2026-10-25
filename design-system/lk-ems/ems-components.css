@@ -1,0 +1,127 @@
+/* L&K Group EMS components. Requires ems-tokens.css (and ems-fonts.css for self-hosted Outfit).
+   Everything is scoped to .ems-theme or uses ems-* class names, so it does not restyle a host page by itself. */
+
+/* Base */
+.ems-theme {
+  background: var(--ems-canvas);
+  color: var(--ems-ink);
+  font: var(--ems-weight-regular) var(--ems-text-body)/1.55 var(--ems-font);
+  /* Korean wraps between words, long emails and references still break */
+  word-break: keep-all; overflow-wrap: anywhere;
+}
+.ems-theme *, .ems-theme *::before, .ems-theme *::after { box-sizing: border-box; }
+.ems-theme :is(h1, h2, h3, h4, h5, h6) { margin: 0; color: var(--ems-ink); }
+.ems-theme :is(strong, b, dt, legend, th) { font-weight: var(--ems-weight-semibold); }
+.ems-theme :is(time, data, .ems-num) { font-variant-numeric: tabular-nums; }
+
+/* Type scale — Outfit reads heavy at 700+, so nothing goes above 650 */
+.ems-page-title { font-size: var(--ems-text-page); font-weight: var(--ems-weight-bold); line-height: 1.2; letter-spacing: -.015em; }
+.ems-section-title { font-size: var(--ems-text-section); font-weight: var(--ems-weight-semibold); line-height: 1.3; letter-spacing: -.01em; }
+.ems-panel-title { font-size: var(--ems-text-card); font-weight: var(--ems-weight-semibold); line-height: 1.35; }
+.ems-body { font-size: var(--ems-text-body); line-height: 1.55; max-width: 70ch; }
+.ems-label { font-size: var(--ems-text-label); font-weight: var(--ems-weight-medium); color: var(--ems-ink-2); }
+.ems-meta { font-size: var(--ems-text-meta); color: var(--ems-muted); }
+.ems-eyebrow { font-size: var(--ems-text-xs); font-weight: var(--ems-weight-semibold); text-transform: uppercase; letter-spacing: .08em; color: var(--ems-gold-text); }
+.ems-kpi { font-size: var(--ems-text-kpi); font-weight: var(--ems-weight-semibold); line-height: 1.05; font-variant-numeric: tabular-nums; }
+
+/* Surfaces */
+.ems-panel { border: 1px solid var(--ems-line); border-radius: var(--ems-radius-card); background: var(--ems-surface); box-shadow: var(--ems-shadow-card); padding: 24px; min-width: 0; }
+.ems-panel--focus { border: 0; background: var(--ems-black); color: var(--ems-surface); }
+.ems-panel--focus :is(h1, h2, h3) { color: var(--ems-surface); }
+.ems-panel--focus .ems-eyebrow { color: var(--ems-gold); }
+.ems-panel[data-accent=gold] { background: var(--ems-gold-tint); }
+.ems-panel[data-accent=info] { background: var(--ems-info-bg); }
+.ems-panel[data-accent=success] { background: var(--ems-success-bg); }
+.ems-panel[data-accent=neutral] { background: var(--ems-neutral-bg); }
+
+/* Fields — warm fill + strong border so they stand apart from white cards */
+.ems-field { display: grid; gap: 6px; align-content: start; }
+.ems-input, .ems-select, .ems-textarea,
+.ems-theme :is(input:not([type=checkbox]):not([type=radio]):not([type=file]), select, textarea) {
+  width: 100%; min-width: 0; min-height: 44px;
+  border: 1px solid var(--ems-line-strong); border-radius: var(--ems-radius-control);
+  background: var(--ems-field); color: var(--ems-ink);
+  padding: 10px 12px; font: var(--ems-weight-regular) var(--ems-text-body)/1.4 var(--ems-font);
+}
+.ems-theme :is(input, select, textarea)::placeholder { color: var(--ems-muted); opacity: 1; }
+.ems-theme :is(input:not([type=checkbox]):not([type=radio]), select, textarea):hover:not(:disabled) { border-color: var(--ems-ink-2); }
+.ems-theme :is(input:not([type=checkbox]):not([type=radio]), select, textarea):focus-visible {
+  background: var(--ems-surface); border-color: var(--ems-ink);
+  outline: 2px solid var(--ems-gold-text); outline-offset: 2px; box-shadow: 0 0 0 5px var(--ems-gold-tint);
+}
+.ems-theme :is(input, select, textarea):disabled { background: var(--ems-sunken); color: var(--ems-muted); cursor: not-allowed; }
+.ems-theme :is(input, select, textarea)[aria-invalid=true] { border-color: var(--ems-danger); }
+.ems-theme :is(input[type=checkbox], input[type=radio]) { width: 18px; height: 18px; accent-color: var(--ems-black); }
+.ems-theme label { font-size: var(--ems-text-label); font-weight: var(--ems-weight-medium); color: var(--ems-ink-2); }
+.ems-help { font-size: var(--ems-text-meta); color: var(--ems-muted); }
+.ems-error-text { font-size: var(--ems-text-meta); color: var(--ems-danger); }
+@media (max-width: 600px) {
+  /* 16px stops iOS zooming into focused fields */
+  .ems-theme :is(input:not([type=checkbox]):not([type=radio]):not([type=file]), select, textarea) { font-size: 16px; }
+}
+
+/* Buttons — black primary; gold fill only inside the black focus card */
+.ems-button {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 44px; padding: 10px 16px; border: 1px solid var(--ems-black); border-radius: var(--ems-radius-control);
+  background: var(--ems-black); color: var(--ems-surface);
+  font: var(--ems-weight-semibold) var(--ems-text-label)/1.25 var(--ems-font); text-decoration: none; cursor: pointer;
+}
+.ems-button--secondary { background: var(--ems-surface); border-color: var(--ems-line-strong); color: var(--ems-ink); }
+.ems-button--danger { background: var(--ems-surface); border-color: var(--ems-danger); color: var(--ems-danger); }
+.ems-button--gold { background: var(--ems-gold); border-color: var(--ems-gold); color: var(--ems-black); }
+.ems-button:disabled, .ems-button[aria-disabled=true] { background: var(--ems-sunken); border-color: var(--ems-line); color: var(--ems-muted); cursor: not-allowed; }
+@media (hover: hover) and (pointer: fine) {
+  .ems-button:hover:not(:disabled) { background: var(--ems-black-raised); }
+  .ems-button--secondary:hover:not(:disabled) { background: var(--ems-canvas); }
+  .ems-button--danger:hover:not(:disabled) { background: var(--ems-danger-bg); }
+  .ems-button--gold:hover:not(:disabled) { background: var(--ems-gold-bright); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .ems-button:active:not(:disabled) { transform: scale(.98); }
+}
+.ems-theme :is(a, button, summary, .ems-button):focus-visible { outline: 2px solid var(--ems-gold-text); outline-offset: 3px; }
+
+/* Status badge — always colour + text */
+.ems-status { display: inline-flex; align-items: center; gap: 6px; min-height: 26px; padding: 3px 10px; border-radius: 999px; font: var(--ems-weight-semibold) var(--ems-text-xs)/1.3 var(--ems-font); background: var(--ems-neutral-bg); color: var(--ems-neutral); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.ems-status--success { background: var(--ems-success-bg); color: var(--ems-success); }
+.ems-status--warning { background: var(--ems-warning-bg); color: var(--ems-warning); }
+.ems-status--danger { background: var(--ems-danger-bg); color: var(--ems-danger); }
+.ems-status--info { background: var(--ems-info-bg); color: var(--ems-info); }
+
+/* Notices */
+.ems-feedback { border: 1px solid var(--ems-line); border-left: 4px solid var(--ems-info); border-radius: var(--ems-radius-control); background: var(--ems-info-bg); color: var(--ems-ink); padding: 12px 14px; }
+.ems-feedback--danger { border-color: var(--ems-danger); background: var(--ems-danger-bg); color: var(--ems-danger); }
+.ems-feedback--warning { border-color: var(--ems-warning); background: var(--ems-warning-bg); color: var(--ems-ink); }
+.ems-feedback--success { border-color: var(--ems-success); background: var(--ems-success-bg); color: var(--ems-ink); }
+
+/* Read-only values — no field look */
+.ems-details { margin: 0; }
+.ems-details > div { display: grid; grid-template-columns: 10rem minmax(0, 1fr); gap: 4px 16px; padding: 10px 0; border-bottom: 1px solid var(--ems-line); }
+.ems-details dt { font-size: var(--ems-text-meta); font-weight: var(--ems-weight-semibold); color: var(--ems-muted); }
+.ems-details dd { margin: 0; font-size: var(--ems-text-body); overflow-wrap: anywhere; }
+@media (max-width: 600px) { .ems-details > div { grid-template-columns: minmax(0, 1fr); } }
+
+/* Record list — same pattern as the EMS screens: .ems-list > .ems-record-row */
+.ems-list { display: grid; margin: 0; padding: 0; list-style: none; }
+.ems-record-row { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 16px 0; border-bottom: 1px solid var(--ems-line); min-width: 0; overflow-wrap: anywhere; }
+.ems-record-row:last-child { border-bottom: 0; }
+.ems-record-row[aria-current=true] { margin-inline: -12px; padding-inline: 12px; border-radius: 12px; background: var(--ems-gold-tint); box-shadow: inset 3px 0 0 var(--ems-gold); }
+.ems-record-main { display: grid; gap: 2px; min-width: 0; flex: 1; }
+.ems-record-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+@media (max-width: 600px) { .ems-record-row { flex-direction: column; align-items: stretch; gap: 12px; } }
+
+/* Dark sidebar navigation */
+.ems-sidebar { display: flex; flex-direction: column; gap: 24px; min-height: 100%; padding: 24px 14px 20px; background: var(--ems-black); color: var(--ems-rail-text); }
+.ems-nav-label { margin: 0 12px 8px; font-size: var(--ems-text-xs); font-weight: var(--ems-weight-semibold); text-transform: uppercase; letter-spacing: .08em; color: var(--ems-rail-dim); }
+.ems-nav { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; }
+.ems-nav a { position: relative; display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 10px 12px; border-radius: var(--ems-radius-control); color: var(--ems-rail-text); font-size: var(--ems-text-label); font-weight: var(--ems-weight-medium); text-decoration: none; }
+.ems-nav a[aria-current=page] { background: var(--ems-black-raised); color: var(--ems-surface); font-weight: var(--ems-weight-semibold); }
+.ems-nav a[aria-current=page]::before { content: ""; position: absolute; left: 0; top: 10px; bottom: 10px; width: 3px; border-radius: 3px; background: var(--ems-gold); }
+.ems-nav a[aria-current=page] svg { color: var(--ems-gold); }
+.ems-sidebar :is(a, button):focus-visible { outline: 2px solid var(--ems-gold-bright); outline-offset: 2px; }
+@media (hover: hover) and (pointer: fine) { .ems-nav a:not([aria-current]):hover { background: var(--ems-black-raised); color: var(--ems-surface); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .ems-theme *, .ems-theme *::before, .ems-theme *::after { transition: none; animation: none; }
+}

@@ -1,0 +1,271 @@
+{
+  "synthetic": true,
+  "passed": 20,
+  "outcomes": [
+    {
+      "name": "Client candidates block insert and existing selection reuses a customer",
+      "evidence": {
+        "candidateInsertCount": 0,
+        "reusedId": "60cb0ac8-332d-44e9-9930-1aed3cd96dc4",
+        "finalClients": 13
+      },
+      "result": "passed"
+    },
+    {
+      "name": "Archived duplicate candidate opens restoration without creating another client",
+      "evidence": {
+        "archivedCandidateFound": true,
+        "existingClientRestored": true,
+        "duplicateClientCount": 0
+      },
+      "result": "passed"
+    },
+    {
+      "name": "Shared contact creates a separate reviewed person with recorded reason",
+      "evidence": {
+        "separateClient": true,
+        "sharedEmailPreserved": true,
+        "reasonRecorded": true
+      },
+      "result": "passed"
+    },
+    {
+      "name": "Client edit409 keeps input and requires current revision reconfirmation",
+      "evidence": {
+        "inputKept": true,
+        "explicitReconfirmation": true,
+        "freshRevision": 2
+      },
+      "result": "passed"
+    },
+    {
+      "name": "Same customer same property is reused and unit2 remains distinct",
+      "evidence": {
+        "sameAddressProperties": 1,
+        "distinctUnits": [
+          "1",
+          "2"
+        ],
+        "customerCount": 13
+      },
+      "result": "passed"
+    },
+    {
+      "name": "Property edit archive restore preserve location identity and originals",
+      "evidence": {
+        "propertyId": "3f12e211-d30a-421d-bd46-92fd04b911fd",
+        "restored": true,
+        "sourceSnapshotsPreserved": true
+      },
+      "result": "passed"
+    },
+    {
+      "name": "Archive Cancel sends no command and client restore preserves links and property",
+      "evidence": {
+        "cancelledCommands": 0,
+        "linkedRecordsPreserved": true,
+        "propertyPreserved": true,
+        "restored": true
+      },
+      "result": "passed"
+    },
+    {
+      "name": "Saved503 client creation retries exactly one immutable request",
+      "evidence": {
+        "created": 1,
+        "sameKey": true,
+        "samePayload": true
+      },
+      "result": "passed"
+    },
+    {
+      "name": "Saved503 client edit freezes fields and retries unchanged save",
+      "evidence": {
+        "savedRevision": 2,
+        "immutableRetry": true
+      },
+      "result": "passed"
+    },
+    {
+      "name": "Quote CRM creates relation visible in Clients and preserves quote source",
+      "evidence": {
+        "crmRevision": 1,
+        "linkedClientVisible": true,
+        "linkedPropertyVisible": true,
+        "quoteSourceWrites": 0,
+        "sourceSnapshotsPreserved": true
+      },
+      "result": "passed"
+    },
+    {
+      "name": "Quote CRM source refresh preserves draft and requires explicit review restart",
+      "evidence": {
+        "originalReview": 2,
+        "latestReview": 3,
+        "staleSaveBlocked": true,
+        "draftPreservedUntilExplicitRestart": true
+      },
+      "result": "passed"
+    },
+    {
+      "name": "Unknown quote CRM save blocks navigation and retries identical payload and key",
+      "evidence": {
+        "clientCount": 1,
+        "propertyCount": 1,
+        "immutableRetry": true,
+        "navigationBlocked": true,
+        "sourcePreserved": true
+      },
+      "result": "passed"
+    },
+    {
+      "name": "Quote CRM finds an existing client outside contact candidates",
+      "evidence": {
+        "selectedOutsideCandidates": true,
+        "reusedClientId": "cf23c999-ccea-4c79-b5b6-166401e85ed7",
+        "createdClients": 0
+      },
+      "result": "passed"
+    },
+    {
+      "name": "Quote property review cancel restores input without another POST or CRM write",
+      "evidence": {
+        "reviewPosts": 1,
+        "cancelPosts": 0,
+        "originalFormRestored": true,
+        "noWrites": true,
+        "sourcePreserved": true
+      },
+      "result": "passed"
+    },
+    {
+      "name": "Quote property review existing selection keeps key and every reviewed revision",
+      "evidence": {
+        "posts": 2,
+        "sameKey": true,
+        "sourceAndClientRevisionsPreserved": true,
+        "expectedPropertyRevision": 1,
+        "newProperties": 0
+      },
+      "result": "passed"
+    },
+    {
+      "name": "Quote property review confirms a separate site with reason and every candidate revision",
+      "evidence": {
+        "sameKey": true,
+        "candidatesReviewed": 2,
+        "reasonRecorded": true,
+        "newProperties": 1,
+        "sourcePreserved": true
+      },
+      "result": "passed"
+    },
+    {
+      "name": "Quote property changed in another tab causes property409 comparison and explicit restart",
+      "evidence": {
+        "oldPropertyRevision": 1,
+        "latestPropertyRevision": 2,
+        "customerRevisionUnchanged": true,
+        "conflictWrites": 0,
+        "explicitRestart": true
+      },
+      "result": "passed"
+    },
+    {
+      "name": "401 removes client dialog draft and rejects late candidate response",
+      "evidence": {
+        "draftCleared": true,
+        "lateCandidatesCannotRestorePii": true
+      },
+      "result": "passed"
+    },
+    {
+      "name": "401 removes management PII before delayed save returns",
+      "evidence": {
+        "pendingDraftCleared": true,
+        "lateSaveCannotRestorePrivateUi": true
+      },
+      "result": "passed"
+    },
+    {
+      "name": "Properties and create dialog reflow3203931440 and keyboard focus remains visible",
+      "evidence": {
+        "widths": [
+          320,
+          393,
+          1440
+        ],
+        "propertyFormNoOverflow": true,
+        "dialogFocusRestored": true,
+        "keyboardFields": true
+      },
+      "result": "passed"
+    }
+  ],
+  "skipped": [],
+  "external": [],
+  "pageErrors": [],
+  "unexpectedResources": [],
+  "consoles": [
+    {
+      "name": "Client candidates block insert and existing selection reuses a customer",
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 409 (Conflict)"
+    },
+    {
+      "name": "Client edit409 keeps input and requires current revision reconfirmation",
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 409 (Conflict)"
+    },
+    {
+      "name": "Saved503 client creation retries exactly one immutable request",
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+    },
+    {
+      "name": "Saved503 client edit freezes fields and retries unchanged save",
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+    },
+    {
+      "name": "Unknown quote CRM save blocks navigation and retries identical payload and key",
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+    },
+    {
+      "name": "Quote property review cancel restores input without another POST or CRM write",
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 409 (Conflict)"
+    },
+    {
+      "name": "Quote property review existing selection keeps key and every reviewed revision",
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 409 (Conflict)"
+    },
+    {
+      "name": "Quote property review confirms a separate site with reason and every candidate revision",
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 409 (Conflict)"
+    },
+    {
+      "name": "Quote property changed in another tab causes property409 comparison and explicit restart",
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 409 (Conflict)"
+    },
+    {
+      "name": "Quote property changed in another tab causes property409 comparison and explicit restart",
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 409 (Conflict)"
+    },
+    {
+      "name": "Quote property changed in another tab causes property409 comparison and explicit restart",
+      "type": "warning",
+      "text": "The resource http://127.0.0.1:3074/_next/static/media/4c9affa5bc8f420e-s.p.woff2 was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally."
+    },
+    {
+      "name": "Quote property changed in another tab causes property409 comparison and explicit restart",
+      "type": "warning",
+      "text": "The resource http://127.0.0.1:3074/_next/static/css/9847f4c9dbbb1aa7.css was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally."
+    }
+  ]
+}

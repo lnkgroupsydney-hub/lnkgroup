@@ -11,6 +11,8 @@ import { createCustomerAuthApi } from '../src/modules/quotes/infrastructure/cust
 import { QuoteRequestError } from '../src/modules/quotes/domain/contracts.ts'
 
 const pages = new Set(['/quote/start', '/admin', '/admin/quotes'])
+// EMS opens each saved quote on its own detail page.
+const allowedPage = pathname => pages.has(pathname) || /^\/admin\/quotes\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(pathname)
 const assets = new Set(['/favicon.ico', '/images/lk-group-logo-circle-transparent.png'])
 const navigationHeaders = ['accept', 'rsc', 'next-router-state-tree', 'next-router-prefetch', 'next-router-segment-prefetch', 'next-url', 'purpose']
 function logo(url) {
@@ -153,7 +155,7 @@ export async function createLiveQuoteFixture({ port = 3014, hostname = '127.0.0.
         else response = json({ error: 'Synthetic API is unavailable. Nothing was forwarded.' }, 404)
         return await send(res, response, flags.responseDelayMs)
       }
-      if (!['GET', 'HEAD'].includes(req.method) || !(pages.has(url.pathname) || url.pathname.startsWith('/_next/static/') || assets.has(url.pathname) || logo(url))) return await send(res, json({ error: 'Page or asset not allowlisted.' }, 404))
+      if (!['GET', 'HEAD'].includes(req.method) || !(allowedPage(url.pathname) || url.pathname.startsWith('/_next/static/') || assets.has(url.pathname) || logo(url))) return await send(res, json({ error: 'Page or asset not allowlisted.' }, 404))
       if (url.pathname === '/quote/start') {
         const scenario = url.searchParams.get('scenario')
         if (scenario === 'lost-response') flags.loseNextSaveResponse = true
@@ -164,7 +166,7 @@ export async function createLiveQuoteFixture({ port = 3014, hostname = '127.0.0.
       for (const name of navigationHeaders) if (typeof req.headers[name] === 'string') headers[name] = req.headers[name]
       if (headers['next-url']) {
         const next = new URL(headers['next-url'], base)
-        if (next.origin !== base || !pages.has(next.pathname)) return await send(res, json({ error: 'Navigation target not allowlisted.' }, 400))
+        if (next.origin !== base || !allowedPage(next.pathname)) return await send(res, json({ error: 'Navigation target not allowlisted.' }, 400))
         headers['next-url'] = next.pathname + next.search
       }
       const response = await fetch(`${upstreamUrl.origin}${url.pathname}${url.search}`, { method: req.method, redirect: 'manual', headers, signal: AbortSignal.timeout(15000) })

@@ -44,3 +44,18 @@ test('mutation snapshots are independent of the instance and later snapshots', (
   attempt.clear()
   assert.equal(restored.snapshot()!.value.name, 'Customer A')
 })
+
+test('nested reviewed candidate revisions and property address remain immutable across retries', () => {
+  const attempt = new MutationAttempt<{ decision: { reviewedCandidates: { id: string; revision: number }[] }; property: { address: { unit: string } } }>()
+  const input = { decision: { reviewedCandidates: [{ id: 'candidate-a', revision: 2 }] }, property: { address: { unit: 'Unit 4' } } }
+  attempt.prepare(input, () => 'fixed-review-key')
+  input.decision.reviewedCandidates[0].revision = 99
+  input.property.address.unit = 'Unit 5'
+  const snapshot = attempt.snapshot()!
+  assert.equal(snapshot.value.decision.reviewedCandidates[0].revision, 2)
+  assert.equal(snapshot.value.property.address.unit, 'Unit 4')
+  const remounted = new MutationAttempt(snapshot)
+  snapshot.value.decision.reviewedCandidates[0].revision = 88
+  assert.equal(remounted.snapshot()!.value.decision.reviewedCandidates[0].revision, 2)
+  assert.equal(remounted.snapshot()!.value.idempotencyKey, 'fixed-review-key')
+})

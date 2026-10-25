@@ -258,3 +258,18 @@ GST 통과 scenario: `new-3-2-1280`, `new-3-2-390`, `new-3-2-320`, `new-12-4-390
 | 승인 409 "calendar connection changed" | 데모 DB에 회사 Google 연결 기록 없음 | 데모 서버에서 토큰 없는 로컬 연결 기록 시드(데모 전용) |
 
 재실행 결과: 두 크기 모두 전 단계 통과, 콘솔 오류·실패 요청 0, 가로 넘침 0, 금액 `A$2,200`, 영수증 PDF 다운로드(`REQUEST-….pdf`), 접수 화면 잘못된 안내 없음. 이어서 `npm run lint` 0, `npm run typecheck` 0, `test:live-quotes` 359/359, `test:operations` 774/774, 브라우저 게이트 journey 18/18·entry 16/16·entry-photo 6/6·GST 8/8(서버 `STAFF_ADMIN_AUTH_ENABLED=true`, 스크린샷은 저장소 밖). 미수행: 실기기, 스크린리더, PDF 내용의 시각 검토, 실제 메일 발송.
+
+## main 통합 검증 (2026-10-25)
+
+Quote 커밋 `7f9ad42`에 로컬 main `9eee824`(EMS R2·R3a·R3b·대시보드 재디자인, 미배포 21커밋)를 병합했다. 충돌 5건 해결: `live-receipt.ts`(R3b 수정 견적 문단 유지 + 고객 문구 door-removal), `live-proposal-summary.tsx`(R3b `accepted_revision` 분기 + 고객 금액·door-removal 분기, 직원 출력 불변), `booking-flow-panel.tsx`(접수 타임라인 + R3b `CustomerCompanyRevision` 모두 유지), `live-quote.css`(Quote 재작성 + EMS 직원 초안 규칙), 15번 TODO(두 기록 모두 유지).
+
+통합 후 main이 바꾸지 않았던 검증 도구의 공백을 고쳤다: EMS 합성 픽스처와 Quote 픽스처의 진입 사진·EMS 견적 상세 경로 허용, 가격 게이트의 새 EMS 탐색(링크·탭·접힌 가격표)과 R3b 응답(직원 견적 목록·수정 견적 상태). 로컬 데모 서버에 R3b 고객 수정 견적 API와 `auth.sessions` 대조를 추가했다. 금액·세금 단언은 바꾸지 않았다.
+
+| 검사 | 결과 |
+| --- | --- |
+| lint · typecheck · `git diff --check` | 0 |
+| test:operations · live-quotes · customers · admin-shell · admin-access · address · search | 1013 · 369 · 54 · 48 · 123 · 18 · 5 모두 통과 |
+| production build | 통과 |
+| EMS Chrome 게이트(픽스처 3021 → next start 3022, `STAFF_ADMIN_AUTH_ENABLED=true`) | R3b 6/6 · R3a 11/11 · R1 13/13 · R2 20/20 |
+| Quote 게이트 | journey 18/18 · entry 16/16 · entry-photo 6/6 · GST 8/8 |
+| 시험 데이터 전체 흐름(로컬 데모, 실제 API) | 390·1280 모두 영수증 PDF까지 통과, 콘솔 오류·실패 요청 0 |

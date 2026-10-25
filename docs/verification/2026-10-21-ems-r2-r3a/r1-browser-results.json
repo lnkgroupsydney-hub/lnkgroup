@@ -1,0 +1,160 @@
+{
+  "synthetic": true,
+  "passed": 13,
+  "outcomes": [
+    {
+      "name": "Authentication stages protect direct detail routes",
+      "evidence": {
+        "protectedStages": 5,
+        "companyApiCalls": 0
+      },
+      "result": "passed"
+    },
+    {
+      "name": "Lists and known detail paths preserve one H1 and active navigation",
+      "evidence": {
+        "directPages": 9,
+        "landmark": "one main and H1",
+        "detailMenuActive": true
+      },
+      "result": "passed"
+    },
+    {
+      "name": "Client dialog protects unsaved Escape and returns focus",
+      "evidence": {
+        "defaultCreateHidden": true,
+        "escapeGuard": true,
+        "discardClearsInput": true,
+        "triggerFocusRestored": true
+      },
+      "result": "passed"
+    },
+    {
+      "name": "Lost client create response retries one immutable save",
+      "evidence": {
+        "customersCreated": 1,
+        "immutableAttempts": 1,
+        "savedDetailRoute": true
+      },
+      "result": "passed"
+    },
+    {
+      "name": "Clients restore list page, tabs and revision-conflict reason",
+      "evidence": {
+        "pageRestored": 2,
+        "keyboardTabs": true,
+        "reasonRetainedAfter409": true,
+        "requiresFreshConfirmation": true,
+        "unlinkPreservesSourceAndAudit": true
+      },
+      "result": "passed"
+    },
+    {
+      "name": "Uncertain classification retries immutable link without clearing comparison",
+      "evidence": {
+        "immutableAttempts": 1,
+        "reasonPreserved": true,
+        "uncertainNavigationBlocked": true,
+        "sourcePreserved": true
+      },
+      "result": "passed"
+    },
+    {
+      "name": "Quote summary prioritises saved amount, exclusions and private photo evidence",
+      "evidence": {
+        "requestId": "262792a7-6452-4745-8d47-678b7e2a1251",
+        "amount": 242000,
+        "exclusionsVisible": true,
+        "photosPrivate": true,
+        "searchRestored": true
+      },
+      "result": "passed"
+    },
+    {
+      "name": "Quote booking draft survives tabs and hidden reads stop polling",
+      "evidence": {
+        "draftRetained": "2500",
+        "immediateReadReentry": true,
+        "activePolling": true,
+        "hiddenPollingStopped": true,
+        "navigationGuard": true
+      },
+      "result": "passed"
+    },
+    {
+      "name": "Company draft mutation completes while its tab is hidden without duplicate commands",
+      "evidence": {
+        "commandCount": 1,
+        "savedRevision": 1,
+        "hiddenResponseApplied": true
+      },
+      "result": "passed"
+    },
+    {
+      "name": "Running photo analysis polls only on active tabs",
+      "evidence": {
+        "activeFiveSecondPoll": true,
+        "hiddenReadsStopped": true
+      },
+      "result": "passed"
+    },
+    {
+      "name": "Schedule filters loaded Sydney dates and statuses and opens exact visits",
+      "evidence": {
+        "loadedScope": "3 records",
+        "statusAndDate": true,
+        "exactTakeOff": "2026-11-05T10:30",
+        "filterRestored": true
+      },
+      "result": "passed"
+    },
+    {
+      "name": "Responsive lists, detail and dialog reflow at 320–1440 with reduced motion",
+      "evidence": {
+        "widths": [
+          320,
+          390,
+          768,
+          1280,
+          1440
+        ],
+        "pagesPerWidth": 6,
+        "reducedMotion": {
+          "animation": "none",
+          "transition": "0s"
+        },
+        "keyboardEnd": true
+      },
+      "result": "passed"
+    },
+    {
+      "name": "Access loss clears private details and retained dialog input",
+      "evidence": {
+        "privateUiRemoved": true,
+        "draftCleared": true
+      },
+      "result": "passed"
+    }
+  ],
+  "skipped": [],
+  "external": [],
+  "pageErrors": [],
+  "unexpectedResources": [],
+  "consoles": [
+    {
+      "name": "Lost client create response retries one immutable save",
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+    },
+    {
+      "name": "Clients restore list page, tabs and revision-conflict reason",
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 409 (Conflict)"
+    },
+    {
+      "name": "Uncertain classification retries immutable link without clearing comparison",
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+    }
+  ]
+}

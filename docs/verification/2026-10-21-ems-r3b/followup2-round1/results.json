@@ -1,0 +1,197 @@
+{
+  "synthetic": true,
+  "base": "http://127.0.0.1:3063",
+  "planned": 6,
+  "passed": 5,
+  "failed": 1,
+  "skipped": 0,
+  "results": [
+    {
+      "name": "D1 source issues unchanged legacy save changed invalid rejection and server fields",
+      "result": "passed",
+      "evidence": {
+        "sourceIssues": true,
+        "unchangedLegacySaved": true,
+        "changedInvalidRejected": true,
+        "serverFieldsDisplayed": true,
+        "widths": [
+          320,
+          768,
+          1440
+        ]
+      },
+      "expectedHttp": [
+        {
+          "path": "/api/admin/quote-requests/2cb9c855-5602-4fdd-8b9d-86d258442436/staff-draft",
+          "status": 422
+        }
+      ]
+    },
+    {
+      "name": "Booking draft warning nonblocking published gate and schedule server409",
+      "result": "passed",
+      "evidence": {
+        "draftWarningNonblocking": true,
+        "publishedConfirmationDisabled": true,
+        "tabNavigation": true,
+        "serverCode": "revision_awaiting_customer",
+        "bookingsCreated": 0
+      },
+      "expectedHttp": [
+        {
+          "path": "/api/admin/live-bookings/d346d8bd-e747-43b6-9336-1c7b161e073e/confirm-request",
+          "status": 409
+        }
+      ]
+    },
+    {
+      "name": "Customer real journey proof expiry new signature unknown retry acceptance exactly once",
+      "result": "passed",
+      "evidence": {
+        "realCustomerPath": "/quote/start",
+        "expiredProofRejected": true,
+        "newSignature": true,
+        "acceptanceCommits": 1,
+        "receipts": 1,
+        "receiptOutbox": 1
+      },
+      "expectedHttp": [
+        {
+          "path": "/api/quote/requests/company-revision/accept",
+          "status": 409
+        },
+        {
+          "path": "/api/quote/requests/company-revision/accept",
+          "status": 503
+        }
+      ]
+    },
+    {
+      "name": "Withdraw pending second version sends no mail and keeps accepted first version",
+      "result": "passed",
+      "evidence": {
+        "withdrawnVersion": 2,
+        "acceptedVersionUnchanged": 1,
+        "withdrawalEmails": 0,
+        "customerStatus": "withdrawn"
+      },
+      "expectedHttp": []
+    },
+    {
+      "name": "Customer401 removes private view acknowledgment and unsaved signature",
+      "result": "passed",
+      "evidence": {
+        "status": 401,
+        "privateContactRemoved": true,
+        "signatureRemoved": true,
+        "acknowledgmentRemoved": true,
+        "acceptances": 0
+      },
+      "expectedHttp": [
+        {
+          "path": "/api/quote/requests/company-revision/accept",
+          "status": 401
+        },
+        {
+          "path": "/api/quote/requests/customer",
+          "status": 401
+        }
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "name": "Company save conflict unknown identical retry strict publication and modal focus",
+      "message": "An enabled outside button must have a visible viewport point outside the dialog for the inertness probe.",
+      "stack": "AssertionError [ERR_ASSERTION]: An enabled outside button must have a visible viewport point outside the dialog for the inertness probe.\n    at modalFocus (file:///private/tmp/claude-501/-Users-jimee-orca-workspaces-L-K-Group-featherduster/687d9dbc-0c8f-4a4c-aac2-1fe5e91655c7/scratchpad/orchestration/ems-r3b/p3/app/scripts/verify-ems-r3b-ui.mjs:181:12)\n    at async scenario.path (file:///private/tmp/claude-501/-Users-jimee-orca-workspaces-L-K-Group-featherduster/687d9dbc-0c8f-4a4c-aac2-1fe5e91655c7/scratchpad/orchestration/ems-r3b/p3/app/scripts/verify-ems-r3b-ui.mjs:327:19)\n    at async scenario (file:///private/tmp/claude-501/-Users-jimee-orca-workspaces-L-K-Group-featherduster/687d9dbc-0c8f-4a4c-aac2-1fe5e91655c7/scratchpad/orchestration/ems-r3b/p3/app/scripts/verify-ems-r3b-ui.mjs:228:21)\n    at async main (file:///private/tmp/claude-501/-Users-jimee-orca-workspaces-L-K-Group-featherduster/687d9dbc-0c8f-4a4c-aac2-1fe5e91655c7/scratchpad/orchestration/ems-r3b/p3/app/scripts/verify-ems-r3b-ui.mjs:289:3)\n    at async file:///private/tmp/claude-501/-Users-jimee-orca-workspaces-L-K-Group-featherduster/687d9dbc-0c8f-4a4c-aac2-1fe5e91655c7/scratchpad/orchestration/ems-r3b/p3/app/scripts/verify-ems-r3b-ui.mjs:489:7",
+      "url": "http://127.0.0.1:3063/admin/quotes/1c1255e0-7590-48d9-812e-48cbe866fb2d",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "screenshot": "/private/tmp/claude-501/-Users-jimee-orca-workspaces-L-K-Group-featherduster/687d9dbc-0c8f-4a4c-aac2-1fe5e91655c7/scratchpad/orchestration/ems-r3b/p3/gates-round1/r3b/failure-1.png",
+      "evidence": {
+        "external": [],
+        "http": [],
+        "page": [],
+        "console": [
+          {
+            "text": "Failed to load resource: the server responded with a status of 409 (Conflict)",
+            "url": "http://127.0.0.1:3063/api/admin/quote-requests/1c1255e0-7590-48d9-812e-48cbe866fb2d/company-revisions"
+          },
+          {
+            "text": "Failed to load resource: the server responded with a status of 503 (Service Unavailable)",
+            "url": "http://127.0.0.1:3063/api/admin/quote-requests/1c1255e0-7590-48d9-812e-48cbe866fb2d/company-revisions"
+          }
+        ],
+        "expected": [
+          {
+            "path": "/api/admin/quote-requests/1c1255e0-7590-48d9-812e-48cbe866fb2d/company-revisions",
+            "status": 409
+          },
+          {
+            "path": "/api/admin/quote-requests/1c1255e0-7590-48d9-812e-48cbe866fb2d/company-revisions",
+            "status": 503
+          }
+        ]
+      }
+    }
+  ],
+  "screenshots": [
+    {
+      "name": "failure-1",
+      "path": "/private/tmp/claude-501/-Users-jimee-orca-workspaces-L-K-Group-featherduster/687d9dbc-0c8f-4a4c-aac2-1fe5e91655c7/scratchpad/orchestration/ems-r3b/p3/gates-round1/r3b/failure-1.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "url": "http://127.0.0.1:3063/admin/quotes/1c1255e0-7590-48d9-812e-48cbe866fb2d"
+    },
+    {
+      "name": "confirmation-blocked",
+      "path": "/private/tmp/claude-501/-Users-jimee-orca-workspaces-L-K-Group-featherduster/687d9dbc-0c8f-4a4c-aac2-1fe5e91655c7/scratchpad/orchestration/ems-r3b/p3/gates-round1/r3b/confirmation-blocked.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "url": "http://127.0.0.1:3063/admin/quotes/d346d8bd-e747-43b6-9336-1c7b161e073e"
+    },
+    {
+      "name": "confirmation-server409",
+      "path": "/private/tmp/claude-501/-Users-jimee-orca-workspaces-L-K-Group-featherduster/687d9dbc-0c8f-4a4c-aac2-1fe5e91655c7/scratchpad/orchestration/ems-r3b/p3/gates-round1/r3b/confirmation-server409.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "url": "http://127.0.0.1:3063/admin/schedule/d346d8bd-e747-43b6-9336-1c7b161e073e"
+    },
+    {
+      "name": "customer-accepted-320",
+      "path": "/private/tmp/claude-501/-Users-jimee-orca-workspaces-L-K-Group-featherduster/687d9dbc-0c8f-4a4c-aac2-1fe5e91655c7/scratchpad/orchestration/ems-r3b/p3/gates-round1/r3b/customer-accepted-320.png",
+      "viewport": {
+        "width": 320,
+        "height": 1000
+      },
+      "url": "http://127.0.0.1:3063/quote/start?mode=live"
+    },
+    {
+      "name": "customer-withdrawn-1440",
+      "path": "/private/tmp/claude-501/-Users-jimee-orca-workspaces-L-K-Group-featherduster/687d9dbc-0c8f-4a4c-aac2-1fe5e91655c7/scratchpad/orchestration/ems-r3b/p3/gates-round1/r3b/customer-withdrawn-1440.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "url": "http://127.0.0.1:3063/quote/start?mode=live"
+    },
+    {
+      "name": "customer-access-lost-1440",
+      "path": "/private/tmp/claude-501/-Users-jimee-orca-workspaces-L-K-Group-featherduster/687d9dbc-0c8f-4a4c-aac2-1fe5e91655c7/scratchpad/orchestration/ems-r3b/p3/gates-round1/r3b/customer-access-lost-1440.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "url": "http://127.0.0.1:3063/quote/start?mode=live"
+    }
+  ],
+  "skippedScenarios": []
+}

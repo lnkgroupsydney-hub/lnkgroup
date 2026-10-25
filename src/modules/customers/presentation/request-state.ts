@@ -17,15 +17,15 @@ export type MutationSnapshot<T extends object> = { signature: string; value: T &
 export class MutationAttempt<T extends object> {
   private pending: MutationSnapshot<T> | null
   constructor(snapshot: MutationSnapshot<T> | null = null) {
-    this.pending = snapshot ? { signature: snapshot.signature, value: { ...snapshot.value } } : null
+    this.pending = snapshot ? structuredClone(snapshot) : null
   }
   snapshot(): MutationSnapshot<T> | null {
-    return this.pending ? { signature: this.pending.signature, value: { ...this.pending.value } } : null
+    return this.pending ? structuredClone(this.pending) : null
   }
   prepare(value: T, newKey: () => string) {
     const signature = JSON.stringify(value)
     if (this.pending && this.pending.signature !== signature) throw new Error('The previous save could not be confirmed. Retry the unchanged details before starting another request.')
-    if (!this.pending) this.pending = { signature, value: { ...value, idempotencyKey: newKey() } }
+    if (!this.pending) this.pending = { signature, value: structuredClone({ ...value, idempotencyKey: newKey() }) }
     return this.pending.value
   }
   clear() { this.pending = null }

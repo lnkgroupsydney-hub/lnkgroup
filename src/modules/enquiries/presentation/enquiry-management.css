@@ -1,0 +1,15 @@
+/* Enquiry inbox specifics only; EMS layout, fields, buttons and feedback come from the shared admin CSS. */
+.ems-root .enquiry-inbox :is(h2, h3, h4)[tabindex="-1"]:focus, .ems-root .enquiry-record :is(h2, h3, h4)[tabindex="-1"]:focus { outline: none; }
+.ems-root .enquiry-form { display: grid; gap: .875rem; margin-top: 1rem; min-width: 0; }
+.ems-root .enquiry-form + .enquiry-form { margin-top: 1.5rem; }
+.ems-root .enquiry-note-body { margin: 0 0 .5rem; white-space: pre-wrap; overflow-wrap: anywhere; }
+.ems-root .enquiry-impact { list-style: disc; display: grid; gap: .375rem; margin: .5rem 0 0; padding-left: 1.25rem; }
+.ems-root .enquiry-pagination { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem; margin-top: 1rem; }
+.ems-root .enquiry-compare { display: grid; gap: .5rem; }
+.ems-root .enquiry-compare p { margin: 0; }
+.ems-root .enquiry-record .ems-feedback h3 { margin: 0 0 .375rem; }
+.ems-root .enquiry-record .ems-feedback p { margin: 0 0 .5rem; }
+.ems-root .enquiry-record .ems-panel h4 { margin: 0; font-size: 1rem; font-weight: 700; }
+.ems-root .enquiry-record .enquiry-form + h3 { margin-top: 1.5rem; }
+.ems-root .enquiry-record .ems-feedback[tabindex="-1"]:focus { outline: 2px solid var(--site-focus); outline-offset: 2px; }
+.ems-root .ems-field .enquiry-field-error, .ems-root .enquiry-field-error { color: var(--ems-ink); font-weight: 650; }

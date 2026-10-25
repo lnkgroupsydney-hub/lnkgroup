@@ -1,0 +1,22 @@
+{
+  "synthetic": true,
+  "updatedAt": "2026-10-22T09:57:34.925Z",
+  "exitCode": 0,
+  "gates": {
+    "check": 0,
+    "copy": 0,
+    "r1-result": 0,
+    "r1": 0,
+    "r2-result": 0,
+    "r2": 0,
+    "r3a-result": 0,
+    "r3a": 0,
+    "r3b-result": 0,
+    "r3b": 0,
+    "ready": 0,
+    "reset-r1": 0,
+    "reset-r2": 0,
+    "reset-r3a": 0,
+    "reset-r3b": 0
+  }
+}

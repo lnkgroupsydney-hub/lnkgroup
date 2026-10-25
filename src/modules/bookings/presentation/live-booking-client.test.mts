@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { COMPANY_BOOKING_SITE_DAMAGE_NOTE, COMPANY_BOOKING_ACK_TEXT, COMPANY_BOOKING_ACK_VERSION, type LiveCompanyBookingState, type LiveCompanyProposal } from '../domain/live-contracts.ts';
 import { companyBookingRequest, companyDraftAfterRead, companyPeriodSummary, companyProcessingRetryable, companySegmentLabel, currentAcceptance, dollarsToCents, LiveCompanyRequestError, newerCompanyState, parseCompanyCheck, parseCompanyProposal, parseCompanyReview, parseCompanyState, periodPayload, shiftDay, type CompanyPeriodInput, signedRequestConfirmationPayload, usesSignedRequestBooking } from './live-booking-client.ts';
+import { companyBookingTone, needsCompanyAction } from './booking-status-tone.ts';
 
 const requestId='895f8919-7e19-4506-972d-944285b0185a';
 const proposal={id:'company-proposal',version:1,revision:1,status:'published',hash:'immutable-proposal-hash',amountExGst:150000,gst:15000,total:165000,currency:'AUD',scope:'Cabinet repainting only',adjustmentReason:'Site quantity confirmed',calendarTarget:{calendarId:'lnkgroupsydney@gmail.com',accountEmail:'lnkgroupsydney@gmail.com'},segments:[{kind:'all_day',startDate:'2026-10-20',endDate:'2026-10-22',startAt:'2026-10-19T13:00:00Z',endAt:'2026-10-21T13:00:00Z'}]} as LiveCompanyProposal;
@@ -95,4 +96,53 @@ test('v2 booking recovery protects the original estimate, selected time, two pur
 test('only the newly signed v2 wording enables a one-confirmation EMS workflow; legacy signatures retain their original approval path', () => {
   assert.equal(usesSignedRequestBooking(signedState), true);
   assert.equal(usesSignedRequestBooking({ ...state, submission: { ...state.submission, snapshot: { version: 'live-booking-request-ack-v1' } } } as LiveCompanyBookingState), false);
+});
+
+test('company booking badges use the schedule status labels with one tone per status', () => {
+  const booked = (status: string) => ({ ...state, booking: { status } }) as unknown as LiveCompanyBookingState;
+  for (const [status, tone, label] of [['confirmed', 'success', 'Confirmed'], ['confirming', 'info', 'Confirmation processing'], ['review_required', 'danger', 'Review required'], ['cancel_pending', 'info', 'Cancellation pending · periods held'], ['cancelled', 'neutral', 'Cancelled · periods released']] as const) {
+    assert.deepEqual(companyBookingTone(booked(status)), { tone, label }, status);
+  }
+  assert.deepEqual(companyBookingTone({ ...state, proposal: null, proposals: [] } as LiveCompanyBookingState), { tone: 'warning', label: 'Awaiting company review' });
+  assert.deepEqual(companyBookingTone({ ...state, proposal: { ...proposal, status: 'draft' } } as LiveCompanyBookingState), { tone: 'warning', label: 'Company draft saved' });
+  assert.deepEqual(companyBookingTone(state), { tone: 'info', label: 'Company proposal published' });
+  assert.deepEqual(companyBookingTone(signedState), { tone: 'warning', label: 'Awaiting company review' });
+});
+test('a published proposal accepted for its current hash waits on the company; a stale acceptance waits on the customer', () => {
+  const acceptance = { id: 'acceptance', proposalId: proposal.id, proposalHash: proposal.hash, acceptedAt: '2026-10-25T00:00:00Z', signature: { name: 'Synthetic customer' }, acknowledgmentVersion: COMPANY_BOOKING_ACK_VERSION, acknowledgmentText: COMPANY_BOOKING_ACK_TEXT } as unknown as NonNullable<LiveCompanyBookingState['acceptance']>;
+  assert.deepEqual(companyBookingTone({ ...state, acceptance }), { tone: 'warning', label: 'Company proposal published' });
+  assert.equal(needsCompanyAction({ ...state, acceptance }), true);
+  for (const stale of [{ ...acceptance, proposalId: 'older-proposal' }, { ...acceptance, proposalHash: 'older-hash' }]) {
+    assert.deepEqual(companyBookingTone({ ...state, acceptance: stale }), { tone: 'info', label: 'Company proposal published' });
+    assert.equal(needsCompanyAction({ ...state, acceptance: stale }), false);
+  }
+});
+test('overview action rule matches the badge: company review, drafts, processing and review-required count; customer waits and closed bookings do not', () => {
+  const booked = (status: string) => ({ ...state, booking: { status } }) as unknown as LiveCompanyBookingState;
+  assert.equal(needsCompanyAction({ ...state, proposal: null, proposals: [] } as LiveCompanyBookingState), true);
+  assert.equal(needsCompanyAction(signedState), true);
+  assert.equal(needsCompanyAction({ ...state, proposal: { ...proposal, status: 'draft' } } as LiveCompanyBookingState), true);
+  assert.equal(needsCompanyAction(state), false);
+  for (const status of ['confirming', 'review_required', 'cancel_pending']) assert.equal(needsCompanyAction(booked(status)), true, status);
+  for (const status of ['confirmed', 'cancelled']) assert.equal(needsCompanyAction(booked(status)), false, status);
+});
+
+test('accepted revision confirmation parses new money and evidence without rewriting original signed amount',async()=>{
+ const {COMPANY_REVISION_ACK,calculateCompanyRevisionPricing}=await import('../../quotes/domain/company-revision.ts');const {BOOKING_SIMPLE_ACK_VERSION,bookingAcknowledgment}=await import('../../quotes/domain/booking-flow.ts');
+ const contact={name:'Customer',email:'customer@example.invalid',phone:'',siteAddress:'1 Street',suburb:'Sydney',postcode:'2000',details:''},quantities={doorCount:12,drawerCount:0,moderateRepair:false},pricing=calculateCompanyRevisionPricing({contact,quantities,extraItems:[],customerNote:''}),evidence={companyRevisionId:'895f8919-7e19-4506-972d-944285b01851',companyRevisionAcceptanceId:'895f8919-7e19-4506-972d-944285b01852',companyRevisionSnapshotHash:'a'.repeat(64),companyRevisionSignedContentHash:'b'.repeat(64)};
+ const p={...proposal,...evidence,confirmationBasis:'accepted_revision',amountExGst:pricing.total,gst:0,total:pricing.total,pricing,contact,quantities,extraItems:[],customerNote:'',companyRevisionSignature:{name:'Customer',method:'typed',strokes:[],acknowledged:true},companyRevisionAcknowledgment:COMPANY_REVISION_ACK,segments:[{kind:'timed',purpose:'take_off',startLocal:'2030-01-05T09:00',startAt:'2030-01-04T22:00:00Z',endAt:'2030-01-05T00:00:00Z',startDate:'2030-01-05',endDate:'2030-01-06'},{kind:'timed',purpose:'install',startLocal:'2030-01-08T09:00',startAt:'2030-01-07T22:00:00Z',endAt:'2030-01-08T00:00:00Z',startDate:'2030-01-08',endDate:'2030-01-09'}]};
+ const submission={requestId,id:'submission',preferredDate:'2030-01-05',preferredTime:'09:00',snapshot:{version:BOOKING_SIMPLE_ACK_VERSION,acknowledgment:bookingAcknowledgment(BOOKING_SIMPLE_ACK_VERSION),preferredDate:'2030-01-05',preferredTime:'09:00',pricing:{total:145000}}};
+ const next={...state,submission,proposal:p,proposals:[p],booking:{...evidence,confirmationBasis:'accepted_revision',signedSubmissionId:'submission',status:'confirming',proposalId:p.id,proposalHash:p.hash,events:[]}};
+ assert.equal(parseCompanyState({state:next},requestId)!.proposal!.total,180000);assert.equal(submission.snapshot.pricing.total,145000);assert.throws(()=>parseCompanyState({state:{...next,booking:{...next.booking,companyRevisionSignedContentHash:'c'.repeat(64)}}},requestId));assert.throws(()=>parseCompanyProposal({...p,companyRevisionSignature:{name:'Customer',method:'typed',strokes:[],acknowledged:false}}));
+})
+
+test('company request errors preserve response code and existing constructor callers', async () => {
+  assert.equal(new LiveCompanyRequestError(409, 'Old caller').code, undefined);
+  const original = globalThis.fetch;
+  try {
+    for (const code of ['revision_awaiting_customer', null, 409, { unsafe: true }]) {
+      globalThis.fetch = async () => Response.json({ error: 'Waiting for revised quote acceptance', code }, { status: 409 });
+      await assert.rejects(companyBookingRequest('/synthetic', requestId), error => error instanceof LiveCompanyRequestError && error.status === 409 && error.code === (typeof code === 'string' ? code : undefined));
+    }
+  } finally { globalThis.fetch = original; }
 });

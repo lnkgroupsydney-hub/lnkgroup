@@ -1,0 +1,194 @@
+{
+  "synthetic": true,
+  "base": "http://127.0.0.1:3074",
+  "passed": 11,
+  "failed": 0,
+  "skipped": 0,
+  "results": [
+    {
+      "name": "Enquiries list filters owner notes archive restore",
+      "result": "passed",
+      "evidence": {
+        "ownerSaved": true,
+        "noteAddedAndEdited": true,
+        "archivedAndRestored": true,
+        "deleted": 0,
+        "widths": [
+          320,
+          768,
+          1440
+        ]
+      },
+      "expectedHttp": []
+    },
+    {
+      "name": "Enquiry409 keeps entry until latest revision reconfirmed",
+      "result": "passed",
+      "evidence": {
+        "inputRetained": true,
+        "explicitReconfirmation": true,
+        "newKey": true
+      },
+      "expectedHttp": [
+        {
+          "path": "/api/admin/enquiries/87d827b5-0946-4813-aeec-a295d70e6a05",
+          "status": 409
+        }
+      ]
+    },
+    {
+      "name": "Enquiry409 failed reload keeps saves blocked until latest details load",
+      "result": "passed",
+      "evidence": {
+        "failedReadBlocksSave": true,
+        "entryRetained": true,
+        "explicitReviewAfterSuccessfulRead": true
+      },
+      "expectedHttp": [
+        {
+          "path": "/api/admin/enquiries/02030451-1951-4162-9941-52e674ee21ef",
+          "status": 409
+        },
+        {
+          "path": "/api/admin/enquiries/02030451-1951-4162-9941-52e674ee21ef",
+          "status": 503
+        }
+      ]
+    },
+    {
+      "name": "Enquiry unknown retry applies identical key and body exactly once",
+      "result": "passed",
+      "evidence": {
+        "sameKeyAndBody": true,
+        "writesApplied": 1,
+        "receipts": 1
+      },
+      "expectedHttp": [
+        {
+          "path": "/api/admin/enquiries/a5d34d95-5e2b-43d6-b66e-5f009ee5af05/notes",
+          "status": 503
+        }
+      ]
+    },
+    {
+      "name": "Enquiry503 not_applied is an editable definite failure",
+      "result": "passed",
+      "evidence": {
+        "definiteFailure": true,
+        "inputEditable": true,
+        "newAttemptSaved": true
+      },
+      "expectedHttp": [
+        {
+          "path": "/api/admin/enquiries/5d6bb317-c3f7-4973-9cb9-0ac373e1fcd6/notes",
+          "status": 503
+        }
+      ]
+    },
+    {
+      "name": "Staff quote draft422 field error save409 and source filters",
+      "result": "passed",
+      "evidence": {
+        "fieldsRenderedInline": true,
+        "inputRetained": true,
+        "internalRevision": 3,
+        "sourceFilters": true
+      },
+      "expectedHttp": [
+        {
+          "path": "/api/admin/quote-requests/688b1c73-d56c-41cd-805e-859848a8323f/staff-draft",
+          "status": 422
+        },
+        {
+          "path": "/api/admin/quote-requests/688b1c73-d56c-41cd-805e-859848a8323f/staff-draft",
+          "status": 409
+        }
+      ]
+    },
+    {
+      "name": "Staff quote failed conflict reads preserve entries and require verified latest details",
+      "result": "passed",
+      "evidence": {
+        "noCachedRevisionPresentedAsLatest": true,
+        "failedDiscardPreservesEntries": true,
+        "explicitReviewThenSave": true
+      },
+      "expectedHttp": [
+        {
+          "path": "/api/admin/quote-requests/5ae8bc82-d967-4f77-9476-01550edc4ec2/staff-draft",
+          "status": 409
+        },
+        {
+          "path": "/api/admin/quote-requests/5ae8bc82-d967-4f77-9476-01550edc4ec2/staff-draft",
+          "status": 503
+        },
+        {
+          "path": "/api/admin/quote-requests/5ae8bc82-d967-4f77-9476-01550edc4ec2/staff-draft",
+          "status": 503
+        }
+      ]
+    },
+    {
+      "name": "Simple booking saves partial draft edits and resolves409",
+      "result": "passed",
+      "evidence": {
+        "partialDraft": true,
+        "persistedAfterReload": true,
+        "noConfirmationOrOccupancy": true,
+        "revision": 4
+      },
+      "expectedHttp": [
+        {
+          "path": "/api/admin/live-bookings/98ee946b-5fb3-4bae-8c02-9edac67ba9bb/draft",
+          "status": 409
+        }
+      ]
+    },
+    {
+      "name": "Simple cancellation holds until verified release and continues original key",
+      "result": "passed",
+      "evidence": {
+        "accepted": true,
+        "heldDuringRetryAndReview": true,
+        "originalKeyContinued": true,
+        "verifiedDeletedEvents": 2,
+        "releasedTogether": true
+      },
+      "expectedHttp": []
+    },
+    {
+      "name": "Enquiry401 access loss removes private data and typed input",
+      "result": "passed",
+      "evidence": {
+        "status": 401,
+        "contactRemoved": true,
+        "typedPrivateInputRemoved": true,
+        "writesApplied": 0
+      },
+      "expectedHttp": [
+        {
+          "path": "/api/admin/enquiries/c2b5b676-81ec-488d-905a-4ee81fddf294/notes",
+          "status": 401
+        }
+      ]
+    },
+    {
+      "name": "Enquiry403 access loss removes private data and typed input",
+      "result": "passed",
+      "evidence": {
+        "status": 403,
+        "contactRemoved": true,
+        "typedPrivateInputRemoved": true,
+        "writesApplied": 0
+      },
+      "expectedHttp": [
+        {
+          "path": "/api/admin/enquiries/b68940a0-f248-4898-b5d0-6c94eedbad31/notes",
+          "status": 403
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "skippedScenarios": []
+}

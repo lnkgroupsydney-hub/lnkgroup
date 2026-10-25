@@ -483,3 +483,15 @@ html:has(.quote-route-shell .lq-workspace-layout){scroll-padding-top:4.5rem;scro
 .lq-journey button,.lq-menu-button,.lq-menu-chevron,.lq-summary-chevron,.lq-progress-chevron{transition:none}
 .lq-journey button:active{transform:none!important}
 }
+/* Staff internal drafts: dashed edge separates the work copy from the customer request. */
+.ems-root .staff-draft .ems-actions h3{margin:0}
+.ems-root .staff-draft-copy{border-style:dashed;border-width:2px}
+.ems-root .staff-draft-check{display:flex;align-items:flex-start;gap:.65rem;min-height:2.75rem;padding-block:.35rem;font-size:.9375rem;font-weight:600}
+.ems-root .staff-draft-check input{flex:none;width:1.1rem;height:1.1rem;min-height:0;margin-top:.2rem;padding:0}
+.ems-root .staff-draft-surfaces{grid-template-columns:repeat(auto-fit,minmax(min(100%,11rem),1fr));gap:0 1rem;margin:0}
+.ems-root .staff-draft-surfaces>legend{font-size:var(--ems-small);font-weight:650;margin-bottom:.25rem}
+.ems-root .ems-field .staff-draft-field-error{color:var(--ems-ink);font-weight:650;font-size:var(--ems-small)}
+.ems-root .staff-draft [aria-invalid=true]{border-color:var(--site-border-strong);border-width:2px}
+/* D1: customer values kept from the original request are marked separately from save errors. */
+.ems-root .ems-field .staff-draft-source-note{display:block;padding:.35rem .5rem;border-left:3px dashed var(--site-border-strong);background:var(--ems-bg);color:var(--ems-ink);font-weight:500;font-size:var(--ems-small)}
+.ems-root .staff-draft-source-issues ul{margin:.5rem 0 0;padding-left:1.2rem;display:grid;gap:.25rem}
