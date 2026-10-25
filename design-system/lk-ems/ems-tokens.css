@@ -1,0 +1,66 @@
+/* L&K Group EMS design tokens (black + gold, Outfit).
+   Portable copy of the values in src/modules/admin-dashboard/presentation/admin-theme.css.
+   ems-tokens.test.mts fails if the two drift apart.
+   Usage: add class="ems-theme" to <html>, <body> or any container, then use the --ems-* variables. */
+.ems-theme {
+  /* Brand */
+  --ems-black: #161412;
+  --ems-black-raised: #26231F;
+  --ems-gold: #C9A227;
+  --ems-gold-bright: #E0BC4F;
+  --ems-gold-text: #7A5E0E;
+  --ems-gold-tint: #F7EFD6;
+
+  /* Neutrals */
+  --ems-canvas: #F3F1EC;
+  --ems-surface: #FFFFFF;
+  --ems-field: #F8F6F1;
+  --ems-sunken: #EEEBE4;
+  --ems-ink: #1C1A17;
+  --ems-ink-2: #45413A;
+  --ems-muted: #5F5A51;
+  --ems-line: #E2DED5;
+  --ems-line-strong: #8A8478;
+
+  /* Dark rail (sidebar) */
+  --ems-rail-text: #BDB7AC;
+  --ems-rail-dim: #9A948A;
+  --ems-rail-line: #33302B;
+  --ems-rail-line-strong: #4A453E;
+
+  /* Status: text / background pairs */
+  --ems-success: #2E6A4C;
+  --ems-success-bg: #E4F1E9;
+  --ems-warning: #97510A;
+  --ems-warning-bg: #FCEEDB;
+  --ems-danger: #A12A2A;
+  --ems-danger-bg: #FBE8E6;
+  --ems-info: #2D5784;
+  --ems-info-bg: #E5EDF6;
+  --ems-neutral: #56524A;
+  --ems-neutral-bg: #ECE9E3;
+
+  /* Type: Outfit has no Korean glyphs, so Korean falls back to the system Korean font. */
+  --ems-font: var(--font-outfit, "Outfit"), "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", system-ui, sans-serif;
+  --ems-weight-regular: 400;
+  --ems-weight-medium: 500;
+  --ems-weight-semibold: 600;
+  --ems-weight-bold: 650;
+  --ems-text-page: 28px;
+  --ems-text-section: 20px;
+  --ems-text-card: 16px;
+  --ems-text-body: 15px;
+  --ems-text-label: 14px;
+  --ems-text-meta: 13px;
+  --ems-text-xs: 12px;
+  --ems-text-kpi: 36px;
+
+  /* Shape */
+  --ems-radius-card: 16px;
+  --ems-radius-control: 10px;
+  --ems-shadow-card: 0 1px 2px rgb(22 20 18 / 6%), 0 4px 16px rgb(22 20 18 / 4%);
+}
+
+@media (max-width: 600px) {
+  .ems-theme { --ems-text-page: 24px; --ems-text-kpi: 30px; }
+}

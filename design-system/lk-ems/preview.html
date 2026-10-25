@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en" class="ems-theme">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>L&amp;K EMS Design Kit</title>
+  <link rel="stylesheet" href="./ems-fonts.css">
+  <link rel="stylesheet" href="./ems-tokens.css">
+  <link rel="stylesheet" href="./ems-components.css">
+  <style>
+    body { margin: 0; }
+    .kit { display: grid; grid-template-columns: 248px minmax(0, 1fr); min-height: 100vh; }
+    .kit main { padding: 32px; display: grid; gap: 24px; max-width: 1200px; }
+    .kit-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+    .kit-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+    .swatch { border-radius: 12px; border: 1px solid var(--ems-line); overflow: hidden; background: var(--ems-surface); }
+    .swatch div { height: 64px; }
+    .swatch p { margin: 0; padding: 8px 10px; font-size: var(--ems-text-meta); }
+    .kit-brand { display: flex; align-items: center; gap: 12px; padding: 0 8px; color: var(--ems-surface); font-weight: var(--ems-weight-semibold); font-size: 17px; }
+    .kit-brand small { display: block; color: var(--ems-rail-text); font-size: var(--ems-text-xs); font-weight: var(--ems-weight-regular); }
+    .kit-mark { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--ems-gold); color: var(--ems-gold); font-size: 14px; }
+    @media (max-width: 900px) { .kit { grid-template-columns: minmax(0, 1fr); } .kit .ems-sidebar { display: none; } .kit main { padding: 20px 16px; } }
+  </style>
+</head>
+<body>
+<div class="kit">
+  <aside class="ems-sidebar" aria-label="Sample navigation">
+    <div class="kit-brand"><span class="kit-mark" aria-hidden="true">L&amp;K</span><span>L&amp;K Group<small>EMS · Design kit</small></span></div>
+    <nav aria-label="Sample">
+      <p class="ems-nav-label">Work</p>
+      <ul class="ems-nav">
+        <li><a href="#colours" aria-current="page">Colours</a></li>
+        <li><a href="#type">Type</a></li>
+        <li><a href="#components">Components</a></li>
+      </ul>
+    </nav>
+  </aside>
+  <main>
+    <header>
+      <p class="ems-eyebrow">L&amp;K Group · EMS</p>
+      <h1 class="ems-page-title">Design kit</h1>
+      <p class="ems-body ems-meta">Sample values only. Numbers and names on this page are examples, not company records.</p>
+    </header>
+
+    <section id="colours" aria-labelledby="colours-title" class="ems-card">
+      <h2 id="colours-title" class="ems-section-title">Colours</h2>
+      <div class="kit-grid" style="margin-top:16px">
+        <div class="swatch"><div style="background:var(--ems-black)"></div><p>black #161412</p></div>
+        <div class="swatch"><div style="background:var(--ems-gold)"></div><p>gold #C9A227</p></div>
+        <div class="swatch"><div style="background:var(--ems-gold-text)"></div><p>gold-text #7A5E0E</p></div>
+        <div class="swatch"><div style="background:var(--ems-gold-tint)"></div><p>gold-tint #F7EFD6</p></div>
+        <div class="swatch"><div style="background:var(--ems-canvas)"></div><p>canvas #F3F1EC</p></div>
+        <div class="swatch"><div style="background:var(--ems-field)"></div><p>field #F8F6F1</p></div>
+      </div>
+    </section>
+
+    <section id="type" aria-labelledby="type-title" class="ems-card">
+      <h2 id="type-title" class="ems-section-title">Type — Outfit</h2>
+      <p class="ems-page-title" style="margin-top:12px">Page title 28 / 650</p>
+      <p class="ems-section-title">Section title 20 / 600</p>
+      <p class="ems-card-title">Card title 16 / 600</p>
+      <p class="ems-body">Body 15 / 400 — Review website requests and confirm work periods. 한글 대체 글꼴: 김민수 · 서울</p>
+      <p class="ems-meta">Meta 13 / 400 — Counted at 12:50</p>
+      <p class="ems-kpi">128</p>
+    </section>
+
+    <section id="components" aria-labelledby="components-title" class="ems-card">
+      <h2 id="components-title" class="ems-section-title">Components</h2>
+      <div class="kit-grid" style="margin-top:16px">
+        <label class="ems-field">Name <input placeholder="Client name"></label>
+        <label class="ems-field">Email <input type="email" aria-invalid="true" value="not-an-email"><span class="ems-error-text">Enter a valid email address.</span></label>
+        <label class="ems-field">Service <select><option>Cabinet painting</option></select></label>
+        <label class="ems-field">Disabled <input disabled value="Read only"></label>
+      </div>
+      <div class="kit-row" style="margin-top:16px">
+        <button class="ems-btn" type="button">Primary</button>
+        <button class="ems-btn ems-btn--secondary" type="button">Secondary</button>
+        <button class="ems-btn ems-btn--danger" type="button">Cancel booking</button>
+        <button class="ems-btn" type="button" disabled>Disabled</button>
+      </div>
+      <div class="kit-row" style="margin-top:16px">
+        <span class="ems-badge" data-tone="success">Confirmed</span>
+        <span class="ems-badge" data-tone="warning">Awaiting company review</span>
+        <span class="ems-badge" data-tone="danger">Company review required</span>
+        <span class="ems-badge" data-tone="info">Awaiting customer</span>
+        <span class="ems-badge">Draft</span>
+      </div>
+      <p class="ems-notice" style="margin-top:16px">Changes are saved to this browser until you submit.</p>
+      <p class="ems-notice" data-tone="danger">Could not load the booking list. Check your connection and retry.</p>
+    </section>
+
+    <div class="kit-grid">
+      <section class="ems-card ems-card--focus" aria-labelledby="focus-title">
+        <p class="ems-eyebrow">Today's focus</p>
+        <h2 id="focus-title" class="ems-section-title" style="margin:8px 0 16px">Review new booking requests</h2>
+        <button class="ems-btn ems-btn--gold" type="button">Review bookings</button>
+      </section>
+      <section class="ems-card" data-accent="gold" aria-labelledby="accent-title">
+        <h2 id="accent-title" class="ems-card-title">Client records</h2>
+        <p class="ems-meta">Tinted shortcut card.</p>
+      </section>
+      <section class="ems-card" aria-labelledby="details-title">
+        <h2 id="details-title" class="ems-card-title">Read-only details</h2>
+        <dl class="ems-details">
+          <div><dt>Reference</dt><dd class="ems-num">RQ-000123</dd></div>
+          <div><dt>Preferred date</dt><dd><time>12 Nov 2026</time></dd></div>
+        </dl>
+      </section>
+    </div>
+
+    <ul class="ems-list" aria-label="Sample list">
+      <li aria-current="true"><strong>Sample Client · RQ-000123</strong> <span class="ems-badge" data-tone="warning">Review requested</span></li>
+      <li><strong>Sample Client · RQ-000124</strong> <span class="ems-badge">Draft</span></li>
+    </ul>
+  </main>
+</div>
+</body>
+</html>

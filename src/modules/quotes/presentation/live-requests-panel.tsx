@@ -12,6 +12,8 @@ import { quotePricingDisplay } from '../domain/pricing-display.ts';
 import { BookingSubmissionSummary } from './booking-flow-panel';
 import { parseBookingState, bookingRequest } from './booking-flow-client';
 import { displayTime, isRecord, liveRequest, LiveRequestError, parseLiveRequest } from './request-client';
+import { quoteRequestStatusLabel, quoteRequestTone } from './request-status-tone';
+import { StatusBadge } from '@/shared/ui/status-badge';
 import './live-quote.css';
 
 function StaffBookingDetails({ requestId, onAccessLost }: { requestId: string; onAccessLost: () => void }) {
@@ -97,7 +99,7 @@ export function LiveQuoteRequestsPanel({ onAccessLost, title = 'Customer quote r
     {list && <>
       <p>{list.total} matching {list.total === 1 ? 'request' : 'requests'} · Page {list.page}</p>
       {!list.requests.length && <p>No saved requests match this search.</p>}
-      <ul className="lq-admin-list">{list.requests.map(request => <li key={request.id}><div><strong>{request.payload.contact.name} · {request.reference}</strong><span>{request.status === 'review_requested' ? 'Review requested' : 'Details saved'} · {request.payload.service ? 'Service details saved' : 'Contact only'}</span><span>{request.payload.contact.email} · {displayTime(request.savedAt)} (Sydney)</span></div><button type="button" className="secondary" onClick={() => navigate(() => void loadDetail(request.id))}>View request<span className="sr-only"> {request.reference}</span></button></li>)}</ul>
+      <ul className="lq-admin-list">{list.requests.map(request => <li key={request.id}><div><strong>{request.payload.contact.name} · {request.reference}</strong><span className="ems-status-row"><StatusBadge tone={quoteRequestTone(request.status)}>{quoteRequestStatusLabel(request.status)}</StatusBadge><span>{request.payload.service ? 'Service details saved' : 'Contact only'}</span></span><span>{request.payload.contact.email} · {displayTime(request.savedAt)} (Sydney)</span></div><button type="button" className="secondary" onClick={() => navigate(() => void loadDetail(request.id))}>View request<span className="sr-only"> {request.reference}</span></button></li>)}</ul>
       <div className="lq-actions"><button type="button" className="secondary" disabled={listBusy || list.page <= 1} onClick={() => void loadList(query, list.page - 1)}>Previous page</button><button type="button" className="secondary" disabled={listBusy || list.page * list.pageSize >= list.total} onClick={() => void loadList(query, list.page + 1)}>Next page</button></div>
     </>}
     {detailBusy && <p role="status">Loading request details…</p>}

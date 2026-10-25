@@ -1,0 +1,196 @@
+/* EMS administrator theme. Scoped to the admin workspace, its leave dialog and the staff sign-in
+   screens (.ems-theme) so the public site keeps its :root tokens and Manrope. */
+.admin-workspace,
+.admin-leave-dialog,
+.ems-theme {
+  --ems-black: #161412;
+  --ems-black-raised: #26231F;
+  --ems-gold: #C9A227;
+  --ems-gold-bright: #E0BC4F;
+  --ems-gold-text: #7A5E0E;
+  --ems-gold-tint: #F7EFD6;
+
+  --ems-canvas: #F3F1EC;
+  --ems-surface: #FFFFFF;
+  --ems-field: #F8F6F1;
+  --ems-sunken: #EEEBE4;
+  --ems-ink: #1C1A17;
+  --ems-ink-2: #45413A;
+  --ems-muted: #5F5A51;
+  --ems-line: #E2DED5;
+  --ems-line-strong: #8A8478;
+  --ems-rail-text: #BDB7AC;
+  /* Decorative separators on the black rail (not text, not a control boundary). */
+  --ems-rail-line: #33302B;
+  --ems-rail-line-strong: #4A453E;
+  /* Quieter rail text for group labels and "Coming soon" items: 6.1:1 on black, 5.2:1 on black-raised. */
+  --ems-rail-dim: #9A948A;
+
+  --ems-success: #2E6A4C;
+  --ems-success-bg: #E4F1E9;
+  --ems-warning: #97510A;
+  --ems-warning-bg: #FCEEDB;
+  --ems-danger: #A12A2A;
+  --ems-danger-bg: #FBE8E6;
+  --ems-info: #2D5784;
+  --ems-info-bg: #E5EDF6;
+  --ems-neutral: #56524A;
+  --ems-neutral-bg: #ECE9E3;
+
+  --ems-font: var(--font-outfit, "Outfit"), "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", system-ui, sans-serif;
+  --ems-weight-regular: 400;
+  --ems-weight-medium: 500;
+  --ems-weight-semibold: 600;
+  --ems-weight-bold: 650;
+  --ems-text-page: 28px;
+  --ems-text-section: 20px;
+  --ems-text-card: 16px;
+  --ems-text-body: 15px;
+  --ems-text-label: 14px;
+  --ems-text-meta: 13px;
+  --ems-text-xs: 12px;
+  --ems-text-kpi: 36px;
+  --ems-radius-card: 16px;
+  --ems-radius-control: 10px;
+  --ems-shadow-card: 0 1px 2px rgb(22 20 18 / 6%), 0 4px 16px rgb(22 20 18 / 4%);
+
+  --site-background: var(--ems-canvas);
+  --site-surface: var(--ems-surface);
+  --site-foreground: var(--ems-ink);
+  --site-muted: var(--ems-muted);
+  --site-border: var(--ems-line);
+  --site-border-strong: var(--ems-line-strong);
+  --site-action: var(--ems-black);
+  --site-action-hover: var(--ems-black-raised);
+  --site-on-action: var(--ems-surface);
+  --site-focus: var(--ems-gold-text);
+  --site-focus-outer: var(--ems-surface);
+  --site-disabled-surface: var(--ems-sunken);
+  --site-disabled-text: var(--ems-muted);
+
+  font-family: var(--ems-font);
+  font-weight: var(--ems-weight-regular);
+  color: var(--ems-ink);
+}
+
+@media (max-width: 600px) {
+  .admin-workspace,
+  .ems-theme { --ems-text-page: 24px; --ems-text-kpi: 30px; }
+}
+
+/* Headings inside admin modules: Outfit reads heavy at 700+, keep within 600–650. */
+:is(.admin-workspace .admin-main, .ems-theme) :is(h2, h3, h4, h5, legend, dt, strong, b, th) { font-weight: var(--ems-weight-semibold); }
+
+/* Staff sign-in, password, email and MFA screens (StaffAdminBoundary adds .ems-theme). */
+.ems-theme.operations-page { background: var(--ems-canvas); }
+.ems-theme .operations-header { background: var(--ems-black); border-bottom: 0; color: var(--ems-rail-text); min-height: 64px; }
+.ems-theme .operations-header a { display: inline-flex; align-items: center; min-height: 44px; color: var(--ems-surface); font-size: 17px; font-weight: var(--ems-weight-semibold); }
+.ems-theme .operations-header span { font-size: var(--ems-text-meta); color: var(--ems-rail-text); }
+.ems-theme .operations-header a:focus-visible,
+.ems-theme .operations-header button:focus-visible { outline-color: var(--ems-gold-bright); }
+.ems-theme .operations-header button { background: transparent; border-color: var(--ems-rail-line-strong); color: var(--ems-surface); }
+.ems-theme .operations-shell h1 { font-size: clamp(28px, 2.4vw + 16px, 36px); font-weight: var(--ems-weight-bold); line-height: 1.2; letter-spacing: -.015em; }
+.ems-theme .operations-shell h2 { font-size: var(--ems-text-section); line-height: 1.3; }
+/* Heading gets programmatic focus for screen readers; no visible box. */
+.ems-theme .operations-shell h1:focus { outline: none; box-shadow: none; }
+/* 44rem limit from staff-admin-console.css otherwise loses to .operations-shell on load order. */
+.ems-theme .operations-shell.staff-admin-shell { max-width: 44rem; }
+.ems-theme .staff-admin-email.operations-small { margin-bottom: 12px; }
+.ems-theme .operations-intro { font-size: var(--ems-text-body); color: var(--ems-muted); }
+.ems-theme .operations-panel { border: 1px solid var(--ems-line); border-radius: var(--ems-radius-card); background: var(--ems-surface); box-shadow: var(--ems-shadow-card); }
+.ems-theme .operations-panel p, .ems-theme .operations-panel li { font-size: var(--ems-text-body); }
+
+/* Fields — distinct from cards and page. Specificity (0,5,1) beats module rules such as
+   .lq-fields input:not(..) (0,3,1) and .operations-panel input:not(..) (0,2,1) without !important. */
+:is(.admin-workspace .admin-main, .ems-theme) :is(input:not([type=checkbox]):not([type=radio]):not([type=file]), select, textarea) {
+  min-height: 44px; min-width: 0;
+  border: 1px solid var(--ems-line-strong); border-radius: var(--ems-radius-control);
+  background: var(--ems-field); color: var(--ems-ink);
+  padding: 10px 12px; font: var(--ems-weight-regular) var(--ems-text-body)/1.4 var(--ems-font);
+}
+:is(.admin-workspace .admin-main, .ems-theme) :is(input, select, textarea)::placeholder { color: var(--ems-muted); opacity: 1; }
+:is(.admin-workspace .admin-main, .ems-theme) :is(input:not([type=checkbox]):not([type=radio]), select, textarea):hover:not(:disabled) { border-color: var(--ems-ink-2); }
+:is(.admin-workspace .admin-main, .ems-theme) :is(input:not([type=checkbox]):not([type=radio]), select, textarea):focus-visible {
+  background: var(--ems-surface); border-color: var(--ems-ink);
+  outline: 2px solid var(--ems-gold-text); outline-offset: 2px; box-shadow: 0 0 0 5px var(--ems-gold-tint);
+}
+:is(.admin-workspace .admin-main, .ems-theme) :is(input, select, textarea):disabled { background: var(--ems-sunken); color: var(--ems-muted); cursor: not-allowed; }
+:is(.admin-workspace .admin-main, .ems-theme) :is(input, select, textarea)[aria-invalid=true] { border-color: var(--ems-danger); }
+:is(.admin-workspace .admin-main, .ems-theme) label { font-size: var(--ems-text-label); font-weight: var(--ems-weight-medium); color: var(--ems-ink-2); }
+:is(.admin-workspace .admin-main, .ems-theme) :is(input[type=checkbox], input[type=radio]) { width: 18px; height: 18px; accent-color: var(--ems-black); }
+:is(.admin-workspace .admin-main, .ems-theme) :is(input[type=checkbox], input[type=radio]):focus-visible { outline: 2px solid var(--ems-gold-text); outline-offset: 2px; box-shadow: none; }
+@media (max-width: 600px) {
+  /* 16px stops iOS zooming into focused fields. */
+  :is(.admin-workspace .admin-main, .ems-theme) :is(input:not([type=checkbox]):not([type=radio]):not([type=file]), select, textarea) { font-size: 16px; }
+}
+
+/* Buttons — one shape everywhere. Colours come from the module rules through the remapped --site-* tokens. */
+:is(.admin-workspace .admin-main, .ems-theme) button:not(.admin-menu-button) {
+  min-height: 44px; border-radius: var(--ems-radius-control); padding: 10px 16px;
+  font: var(--ems-weight-semibold) var(--ems-text-label)/1.25 var(--ems-font);
+}
+:is(.admin-workspace .admin-main, .ems-theme) :is(button.secondary, button.operations-button-secondary) {
+  background: var(--ems-surface); border-color: var(--ems-line-strong); color: var(--ems-ink);
+}
+@media (hover: hover) and (pointer: fine) {
+  :is(.admin-workspace .admin-main, .ems-theme) :is(button.secondary, button.operations-button-secondary):hover:not(:disabled) { background: var(--ems-canvas); color: var(--ems-ink); }
+}
+:is(.admin-workspace .admin-main, .ems-theme) button:disabled,
+:is(.admin-workspace .admin-main, .ems-theme) button:disabled:hover { opacity: 1; background: var(--ems-sunken); border-color: var(--ems-line); color: var(--ems-muted); cursor: not-allowed; }
+@media (prefers-reduced-motion: no-preference) {
+  :is(.admin-workspace .admin-main, .ems-theme) button:active:not(:disabled) { transform: scale(.98); }
+}
+/* Inbox rows are list items rendered as buttons; keep them flat. */
+:is(.admin-workspace .admin-main, .ems-theme) .operations-inbox button:not(.admin-menu-button) { border-radius: 0; padding: 12px 14px; text-align: left; }
+:is(.admin-workspace .admin-main, .ems-theme) .operations-inbox button:active { transform: none; }
+/* Address suggestions are a listbox, not buttons in the visual sense. */
+:is(.admin-workspace .admin-main, .ems-theme) .address-autocomplete-options button:not(.admin-menu-button) { border-radius: 0; padding: 12px; font-weight: var(--ems-weight-regular); text-align: left; }
+:is(.admin-workspace .admin-main, .ems-theme) .address-autocomplete-options button:active { transform: none; }
+:is(.admin-workspace .admin-main, .ems-theme) .address-autocomplete-panel { border-radius: var(--ems-radius-control); overflow: hidden; }
+/* Line the address field up with neighbouring label-wrapped fields. */
+:is(.admin-workspace .admin-main, .ems-theme) .operations-panel .address-field { margin: 1rem 0; gap: .35rem; }
+:is(.admin-workspace .admin-main, .ems-theme) .operations-panel .address-field > label { margin: 0; }
+
+/* Focus — gold outline on light surfaces (0,3,1 beats module focus rules at 0,2,x). */
+:is(.admin-workspace, .ems-theme) :is(.admin-main, .admin-topbar, .operations-header, .operations-shell) :is(button, a, summary):focus-visible,
+.admin-leave-dialog button:focus-visible { outline: 2px solid var(--ems-gold-text); outline-offset: 3px; box-shadow: none; }
+
+/* Badges */
+.ems-badge { display: inline-flex; align-items: center; gap: 6px; min-height: 26px; padding: 3px 10px; border-radius: 999px; font: var(--ems-weight-semibold) var(--ems-text-xs)/1.3 var(--ems-font); background: var(--ems-neutral-bg); color: var(--ems-neutral); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.ems-badge[data-tone=success] { background: var(--ems-success-bg); color: var(--ems-success); }
+.ems-badge[data-tone=warning] { background: var(--ems-warning-bg); color: var(--ems-warning); }
+.ems-badge[data-tone=danger] { background: var(--ems-danger-bg); color: var(--ems-danger); }
+.ems-badge[data-tone=info] { background: var(--ems-info-bg); color: var(--ems-info); }
+
+/* Notices & errors — replace module hardcoded colours inside admin scope only */
+:is(.admin-workspace, .ems-theme) :is(.operations-error, .lq-error, .live-company-error) { border: 1px solid var(--ems-danger); border-left-width: 4px; border-radius: var(--ems-radius-control); background: var(--ems-danger-bg); color: var(--ems-danger); padding: 12px 14px; }
+:is(.admin-workspace, .ems-theme) :is(.operations-notice, .lq-notice, .live-company-notice, .booking-demo-note) { border: 1px solid var(--ems-line); border-left: 4px solid var(--ems-info); border-radius: var(--ems-radius-control); background: var(--ems-info-bg); color: var(--ems-ink); }
+:is(.admin-workspace, .ems-theme) :is(.operations-uri, .staff-admin-secret) { background: var(--ems-sunken); border-radius: 8px; }
+:is(.admin-workspace, .ems-theme) :is(.operations-small, .booking-refresh-note) { font-size: var(--ems-text-meta); color: var(--ems-muted); }
+
+/* Read-only details — no field look */
+.admin-workspace :is(.operations-detail dt, .booking-definition dt, .lq-details dt, .live-company-details dt, .customers-contact dt) { font-size: var(--ems-text-meta); font-weight: var(--ems-weight-semibold); color: var(--ems-muted); }
+.admin-workspace :is(.operations-detail dd, .booking-definition dd, .lq-details dd, .live-company-details dd, .customers-contact dd) { font-size: var(--ems-text-body); color: var(--ems-ink); }
+
+/* List rows */
+.admin-workspace :is(.customers-cards > li, .customers-source, .live-company-booking, .booking-segment-editor, .live-company-booking fieldset, .live-company-ack) { border-radius: 12px; }
+.admin-workspace :is(.lq-admin-list, .live-company-list)>li { border: 1px solid var(--ems-line); border-radius: 12px; background: var(--ems-surface); padding: 14px 16px; }
+.admin-workspace :is(.lq-admin-list, .live-company-list)>li strong { font-size: var(--ems-text-card); font-weight: var(--ems-weight-semibold); }
+.admin-workspace :is(.lq-admin-list, .live-company-list)>li span:not(.ems-badge) { font-size: var(--ems-text-meta); color: var(--ems-muted); font-variant-numeric: tabular-nums; }
+/* Status line in lists: badge + plain detail. Module CSS sets list spans to display:block. */
+.admin-workspace :is(.lq-admin-list, .live-company-list) .ems-status-row { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin: 6px 0 4px; }
+.admin-workspace :is(.lq-admin-list, .live-company-list) .ems-badge { display: inline-flex; }
+.admin-workspace .admin-main .operations-inbox button.selected { background: var(--ems-gold-tint); box-shadow: inset 3px 0 0 var(--ems-gold); }
+@media (hover: hover) and (pointer: fine) {
+  .admin-workspace :is(.lq-admin-list, .live-company-list)>li:hover { border-color: var(--ems-line-strong); }
+}
+
+/* Weight cap and 12px floor for module screens embedded in the admin workspace. live-quote.css, live-booking.css,
+   bookings.css, operations-console.css and the photo workspace use 700–800 weights and .5–.79rem sizes that were
+   tuned for Manrope or for the customer journey. Scoped to .admin-workspace .admin-main only, so the customer
+   journey (.lq-journey, /quote/**) keeps its own type. (0,2,1)+ beats the module rules without !important. */
+.admin-workspace .admin-main :is(h2, h3, h4, h5, h6, strong, b, dt, legend, th, summary, caption) { font-weight: var(--ems-weight-semibold); }
+.admin-workspace .admin-main h1 { font-weight: var(--ems-weight-bold); }
+.admin-workspace .admin-main :is(.live-company-price, .lq-price-total, .lq-received-badge, .lq-estimate-hero > strong, .lq-group-title, .lq-sidebar-title, .lq-progress [aria-current], .enquiry-kicker, .enquiry-progress .active, .enquiry-button, .demo-price, .quote-brand) { font-weight: var(--ems-weight-semibold); }
+.admin-workspace .admin-main :is(small, sub, sup) { font-size: max(var(--ems-text-xs), .85em); }
+.admin-workspace .admin-main :is(.lq-calendar button span, .demo-calendar button span, .demo-calendar .demo-weekday, [class*="roleSaved"], .lq-project-summary, .lq-project-summary > span, .lq-project-summary small, .lq-private-note, .lq-save-state, .lq-step-intro > span, .lq-optional, .lq-optional-details summary span, .lq-stage-actions .lq-text-button, .lq-stage-actions > .lq-muted, .lq-stage-actions button, .lq-estimate-badge, .lq-receipt-highlights span, .lq-receipt-highlights small, .lq-entry-actions button, .lq-sidebar-title, .lq-address-group .address-autocomplete-status, .quote-brand small, .quote-route-footer, .quote-exit) { font-size: var(--ems-text-xs); }

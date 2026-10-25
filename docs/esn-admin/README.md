@@ -1,5 +1,7 @@
 # 관리자 전용 ESN 계획
 
+**2026-10-25 EMS 대시보드 UI/UX 개편(브랜치 `dashboard-ui/ux`, 미커밋):** [10번 계획](10-2026-10-25-dashboard-ui-ux-plan.md)에 따라 관리자 화면에만 로고 기준 검정·금색 팔레트와 Outfit 글꼴을 적용했다. 검정 사이드바·실제 로고·메뉴 그룹, 입력창과 카드의 바탕 구분, 상태 배지, Overview 실제 건수 카드 3개(기존 관리자 읽기 API만 사용)를 구현했다. 전체 업무 검사 **800/800**·lint·타입·build가 통과했고, 합성 데이터로 5개 화면 폭을 확인했다. 공개 사이트는 바꾸지 않았다. 다른 프로젝트에서도 쓸 수 있는 CSS 키트는 [`design-system/lk-ems/`](../../design-system/lk-ems/README.md)에 있다. 합성 픽스처의 Next 16 dev 대응은 후속이다. [검증 기록](../verification/2026-10-25-ems-dashboard-ui-ux.md).
+
 **2026-10-11 최신 개정 — AI 수량 추정 가견적 운영 완료:** 고객 수량을 비워 두어도 AI가 문·서랍 앞판을 추정하고 예상 도장 금액을 계산한다. 정확한 수량·상태·최종 가격은 현장에서 확인해 조정한다. 기존 단가와 GST는 유지하며, 같은 사진의 미선택 표면이나 다른 현장의 손상은 보수비에 합산하지 않는다. [40번 현행 명세](../plans/40-ai-quantity-provisional-estimates.md)가 아래 v1의 고객 수량 일치 조건을 대체한다. 기존 기록은 보존한다.
 
 전체 **524/524**·lint·타입·빌드, 회사 Supabase 적용, Vercel `dpl_FgjBEwxhuz17b5A4pUVWq4FAMUK7` READY를 확인했다. 5장씩 3세트의 실제 AI 추정 결과는 **14문/6서랍 A$2,970 · 21문/6서랍 A$4,125 · 12문/4서랍 A$2,420 (GST 포함)**이며 회사 Chrome EMS와 DB의 저장값이 일치한다. 모두 기준 전면 범위의 잠정 도장비이고 미산정 손상·미촬영 범위는 별도다. 현장 최종견적 편집·발행(RQ-04c), 재동의·정식 예약은 후속이다. [실행 증거](../verification/2026-10-11-ai-quantity-provisional-estimates.md). 후속 사용자 요청으로 운영 수정·AI 수량 견적을 `main`에 병합했다(`425959b`). 회사 원격은 `origin` = `lnkgroupsydney-hub/lnkgroup`이며 이번 통합의 push 대상이다. 아래 이전 시점의 미병합 설명은 당시 기록이다.

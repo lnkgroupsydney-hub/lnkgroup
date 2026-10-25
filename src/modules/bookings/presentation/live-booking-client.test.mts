@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { COMPANY_BOOKING_SITE_DAMAGE_NOTE, COMPANY_BOOKING_ACK_TEXT, COMPANY_BOOKING_ACK_VERSION, type LiveCompanyBookingState, type LiveCompanyProposal } from '../domain/live-contracts.ts';
 import { companyBookingRequest, companyDraftAfterRead, companyPeriodSummary, companyProcessingRetryable, companySegmentLabel, currentAcceptance, dollarsToCents, LiveCompanyRequestError, newerCompanyState, parseCompanyCheck, parseCompanyProposal, parseCompanyReview, parseCompanyState, periodPayload, shiftDay, type CompanyPeriodInput, signedRequestConfirmationPayload, usesSignedRequestBooking } from './live-booking-client.ts';
+import { companyBookingTone } from './booking-status-tone.ts';
 
 const requestId='895f8919-7e19-4506-972d-944285b0185a';
 const proposal={id:'company-proposal',version:1,revision:1,status:'published',hash:'immutable-proposal-hash',amountExGst:150000,gst:15000,total:165000,currency:'AUD',scope:'Cabinet repainting only',adjustmentReason:'Site quantity confirmed',calendarTarget:{calendarId:'lnkgroupsydney@gmail.com',accountEmail:'lnkgroupsydney@gmail.com'},segments:[{kind:'all_day',startDate:'2026-10-20',endDate:'2026-10-22',startAt:'2026-10-19T13:00:00Z',endAt:'2026-10-21T13:00:00Z'}]} as LiveCompanyProposal;
@@ -95,4 +96,32 @@ test('v2 booking recovery protects the original estimate, selected time, two pur
 test('only the newly signed v2 wording enables a one-confirmation EMS workflow; legacy signatures retain their original approval path', () => {
   assert.equal(usesSignedRequestBooking(signedState), true);
   assert.equal(usesSignedRequestBooking({ ...state, submission: { ...state.submission, snapshot: { version: 'live-booking-request-ack-v1' } } } as LiveCompanyBookingState), false);
+});
+
+test('company booking badge tones preserve existing confirmed, processing and review labels', () => {
+  for (const [status, tone, label] of [['confirmed', 'success', 'Confirmed and Google verified'], ['confirming', 'info', 'Confirmation processing'], ['review_required', 'danger', 'Company review required']] as const) {
+    assert.deepEqual(companyBookingTone({ ...state, booking: { status } as NonNullable<LiveCompanyBookingState['booking']> }), { tone, label });
+  }
+});
+test('company booking badges distinguish company action, customer response and draft states', () => {
+  const legacy = { ...state, submission: { ...state.submission, snapshot: { version: 'live-booking-request-ack-v1' } } } as LiveCompanyBookingState;
+  const acceptance = { id: 'acceptance', proposalId: proposal.id, proposalHash: proposal.hash, acceptedAt: '2026-10-25T00:00:00Z', signature: { name: 'Synthetic customer' }, acknowledgmentVersion: COMPANY_BOOKING_ACK_VERSION, acknowledgmentText: COMPANY_BOOKING_ACK_TEXT, emailStatus: 'pending', receiptReady: false } as NonNullable<LiveCompanyBookingState['acceptance']>;
+  assert.deepEqual(companyBookingTone({ ...legacy, acceptance }), { tone: 'warning', label: 'Awaiting company confirmation' });
+  for (const stale of [{ ...acceptance, proposalId: 'older-proposal' }, { ...acceptance, proposalHash: 'older-hash' }]) assert.deepEqual(companyBookingTone({ ...legacy, acceptance: stale }), { tone: 'info', label: 'Awaiting customer' });
+  assert.deepEqual(companyBookingTone(legacy), { tone: 'info', label: 'Awaiting customer' });
+  assert.deepEqual(companyBookingTone({ ...legacy, proposal: { ...proposal, status: 'draft' } }), { tone: 'warning', label: 'Company draft' });
+  assert.deepEqual(companyBookingTone({ ...legacy, proposal: null }), { tone: 'warning', label: 'Awaiting company review' });
+  for (const status of ['confirmed', 'confirming', 'review_required'] as const) assert.deepEqual(companyBookingTone({ ...legacy, acceptance, booking: { status } as NonNullable<LiveCompanyBookingState['booking']> }), companyBookingTone({ ...legacy, booking: { status } as NonNullable<LiveCompanyBookingState['booking']> }));
+});
+test('signed requests await company review before acceptance checks, while existing bookings keep priority', () => {
+  assert.deepEqual(companyBookingTone(signedState), { tone: 'warning', label: 'Awaiting company review' });
+  const acceptance = { id: 'acceptance', proposalId: proposal.id, proposalHash: proposal.hash, acceptedAt: '2026-10-25T00:00:00Z', signature: { name: 'Synthetic customer' }, acknowledgmentVersion: COMPANY_BOOKING_ACK_VERSION, acknowledgmentText: COMPANY_BOOKING_ACK_TEXT, emailStatus: 'pending', receiptReady: false } as NonNullable<LiveCompanyBookingState['acceptance']>;
+  // This synthetic overlap fixes tone precedence; real signed-request parsing rejects acceptance.
+  assert.deepEqual(companyBookingTone({ ...signedState, proposal, acceptance }), { tone: 'warning', label: 'Awaiting company review' });
+  for (const [status, tone, label] of [['confirmed', 'success', 'Confirmed and Google verified'], ['confirming', 'info', 'Confirmation processing'], ['review_required', 'danger', 'Company review required']] as const) assert.deepEqual(companyBookingTone({ ...signedState, booking: { status } as NonNullable<LiveCompanyBookingState['booking']> }), { tone, label });
+});
+
+test('legacy submitted requests without a company proposal await company review', () => {
+  const pending = { ...state, proposal: null, proposals: [], acceptance: null, booking: null, submission: { ...state.submission, snapshot: { version: 'live-booking-request-ack-v1' } } } as LiveCompanyBookingState;
+  assert.deepEqual(companyBookingTone(pending), { tone: 'warning', label: 'Awaiting company review' });
 });

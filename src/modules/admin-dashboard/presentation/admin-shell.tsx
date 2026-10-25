@@ -1,12 +1,15 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { ArrowUpRight, CalendarDays, ChartNoAxesCombined, ChevronDown, ClipboardList, FileText, LayoutDashboard, LogOut, Menu, Package, Settings, ShieldCheck, ShoppingBag, UsersRound, X, type LucideIcon } from "lucide-react";
 import { useStaffAdmin } from "@/modules/admin-access/client";
 import { OperationsWorkspaceProvider } from "@/modules/operations/client";
+import { siteAssets } from "@/shared/config/assets";
 import { AdminWorkspaceStateProvider, useWorkspaceNavigation, WorkspaceLink } from "@/shared/ui/admin-workspace-state";
-import { adminPages, compatibleAdminPath, type AdminPageId } from "./admin-navigation";
+import { adminNavGroups, adminPages, compatibleAdminPath, type AdminPageId } from "./admin-navigation";
+import "./admin-theme.css";
 import "./admin-shell.css";
 
 const icons: Record<AdminPageId, LucideIcon> = { overview: LayoutDashboard, customers: UsersRound, enquiries: ClipboardList, quotes: FileText, schedule: CalendarDays, jobs: ClipboardList, orders: ShoppingBag, inventory: Package, reports: ChartNoAxesCombined, settings: Settings };
@@ -16,15 +19,23 @@ export function AdminWorkspace({ children }: { children: ReactNode }) {
   return <AdminWorkspaceStateProvider><OperationsWorkspaceProvider onAccessLost={onAccessLost} onSignedOut={onAccessLost}><AdminShell>{children}</AdminShell></OperationsWorkspaceProvider></AdminWorkspaceStateProvider>;
 }
 
-function Navigation({ onSelect }: { onSelect?: () => void }) {
+function Navigation({ idPrefix, onSelect }: { idPrefix: string; onSelect?: () => void }) {
   const pathname = usePathname();
-  return <nav aria-label="Administrator workspace"><p className="admin-nav-label">Workspace</p><ul className="admin-nav-list">
-    {adminPages.map((page) => { const Icon = icons[page.id]; return <li key={page.id}>
-      <WorkspaceLink href={page.href} aria-current={pathname === page.href ? "page" : undefined} onClick={onSelect}>
-        <Icon size={19} aria-hidden="true" /><span>{page.label}</span>{"upcoming" in page && <span className="admin-nav-tag">Planned</span>}
-      </WorkspaceLink>
-    </li>; })}
-  </ul></nav>;
+  return <nav aria-label="Administrator workspace">{adminNavGroups.map((group) => <div key={group.id} className="admin-nav-group" data-group={group.id}>
+    <p className="admin-nav-label" id={`${idPrefix}-${group.id}`}>{group.label}</p>
+    <ul className="admin-nav-list" aria-labelledby={`${idPrefix}-${group.id}`}>
+      {adminPages.filter((page) => page.group === group.id).map((page) => { const Icon = icons[page.id]; return <li key={page.id}>
+        <WorkspaceLink href={page.href} aria-current={pathname === page.href ? "page" : undefined} onClick={onSelect}>
+          <Icon size={20} aria-hidden="true" /><span className="admin-nav-text">{page.label}</span>{"upcoming" in page && <span className="admin-nav-tag">Soon</span>}
+        </WorkspaceLink>
+      </li>; })}
+    </ul>
+  </div>)}</nav>;
+}
+
+// Intrinsic 96px (served as 96w at 1x, 256w at 2x) keeps the round logo sharp; CSS sets the displayed size.
+function BrandLogo({ size, priority = false }: { size: number; priority?: boolean }) {
+  return <Image src={siteAssets.wordmark.src} alt="" width={96} height={96} style={{ width: size, height: size }} className="admin-logo" priority={priority} />;
 }
 
 function AdminShell({ children }: { children: ReactNode }) {
@@ -81,13 +92,13 @@ function AdminShell({ children }: { children: ReactNode }) {
   return <div className="admin-workspace">
     <a className="skip-link" href="#admin-main">Skip to workspace content</a>
     <aside className="admin-sidebar">
-      <WorkspaceLink href="/admin" className="admin-brand" aria-label="L&K Group overview"><span className="admin-monogram">LK</span><span><strong>L&K Group</strong><small>EMS · Private workspace</small></span></WorkspaceLink>
-      <Navigation />
+      <WorkspaceLink href="/admin" className="admin-brand" aria-label="L&K Group overview"><BrandLogo size={44} priority /><span><strong>L&K Group</strong><small>EMS · Private workspace</small></span></WorkspaceLink>
+      <Navigation idPrefix="admin-nav" />
       <div className="admin-sidebar-foot"><ShieldCheck size={18} aria-hidden="true" /><div><strong>Company administration</strong><p>Australia/Sydney</p></div></div>
     </aside>
     <div className="admin-workspace-body">
       <header className="admin-topbar">
-        <div className="admin-breadcrumb"><button type="button" className="admin-menu-button" ref={menuButton} onClick={() => setMobileOpen(true)} aria-label="Open navigation" aria-haspopup="dialog" aria-expanded={mobileOpen} aria-controls="admin-mobile-menu"><Menu size={22} /></button><span>L&K Group</span><span aria-hidden="true">/</span><strong>{page.label}</strong></div>
+        <div className="admin-breadcrumb"><button type="button" className="admin-menu-button" ref={menuButton} onClick={() => setMobileOpen(true)} aria-label="Open navigation" aria-haspopup="dialog" aria-expanded={mobileOpen} aria-controls="admin-mobile-menu"><Menu size={22} /></button><span className="admin-topbar-logo" aria-hidden="true"><BrandLogo size={36} /></span><span className="admin-crumb-root">L&K Group</span><span className="admin-crumb-sep" aria-hidden="true">/</span><strong>{page.label}</strong></div>
         <details className="admin-account" ref={account} onKeyDown={(event) => { if (event.key === "Escape") { event.currentTarget.open = false; event.currentTarget.querySelector("summary")?.focus(); } }}>
           <summary aria-label="Administrator account"><span className="admin-avatar">LK</span><span className="admin-account-label">Administrator</span><ChevronDown size={16} aria-hidden="true" /></summary>
           <div className="admin-account-panel"><p>{email ?? "Company administrator"}</p><WorkspaceLink href="/admin/settings">Account & sessions <ArrowUpRight size={16} aria-hidden="true" /></WorkspaceLink><button type="button" disabled={signingOut} onClick={signOut}><LogOut size={16} aria-hidden="true" />{signingOut ? "Signing out…" : "Sign out"}</button></div>
@@ -100,8 +111,8 @@ function AdminShell({ children }: { children: ReactNode }) {
       </main>
     </div>
     <dialog ref={drawer} id="admin-mobile-menu" className="admin-mobile-drawer" aria-labelledby="admin-menu-heading" onCancel={(event) => { event.preventDefault(); setMobileOpen(false); }} onClick={(event) => { if (event.target === event.currentTarget) { const bounds = event.currentTarget.getBoundingClientRect(); if (event.clientX < bounds.left || event.clientX > bounds.right) setMobileOpen(false); } }}>
-      <div className="admin-drawer-heading"><strong id="admin-menu-heading">L&K Group</strong><button type="button" onClick={() => setMobileOpen(false)} aria-label="Close navigation"><X size={22} /></button></div>
-      <Navigation onSelect={() => setMobileOpen(false)} />
+      <div className="admin-drawer-heading"><span className="admin-drawer-brand"><BrandLogo size={36} /><strong id="admin-menu-heading">L&K Group</strong></span><button type="button" onClick={() => setMobileOpen(false)} aria-label="Close navigation"><X size={22} /></button></div>
+      <Navigation idPrefix="admin-drawer-nav" onSelect={() => setMobileOpen(false)} />
     </dialog>
   </div>;
 }

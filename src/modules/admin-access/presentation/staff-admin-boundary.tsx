@@ -239,7 +239,7 @@ export function StaffAdminBoundary({ children, authMain = false }: { children: R
   const resendSeconds = emailVerification ? Math.max(0, Math.ceil((emailVerification.retryAt - now) / 1000)) : 0;
   const expirySeconds = emailVerification?.sent ? Math.max(0, Math.ceil((emailVerification.expiresAt - now) / 1000)) : 0;
   const AccessContainer = authMain ? "main" : "div";
-  return <AccessContainer className="operations-page" id={authMain ? "main-content" : undefined}>
+  return <AccessContainer className="operations-page ems-theme" id={authMain ? "main-content" : undefined}>
     <a className="skip-link" href="#staff-access-content">Skip to administrator sign in</a>
     <header className="operations-header">
       <Link href="/" aria-label="L&K Group home">L&K Group</Link>

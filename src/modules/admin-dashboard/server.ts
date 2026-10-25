@@ -7,3 +7,4 @@ export function staffWorkspaceEnabled() {
 export function requireStaffWorkspace() {
   if (!staffWorkspaceEnabled()) notFound();
 }
+export { outfit } from "./presentation/admin-fonts";
