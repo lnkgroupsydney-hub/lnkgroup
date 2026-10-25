@@ -1,0 +1,27 @@
+{
+  "upstream": "http://127.0.0.1:3136",
+  "startedAt": "2026-10-15T20:49:56.009Z",
+  "checks": [
+    {
+      "name": "cabinet-detail-to-empty-quote-read-only",
+      "passed": false,
+      "externalBlocked": [],
+      "apiFixtures": [],
+      "blockedWrites": [],
+      "pageErrors": [],
+      "failedLocalResources": [],
+      "consoleErrors": [],
+      "error": "locator.waitFor: Timeout 15000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('textbox', { name: /Your name|Full name/ }).first() to be visible\u001b[22m\n\n    at /Users/jimee/.codex/worktrees/public-search-seo-aeo/L&K Group/scripts/verify-lk-home-ui.mjs:399:18\n    at async scenario (/Users/jimee/.codex/worktrees/public-search-seo-aeo/L&K Group/scripts/verify-lk-home-ui.mjs:100:7)\n    at async verifyLkHome (/Users/jimee/.codex/worktrees/public-search-seo-aeo/L&K Group/scripts/verify-lk-home-ui.mjs:386:5)\n    at async file:///Users/jimee/.codex/worktrees/public-search-seo-aeo/L&K%20Group/scripts/verify-lk-home-ui.mjs:420:20"
+    }
+  ],
+  "isolation": "Fresh contexts without stored sessions; service workers blocked; external requests aborted; all backend writes blocked. Quote-entry scenario alone simulates the exact automatic POST session handshake with {ready:true}, without cookies or records, then serves empty customer/request GET fixtures. No backend session/create, save, submission, company session or external service action.",
+  "limitations": [
+    "Headless Chrome does not certify physical-device behaviour.",
+    "200% TEXT enlargement uses root font-size, not native browser zoom.",
+    "Computed keyboard focus cues and element geometry are checked; screenshots still require visual review. No pixel contrast/WCAG certification.",
+    "Coming-soon cards are checked for interactive DOM, DOM event properties and hydrated React handler props; this is not a general audit of arbitrary delegated JavaScript listeners.",
+    "No production deployment, search ranking, real API persistence, mail or Google integration is exercised."
+  ],
+  "finishedAt": "2026-10-15T20:50:12.485Z",
+  "passed": false
+}

@@ -1,8 +1,8 @@
 # EMS 관리자 대시보드 UI/UX 개편 검증
 
-날짜: 2026-10-25 · Australia/Sydney · 브랜치: `dashboard-ui/ux` (기준 `5c42702`, 미커밋)
+날짜: 2026-10-25 · Australia/Sydney · 브랜치: `dashboard-ui/ux` (기준 `5c42702`, 커밋 `cb532df`) → 로컬 `main`(`44d6cbd` 이후) 병합
 
-[10번 계획](../esn-admin/10-2026-10-25-dashboard-ui-ux-plan.md)의 Task 1~7을 `/orchestration`(Codex 패킷 C1, UI 패킷 U1·U2, integrator 최종 검토)으로 구현했다. 화면 검증의 업무 자료는 모두 **합성 데이터**(`example.invalid`)다. 회사 계정 로그인, 실제 견적·예약 건수와 운영 화면 인수를 대신하지 않는다.
+[13번 계획](../esn-admin/13-2026-10-25-dashboard-ui-ux-plan.md)의 Task 1~7을 `/orchestration`(Codex 패킷 C1, UI 패킷 U1·U2, integrator 최종 검토)으로 구현했다. 화면 검증의 업무 자료는 모두 **합성 데이터**(`example.invalid`)다. 회사 계정 로그인, 실제 견적·예약 건수와 운영 화면 인수를 대신하지 않는다.
 
 ## 구현
 
@@ -44,9 +44,35 @@
 - **동작:** 모바일 서랍(Esc, 바깥 클릭, 포커스 복귀), 계정 메뉴, 저장하지 않은 변경 경고, Tab focus를 확인했다. 한글 이름("김민수 · 서울")은 대체 글꼴로 표시됐다.
 - **로그인:** `signed_out`, `mfa_verify` 단계를 1440·390에서 확인했다.
 
+## main 통합 (2026-10-25)
+
+브랜치 기준(`5c42702`) 이후 main에 R2·R3a·R3b(350개 파일)가 병합되어 관리자 화면 구조가 바뀌었다. main은 `admin-shell.css`를 `src/shared/styles/admin-{tokens,layout,components,motion}.css`와 `src/shared/ui/admin`(AdminPanel·AdminStatusBadge·AdminTabs)로 나누고, 견적·예약 목록/상세 화면을 새로 만들었다. 통합 원칙은 **구조·동작은 main, 시각 계층은 이번 개편**이다.
+
+- **토큰:** EMS 팔레트·Outfit·크기 토큰을 `src/shared/styles/admin-tokens.css`(`.ems-root`, `.ems-theme`)로 옮겨 단일 원본으로 삼았다. main의 별칭(`--ems-bg`, `--ems-action`, `--ems-control-line` 등)은 EMS 값을 가리킨다.
+- **화면 스타일:** 셸·Overview 스타일은 main의 `admin-layout.css`와 `admin-components.css`에 옮겼다. main의 선택자는 모두 유지했다. `admin-shell.css`는 main처럼 삭제했다. `admin-theme.css`에는 이전 모듈 화면 보정 규칙만 남겼다.
+- **상태 배지:** main의 `AdminStatusBadge`로 하나로 합치고 `info` 톤을 추가했다(`StatusTone`은 `@/shared/ui/admin`에 있다). 이번 브랜치에서 만든 `StatusBadge`는 삭제했다.
+- **예약 상태:** main의 `scheduleStatus()`가 원본이다. `booking-status-tone.ts`는 색만 정한다. `needsCompanyAction()` 하나를 목록 배지와 Overview 건수가 함께 쓴다. 회사 조치 대상은 검토 대기, 회사 초안, 처리 중, 검토 필요, 취소 처리 중, 현재 해시로 수락된 게시 제안이다.
+- **메뉴:** main의 그룹(Workspace·Work·Business·Administration)과 `Planned` 표시를 유지했다. 실제 로고, 검정 사이드바, 금색 활성선을 적용했다.
+- **문서 번호:** 계획 문서는 main의 `10-…`과 겹쳐 `13-2026-10-25-dashboard-ui-ux-plan.md`로 바꿨다.
+- **이식 키트:** `design-system/lk-ems`의 클래스 이름을 앱과 같게 맞췄다(`ems-button`, `ems-status--*`, `ems-panel`, `ems-feedback`, `ems-record-row`).
+
+### 통합 후 검사 (lead 직접 실행)
+
+| 검사 | 결과 |
+| --- | --- |
+| `npm run test:operations` | 1012/1012 |
+| `npm run test:admin-shell` | 48/48 |
+| `npm run lint`, `npm run typecheck` | 통과 |
+| `npm run build` (비밀값 없이 `STAFF_ADMIN_AUTH_ENABLED=true`) | 통과 |
+| main의 Chrome 게이트(합성 픽스처 3021 → `next start` 3022, Playwright + 설치된 Chrome) | R3b 6/6 · R3a 11/11 · R1 13/13 · R2 20/20 |
+
+- R1의 첫 실행은 반응형 시나리오의 키보드 End 단계 하나가 실패했다. 같은 시나리오를 단독으로 3회 돌렸을 때 모두 통과했고, R1 전체 재실행과 CSS 수정 후 재빌드 실행도 모두 통과했다. 탭 포커스 타이밍 경합으로 판단한다.
+- 화면 실측은 `/admin`(1440·390), `/admin/quotes`, 견적 상세, `/admin/schedule`(1440·390), `/admin/customers`에서 했다. 12px 미만 텍스트 0, 두께 700 이상 0, 가로 넘침 0이었다. 사이드바는 `#161412`, 입력창은 `#F8F6F1`, Outfit 로드도 확인했다. 합성 데이터의 건수는 3/2/1로 표시됐다.
+- 통합 중 발견한 결함 1건을 고쳤다. 공개 사이트의 `:focus-visible` 흰 6px 그림자가 탐색 직후 프로그램으로 포커스된 페이지 제목 뒤에 흰 상자로 보였다. 관리자 범위에서 제거했다.
+
 ## 제한과 후속
 
 - **합성 픽스처:** `scripts/verify-esn-ui-fixture.mjs`는 Next 16 dev에서 `/_next/hmr` WebSocket과 `x-nextjs-request-id`를 전달하지 못해 화면이 "Checking administrator access…"에서 멈춘다. 이번 검증은 저장소 밖 임시 중계 서버로 우회했다. 픽스처 보완(쿠키 미전달 유지)과 두 건수 API의 합성 응답 추가가 후속이다.
 - **건수의 성격:** 브라우저에서 목록을 받아 센 값이다. 견적이 500건을 넘으면 하한값(`N+`)으로 표시된다. 정확한 서버 집계는 별도 작업이다.
-- **바뀐 목록 문구:** 견적 `Details saved`→`Draft`, 예약 `Company proposal published`→`Awaiting customer`, `Company draft saved`→`Company draft`. 그 밖의 예약 문구는 기존과 같다.
+- **목록 문구:** main 통합 때 main의 상태 문구(`scheduleStatusLabels`, 견적 `Review requested`/`Details saved`)를 그대로 쓰도록 되돌렸다. 브랜치 단계에서 바꿨던 세 문구는 남지 않는다.
 - 실제 회사 계정·운영 데이터에서의 화면 인수, 커밋·푸시·배포는 수행하지 않았다.

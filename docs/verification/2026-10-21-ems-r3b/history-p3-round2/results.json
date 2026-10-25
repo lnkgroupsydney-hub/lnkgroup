@@ -1,0 +1,942 @@
+{
+  "synthetic": true,
+  "base": "http://127.0.0.1:3063",
+  "planned": 6,
+  "passed": 6,
+  "failed": 0,
+  "skipped": 0,
+  "results": [
+    {
+      "name": "D1 source issues unchanged legacy save changed invalid rejection and server fields",
+      "result": "passed",
+      "evidence": {
+        "sourceIssues": true,
+        "unchangedLegacySaved": true,
+        "changedInvalidRejected": true,
+        "serverFieldsDisplayed": true,
+        "widths": [
+          320,
+          768,
+          1440
+        ]
+      },
+      "expectedHttp": [
+        {
+          "path": "/api/admin/quote-requests/b8d6c1d1-9fa6-4ded-af06-69ad3f1af7d1/staff-draft",
+          "status": 422
+        }
+      ]
+    },
+    {
+      "name": "Company save conflict unknown identical retry strict publication and modal focus",
+      "result": "passed",
+      "evidence": {
+        "conflictInputRetained": true,
+        "retryCommits": 1,
+        "retryReceipts": 1,
+        "publicationStrictFields": true,
+        "noticeOutbox": 1,
+        "modalFocus": {
+          "contract": "native modal dialog contract",
+          "initial": {
+            "active": {
+              "tag": "H2",
+              "id": "cr-dialog_r_1_-title",
+              "html": "<h2 id=\"cr-dialog_r_1_-title\" tabindex=\"-1\">Send version 1 to the customer?</h2>"
+            },
+            "documentHasFocus": true,
+            "open": true,
+            "modal": true,
+            "contained": true,
+            "headingFocused": true,
+            "controlIndex": -1,
+            "controls": [
+              {
+                "tag": "INPUT",
+                "id": "cr-dialog_r_1_-reason",
+                "type": null,
+                "text": ""
+              },
+              {
+                "tag": "INPUT",
+                "id": "",
+                "type": "checkbox",
+                "text": ""
+              },
+              {
+                "tag": "BUTTON",
+                "id": "",
+                "type": "button",
+                "text": "Keep as draft"
+              }
+            ]
+          },
+          "transitions": [
+            {
+              "key": "Tab",
+              "index": 0,
+              "before": {
+                "active": {
+                  "tag": "H2",
+                  "id": "cr-dialog_r_1_-title",
+                  "html": "<h2 id=\"cr-dialog_r_1_-title\" tabindex=\"-1\">Send version 1 to the customer?</h2>"
+                },
+                "documentHasFocus": true,
+                "open": true,
+                "modal": true,
+                "contained": true,
+                "headingFocused": true,
+                "controlIndex": -1,
+                "controls": [
+                  {
+                    "tag": "INPUT",
+                    "id": "cr-dialog_r_1_-reason",
+                    "type": null,
+                    "text": ""
+                  },
+                  {
+                    "tag": "INPUT",
+                    "id": "",
+                    "type": "checkbox",
+                    "text": ""
+                  },
+                  {
+                    "tag": "BUTTON",
+                    "id": "",
+                    "type": "button",
+                    "text": "Keep as draft"
+                  }
+                ]
+              },
+              "after": {
+                "active": {
+                  "tag": "INPUT",
+                  "id": "cr-dialog_r_1_-reason",
+                  "html": "<input id=\"cr-dialog_r_1_-reason\" maxlength=\"500\" autocomplete=\"off\" required=\"\" value=\"\">"
+                },
+                "documentHasFocus": true,
+                "open": true,
+                "modal": true,
+                "contained": true,
+                "headingFocused": false,
+                "controlIndex": 0,
+                "controls": [
+                  {
+                    "tag": "INPUT",
+                    "id": "cr-dialog_r_1_-reason",
+                    "type": null,
+                    "text": ""
+                  },
+                  {
+                    "tag": "INPUT",
+                    "id": "",
+                    "type": "checkbox",
+                    "text": ""
+                  },
+                  {
+                    "tag": "BUTTON",
+                    "id": "",
+                    "type": "button",
+                    "text": "Keep as draft"
+                  }
+                ]
+              }
+            },
+            {
+              "key": "Tab",
+              "index": 1,
+              "before": {
+                "active": {
+                  "tag": "INPUT",
+                  "id": "cr-dialog_r_1_-reason",
+                  "html": "<input id=\"cr-dialog_r_1_-reason\" maxlength=\"500\" autocomplete=\"off\" required=\"\" value=\"\">"
+                },
+                "documentHasFocus": true,
+                "open": true,
+                "modal": true,
+                "contained": true,
+                "headingFocused": false,
+                "controlIndex": 0,
+                "controls": [
+                  {
+                    "tag": "INPUT",
+                    "id": "cr-dialog_r_1_-reason",
+                    "type": null,
+                    "text": ""
+                  },
+                  {
+                    "tag": "INPUT",
+                    "id": "",
+                    "type": "checkbox",
+                    "text": ""
+                  },
+                  {
+                    "tag": "BUTTON",
+                    "id": "",
+                    "type": "button",
+                    "text": "Keep as draft"
+                  }
+                ]
+              },
+              "after": {
+                "active": {
+                  "tag": "INPUT",
+                  "id": "",
+                  "html": "<input type=\"checkbox\">"
+                },
+                "documentHasFocus": true,
+                "open": true,
+                "modal": true,
+                "contained": true,
+                "headingFocused": false,
+                "controlIndex": 1,
+                "controls": [
+                  {
+                    "tag": "INPUT",
+                    "id": "cr-dialog_r_1_-reason",
+                    "type": null,
+                    "text": ""
+                  },
+                  {
+                    "tag": "INPUT",
+                    "id": "",
+                    "type": "checkbox",
+                    "text": ""
+                  },
+                  {
+                    "tag": "BUTTON",
+                    "id": "",
+                    "type": "button",
+                    "text": "Keep as draft"
+                  }
+                ]
+              }
+            },
+            {
+              "key": "Tab",
+              "index": 2,
+              "before": {
+                "active": {
+                  "tag": "INPUT",
+                  "id": "",
+                  "html": "<input type=\"checkbox\">"
+                },
+                "documentHasFocus": true,
+                "open": true,
+                "modal": true,
+                "contained": true,
+                "headingFocused": false,
+                "controlIndex": 1,
+                "controls": [
+                  {
+                    "tag": "INPUT",
+                    "id": "cr-dialog_r_1_-reason",
+                    "type": null,
+                    "text": ""
+                  },
+                  {
+                    "tag": "INPUT",
+                    "id": "",
+                    "type": "checkbox",
+                    "text": ""
+                  },
+                  {
+                    "tag": "BUTTON",
+                    "id": "",
+                    "type": "button",
+                    "text": "Keep as draft"
+                  }
+                ]
+              },
+              "after": {
+                "active": {
+                  "tag": "BUTTON",
+                  "id": "",
+                  "html": "<button type=\"button\">Keep as draft</button>"
+                },
+                "documentHasFocus": true,
+                "open": true,
+                "modal": true,
+                "contained": true,
+                "headingFocused": false,
+                "controlIndex": 2,
+                "controls": [
+                  {
+                    "tag": "INPUT",
+                    "id": "cr-dialog_r_1_-reason",
+                    "type": null,
+                    "text": ""
+                  },
+                  {
+                    "tag": "INPUT",
+                    "id": "",
+                    "type": "checkbox",
+                    "text": ""
+                  },
+                  {
+                    "tag": "BUTTON",
+                    "id": "",
+                    "type": "button",
+                    "text": "Keep as draft"
+                  }
+                ]
+              }
+            },
+            {
+              "key": "Tab",
+              "index": 3,
+              "before": {
+                "active": {
+                  "tag": "BUTTON",
+                  "id": "",
+                  "html": "<button type=\"button\">Keep as draft</button>"
+                },
+                "documentHasFocus": true,
+                "open": true,
+                "modal": true,
+                "contained": true,
+                "headingFocused": false,
+                "controlIndex": 2,
+                "controls": [
+                  {
+                    "tag": "INPUT",
+                    "id": "cr-dialog_r_1_-reason",
+                    "type": null,
+                    "text": ""
+                  },
+                  {
+                    "tag": "INPUT",
+                    "id": "",
+                    "type": "checkbox",
+                    "text": ""
+                  },
+                  {
+                    "tag": "BUTTON",
+                    "id": "",
+                    "type": "button",
+                    "text": "Keep as draft"
+                  }
+                ]
+              },
+              "after": {
+                "active": {
+                  "tag": "BODY",
+                  "id": "",
+                  "html": "<body><div hidden=\"\"><!--$--><!--/$--></div><script src=\"/_next/static/chunks/webpack-2fedd2d5397bfb1f.js\" id=\"_R_\" async=\"\"></script><script>(self.__next_f=self.__next_f||[]).push([0])</script><script>self.__next_f.push([1,\"1:\\\"$Sreact.fragment\\\"\\n2:I[9863,[],\\\"\\\"]\\n3:I[7099,[],\\\"\\\"]\\n6:I[4590,[],\\\"OutletBoundary\\\"]\\n7:\\\"$Sreact.suspense\\\"\\na:I[4590,[],\\\"ViewportBoundary\\\"]\\nc:I[4590,[],\\\"MetadataBoundary\\\"]\\ne:I[5501,[],\\\"default\\\",1]\\n:HL[\\\"/_next/static/media/4c9affa5bc8f420e-s.p.woff2\\\",\\\"f"
+                },
+                "documentHasFocus": false,
+                "open": true,
+                "modal": true,
+                "contained": false,
+                "headingFocused": false,
+                "controlIndex": -1,
+                "controls": [
+                  {
+                    "tag": "INPUT",
+                    "id": "cr-dialog_r_1_-reason",
+                    "type": null,
+                    "text": ""
+                  },
+                  {
+                    "tag": "INPUT",
+                    "id": "",
+                    "type": "checkbox",
+                    "text": ""
+                  },
+                  {
+                    "tag": "BUTTON",
+                    "id": "",
+                    "type": "button",
+                    "text": "Keep as draft"
+                  }
+                ]
+              }
+            },
+            {
+              "key": "Tab",
+              "index": 4,
+              "before": {
+                "active": {
+                  "tag": "BODY",
+                  "id": "",
+                  "html": "<body><div hidden=\"\"><!--$--><!--/$--></div><script src=\"/_next/static/chunks/webpack-2fedd2d5397bfb1f.js\" id=\"_R_\" async=\"\"></script><script>(self.__next_f=self.__next_f||[]).push([0])</script><script>self.__next_f.push([1,\"1:\\\"$Sreact.fragment\\\"\\n2:I[9863,[],\\\"\\\"]\\n3:I[7099,[],\\\"\\\"]\\n6:I[4590,[],\\\"OutletBoundary\\\"]\\n7:\\\"$Sreact.suspense\\\"\\na:I[4590,[],\\\"ViewportBoundary\\\"]\\nc:I[4590,[],\\\"MetadataBoundary\\\"]\\ne:I[5501,[],\\\"default\\\",1]\\n:HL[\\\"/_next/static/media/4c9affa5bc8f420e-s.p.woff2\\\",\\\"f"
+                },
+                "documentHasFocus": false,
+                "open": true,
+                "modal": true,
+                "contained": false,
+                "headingFocused": false,
+                "controlIndex": -1,
+                "controls": [
+                  {
+                    "tag": "INPUT",
+                    "id": "cr-dialog_r_1_-reason",
+                    "type": null,
+                    "text": ""
+                  },
+                  {
+                    "tag": "INPUT",
+                    "id": "",
+                    "type": "checkbox",
+                    "text": ""
+                  },
+                  {
+                    "tag": "BUTTON",
+                    "id": "",
+                    "type": "button",
+                    "text": "Keep as draft"
+                  }
+                ]
+              },
+              "after": {
+                "active": {
+                  "tag": "INPUT",
+                  "id": "cr-dialog_r_1_-reason",
+                  "html": "<input id=\"cr-dialog_r_1_-reason\" maxlength=\"500\" autocomplete=\"off\" required=\"\" value=\"\">"
+                },
+                "documentHasFocus": true,
+                "open": true,
+                "modal": true,
+                "contained": true,
+                "headingFocused": false,
+                "controlIndex": 0,
+                "controls": [
+                  {
+                    "tag": "INPUT",
+                    "id": "cr-dialog_r_1_-reason",
+                    "type": null,
+                    "text": ""
+                  },
+                  {
+                    "tag": "INPUT",
+                    "id": "",
+                    "type": "checkbox",
+                    "text": ""
+                  },
+                  {
+                    "tag": "BUTTON",
+                    "id": "",
+                    "type": "button",
+                    "text": "Keep as draft"
+                  }
+                ]
+              }
+            },
+            {
+              "key": "Shift+Tab",
+              "index": 0,
+              "before": {
+                "active": {
+                  "tag": "INPUT",
+                  "id": "cr-dialog_r_1_-reason",
+                  "html": "<input id=\"cr-dialog_r_1_-reason\" maxlength=\"500\" autocomplete=\"off\" required=\"\" value=\"\">"
+                },
+                "documentHasFocus": true,
+                "open": true,
+                "modal": true,
+                "contained": true,
+                "headingFocused": false,
+                "controlIndex": 0,
+                "controls": [
+                  {
+                    "tag": "INPUT",
+                    "id": "cr-dialog_r_1_-reason",
+                    "type": null,
+                    "text": ""
+                  },
+                  {
+                    "tag": "INPUT",
+                    "id": "",
+                    "type": "checkbox",
+                    "text": ""
+                  },
+                  {
+                    "tag": "BUTTON",
+                    "id": "",
+                    "type": "button",
+                    "text": "Keep as draft"
+                  }
+                ]
+              },
+              "after": {
+                "active": {
+                  "tag": "BUTTON",
+                  "id": "",
+                  "html": "<button type=\"button\">Keep as draft</button>"
+                },
+                "documentHasFocus": true,
+                "open": true,
+                "modal": true,
+                "contained": true,
+                "headingFocused": false,
+                "controlIndex": 2,
+                "controls": [
+                  {
+                    "tag": "INPUT",
+                    "id": "cr-dialog_r_1_-reason",
+                    "type": null,
+                    "text": ""
+                  },
+                  {
+                    "tag": "INPUT",
+                    "id": "",
+                    "type": "checkbox",
+                    "text": ""
+                  },
+                  {
+                    "tag": "BUTTON",
+                    "id": "",
+                    "type": "button",
+                    "text": "Keep as draft"
+                  }
+                ]
+              }
+            },
+            {
+              "key": "Shift+Tab",
+              "index": 1,
+              "before": {
+                "active": {
+                  "tag": "BUTTON",
+                  "id": "",
+                  "html": "<button type=\"button\">Keep as draft</button>"
+                },
+                "documentHasFocus": true,
+                "open": true,
+                "modal": true,
+                "contained": true,
+                "headingFocused": false,
+                "controlIndex": 2,
+                "controls": [
+                  {
+                    "tag": "INPUT",
+                    "id": "cr-dialog_r_1_-reason",
+                    "type": null,
+                    "text": ""
+                  },
+                  {
+                    "tag": "INPUT",
+                    "id": "",
+                    "type": "checkbox",
+                    "text": ""
+                  },
+                  {
+                    "tag": "BUTTON",
+                    "id": "",
+                    "type": "button",
+                    "text": "Keep as draft"
+                  }
+                ]
+              },
+              "after": {
+                "active": {
+                  "tag": "INPUT",
+                  "id": "",
+                  "html": "<input type=\"checkbox\">"
+                },
+                "documentHasFocus": true,
+                "open": true,
+                "modal": true,
+                "contained": true,
+                "headingFocused": false,
+                "controlIndex": 1,
+                "controls": [
+                  {
+                    "tag": "INPUT",
+                    "id": "cr-dialog_r_1_-reason",
+                    "type": null,
+                    "text": ""
+                  },
+                  {
+                    "tag": "INPUT",
+                    "id": "",
+                    "type": "checkbox",
+                    "text": ""
+                  },
+                  {
+                    "tag": "BUTTON",
+                    "id": "",
+                    "type": "button",
+                    "text": "Keep as draft"
+                  }
+                ]
+              }
+            },
+            {
+              "key": "Shift+Tab",
+              "index": 2,
+              "before": {
+                "active": {
+                  "tag": "INPUT",
+                  "id": "",
+                  "html": "<input type=\"checkbox\">"
+                },
+                "documentHasFocus": true,
+                "open": true,
+                "modal": true,
+                "contained": true,
+                "headingFocused": false,
+                "controlIndex": 1,
+                "controls": [
+                  {
+                    "tag": "INPUT",
+                    "id": "cr-dialog_r_1_-reason",
+                    "type": null,
+                    "text": ""
+                  },
+                  {
+                    "tag": "INPUT",
+                    "id": "",
+                    "type": "checkbox",
+                    "text": ""
+                  },
+                  {
+                    "tag": "BUTTON",
+                    "id": "",
+                    "type": "button",
+                    "text": "Keep as draft"
+                  }
+                ]
+              },
+              "after": {
+                "active": {
+                  "tag": "INPUT",
+                  "id": "cr-dialog_r_1_-reason",
+                  "html": "<input id=\"cr-dialog_r_1_-reason\" maxlength=\"500\" autocomplete=\"off\" required=\"\" value=\"\">"
+                },
+                "documentHasFocus": true,
+                "open": true,
+                "modal": true,
+                "contained": true,
+                "headingFocused": false,
+                "controlIndex": 0,
+                "controls": [
+                  {
+                    "tag": "INPUT",
+                    "id": "cr-dialog_r_1_-reason",
+                    "type": null,
+                    "text": ""
+                  },
+                  {
+                    "tag": "INPUT",
+                    "id": "",
+                    "type": "checkbox",
+                    "text": ""
+                  },
+                  {
+                    "tag": "BUTTON",
+                    "id": "",
+                    "type": "button",
+                    "text": "Keep as draft"
+                  }
+                ]
+              }
+            },
+            {
+              "key": "Shift+Tab",
+              "index": 3,
+              "before": {
+                "active": {
+                  "tag": "INPUT",
+                  "id": "cr-dialog_r_1_-reason",
+                  "html": "<input id=\"cr-dialog_r_1_-reason\" maxlength=\"500\" autocomplete=\"off\" required=\"\" value=\"\">"
+                },
+                "documentHasFocus": true,
+                "open": true,
+                "modal": true,
+                "contained": true,
+                "headingFocused": false,
+                "controlIndex": 0,
+                "controls": [
+                  {
+                    "tag": "INPUT",
+                    "id": "cr-dialog_r_1_-reason",
+                    "type": null,
+                    "text": ""
+                  },
+                  {
+                    "tag": "INPUT",
+                    "id": "",
+                    "type": "checkbox",
+                    "text": ""
+                  },
+                  {
+                    "tag": "BUTTON",
+                    "id": "",
+                    "type": "button",
+                    "text": "Keep as draft"
+                  }
+                ]
+              },
+              "after": {
+                "active": {
+                  "tag": "BODY",
+                  "id": "",
+                  "html": "<body><div hidden=\"\"><!--$--><!--/$--></div><script src=\"/_next/static/chunks/webpack-2fedd2d5397bfb1f.js\" id=\"_R_\" async=\"\"></script><script>(self.__next_f=self.__next_f||[]).push([0])</script><script>self.__next_f.push([1,\"1:\\\"$Sreact.fragment\\\"\\n2:I[9863,[],\\\"\\\"]\\n3:I[7099,[],\\\"\\\"]\\n6:I[4590,[],\\\"OutletBoundary\\\"]\\n7:\\\"$Sreact.suspense\\\"\\na:I[4590,[],\\\"ViewportBoundary\\\"]\\nc:I[4590,[],\\\"MetadataBoundary\\\"]\\ne:I[5501,[],\\\"default\\\",1]\\n:HL[\\\"/_next/static/media/4c9affa5bc8f420e-s.p.woff2\\\",\\\"f"
+                },
+                "documentHasFocus": false,
+                "open": true,
+                "modal": true,
+                "contained": false,
+                "headingFocused": false,
+                "controlIndex": -1,
+                "controls": [
+                  {
+                    "tag": "INPUT",
+                    "id": "cr-dialog_r_1_-reason",
+                    "type": null,
+                    "text": ""
+                  },
+                  {
+                    "tag": "INPUT",
+                    "id": "",
+                    "type": "checkbox",
+                    "text": ""
+                  },
+                  {
+                    "tag": "BUTTON",
+                    "id": "",
+                    "type": "button",
+                    "text": "Keep as draft"
+                  }
+                ]
+              }
+            },
+            {
+              "key": "Shift+Tab",
+              "index": 4,
+              "before": {
+                "active": {
+                  "tag": "BODY",
+                  "id": "",
+                  "html": "<body><div hidden=\"\"><!--$--><!--/$--></div><script src=\"/_next/static/chunks/webpack-2fedd2d5397bfb1f.js\" id=\"_R_\" async=\"\"></script><script>(self.__next_f=self.__next_f||[]).push([0])</script><script>self.__next_f.push([1,\"1:\\\"$Sreact.fragment\\\"\\n2:I[9863,[],\\\"\\\"]\\n3:I[7099,[],\\\"\\\"]\\n6:I[4590,[],\\\"OutletBoundary\\\"]\\n7:\\\"$Sreact.suspense\\\"\\na:I[4590,[],\\\"ViewportBoundary\\\"]\\nc:I[4590,[],\\\"MetadataBoundary\\\"]\\ne:I[5501,[],\\\"default\\\",1]\\n:HL[\\\"/_next/static/media/4c9affa5bc8f420e-s.p.woff2\\\",\\\"f"
+                },
+                "documentHasFocus": false,
+                "open": true,
+                "modal": true,
+                "contained": false,
+                "headingFocused": false,
+                "controlIndex": -1,
+                "controls": [
+                  {
+                    "tag": "INPUT",
+                    "id": "cr-dialog_r_1_-reason",
+                    "type": null,
+                    "text": ""
+                  },
+                  {
+                    "tag": "INPUT",
+                    "id": "",
+                    "type": "checkbox",
+                    "text": ""
+                  },
+                  {
+                    "tag": "BUTTON",
+                    "id": "",
+                    "type": "button",
+                    "text": "Keep as draft"
+                  }
+                ]
+              },
+              "after": {
+                "active": {
+                  "tag": "BUTTON",
+                  "id": "",
+                  "html": "<button type=\"button\">Keep as draft</button>"
+                },
+                "documentHasFocus": true,
+                "open": true,
+                "modal": true,
+                "contained": true,
+                "headingFocused": false,
+                "controlIndex": 2,
+                "controls": [
+                  {
+                    "tag": "INPUT",
+                    "id": "cr-dialog_r_1_-reason",
+                    "type": null,
+                    "text": ""
+                  },
+                  {
+                    "tag": "INPUT",
+                    "id": "",
+                    "type": "checkbox",
+                    "text": ""
+                  },
+                  {
+                    "tag": "BUTTON",
+                    "id": "",
+                    "type": "button",
+                    "text": "Keep as draft"
+                  }
+                ]
+              }
+            }
+          ],
+          "reachedControls": [
+            0,
+            1,
+            2
+          ],
+          "inert": {
+            "point": {
+              "x": 351,
+              "y": 577.28125
+            },
+            "text": "Send version 1 to customer…",
+            "enabled": true,
+            "insideButton": true,
+            "insideViewport": true,
+            "outsideDialog": true,
+            "outsideButtonClicks": 0,
+            "pageAndBusinessStateUnchanged": true
+          },
+          "escapeRestoredTrigger": true
+        }
+      },
+      "expectedHttp": [
+        {
+          "path": "/api/admin/quote-requests/4ab0d764-8b08-44f0-b842-c826f0a6fb7a/company-revisions",
+          "status": 409
+        },
+        {
+          "path": "/api/admin/quote-requests/4ab0d764-8b08-44f0-b842-c826f0a6fb7a/company-revisions",
+          "status": 503
+        },
+        {
+          "path": "/api/admin/quote-requests/4ab0d764-8b08-44f0-b842-c826f0a6fb7a/company-revisions/publish",
+          "status": 422
+        }
+      ]
+    },
+    {
+      "name": "Booking draft warning nonblocking published gate and schedule server409",
+      "result": "passed",
+      "evidence": {
+        "draftWarningNonblocking": true,
+        "publishedConfirmationDisabled": true,
+        "tabNavigation": true,
+        "serverCode": "revision_awaiting_customer",
+        "bookingsCreated": 0
+      },
+      "expectedHttp": [
+        {
+          "path": "/api/admin/live-bookings/6ac3d51d-e654-4dd5-a8ca-17d9df2e194d/confirm-request",
+          "status": 409
+        }
+      ]
+    },
+    {
+      "name": "Customer real journey proof expiry new signature unknown retry acceptance exactly once",
+      "result": "passed",
+      "evidence": {
+        "realCustomerPath": "/quote/start",
+        "expiredProofRejected": true,
+        "newSignature": true,
+        "acceptanceCommits": 1,
+        "receipts": 1,
+        "receiptOutbox": 1
+      },
+      "expectedHttp": [
+        {
+          "path": "/api/quote/requests/company-revision/accept",
+          "status": 409
+        },
+        {
+          "path": "/api/quote/requests/company-revision/accept",
+          "status": 503
+        }
+      ]
+    },
+    {
+      "name": "Withdraw pending second version sends no mail and keeps accepted first version",
+      "result": "passed",
+      "evidence": {
+        "withdrawnVersion": 2,
+        "acceptedVersionUnchanged": 1,
+        "withdrawalEmails": 0,
+        "customerStatus": "withdrawn"
+      },
+      "expectedHttp": []
+    },
+    {
+      "name": "Customer401 removes private view acknowledgment and unsaved signature",
+      "result": "passed",
+      "evidence": {
+        "status": 401,
+        "privateContactRemoved": true,
+        "signatureRemoved": true,
+        "acknowledgmentRemoved": true,
+        "acceptances": 0
+      },
+      "expectedHttp": [
+        {
+          "path": "/api/quote/requests/company-revision/accept",
+          "status": 401
+        },
+        {
+          "path": "/api/quote/requests/customer",
+          "status": 401
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "screenshots": [
+    {
+      "name": "admin-company-1440",
+      "path": "/private/tmp/claude-501/-Users-jimee-orca-workspaces-L-K-Group-featherduster/687d9dbc-0c8f-4a4c-aac2-1fe5e91655c7/scratchpad/orchestration/ems-r3b/p3/gates-round2/r3b/admin-company-1440.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "url": "http://127.0.0.1:3063/admin/quotes/4ab0d764-8b08-44f0-b842-c826f0a6fb7a"
+    },
+    {
+      "name": "confirmation-blocked",
+      "path": "/private/tmp/claude-501/-Users-jimee-orca-workspaces-L-K-Group-featherduster/687d9dbc-0c8f-4a4c-aac2-1fe5e91655c7/scratchpad/orchestration/ems-r3b/p3/gates-round2/r3b/confirmation-blocked.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "url": "http://127.0.0.1:3063/admin/quotes/6ac3d51d-e654-4dd5-a8ca-17d9df2e194d"
+    },
+    {
+      "name": "confirmation-server409",
+      "path": "/private/tmp/claude-501/-Users-jimee-orca-workspaces-L-K-Group-featherduster/687d9dbc-0c8f-4a4c-aac2-1fe5e91655c7/scratchpad/orchestration/ems-r3b/p3/gates-round2/r3b/confirmation-server409.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "url": "http://127.0.0.1:3063/admin/schedule/6ac3d51d-e654-4dd5-a8ca-17d9df2e194d"
+    },
+    {
+      "name": "customer-accepted-320",
+      "path": "/private/tmp/claude-501/-Users-jimee-orca-workspaces-L-K-Group-featherduster/687d9dbc-0c8f-4a4c-aac2-1fe5e91655c7/scratchpad/orchestration/ems-r3b/p3/gates-round2/r3b/customer-accepted-320.png",
+      "viewport": {
+        "width": 320,
+        "height": 1000
+      },
+      "url": "http://127.0.0.1:3063/quote/start?mode=live"
+    },
+    {
+      "name": "customer-withdrawn-1440",
+      "path": "/private/tmp/claude-501/-Users-jimee-orca-workspaces-L-K-Group-featherduster/687d9dbc-0c8f-4a4c-aac2-1fe5e91655c7/scratchpad/orchestration/ems-r3b/p3/gates-round2/r3b/customer-withdrawn-1440.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "url": "http://127.0.0.1:3063/quote/start?mode=live"
+    },
+    {
+      "name": "customer-access-lost-1440",
+      "path": "/private/tmp/claude-501/-Users-jimee-orca-workspaces-L-K-Group-featherduster/687d9dbc-0c8f-4a4c-aac2-1fe5e91655c7/scratchpad/orchestration/ems-r3b/p3/gates-round2/r3b/customer-access-lost-1440.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "url": "http://127.0.0.1:3063/quote/start?mode=live"
+    }
+  ],
+  "skippedScenarios": []
+}

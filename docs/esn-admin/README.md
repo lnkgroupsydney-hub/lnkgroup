@@ -1,6 +1,18 @@
 # 관리자 전용 ESN 계획
 
-**2026-10-25 EMS 대시보드 UI/UX 개편(브랜치 `dashboard-ui/ux`, 미커밋):** [10번 계획](10-2026-10-25-dashboard-ui-ux-plan.md)에 따라 관리자 화면에만 로고 기준 검정·금색 팔레트와 Outfit 글꼴을 적용했다. 검정 사이드바·실제 로고·메뉴 그룹, 입력창과 카드의 바탕 구분, 상태 배지, Overview 실제 건수 카드 3개(기존 관리자 읽기 API만 사용)를 구현했다. 전체 업무 검사 **800/800**·lint·타입·build가 통과했고, 합성 데이터로 5개 화면 폭을 확인했다. 공개 사이트는 바꾸지 않았다. 다른 프로젝트에서도 쓸 수 있는 CSS 키트는 [`design-system/lk-ems/`](../../design-system/lk-ems/README.md)에 있다. 합성 픽스처의 Next 16 dev 대응은 후속이다. [검증 기록](../verification/2026-10-25-ems-dashboard-ui-ux.md).
+**2026-10-25 EMS 대시보드 UI/UX 개편(브랜치 `dashboard-ui/ux` → 로컬 main 병합, push·배포 안 함):** [13번 계획](13-2026-10-25-dashboard-ui-ux-plan.md)에 따라 관리자 화면에만 로고 기준 검정·금색 팔레트와 Outfit 글꼴을 적용했다. 검정 사이드바·실제 로고·메뉴 그룹, 입력창과 카드의 바탕 구분, 상태 배지, Overview 실제 건수 카드 3개(기존 관리자 읽기 API만 사용)를 구현했다. R2·R3a·R3b의 공통 관리자 UI 구조 위에 시각 계층으로 통합했다. 통합 후 업무 검사 **1012/1012**·lint·타입·build, main의 Chrome 게이트 **R3b 6/6·R3a 11/11·R1 13/13·R2 20/20**이 통과했다. 공개 사이트는 바꾸지 않았다. 다른 프로젝트에서도 쓸 수 있는 CSS 키트는 [`design-system/lk-ems/`](../../design-system/lk-ems/README.md)에 있다. 합성 픽스처의 Next 16 dev 대응은 후속이다. [검증 기록](../verification/2026-10-25-ems-dashboard-ui-ux.md).
+
+**2026-10-22 R3b integrator round 1 보완·최종 합성 인수:** 최초 판정 **CONDITIONAL**의 M1/M2와 L1·L2·L4·L5·L6·L7을 보완했다. Codex는 원본 GST DTO·PDF/메일, 철회 notice 발송 차단, 읽기 쉬운 고객 문서, 확정 scope, private helper 권한을 수정했고 UI 담당은 GST 행·적용 중 금액·짧은 알림·중복 busy 알림·철회 문구를 수정했다. 이번 최종 단계는 fixture 취소 정합·브라우저 단언·문서·증거만 갱신하고 `.tsx`·`.css`·`.sql`은 보존했다. 강한 reviewer의 스크립트 필수 수정 2건을 반영한 뒤 조정자가 샌드박스 밖에서 **fix1-final round a**를 실행했다. 최종 저장소 lint·typecheck **0**, 업무 검사 **984/984**, 격리 check **0**, Chrome **R3b 6/6·R3a 11/11·R1 13/13·R2 20/20**, 실패·skip 0이다. 저장소 최종 로그는 겹친 실행을 중지한 후의 `repo-a2`이며 round b는 실행하지 않았다.
+
+원본 $2,420은 legacy v2 snapshot의 subtotal $2,200 + GST $220이며 회사본 v3는 no-GST다. native modal dialog contract(lead 결정 B)를 유지했다. 남은 경미 항목은 회사본이 없을 때 Amount in effect가 Booking 탭을 안내하는 점과 원본 GST 0 분기의 screenshot 부재다. 수정 전 P3 969/969·R3b 6/6은 라벨 붙은 이력으로 보존했다. 회사 DB·실제 메일/Google/OTP 고객 수락·배포는 미실행이다. [최종 결과·지적 보완·증거](../verification/2026-10-21-ems-r3b.md) · [정책·API 계약](12-2026-10-21-r3b-company-revision-policy.md). 아래 기록은 당시 상태로 보존한다.
+
+**2026-10-21 R2·R3a 이전 검증 기록:** R2 현장 후보 검토의 견적 UI 연결과 R3a 문의 관리·직원 견적 초안·예약 초안/취소의 코드·로컬 검증을 완료했다. 전체901/901·보완 회귀11/11·최종 check·Chrome R3a11/R2 20/R1 13, reviewer 필수 수정 0건이었다. 회사 DB 적용·운영 배포·실제 인수와 기존 자료 이관/병합 미리보기는 남아 있다. [당시 재개 검증 기록](../verification/2026-10-21-ems-r2-r3a-resume.md)을 보존하며 R3b 이후 최신 상태는 위 2026-10-22 기록을 따른다.
+
+**2026-10-13 EMS 커밋 체크포인트:** R1 완료 코드와 R2 고객 중복 검토·복수 프로퍼티·수정/보관/복원·견적 CRM 연결의 현재 구현을 작업 브랜치에 저장한다. [R2 체크포인트](../verification/2026-10-13-ems-r2-customers-properties.md)에 최신 검증과 남은 UI/브라우저 인수를 구분했다. 회사 DB/배포·main 병합·원격 push는 수행하지 않으며, R2 전체 완료 표시는 보류한다.
+
+**2026-10-13 EMS-R1 완료:** [10번 계획](10-2026-10-13-ems-ux-crud-implementation-plan.md)의 공통 CSS/UI·목록/상세·모션을 구현했다. Node 24.14.1/npm 11.11.0에서 **739/739·check·합성 브라우저 13+1+4** 통과, [실행 기록/화면](../verification/2026-10-13-ems-r1-common-ui.md)을 남겼다. 이번 완료는 코드·자동/합성 인수 수준이며 회사 적용·실제 새 UI 인수는 미실행이다. R2 고객 중복/현장·견적 연결과 이후 CRUD/집계는 다음 단계다. 아래 R0 계획·이전 날짜 기록은 최초 작성 시점의 상태로 보존한다.
+
+**2026-10-13 최신 요청 — EMS 화면·모든 카테고리 CRUD:** [10번 구현계획](10-2026-10-13-ems-ux-crud-implementation-plan.md)을 현재 실행 순서로 사용한다. 회사 `main/origin/main@756eb4d` 확인 후 별도 worktree와 `codex/ems-ux-crud-plan-20261013`을 만들었다. 공통 UI/글로벌 CSS·짧은 모션 → 고객 중복 방지/복수 프로퍼티 → 저장된 운영 견적 CRM 연결 → 문의/견적/예약 저장·수정·삭제/취소 → 집계·새 업무 모델을 구현한다. 이번 완료는 분석·계획·진행표/TODO 연결이며 제품 코드 구현은 미착수다. 아래 10월 11일 이전 기록은 당시 결과이고, 운영 예약의 후속 main 통합은 프로젝트 README와 43·45번 계획을 함께 따른다.
 
 **2026-10-11 최신 개정 — AI 수량 추정 가견적 운영 완료:** 고객 수량을 비워 두어도 AI가 문·서랍 앞판을 추정하고 예상 도장 금액을 계산한다. 정확한 수량·상태·최종 가격은 현장에서 확인해 조정한다. 기존 단가와 GST는 유지하며, 같은 사진의 미선택 표면이나 다른 현장의 손상은 보수비에 합산하지 않는다. [40번 현행 명세](../plans/40-ai-quantity-provisional-estimates.md)가 아래 v1의 고객 수량 일치 조건을 대체한다. 기존 기록은 보존한다.
 
@@ -61,10 +73,17 @@
 | [07 최신 main와 다음 작업](07-2026-10-06-main-status-and-next-steps.md) | 로컬/원격 커밋 대조·완료 정정·실제 인수와 후속 구현 순서 |
 | [08 EMS 대시보드 디자인·적용 계획](08-ems-dashboard-design-and-implementation-plan.md) | 참고 이미지 UX 검토, 글로벌 색상, KPI/그래프 정의, 기존 admin 이관·단계별 인수 |
 | [09 오늘 EMS-D1 순차 구현 계획](09-2026-10-07-admin-shell-implementation-plan.md) | 10월 7일 실행 순서·인증/동기화/입력 보존·D1 구현 및 검증 기록 |
+| [10 EMS 화면·CRUD 순차 구현계획](10-2026-10-13-ems-ux-crud-implementation-plan.md) | 최신 main·Jobber 분석, UI/UX·공통 CSS/모션·고객 중복/현장·전 카테고리 CRUD·R0~R8 순서 |
+| [11 다음 작업 인계](11-2026-10-21-next-worktree-handoff.md) | R2·R3a 병합과 R3b 작업 트리 상태, 미적용 migration 4개, 격리 게이트, 결정 대기 |
+| [12 R3b 회사본 정책·API 계약](12-2026-10-21-r3b-company-revision-policy.md) | D1–D4, 회사본·수락·예약 확정, 관리자·고객 DTO와 미결정 정책 |
 
 ESN 상세 진행은 [05 진행표](05-progress.md)를 기준으로 갱신하고, 전체 프로젝트의 [기존 TODO](../plans/15-home-cabinet-admin-todo.md)에는 요약을 동기화한다. 기능 범위는 [전체 백로그](../plans/12-implementation-backlog.md), KCP 업무 상태는 [25번](../plans/25-kcp-quote-to-booking-implementation.md)·[32번](../plans/32-client-quote-signature-submission.md)·[33번](../plans/33-admin-booking-confirmation-day-plan.md)·[35번](../plans/35-mobile-booking-private-photo-plan.md)을 보존한다.
 
 ## 다음 구현 단위
+
+현재 [R3b 실제 고객 화면·통합 게이트](../verification/2026-10-21-ems-r3b.md)의 코드·합성 인수를 완료했다. 다음은 회사 승인 후 R3a 두 개 → R3b 두 개 migration 순차 적용·배포와 실제 직원/고객·메일/Google 인수다. P2는 `accepted_revision` 예약에도 기존 확정·이벤트 manifest·확정 메일 처리 조건에 따른 취소 표시를 제공한다. 실제 Google 삭제 인수는 남아 있다. 할인/음수 항목, 고객 거절·변경 요청, 철회 통지, 확정 예약 variation, 정식 계약 약관·서명 보존 정책은 [12번 §7](12-2026-10-21-r3b-company-revision-policy.md#7-미결정-사항)에 남긴다. 이후 R4 집계·검색, R5~R7 새 업무를 진행하며 준비 화면을 기능 완료로 표시하지 않는다.
+
+## 앞선 우선순위 기록 — 2026-10-11
 
 다음 인수 단위는 [38번 AI 사진 견적](../plans/38-ai-photo-estimate-and-ems-plan.md)의 동일 주방 전체 사진·확인 수량으로 숫자 총액 검증과 RQ-04c 현장 조정이다. 회사 Vercel의 사진 업로드·AI 분석·단일 수납장 가격/EMS 조회 및 5장 세트 1·2·3의 검토 필요 결과는 확인했다. 세트 1은 실제 회사 Chrome에서 5장 업로드·새로고침·EMS 동일 결과를 인수했다. RQ-00~02 저장·EMS 연결과 HTTPS 코드 기반은 [실행 기록](../verification/2026-10-08-live-quote-foundation.md)에 확인했다. AI 예상 견적·현장 조정·고객 승인·예약을 연결한 뒤 [08번 EMS-D2](08-ems-dashboard-design-and-implementation-plan.md)의 전체 서버 집계·4 KPI·차트/일정·동일 조건 드릴다운을 진행한다.
 

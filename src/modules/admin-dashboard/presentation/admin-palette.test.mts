@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
-const css = readFileSync(new URL("./admin-theme.css", import.meta.url), "utf8");
+const css = readFileSync(new URL("../../../shared/styles/admin-tokens.css", import.meta.url), "utf8");
 const token = (name: string) => {
   const match = css.match(new RegExp(`--ems-${name}:\\s*(#[0-9a-fA-F]{6})`));
   assert.ok(match, `missing --ems-${name}`);

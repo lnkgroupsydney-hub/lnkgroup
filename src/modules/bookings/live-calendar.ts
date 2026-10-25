@@ -194,3 +194,52 @@ export async function reconcileLiveCompanyEvents(state: LiveCompanyBookingState,
     throw error
   }
 }
+
+/** Only immutable manifest IDs are removed, with an independent absence read after DELETE. */
+export async function removeSimpleBookingEvents(claim: import('./domain/simple-management.ts').CancellationClaim, callbacks: { assertLease(): Promise<void>; recordEvent(proof: import('./domain/simple-management.ts').AbsenceProof): Promise<void> }, deps: CompanyCalendarPorts = ports): Promise<import('./domain/simple-management.ts').AbsenceProof[]> {
+  const { state, manifest } = claim
+  if (!state.booking || !state.proposal || state.booking.status !== 'cancel_pending' || !['signed_request','accepted_revision'].includes(String(state.booking.confirmationBasis)) || state.booking.id !== claim.bookingId || state.proposal.hash !== claim.proposalHash || state.booking.proposalHash !== claim.proposalHash || state.proposal.segments.length !== 2 || manifest.length !== 2 || state.submission.id !== state.booking.signedSubmissionId) throw review('Cancellation evidence does not match the signed booking.')
+  if (state.booking.confirmationBasis === 'accepted_revision') {
+    if (state.proposal.confirmationBasis !== 'accepted_revision') throw review('Cancellation revision basis changed.')
+    for (const key of ['companyRevisionId', 'companyRevisionAcceptanceId'] as const) if (!/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i.test(String(state.booking[key])) || state.booking[key] !== state.proposal[key]) throw review('Cancellation revision identity changed.')
+    for (const key of ['companyRevisionSnapshotHash', 'companyRevisionSignedContentHash'] as const) if (!/^[a-f0-9]{64}$/.test(String(state.booking[key])) || state.booking[key] !== state.proposal[key]) throw review('Cancellation revision evidence changed.')
+  }
+  const owned: Owned = { booking: state.booking, proposal: state.proposal, reference: state.submission.reference }, target = state.proposal.calendarTarget
+  const deadline = Math.min(Date.parse(claim.leaseExpiresAt) - 20000, deps.now().getTime() + 175000)
+  const guard = async () => { if (!Number.isFinite(deadline) || deps.now().getTime() >= deadline) throw unavailable(); await callbacks.assertLease(); if (!sameTarget(target, await deps.target())) throw Object.assign(review('The company Calendar target changed.'), { cancellationCode: 'calendar_target_changed' }) }
+  const read = async (index: number): Promise<{ event: CalendarEvent | null; proof: import('./domain/simple-management.ts').AbsenceProof | null }> => {
+    await guard()
+    const id = manifest[index].eventId, response = await deps.request(`${GOOGLE}/calendars/${encodeURIComponent(target.calendarId)}/events/${id}`, { signal: AbortSignal.timeout(15000), cache: 'no-store' })
+    const proof = (resultCode: import('./domain/simple-management.ts').AbsenceProof['resultCode']) => ({ segmentIndex: index, eventId: id, resultCode, verifiedAt: deps.now().toISOString() })
+    if (response.status === 404 || response.status === 410) return { event: null, proof: proof(response.status === 404 ? 'absent_404' : 'absent_410') }
+    if (!response.ok) throw unavailable()
+    const event = await response.json() as CalendarEvent
+    if (!event || event.id !== id) throw review('The expected Calendar event identity changed.')
+    if (event.status === 'cancelled') return { event: null, proof: proof('cancelled_tombstone') }
+    return { event, proof: null }
+  }
+  for (let index = 0; index < 2; index++) {
+    const evidence = manifest[index], plan = liveCompanyEventPlan(owned, index)
+    if (evidence.segmentIndex !== index || evidence.eventId !== plan.payload.id || evidence.payloadHash !== plan.payloadHash || !evidence.etag || !evidence.verifiedAt) throw review('Verified Calendar manifest is incomplete or changed.')
+  }
+  for (let index = 0; index < 2; index++) {
+    let current = await read(index)
+    if (current.event) {
+      if (!matches(current.event, owned, index) || current.event.etag !== manifest[index].etag) throw review('The company work period was changed externally. Review it before cancellation.')
+      await guard()
+      let deletion: Response | undefined
+      try {
+        deletion = await deps.request(`${GOOGLE}/calendars/${encodeURIComponent(target.calendarId)}/events/${manifest[index].eventId}?sendUpdates=none`, { method: 'DELETE', headers: { 'If-Match': manifest[index].etag! }, signal: AbortSignal.timeout(15000), cache: 'no-store' })
+      } catch { /* A lost response is resolved by the separate exact-ID GET below. */ }
+      if (deletion?.status === 412) throw review('The company work period changed before deletion.')
+      if (deletion && deletion.status >= 400 && deletion.status < 500 && ![404,410].includes(deletion.status)) throw unavailable()
+      current = await read(index)
+    }
+    if (!current.proof) throw unavailable()
+    await guard(); await callbacks.recordEvent(current.proof)
+  }
+  const final: import('./domain/simple-management.ts').AbsenceProof[] = []
+  for (let index = 0; index < 2; index++) { const current = await read(index); if (!current.proof) throw review('An expected Calendar event reappeared before cancellation completed.'); final.push(current.proof) }
+  await guard()
+  return final
+}

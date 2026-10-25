@@ -1,82 +1,6 @@
-/* EMS administrator theme. Scoped to the admin workspace, its leave dialog and the staff sign-in
-   screens (.ems-theme) so the public site keeps its :root tokens and Manrope. */
-.admin-workspace,
-.admin-leave-dialog,
-.ems-theme {
-  --ems-black: #161412;
-  --ems-black-raised: #26231F;
-  --ems-gold: #C9A227;
-  --ems-gold-bright: #E0BC4F;
-  --ems-gold-text: #7A5E0E;
-  --ems-gold-tint: #F7EFD6;
-
-  --ems-canvas: #F3F1EC;
-  --ems-surface: #FFFFFF;
-  --ems-field: #F8F6F1;
-  --ems-sunken: #EEEBE4;
-  --ems-ink: #1C1A17;
-  --ems-ink-2: #45413A;
-  --ems-muted: #5F5A51;
-  --ems-line: #E2DED5;
-  --ems-line-strong: #8A8478;
-  --ems-rail-text: #BDB7AC;
-  /* Decorative separators on the black rail (not text, not a control boundary). */
-  --ems-rail-line: #33302B;
-  --ems-rail-line-strong: #4A453E;
-  /* Quieter rail text for group labels and "Coming soon" items: 6.1:1 on black, 5.2:1 on black-raised. */
-  --ems-rail-dim: #9A948A;
-
-  --ems-success: #2E6A4C;
-  --ems-success-bg: #E4F1E9;
-  --ems-warning: #97510A;
-  --ems-warning-bg: #FCEEDB;
-  --ems-danger: #A12A2A;
-  --ems-danger-bg: #FBE8E6;
-  --ems-info: #2D5784;
-  --ems-info-bg: #E5EDF6;
-  --ems-neutral: #56524A;
-  --ems-neutral-bg: #ECE9E3;
-
-  --ems-font: var(--font-outfit, "Outfit"), "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", system-ui, sans-serif;
-  --ems-weight-regular: 400;
-  --ems-weight-medium: 500;
-  --ems-weight-semibold: 600;
-  --ems-weight-bold: 650;
-  --ems-text-page: 28px;
-  --ems-text-section: 20px;
-  --ems-text-card: 16px;
-  --ems-text-body: 15px;
-  --ems-text-label: 14px;
-  --ems-text-meta: 13px;
-  --ems-text-xs: 12px;
-  --ems-text-kpi: 36px;
-  --ems-radius-card: 16px;
-  --ems-radius-control: 10px;
-  --ems-shadow-card: 0 1px 2px rgb(22 20 18 / 6%), 0 4px 16px rgb(22 20 18 / 4%);
-
-  --site-background: var(--ems-canvas);
-  --site-surface: var(--ems-surface);
-  --site-foreground: var(--ems-ink);
-  --site-muted: var(--ems-muted);
-  --site-border: var(--ems-line);
-  --site-border-strong: var(--ems-line-strong);
-  --site-action: var(--ems-black);
-  --site-action-hover: var(--ems-black-raised);
-  --site-on-action: var(--ems-surface);
-  --site-focus: var(--ems-gold-text);
-  --site-focus-outer: var(--ems-surface);
-  --site-disabled-surface: var(--ems-sunken);
-  --site-disabled-text: var(--ems-muted);
-
-  font-family: var(--ems-font);
-  font-weight: var(--ems-weight-regular);
-  color: var(--ems-ink);
-}
-
-@media (max-width: 600px) {
-  .admin-workspace,
-  .ems-theme { --ems-text-page: 24px; --ems-text-kpi: 30px; }
-}
+/* EMS module overrides. Tokens live in src/shared/styles/admin-tokens.css; the shared admin layout and
+   components are in src/shared/styles/admin-*.css. These rules adapt older module screens embedded in EMS
+   (operations, customers, live quote and booking editors) and the staff sign-in screens (.ems-theme). */
 
 /* Headings inside admin modules: Outfit reads heavy at 700+, keep within 600–650. */
 :is(.admin-workspace .admin-main, .ems-theme) :is(h2, h3, h4, h5, legend, dt, strong, b, th) { font-weight: var(--ems-weight-semibold); }
@@ -155,12 +79,6 @@
 :is(.admin-workspace, .ems-theme) :is(.admin-main, .admin-topbar, .operations-header, .operations-shell) :is(button, a, summary):focus-visible,
 .admin-leave-dialog button:focus-visible { outline: 2px solid var(--ems-gold-text); outline-offset: 3px; box-shadow: none; }
 
-/* Badges */
-.ems-badge { display: inline-flex; align-items: center; gap: 6px; min-height: 26px; padding: 3px 10px; border-radius: 999px; font: var(--ems-weight-semibold) var(--ems-text-xs)/1.3 var(--ems-font); background: var(--ems-neutral-bg); color: var(--ems-neutral); white-space: nowrap; font-variant-numeric: tabular-nums; }
-.ems-badge[data-tone=success] { background: var(--ems-success-bg); color: var(--ems-success); }
-.ems-badge[data-tone=warning] { background: var(--ems-warning-bg); color: var(--ems-warning); }
-.ems-badge[data-tone=danger] { background: var(--ems-danger-bg); color: var(--ems-danger); }
-.ems-badge[data-tone=info] { background: var(--ems-info-bg); color: var(--ems-info); }
 
 /* Notices & errors — replace module hardcoded colours inside admin scope only */
 :is(.admin-workspace, .ems-theme) :is(.operations-error, .lq-error, .live-company-error) { border: 1px solid var(--ems-danger); border-left-width: 4px; border-radius: var(--ems-radius-control); background: var(--ems-danger-bg); color: var(--ems-danger); padding: 12px 14px; }
@@ -175,11 +93,8 @@
 /* List rows */
 .admin-workspace :is(.customers-cards > li, .customers-source, .live-company-booking, .booking-segment-editor, .live-company-booking fieldset, .live-company-ack) { border-radius: 12px; }
 .admin-workspace :is(.lq-admin-list, .live-company-list)>li { border: 1px solid var(--ems-line); border-radius: 12px; background: var(--ems-surface); padding: 14px 16px; }
-.admin-workspace :is(.lq-admin-list, .live-company-list)>li strong { font-size: var(--ems-text-card); font-weight: var(--ems-weight-semibold); }
-.admin-workspace :is(.lq-admin-list, .live-company-list)>li span:not(.ems-badge) { font-size: var(--ems-text-meta); color: var(--ems-muted); font-variant-numeric: tabular-nums; }
-/* Status line in lists: badge + plain detail. Module CSS sets list spans to display:block. */
-.admin-workspace :is(.lq-admin-list, .live-company-list) .ems-status-row { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin: 6px 0 4px; }
-.admin-workspace :is(.lq-admin-list, .live-company-list) .ems-badge { display: inline-flex; }
+.admin-workspace :is(.lq-admin-list, .live-company-list)>li strong { font-size: var(--ems-text-card); font-weight: var(--ems-weight-semibold); } 
+.admin-workspace :is(.lq-admin-list, .live-company-list)>li span { font-size: var(--ems-text-meta); color: var(--ems-muted); font-variant-numeric: tabular-nums; }
 .admin-workspace .admin-main .operations-inbox button.selected { background: var(--ems-gold-tint); box-shadow: inset 3px 0 0 var(--ems-gold); }
 @media (hover: hover) and (pointer: fine) {
   .admin-workspace :is(.lq-admin-list, .live-company-list)>li:hover { border-color: var(--ems-line-strong); }

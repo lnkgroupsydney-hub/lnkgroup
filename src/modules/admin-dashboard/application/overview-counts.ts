@@ -14,10 +14,9 @@ export function countQuotesAwaitingReview(pages: LiveQuoteRequestPage[]): { coun
 export function countBookings(states: LiveCompanyBookingState[], needsAction: (state: LiveCompanyBookingState) => boolean): { needingAction: number; confirmed: number } {
   let needingAction = 0, confirmed = 0;
   for (const state of states) {
-    const { booking } = state;
-    // The caller identifies pending review, company drafts and current acceptance; stale published acceptance awaits the customer.
-    if (booking === null && needsAction(state) || booking?.status === 'confirming' || booking?.status === 'review_required') needingAction++;
-    if (booking?.status === 'confirmed') confirmed++;
+    // The caller supplies the same rule the schedule badges use (bookings presentation: needsCompanyAction).
+    if (needsAction(state)) needingAction++;
+    if (state.booking?.status === 'confirmed') confirmed++;
   }
   return { needingAction, confirmed };
 }

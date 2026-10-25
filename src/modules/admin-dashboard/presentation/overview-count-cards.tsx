@@ -2,7 +2,7 @@
 
 import { useSyncExternalStore } from "react";
 import { ArrowRight, RefreshCw } from "lucide-react";
-import { StatusBadge } from "@/shared/ui/status-badge";
+import { AdminStatusBadge } from "@/shared/ui/admin";
 import { WorkspaceLink } from "@/shared/ui/admin-workspace-state";
 import type { OverviewCounts, OverviewCountsState } from "../application/overview-counts-contract";
 
@@ -10,7 +10,7 @@ type CountKey = Exclude<keyof OverviewCounts, "quotesAwaitingReviewIsPartial">;
 
 const cards: readonly { key: CountKey; title: string; description: string; href: string; link: string }[] = [
   { key: "quotesAwaitingReview", title: "Quotes awaiting review", description: "Quote requests sent for company review.", href: "/admin/quotes", link: "Open quotes" },
-  { key: "bookingsNeedingAction", title: "Bookings needing action", description: "Requests and drafts waiting on the company, plus bookings being confirmed or reviewed.", href: "/admin/schedule", link: "Open schedule" },
+  { key: "bookingsNeedingAction", title: "Bookings needing action", description: "Requests, drafts and accepted proposals waiting on the company, plus bookings being processed or reviewed.", href: "/admin/schedule", link: "Open schedule" },
   { key: "bookingsConfirmed", title: "Confirmed bookings", description: "Bookings with confirmed work periods.", href: "/admin/schedule", link: "Open schedule" },
 ];
 
@@ -37,7 +37,7 @@ export function OverviewCountCards({ state, onRefresh }: { state: OverviewCounts
           <WorkspaceLink href={card.href} className="admin-count-link" aria-label={`${card.link}: ${card.title}`}>Open <ArrowRight size={15} aria-hidden="true" /></WorkspaceLink>
           {state.status === "loading" && <p className="admin-count-value" aria-hidden="true">—</p>}
           {state.status === "ready" && <p className="admin-count-value">{state.counts[card.key]}{partial ? "+" : ""}</p>}
-          {state.status === "error" && <p className="admin-count-value admin-count-error"><StatusBadge tone="danger">Could not count</StatusBadge></p>}
+          {state.status === "error" && <p className="admin-count-value admin-count-error"><AdminStatusBadge tone="danger">Could not count</AdminStatusBadge></p>}
           <p className="admin-count-meta">{state.status === "loading" ? "Counting…" : partial ? "Showing the first 500 requests" : card.description}</p>
         </li>;
       })}

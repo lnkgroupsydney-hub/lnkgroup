@@ -1,0 +1,197 @@
+{
+  "synthetic": true,
+  "base": "http://127.0.0.1:3063",
+  "planned": 6,
+  "passed": 5,
+  "failed": 1,
+  "skipped": 0,
+  "results": [
+    {
+      "name": "D1 source issues unchanged legacy save changed invalid rejection and server fields",
+      "result": "passed",
+      "evidence": {
+        "sourceIssues": true,
+        "unchangedLegacySaved": true,
+        "changedInvalidRejected": true,
+        "serverFieldsDisplayed": true,
+        "widths": [
+          320,
+          768,
+          1440
+        ]
+      },
+      "expectedHttp": [
+        {
+          "path": "/api/admin/quote-requests/c0d618af-3d15-4e7d-9901-727e4daa7369/staff-draft",
+          "status": 422
+        }
+      ]
+    },
+    {
+      "name": "Booking draft warning nonblocking published gate and schedule server409",
+      "result": "passed",
+      "evidence": {
+        "draftWarningNonblocking": true,
+        "publishedConfirmationDisabled": true,
+        "tabNavigation": true,
+        "serverCode": "revision_awaiting_customer",
+        "bookingsCreated": 0
+      },
+      "expectedHttp": [
+        {
+          "path": "/api/admin/live-bookings/89b60bcf-6f32-449e-bda4-6f48bdcce7ab/confirm-request",
+          "status": 409
+        }
+      ]
+    },
+    {
+      "name": "Customer real journey proof expiry new signature unknown retry acceptance exactly once",
+      "result": "passed",
+      "evidence": {
+        "realCustomerPath": "/quote/start",
+        "expiredProofRejected": true,
+        "newSignature": true,
+        "acceptanceCommits": 1,
+        "receipts": 1,
+        "receiptOutbox": 1
+      },
+      "expectedHttp": [
+        {
+          "path": "/api/quote/requests/company-revision/accept",
+          "status": 409
+        },
+        {
+          "path": "/api/quote/requests/company-revision/accept",
+          "status": 503
+        }
+      ]
+    },
+    {
+      "name": "Withdraw pending second version sends no mail and keeps accepted first version",
+      "result": "passed",
+      "evidence": {
+        "withdrawnVersion": 2,
+        "acceptedVersionUnchanged": 1,
+        "withdrawalEmails": 0,
+        "customerStatus": "withdrawn"
+      },
+      "expectedHttp": []
+    },
+    {
+      "name": "Customer401 removes private view acknowledgment and unsaved signature",
+      "result": "passed",
+      "evidence": {
+        "status": 401,
+        "privateContactRemoved": true,
+        "signatureRemoved": true,
+        "acknowledgmentRemoved": true,
+        "acceptances": 0
+      },
+      "expectedHttp": [
+        {
+          "path": "/api/quote/requests/company-revision/accept",
+          "status": 401
+        },
+        {
+          "path": "/api/quote/requests/customer",
+          "status": 401
+        }
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "name": "Company save conflict unknown identical retry strict publication and modal focus",
+      "message": "Dialog focus trap escaped: {\"key\":\"Tab\",\"index\":3,\"before\":{\"active\":{\"tag\":\"BUTTON\",\"id\":\"\",\"html\":\"<button type=\\\"button\\\">Keep as draft</button>\"},\"documentHasFocus\":true,\"open\":true,\"modal\":true,\"contained\":true},\"after\":{\"active\":{\"tag\":\"BODY\",\"id\":\"\",\"html\":\"<body><div hidden=\\\"\\\"><!--$--><!--/$--></div><script src=\\\"/_next/static/chunks/webpack-2fedd2d5397bfb1f.js\\\" id=\\\"_R_\\\" async=\\\"\\\"></script><script>(self.__next_f=self.__next_f||[]).push([0])</script><script>self.__next_f.push([1,\\\"1:\\\\\\\"$Sreact.fragment\\\\\\\"\\\\n2:I[9863,[],\\\\\\\"\\\\\\\"]\\\\n3:I[7099,[],\\\\\\\"\\\\\\\"]\\\\n6:I[4590,[],\\\\\\\"OutletBoundary\\\\\\\"]\\\\n7:\\\\\\\"$Sreact.suspense\\\\\\\"\\\\na:I[4590,[],\\\\\\\"ViewportBoundary\\\\\\\"]\\\\nc:I[4590,[],\\\\\\\"MetadataBoundary\\\\\\\"]\\\\ne:I[5501,[],\\\\\\\"default\\\\\\\",1]\\\\n:HL[\\\\\\\"/_next/static/media/4c9affa5bc8f420e-s.p.woff2\\\\\\\",\\\\\\\"f\"},\"documentHasFocus\":false,\"open\":true,\"modal\":true,\"contained\":false}}\n\nfalse !== true\n",
+      "stack": "AssertionError [ERR_ASSERTION]: Dialog focus trap escaped: {\"key\":\"Tab\",\"index\":3,\"before\":{\"active\":{\"tag\":\"BUTTON\",\"id\":\"\",\"html\":\"<button type=\\\"button\\\">Keep as draft</button>\"},\"documentHasFocus\":true,\"open\":true,\"modal\":true,\"contained\":true},\"after\":{\"active\":{\"tag\":\"BODY\",\"id\":\"\",\"html\":\"<body><div hidden=\\\"\\\"><!--$--><!--/$--></div><script src=\\\"/_next/static/chunks/webpack-2fedd2d5397bfb1f.js\\\" id=\\\"_R_\\\" async=\\\"\\\"></script><script>(self.__next_f=self.__next_f||[]).push([0])</script><script>self.__next_f.push([1,\\\"1:\\\\\\\"$Sreact.fragment\\\\\\\"\\\\n2:I[9863,[],\\\\\\\"\\\\\\\"]\\\\n3:I[7099,[],\\\\\\\"\\\\\\\"]\\\\n6:I[4590,[],\\\\\\\"OutletBoundary\\\\\\\"]\\\\n7:\\\\\\\"$Sreact.suspense\\\\\\\"\\\\na:I[4590,[],\\\\\\\"ViewportBoundary\\\\\\\"]\\\\nc:I[4590,[],\\\\\\\"MetadataBoundary\\\\\\\"]\\\\ne:I[5501,[],\\\\\\\"default\\\\\\\",1]\\\\n:HL[\\\\\\\"/_next/static/media/4c9affa5bc8f420e-s.p.woff2\\\\\\\",\\\\\\\"f\"},\"documentHasFocus\":false,\"open\":true,\"modal\":true,\"contained\":false}}\n\nfalse !== true\n\n    at modalFocus (file:///private/tmp/claude-501/-Users-jimee-orca-workspaces-L-K-Group-featherduster/687d9dbc-0c8f-4a4c-aac2-1fe5e91655c7/scratchpad/orchestration/ems-r3b/p3/app/scripts/verify-ems-r3b-ui.mjs:144:12)\n    at async scenario.path (file:///private/tmp/claude-501/-Users-jimee-orca-workspaces-L-K-Group-featherduster/687d9dbc-0c8f-4a4c-aac2-1fe5e91655c7/scratchpad/orchestration/ems-r3b/p3/app/scripts/verify-ems-r3b-ui.mjs:274:19)\n    at async scenario (file:///private/tmp/claude-501/-Users-jimee-orca-workspaces-L-K-Group-featherduster/687d9dbc-0c8f-4a4c-aac2-1fe5e91655c7/scratchpad/orchestration/ems-r3b/p3/app/scripts/verify-ems-r3b-ui.mjs:175:21)\n    at async main (file:///private/tmp/claude-501/-Users-jimee-orca-workspaces-L-K-Group-featherduster/687d9dbc-0c8f-4a4c-aac2-1fe5e91655c7/scratchpad/orchestration/ems-r3b/p3/app/scripts/verify-ems-r3b-ui.mjs:236:3)\n    at async file:///private/tmp/claude-501/-Users-jimee-orca-workspaces-L-K-Group-featherduster/687d9dbc-0c8f-4a4c-aac2-1fe5e91655c7/scratchpad/orchestration/ems-r3b/p3/app/scripts/verify-ems-r3b-ui.mjs:436:7",
+      "url": "http://127.0.0.1:3063/admin/quotes/6bbd03de-3d71-4426-9c09-69d50a4db767",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "screenshot": "/private/tmp/claude-501/-Users-jimee-orca-workspaces-L-K-Group-featherduster/687d9dbc-0c8f-4a4c-aac2-1fe5e91655c7/scratchpad/orchestration/ems-r3b/p3/gates/r3b/failure-1.png",
+      "evidence": {
+        "external": [],
+        "http": [],
+        "page": [],
+        "console": [
+          {
+            "text": "Failed to load resource: the server responded with a status of 409 (Conflict)",
+            "url": "http://127.0.0.1:3063/api/admin/quote-requests/6bbd03de-3d71-4426-9c09-69d50a4db767/company-revisions"
+          },
+          {
+            "text": "Failed to load resource: the server responded with a status of 503 (Service Unavailable)",
+            "url": "http://127.0.0.1:3063/api/admin/quote-requests/6bbd03de-3d71-4426-9c09-69d50a4db767/company-revisions"
+          }
+        ],
+        "expected": [
+          {
+            "path": "/api/admin/quote-requests/6bbd03de-3d71-4426-9c09-69d50a4db767/company-revisions",
+            "status": 409
+          },
+          {
+            "path": "/api/admin/quote-requests/6bbd03de-3d71-4426-9c09-69d50a4db767/company-revisions",
+            "status": 503
+          }
+        ]
+      }
+    }
+  ],
+  "screenshots": [
+    {
+      "name": "failure-1",
+      "path": "/private/tmp/claude-501/-Users-jimee-orca-workspaces-L-K-Group-featherduster/687d9dbc-0c8f-4a4c-aac2-1fe5e91655c7/scratchpad/orchestration/ems-r3b/p3/gates/r3b/failure-1.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "url": "http://127.0.0.1:3063/admin/quotes/6bbd03de-3d71-4426-9c09-69d50a4db767"
+    },
+    {
+      "name": "confirmation-blocked",
+      "path": "/private/tmp/claude-501/-Users-jimee-orca-workspaces-L-K-Group-featherduster/687d9dbc-0c8f-4a4c-aac2-1fe5e91655c7/scratchpad/orchestration/ems-r3b/p3/gates/r3b/confirmation-blocked.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "url": "http://127.0.0.1:3063/admin/quotes/89b60bcf-6f32-449e-bda4-6f48bdcce7ab"
+    },
+    {
+      "name": "confirmation-server409",
+      "path": "/private/tmp/claude-501/-Users-jimee-orca-workspaces-L-K-Group-featherduster/687d9dbc-0c8f-4a4c-aac2-1fe5e91655c7/scratchpad/orchestration/ems-r3b/p3/gates/r3b/confirmation-server409.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "url": "http://127.0.0.1:3063/admin/schedule/89b60bcf-6f32-449e-bda4-6f48bdcce7ab"
+    },
+    {
+      "name": "customer-accepted-320",
+      "path": "/private/tmp/claude-501/-Users-jimee-orca-workspaces-L-K-Group-featherduster/687d9dbc-0c8f-4a4c-aac2-1fe5e91655c7/scratchpad/orchestration/ems-r3b/p3/gates/r3b/customer-accepted-320.png",
+      "viewport": {
+        "width": 320,
+        "height": 1000
+      },
+      "url": "http://127.0.0.1:3063/quote/start?mode=live"
+    },
+    {
+      "name": "customer-withdrawn-1440",
+      "path": "/private/tmp/claude-501/-Users-jimee-orca-workspaces-L-K-Group-featherduster/687d9dbc-0c8f-4a4c-aac2-1fe5e91655c7/scratchpad/orchestration/ems-r3b/p3/gates/r3b/customer-withdrawn-1440.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "url": "http://127.0.0.1:3063/quote/start?mode=live"
+    },
+    {
+      "name": "customer-access-lost-1440",
+      "path": "/private/tmp/claude-501/-Users-jimee-orca-workspaces-L-K-Group-featherduster/687d9dbc-0c8f-4a4c-aac2-1fe5e91655c7/scratchpad/orchestration/ems-r3b/p3/gates/r3b/customer-access-lost-1440.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "url": "http://127.0.0.1:3063/quote/start?mode=live"
+    }
+  ],
+  "skippedScenarios": []
+}

@@ -1,5 +1,5 @@
 /* L&K Group EMS design tokens (black + gold, Outfit).
-   Portable copy of the values in src/modules/admin-dashboard/presentation/admin-theme.css.
+   Portable copy of the values in src/shared/styles/admin-tokens.css.
    ems-tokens.test.mts fails if the two drift apart.
    Usage: add class="ems-theme" to <html>, <body> or any container, then use the --ems-* variables. */
 .ems-theme {

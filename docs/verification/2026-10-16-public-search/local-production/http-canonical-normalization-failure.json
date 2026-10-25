@@ -1,0 +1,16 @@
+{
+  "passed": false,
+  "base": "http://127.0.0.1:3136",
+  "checks": [
+    {
+      "path": "/",
+      "method": "GET",
+      "agent": "default",
+      "status": 200,
+      "robots": "index, follow",
+      "cache": "s-maxage=31536000",
+      "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch, Accept-Encoding"
+    }
+  ],
+  "error": "AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n+ actual - expected\n\n+ 'https://www.lnkgroupsydney.com.au'\n- 'https://www.lnkgroupsydney.com.au/'\n                                    ^\n"
+}

@@ -1,27 +1,26 @@
 import type { LiveCompanyBookingState } from '../domain/live-contracts.ts';
-import type { StatusTone } from '@/shared/ui/status-badge';
-import { currentAcceptance, usesSignedRequestBooking } from './live-booking-client.ts';
+import type { StatusTone } from '@/shared/ui/admin';
+import { scheduleStatus, scheduleStatusLabels, type ScheduleStatus } from './admin-schedule-view.ts';
+import { currentAcceptance } from './live-booking-client.ts';
+
+// Colour only. Labels and the status itself come from scheduleStatus so the list badge, the
+// status filter and the overview count describe a booking the same way.
+const tones: Record<ScheduleStatus, StatusTone> = {
+  requested: 'warning', draft: 'warning', published: 'info',
+  confirming: 'info', confirmed: 'success', review_required: 'danger',
+  cancel_pending: 'info', cancelled: 'neutral',
+};
+
+/** True when the next step belongs to the company (review, draft, accepted proposal, processing or review-required booking). */
+export function needsCompanyAction(state: LiveCompanyBookingState): boolean {
+  const status = scheduleStatus(state);
+  if (status === 'published') return currentAcceptance(state);
+  return status === 'requested' || status === 'draft' || status === 'confirming' || status === 'review_required' || status === 'cancel_pending';
+}
 
 export function companyBookingTone(state: LiveCompanyBookingState): { tone: StatusTone; label: string } {
-  const { booking, proposal } = state;
-  if (booking) {
-    const status = booking.status;
-    switch (status) {
-      case 'confirmed': return { tone: 'success', label: 'Confirmed and Google verified' };
-      case 'confirming': return { tone: 'info', label: 'Confirmation processing' };
-      case 'review_required': return { tone: 'danger', label: 'Company review required' };
-    }
-    const exhaustive: never = status;
-    return exhaustive;
-  }
-  if (usesSignedRequestBooking(state)) return { tone: 'warning', label: 'Awaiting company review' };
-  if (currentAcceptance(state)) return { tone: 'warning', label: 'Awaiting company confirmation' };
-  if (proposal === null) return { tone: 'warning', label: 'Awaiting company review' };
-  const status = proposal.status;
-  switch (status) {
-    case 'draft': return { tone: 'warning', label: 'Company draft' };
-    case 'published': return { tone: 'info', label: 'Awaiting customer' };
-  }
-  const exhaustive: never = status;
-  return exhaustive;
+  const status = scheduleStatus(state);
+  // A published proposal the customer has accepted for its current hash waits on company confirmation.
+  const tone = status === 'published' && currentAcceptance(state) ? 'warning' : tones[status];
+  return { tone, label: scheduleStatusLabels[status] };
 }

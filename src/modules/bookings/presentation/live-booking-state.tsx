@@ -6,7 +6,7 @@ import type { LiveCompanyBookingState } from '../domain/live-contracts';
 import { companyBookingRequest, LiveCompanyRequestError, newerCompanyState, parseCompanyState } from './live-booking-client';
 
 type Attempt = { path: string; method: string; payload: Record<string, unknown> };
-export function useCompanyBookingState(requestId: string, staff: boolean, onAccessLost: () => void) {
+export function useCompanyBookingState(requestId: string, staff: boolean, onAccessLost: () => void, pollingEnabled = true) {
   const [state,setState] = useState<LiveCompanyBookingState | null>(null), [loaded,setLoaded] = useState(false), [busy,setBusy] = useState(false), [refreshing,setRefreshing] = useState(false), [error,setError] = useState(''), [notice,setNotice] = useState('');
   const [attempt,setAttempt] = useWorkspaceDraft<Attempt | null>(`live-booking.${staff?'staff':'customer'}.${requestId}.attempt`,null);
   const active = useRef(false), generation = useRef(0), running = useRef(false), reading = useRef(false), abort = useRef<AbortController | null>(null), callbacks = useRef({onAccessLost});
@@ -28,10 +28,22 @@ export function useCompanyBookingState(requestId: string, staff: boolean, onAcce
       const value=parseCompanyState(await companyBookingRequest(staff?`/api/admin/live-bookings?requestId=${encodeURIComponent(requestId)}`:base,requestId,{signal:AbortSignal.any([controller.signal,AbortSignal.timeout(35_000)])}),requestId);
       if(active.current && version===generation.current) {setState(old=>newerCompanyState(old,value));setLoaded(true);setError('');}
     } catch(cause) {if(active.current&&version===generation.current)fail(cause);}
-    finally {reading.current=false;if(active.current&&version===generation.current)setRefreshing(false);}
+    finally {if(abort.current===controller)reading.current=false;if(active.current&&version===generation.current)setRefreshing(false);}
   },[base,fail,requestId,staff]);
   const invalidateRequests=useCallback(()=>{generation.current++;},[]);
-  useEffect(()=>{active.current=true;let cancelled=false;void Promise.resolve().then(()=>{if(!cancelled)return refresh();});const timer=setInterval(()=>void refresh(),15_000);return()=>{cancelled=true;active.current=false;invalidateRequests();abort.current?.abort();clearInterval(timer);};},[refresh,invalidateRequests]);
+  useEffect(()=>{active.current=true;return()=>{active.current=false;invalidateRequests();abort.current?.abort();};},[invalidateRequests]);
+  useEffect(()=>{
+    if(!pollingEnabled)return;
+    let cancelled=false;
+    void Promise.resolve().then(()=>{if(!cancelled)return refresh();});
+    const timer=setInterval(()=>void refresh(),15_000);
+    return()=>{
+      cancelled=true;clearInterval(timer);
+      // A hidden, mounted editor keeps its input and any command receipt. Only
+      // its read lane is stopped; an already-sent mutation may still complete.
+      if(!running.current){invalidateRequests();abort.current?.abort();reading.current=false;setRefreshing(false);}
+    };
+  },[refresh,invalidateRequests,pollingEnabled]);
   async function send(value: Attempt) {
     if(running.current)return null;
     running.current=true;failureStatus.current=null;abort.current?.abort();const version=++generation.current;setRefreshing(false);setBusy(true);setError('');setNotice('');setAttempt(value);

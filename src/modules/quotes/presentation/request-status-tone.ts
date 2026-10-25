@@ -1,5 +1,5 @@
 import type { LiveQuoteRequest } from '../domain/contracts.ts';
-import type { StatusTone } from '@/shared/ui/status-badge';
+import type { StatusTone } from '@/shared/ui/admin';
 
 export function quoteRequestTone(status: LiveQuoteRequest['status']): StatusTone {
   switch (status) {
@@ -12,7 +12,7 @@ export function quoteRequestTone(status: LiveQuoteRequest['status']): StatusTone
 
 export function quoteRequestStatusLabel(status: LiveQuoteRequest['status']): string {
   switch (status) {
-    case 'draft': return 'Draft';
+    case 'draft': return 'Details saved';
     case 'review_requested': return 'Review requested';
   }
   const exhaustive: never = status;

@@ -20,10 +20,14 @@ test('quote counts include only review requests across all scanned pages and use
   assert.deepEqual(countQuotesAwaitingReview([page(['review_requested'], 3), page(['draft'], 5)]), { count: 1, partial: true });
   assert.deepEqual(countQuotesAwaitingReview([page([], 1)]), { count: 0, partial: true });
 });
-test('every existing booking status takes precedence over the injected action predicate', () => {
-  for (const status of ['confirming', 'review_required', 'confirmed'] as const) {
+test('the injected action rule decides every booking and only confirmed bookings count as confirmed', () => {
+  for (const status of ['confirming', 'review_required', 'confirmed', 'cancel_pending', 'cancelled'] as const) {
     const state = bookingState({ status } as NonNullable<LiveCompanyBookingState['booking']>, acceptance);
-    assert.deepEqual(countBookings([state], () => assert.fail('Existing bookings must not invoke the unbooked action predicate')), { needingAction: status === 'confirmed' ? 0 : 1, confirmed: status === 'confirmed' ? 1 : 0 });
+    for (const action of [true, false]) {
+      let calls = 0;
+      assert.deepEqual(countBookings([state], value => { calls++; assert.equal(value, state); return action; }), { needingAction: Number(action), confirmed: status === 'confirmed' ? 1 : 0 }, `${status} ${action}`);
+      assert.equal(calls, 1);
+    }
   }
 });
 test('unbooked company-action fixtures use the injected decision; stale published and customer waits do not count', () => {
@@ -45,7 +49,10 @@ test('unbooked company-action fixtures use the injected decision; stale publishe
 });
 test('mixed bookings build the shared overview contract without changing partial counts', () => {
   const accepted = bookingState(null, acceptance);
-  const signed = { ...bookingState(null), submission: { snapshot: { version: 'live-booking-request-ack-v2' } } } as LiveCompanyBookingState;
-  const bookings = countBookings([bookingState(null), accepted, signed, bookingState({ status: 'confirming' } as NonNullable<LiveCompanyBookingState['booking']>), bookingState({ status: 'review_required' } as NonNullable<LiveCompanyBookingState['booking']>), bookingState({ status: 'confirmed' } as NonNullable<LiveCompanyBookingState['booking']>)], state => state === accepted || state === signed);
-  assert.deepEqual(buildOverviewCounts({ count: 4, partial: true }, bookings), { quotesAwaitingReview: 4, quotesAwaitingReviewIsPartial: true, bookingsNeedingAction: 4, bookingsConfirmed: 1 });
+  const confirmed = bookingState({ status: 'confirmed' } as NonNullable<LiveCompanyBookingState['booking']>);
+  const processing = bookingState({ status: 'confirming' } as NonNullable<LiveCompanyBookingState['booking']>);
+  const waiting = bookingState(null);
+  const actionable = new Set<LiveCompanyBookingState>([accepted, processing]);
+  const bookings = countBookings([waiting, accepted, processing, confirmed], state => actionable.has(state));
+  assert.deepEqual(buildOverviewCounts({ count: 4, partial: true }, bookings), { quotesAwaitingReview: 4, quotesAwaitingReviewIsPartial: true, bookingsNeedingAction: 2, bookingsConfirmed: 1 });
 });

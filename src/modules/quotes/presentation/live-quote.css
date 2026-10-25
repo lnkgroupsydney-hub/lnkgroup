@@ -34,3 +34,15 @@
 
 .lq-journey .lq-entry{padding:clamp(1.25rem,5vw,4rem);overflow:auto;justify-content:center}.lq-entry h1{font-size:clamp(1.7rem,4vw,2.5rem);letter-spacing:-.035em;margin:.5rem 0 1rem}.lq-entry>p{max-width:44rem}.lq-entry-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem;margin:1.75rem 0;max-width:55rem}.lq-journey .lq-entry-cards>button{display:grid;grid-template-columns:1fr auto;gap:.8rem;padding:1.5rem;min-height:12rem;text-align:left;border:1px solid var(--site-border-strong);border-radius:16px;background:var(--site-surface);color:var(--site-text);white-space:normal}.lq-entry-cards>button>svg:first-child{grid-column:1/-1;color:#526858;width:30px;height:30px}.lq-entry-cards strong{font-size:1.1rem}.lq-entry-cards span{grid-column:1;font-size:.82rem;line-height:1.55;font-weight:400}.lq-entry-cards>button>svg:last-child{grid-column:2;grid-row:2/4;align-self:center}.lq-entry-cards>button:hover{background:#eef1e8!important}.lq-entry-actions{display:flex;gap:.6rem;flex-wrap:wrap;justify-content:flex-end}.lq-entry>.lq-muted{display:flex;gap:.5rem;align-items:center}
 @media(max-width:700px){.lq-entry-cards{grid-template-columns:1fr;gap:.8rem;margin:1.25rem 0}.lq-journey .lq-entry-cards>button{padding:1.1rem;min-height:10rem}.lq-entry-actions{max-width:9rem;gap:.35rem}.lq-entry-actions button{font-size:.65rem!important;padding:.4rem .55rem!important;min-height:36px!important}.lq-entry-actions .lq-access-toggle{width:100%}}
+/* Staff internal drafts: dashed edge separates the work copy from the customer request. */
+.ems-root .staff-draft .ems-actions h3{margin:0}
+.ems-root .staff-draft-copy{border-style:dashed;border-width:2px}
+.ems-root .staff-draft-check{display:flex;align-items:flex-start;gap:.65rem;min-height:2.75rem;padding-block:.35rem;font-size:.9375rem;font-weight:600}
+.ems-root .staff-draft-check input{flex:none;width:1.1rem;height:1.1rem;min-height:0;margin-top:.2rem;padding:0}
+.ems-root .staff-draft-surfaces{grid-template-columns:repeat(auto-fit,minmax(min(100%,11rem),1fr));gap:0 1rem;margin:0}
+.ems-root .staff-draft-surfaces>legend{font-size:var(--ems-small);font-weight:650;margin-bottom:.25rem}
+.ems-root .ems-field .staff-draft-field-error{color:var(--ems-ink);font-weight:650;font-size:var(--ems-small)}
+.ems-root .staff-draft [aria-invalid=true]{border-color:var(--site-border-strong);border-width:2px}
+/* D1: customer values kept from the original request are marked separately from save errors. */
+.ems-root .ems-field .staff-draft-source-note{display:block;padding:.35rem .5rem;border-left:3px dashed var(--site-border-strong);background:var(--ems-bg);color:var(--ems-ink);font-weight:500;font-size:var(--ems-small)}
+.ems-root .staff-draft-source-issues ul{margin:.5rem 0 0;padding-left:1.2rem;display:grid;gap:.25rem}

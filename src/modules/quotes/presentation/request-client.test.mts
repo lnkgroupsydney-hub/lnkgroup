@@ -27,6 +27,6 @@ test('unsupported session serialization fails before issuing cookies or sending 
 });
 
 test('quote request badges distinguish drafts from company review requests', () => {
- assert.equal(quoteRequestTone('draft'), 'neutral'); assert.equal(quoteRequestStatusLabel('draft'), 'Draft');
+ assert.equal(quoteRequestTone('draft'), 'neutral'); assert.equal(quoteRequestStatusLabel('draft'), 'Details saved');
  assert.equal(quoteRequestTone('review_requested'), 'warning'); assert.equal(quoteRequestStatusLabel('review_requested'), 'Review requested');
 });

@@ -1,0 +1,10 @@
+/* Repeated list and tab navigation stays immediate. Motion is pointer feedback only. */
+@media (prefers-reduced-motion:no-preference) and (hover:hover) and (pointer:fine) {
+  .ems-root .ems-button, .ems-root .admin-primary-link { transition: transform var(--ems-fast) var(--ems-ease); }
+  .ems-root .ems-button:active:not(:disabled):not(:focus-visible), .ems-root .admin-primary-link:active:not(:focus-visible) { transform: scale(.98); }
+  .ems-root .admin-mobile-drawer[data-pointer-open=true][open] { animation: ems-drawer-enter var(--ems-dialog-duration) var(--ems-ease); }
+  .ems-root .admin-account[data-pointer-open=true][open] .admin-account-panel { animation: ems-menu-enter 150ms var(--ems-ease); }
+}
+@keyframes ems-drawer-enter { from { opacity: .7; transform: translateX(-.75rem); } to { opacity: 1; transform: translateX(0); } }
+@keyframes ems-menu-enter { from { opacity: 0; transform: translateY(-.25rem); } to { opacity: 1; transform: translateY(0); } }
+@media (prefers-reduced-motion:reduce) { .ems-root *, .ems-root *::before, .ems-root *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }

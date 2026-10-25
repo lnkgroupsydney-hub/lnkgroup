@@ -12,7 +12,7 @@
 .codex/log/
 
 # Dependencies and generated output
-node_modules/
+node_modules
 .next/
 out/
 dist/
@@ -44,3 +44,6 @@ Desktop.ini
 ~$*
 *.swp
 *.swo
+
+# Claude Code local settings
+.claude/settings.local.json

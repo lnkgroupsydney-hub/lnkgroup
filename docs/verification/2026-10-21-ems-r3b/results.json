@@ -1,0 +1,959 @@
+{
+  "synthetic": true,
+  "base": "http://127.0.0.1:3021",
+  "planned": 6,
+  "passed": 6,
+  "failed": 0,
+  "skipped": 0,
+  "results": [
+    {
+      "name": "D1 source issues unchanged legacy save changed invalid rejection and server fields",
+      "result": "passed",
+      "evidence": {
+        "sourceIssues": true,
+        "unchangedLegacySaved": true,
+        "changedInvalidRejected": true,
+        "serverFieldsDisplayed": true,
+        "widths": [
+          320,
+          768,
+          1440
+        ]
+      },
+      "expectedHttp": [
+        {
+          "path": "/api/admin/quote-requests/b157402d-f98a-49ae-8670-bcfd716ec980/staff-draft",
+          "status": 422
+        }
+      ]
+    },
+    {
+      "name": "Company save conflict unknown identical retry strict publication and modal focus",
+      "result": "passed",
+      "evidence": {
+        "conflictInputRetained": true,
+        "retryCommits": 1,
+        "retryReceipts": 1,
+        "publicationStrictFields": true,
+        "noticeOutbox": 1,
+        "signedGstComparison": {
+          "originalSubtotal": "$2,200.00",
+          "originalGst": "$220.00",
+          "originalTotal": "$2,420.00",
+          "revisedGst": "No GST",
+          "differenceIncludesRemovingOriginalGst": true
+        },
+        "modalFocus": {
+          "contract": "native modal dialog contract",
+          "initial": {
+            "active": {
+              "tag": "H2",
+              "id": "cr-dialog_r_1_-title",
+              "html": "<h2 id=\"cr-dialog_r_1_-title\" tabindex=\"-1\">Send version 1 to the customer?</h2>"
+            },
+            "documentHasFocus": true,
+            "open": true,
+            "modal": true,
+            "contained": true,
+            "headingFocused": true,
+            "controlIndex": -1,
+            "controls": [
+              {
+                "tag": "INPUT",
+                "id": "cr-dialog_r_1_-reason",
+                "type": null,
+                "text": ""
+              },
+              {
+                "tag": "INPUT",
+                "id": "",
+                "type": "checkbox",
+                "text": ""
+              },
+              {
+                "tag": "BUTTON",
+                "id": "",
+                "type": "button",
+                "text": "Keep as draft"
+              }
+            ]
+          },
+          "transitions": [
+            {
+              "key": "Tab",
+              "index": 0,
+              "before": {
+                "active": {
+                  "tag": "H2",
+                  "id": "cr-dialog_r_1_-title",
+                  "html": "<h2 id=\"cr-dialog_r_1_-title\" tabindex=\"-1\">Send version 1 to the customer?</h2>"
+                },
+                "documentHasFocus": true,
+                "open": true,
+                "modal": true,
+                "contained": true,
+                "headingFocused": true,
+                "controlIndex": -1,
+                "controls": [
+                  {
+                    "tag": "INPUT",
+                    "id": "cr-dialog_r_1_-reason",
+                    "type": null,
+                    "text": ""
+                  },
+                  {
+                    "tag": "INPUT",
+                    "id": "",
+                    "type": "checkbox",
+                    "text": ""
+                  },
+                  {
+                    "tag": "BUTTON",
+                    "id": "",
+                    "type": "button",
+                    "text": "Keep as draft"
+                  }
+                ]
+              },
+              "after": {
+                "active": {
+                  "tag": "INPUT",
+                  "id": "cr-dialog_r_1_-reason",
+                  "html": "<input id=\"cr-dialog_r_1_-reason\" maxlength=\"500\" autocomplete=\"off\" required=\"\" value=\"\">"
+                },
+                "documentHasFocus": true,
+                "open": true,
+                "modal": true,
+                "contained": true,
+                "headingFocused": false,
+                "controlIndex": 0,
+                "controls": [
+                  {
+                    "tag": "INPUT",
+                    "id": "cr-dialog_r_1_-reason",
+                    "type": null,
+                    "text": ""
+                  },
+                  {
+                    "tag": "INPUT",
+                    "id": "",
+                    "type": "checkbox",
+                    "text": ""
+                  },
+                  {
+                    "tag": "BUTTON",
+                    "id": "",
+                    "type": "button",
+                    "text": "Keep as draft"
+                  }
+                ]
+              }
+            },
+            {
+              "key": "Tab",
+              "index": 1,
+              "before": {
+                "active": {
+                  "tag": "INPUT",
+                  "id": "cr-dialog_r_1_-reason",
+                  "html": "<input id=\"cr-dialog_r_1_-reason\" maxlength=\"500\" autocomplete=\"off\" required=\"\" value=\"\">"
+                },
+                "documentHasFocus": true,
+                "open": true,
+                "modal": true,
+                "contained": true,
+                "headingFocused": false,
+                "controlIndex": 0,
+                "controls": [
+                  {
+                    "tag": "INPUT",
+                    "id": "cr-dialog_r_1_-reason",
+                    "type": null,
+                    "text": ""
+                  },
+                  {
+                    "tag": "INPUT",
+                    "id": "",
+                    "type": "checkbox",
+                    "text": ""
+                  },
+                  {
+                    "tag": "BUTTON",
+                    "id": "",
+                    "type": "button",
+                    "text": "Keep as draft"
+                  }
+                ]
+              },
+              "after": {
+                "active": {
+                  "tag": "INPUT",
+                  "id": "",
+                  "html": "<input type=\"checkbox\">"
+                },
+                "documentHasFocus": true,
+                "open": true,
+                "modal": true,
+                "contained": true,
+                "headingFocused": false,
+                "controlIndex": 1,
+                "controls": [
+                  {
+                    "tag": "INPUT",
+                    "id": "cr-dialog_r_1_-reason",
+                    "type": null,
+                    "text": ""
+                  },
+                  {
+                    "tag": "INPUT",
+                    "id": "",
+                    "type": "checkbox",
+                    "text": ""
+                  },
+                  {
+                    "tag": "BUTTON",
+                    "id": "",
+                    "type": "button",
+                    "text": "Keep as draft"
+                  }
+                ]
+              }
+            },
+            {
+              "key": "Tab",
+              "index": 2,
+              "before": {
+                "active": {
+                  "tag": "INPUT",
+                  "id": "",
+                  "html": "<input type=\"checkbox\">"
+                },
+                "documentHasFocus": true,
+                "open": true,
+                "modal": true,
+                "contained": true,
+                "headingFocused": false,
+                "controlIndex": 1,
+                "controls": [
+                  {
+                    "tag": "INPUT",
+                    "id": "cr-dialog_r_1_-reason",
+                    "type": null,
+                    "text": ""
+                  },
+                  {
+                    "tag": "INPUT",
+                    "id": "",
+                    "type": "checkbox",
+                    "text": ""
+                  },
+                  {
+                    "tag": "BUTTON",
+                    "id": "",
+                    "type": "button",
+                    "text": "Keep as draft"
+                  }
+                ]
+              },
+              "after": {
+                "active": {
+                  "tag": "BUTTON",
+                  "id": "",
+                  "html": "<button type=\"button\">Keep as draft</button>"
+                },
+                "documentHasFocus": true,
+                "open": true,
+                "modal": true,
+                "contained": true,
+                "headingFocused": false,
+                "controlIndex": 2,
+                "controls": [
+                  {
+                    "tag": "INPUT",
+                    "id": "cr-dialog_r_1_-reason",
+                    "type": null,
+                    "text": ""
+                  },
+                  {
+                    "tag": "INPUT",
+                    "id": "",
+                    "type": "checkbox",
+                    "text": ""
+                  },
+                  {
+                    "tag": "BUTTON",
+                    "id": "",
+                    "type": "button",
+                    "text": "Keep as draft"
+                  }
+                ]
+              }
+            },
+            {
+              "key": "Tab",
+              "index": 3,
+              "before": {
+                "active": {
+                  "tag": "BUTTON",
+                  "id": "",
+                  "html": "<button type=\"button\">Keep as draft</button>"
+                },
+                "documentHasFocus": true,
+                "open": true,
+                "modal": true,
+                "contained": true,
+                "headingFocused": false,
+                "controlIndex": 2,
+                "controls": [
+                  {
+                    "tag": "INPUT",
+                    "id": "cr-dialog_r_1_-reason",
+                    "type": null,
+                    "text": ""
+                  },
+                  {
+                    "tag": "INPUT",
+                    "id": "",
+                    "type": "checkbox",
+                    "text": ""
+                  },
+                  {
+                    "tag": "BUTTON",
+                    "id": "",
+                    "type": "button",
+                    "text": "Keep as draft"
+                  }
+                ]
+              },
+              "after": {
+                "active": {
+                  "tag": "BODY",
+                  "id": "",
+                  "html": "<body><div hidden=\"\"><!--$--><!--/$--></div><div class=\"__variable_c604bd\"><div class=\"ems-root\"><div class=\"admin-workspace\"><a class=\"skip-link\" href=\"#admin-main\">Skip to workspace content</a><aside class=\"admin-sidebar\"><a class=\"admin-brand\" aria-label=\"L&amp;K Group overview\" href=\"/admin\"><img alt=\"\" width=\"96\" height=\"96\" decoding=\"async\" data-nimg=\"1\" class=\"admin-logo\" srcset=\"/_next/image?url=%2Fimages%2Flk-group-logo-circle-transparent.png&amp;w=96&amp;q=75 1x, /_next/image?url=%2Fim"
+                },
+                "documentHasFocus": false,
+                "open": true,
+                "modal": true,
+                "contained": false,
+                "headingFocused": false,
+                "controlIndex": -1,
+                "controls": [
+                  {
+                    "tag": "INPUT",
+                    "id": "cr-dialog_r_1_-reason",
+                    "type": null,
+                    "text": ""
+                  },
+                  {
+                    "tag": "INPUT",
+                    "id": "",
+                    "type": "checkbox",
+                    "text": ""
+                  },
+                  {
+                    "tag": "BUTTON",
+                    "id": "",
+                    "type": "button",
+                    "text": "Keep as draft"
+                  }
+                ]
+              }
+            },
+            {
+              "key": "Tab",
+              "index": 4,
+              "before": {
+                "active": {
+                  "tag": "BODY",
+                  "id": "",
+                  "html": "<body><div hidden=\"\"><!--$--><!--/$--></div><div class=\"__variable_c604bd\"><div class=\"ems-root\"><div class=\"admin-workspace\"><a class=\"skip-link\" href=\"#admin-main\">Skip to workspace content</a><aside class=\"admin-sidebar\"><a class=\"admin-brand\" aria-label=\"L&amp;K Group overview\" href=\"/admin\"><img alt=\"\" width=\"96\" height=\"96\" decoding=\"async\" data-nimg=\"1\" class=\"admin-logo\" srcset=\"/_next/image?url=%2Fimages%2Flk-group-logo-circle-transparent.png&amp;w=96&amp;q=75 1x, /_next/image?url=%2Fim"
+                },
+                "documentHasFocus": false,
+                "open": true,
+                "modal": true,
+                "contained": false,
+                "headingFocused": false,
+                "controlIndex": -1,
+                "controls": [
+                  {
+                    "tag": "INPUT",
+                    "id": "cr-dialog_r_1_-reason",
+                    "type": null,
+                    "text": ""
+                  },
+                  {
+                    "tag": "INPUT",
+                    "id": "",
+                    "type": "checkbox",
+                    "text": ""
+                  },
+                  {
+                    "tag": "BUTTON",
+                    "id": "",
+                    "type": "button",
+                    "text": "Keep as draft"
+                  }
+                ]
+              },
+              "after": {
+                "active": {
+                  "tag": "INPUT",
+                  "id": "cr-dialog_r_1_-reason",
+                  "html": "<input id=\"cr-dialog_r_1_-reason\" maxlength=\"500\" autocomplete=\"off\" required=\"\" value=\"\">"
+                },
+                "documentHasFocus": true,
+                "open": true,
+                "modal": true,
+                "contained": true,
+                "headingFocused": false,
+                "controlIndex": 0,
+                "controls": [
+                  {
+                    "tag": "INPUT",
+                    "id": "cr-dialog_r_1_-reason",
+                    "type": null,
+                    "text": ""
+                  },
+                  {
+                    "tag": "INPUT",
+                    "id": "",
+                    "type": "checkbox",
+                    "text": ""
+                  },
+                  {
+                    "tag": "BUTTON",
+                    "id": "",
+                    "type": "button",
+                    "text": "Keep as draft"
+                  }
+                ]
+              }
+            },
+            {
+              "key": "Shift+Tab",
+              "index": 0,
+              "before": {
+                "active": {
+                  "tag": "INPUT",
+                  "id": "cr-dialog_r_1_-reason",
+                  "html": "<input id=\"cr-dialog_r_1_-reason\" maxlength=\"500\" autocomplete=\"off\" required=\"\" value=\"\">"
+                },
+                "documentHasFocus": true,
+                "open": true,
+                "modal": true,
+                "contained": true,
+                "headingFocused": false,
+                "controlIndex": 0,
+                "controls": [
+                  {
+                    "tag": "INPUT",
+                    "id": "cr-dialog_r_1_-reason",
+                    "type": null,
+                    "text": ""
+                  },
+                  {
+                    "tag": "INPUT",
+                    "id": "",
+                    "type": "checkbox",
+                    "text": ""
+                  },
+                  {
+                    "tag": "BUTTON",
+                    "id": "",
+                    "type": "button",
+                    "text": "Keep as draft"
+                  }
+                ]
+              },
+              "after": {
+                "active": {
+                  "tag": "BUTTON",
+                  "id": "",
+                  "html": "<button type=\"button\">Keep as draft</button>"
+                },
+                "documentHasFocus": true,
+                "open": true,
+                "modal": true,
+                "contained": true,
+                "headingFocused": false,
+                "controlIndex": 2,
+                "controls": [
+                  {
+                    "tag": "INPUT",
+                    "id": "cr-dialog_r_1_-reason",
+                    "type": null,
+                    "text": ""
+                  },
+                  {
+                    "tag": "INPUT",
+                    "id": "",
+                    "type": "checkbox",
+                    "text": ""
+                  },
+                  {
+                    "tag": "BUTTON",
+                    "id": "",
+                    "type": "button",
+                    "text": "Keep as draft"
+                  }
+                ]
+              }
+            },
+            {
+              "key": "Shift+Tab",
+              "index": 1,
+              "before": {
+                "active": {
+                  "tag": "BUTTON",
+                  "id": "",
+                  "html": "<button type=\"button\">Keep as draft</button>"
+                },
+                "documentHasFocus": true,
+                "open": true,
+                "modal": true,
+                "contained": true,
+                "headingFocused": false,
+                "controlIndex": 2,
+                "controls": [
+                  {
+                    "tag": "INPUT",
+                    "id": "cr-dialog_r_1_-reason",
+                    "type": null,
+                    "text": ""
+                  },
+                  {
+                    "tag": "INPUT",
+                    "id": "",
+                    "type": "checkbox",
+                    "text": ""
+                  },
+                  {
+                    "tag": "BUTTON",
+                    "id": "",
+                    "type": "button",
+                    "text": "Keep as draft"
+                  }
+                ]
+              },
+              "after": {
+                "active": {
+                  "tag": "INPUT",
+                  "id": "",
+                  "html": "<input type=\"checkbox\">"
+                },
+                "documentHasFocus": true,
+                "open": true,
+                "modal": true,
+                "contained": true,
+                "headingFocused": false,
+                "controlIndex": 1,
+                "controls": [
+                  {
+                    "tag": "INPUT",
+                    "id": "cr-dialog_r_1_-reason",
+                    "type": null,
+                    "text": ""
+                  },
+                  {
+                    "tag": "INPUT",
+                    "id": "",
+                    "type": "checkbox",
+                    "text": ""
+                  },
+                  {
+                    "tag": "BUTTON",
+                    "id": "",
+                    "type": "button",
+                    "text": "Keep as draft"
+                  }
+                ]
+              }
+            },
+            {
+              "key": "Shift+Tab",
+              "index": 2,
+              "before": {
+                "active": {
+                  "tag": "INPUT",
+                  "id": "",
+                  "html": "<input type=\"checkbox\">"
+                },
+                "documentHasFocus": true,
+                "open": true,
+                "modal": true,
+                "contained": true,
+                "headingFocused": false,
+                "controlIndex": 1,
+                "controls": [
+                  {
+                    "tag": "INPUT",
+                    "id": "cr-dialog_r_1_-reason",
+                    "type": null,
+                    "text": ""
+                  },
+                  {
+                    "tag": "INPUT",
+                    "id": "",
+                    "type": "checkbox",
+                    "text": ""
+                  },
+                  {
+                    "tag": "BUTTON",
+                    "id": "",
+                    "type": "button",
+                    "text": "Keep as draft"
+                  }
+                ]
+              },
+              "after": {
+                "active": {
+                  "tag": "INPUT",
+                  "id": "cr-dialog_r_1_-reason",
+                  "html": "<input id=\"cr-dialog_r_1_-reason\" maxlength=\"500\" autocomplete=\"off\" required=\"\" value=\"\">"
+                },
+                "documentHasFocus": true,
+                "open": true,
+                "modal": true,
+                "contained": true,
+                "headingFocused": false,
+                "controlIndex": 0,
+                "controls": [
+                  {
+                    "tag": "INPUT",
+                    "id": "cr-dialog_r_1_-reason",
+                    "type": null,
+                    "text": ""
+                  },
+                  {
+                    "tag": "INPUT",
+                    "id": "",
+                    "type": "checkbox",
+                    "text": ""
+                  },
+                  {
+                    "tag": "BUTTON",
+                    "id": "",
+                    "type": "button",
+                    "text": "Keep as draft"
+                  }
+                ]
+              }
+            },
+            {
+              "key": "Shift+Tab",
+              "index": 3,
+              "before": {
+                "active": {
+                  "tag": "INPUT",
+                  "id": "cr-dialog_r_1_-reason",
+                  "html": "<input id=\"cr-dialog_r_1_-reason\" maxlength=\"500\" autocomplete=\"off\" required=\"\" value=\"\">"
+                },
+                "documentHasFocus": true,
+                "open": true,
+                "modal": true,
+                "contained": true,
+                "headingFocused": false,
+                "controlIndex": 0,
+                "controls": [
+                  {
+                    "tag": "INPUT",
+                    "id": "cr-dialog_r_1_-reason",
+                    "type": null,
+                    "text": ""
+                  },
+                  {
+                    "tag": "INPUT",
+                    "id": "",
+                    "type": "checkbox",
+                    "text": ""
+                  },
+                  {
+                    "tag": "BUTTON",
+                    "id": "",
+                    "type": "button",
+                    "text": "Keep as draft"
+                  }
+                ]
+              },
+              "after": {
+                "active": {
+                  "tag": "BODY",
+                  "id": "",
+                  "html": "<body><div hidden=\"\"><!--$--><!--/$--></div><div class=\"__variable_c604bd\"><div class=\"ems-root\"><div class=\"admin-workspace\"><a class=\"skip-link\" href=\"#admin-main\">Skip to workspace content</a><aside class=\"admin-sidebar\"><a class=\"admin-brand\" aria-label=\"L&amp;K Group overview\" href=\"/admin\"><img alt=\"\" width=\"96\" height=\"96\" decoding=\"async\" data-nimg=\"1\" class=\"admin-logo\" srcset=\"/_next/image?url=%2Fimages%2Flk-group-logo-circle-transparent.png&amp;w=96&amp;q=75 1x, /_next/image?url=%2Fim"
+                },
+                "documentHasFocus": false,
+                "open": true,
+                "modal": true,
+                "contained": false,
+                "headingFocused": false,
+                "controlIndex": -1,
+                "controls": [
+                  {
+                    "tag": "INPUT",
+                    "id": "cr-dialog_r_1_-reason",
+                    "type": null,
+                    "text": ""
+                  },
+                  {
+                    "tag": "INPUT",
+                    "id": "",
+                    "type": "checkbox",
+                    "text": ""
+                  },
+                  {
+                    "tag": "BUTTON",
+                    "id": "",
+                    "type": "button",
+                    "text": "Keep as draft"
+                  }
+                ]
+              }
+            },
+            {
+              "key": "Shift+Tab",
+              "index": 4,
+              "before": {
+                "active": {
+                  "tag": "BODY",
+                  "id": "",
+                  "html": "<body><div hidden=\"\"><!--$--><!--/$--></div><div class=\"__variable_c604bd\"><div class=\"ems-root\"><div class=\"admin-workspace\"><a class=\"skip-link\" href=\"#admin-main\">Skip to workspace content</a><aside class=\"admin-sidebar\"><a class=\"admin-brand\" aria-label=\"L&amp;K Group overview\" href=\"/admin\"><img alt=\"\" width=\"96\" height=\"96\" decoding=\"async\" data-nimg=\"1\" class=\"admin-logo\" srcset=\"/_next/image?url=%2Fimages%2Flk-group-logo-circle-transparent.png&amp;w=96&amp;q=75 1x, /_next/image?url=%2Fim"
+                },
+                "documentHasFocus": false,
+                "open": true,
+                "modal": true,
+                "contained": false,
+                "headingFocused": false,
+                "controlIndex": -1,
+                "controls": [
+                  {
+                    "tag": "INPUT",
+                    "id": "cr-dialog_r_1_-reason",
+                    "type": null,
+                    "text": ""
+                  },
+                  {
+                    "tag": "INPUT",
+                    "id": "",
+                    "type": "checkbox",
+                    "text": ""
+                  },
+                  {
+                    "tag": "BUTTON",
+                    "id": "",
+                    "type": "button",
+                    "text": "Keep as draft"
+                  }
+                ]
+              },
+              "after": {
+                "active": {
+                  "tag": "BUTTON",
+                  "id": "",
+                  "html": "<button type=\"button\">Keep as draft</button>"
+                },
+                "documentHasFocus": true,
+                "open": true,
+                "modal": true,
+                "contained": true,
+                "headingFocused": false,
+                "controlIndex": 2,
+                "controls": [
+                  {
+                    "tag": "INPUT",
+                    "id": "cr-dialog_r_1_-reason",
+                    "type": null,
+                    "text": ""
+                  },
+                  {
+                    "tag": "INPUT",
+                    "id": "",
+                    "type": "checkbox",
+                    "text": ""
+                  },
+                  {
+                    "tag": "BUTTON",
+                    "id": "",
+                    "type": "button",
+                    "text": "Keep as draft"
+                  }
+                ]
+              }
+            }
+          ],
+          "reachedControls": [
+            0,
+            1,
+            2
+          ],
+          "inert": {
+            "point": {
+              "x": 361,
+              "y": 576.09375
+            },
+            "text": "Send version 1 to customer…",
+            "enabled": true,
+            "insideButton": true,
+            "insideViewport": true,
+            "outsideDialog": true,
+            "outsideButtonClicks": 0,
+            "pageAndBusinessStateUnchanged": true
+          },
+          "escapeRestoredTrigger": true
+        }
+      },
+      "expectedHttp": [
+        {
+          "path": "/api/admin/quote-requests/4e207c4b-b644-4171-b614-c2d9a02c52b8/company-revisions",
+          "status": 409
+        },
+        {
+          "path": "/api/admin/quote-requests/4e207c4b-b644-4171-b614-c2d9a02c52b8/company-revisions",
+          "status": 503
+        },
+        {
+          "path": "/api/admin/quote-requests/4e207c4b-b644-4171-b614-c2d9a02c52b8/company-revisions/publish",
+          "status": 422
+        }
+      ]
+    },
+    {
+      "name": "Booking draft warning nonblocking published gate and schedule server409",
+      "result": "passed",
+      "evidence": {
+        "draftWarningNonblocking": true,
+        "publishedConfirmationDisabled": true,
+        "tabNavigation": true,
+        "serverCode": "revision_awaiting_customer",
+        "bookingsCreated": 0
+      },
+      "expectedHttp": [
+        {
+          "path": "/api/admin/live-bookings/d23fa552-ffce-4e5e-93e9-d8c1d12c5e87/confirm-request",
+          "status": 409
+        }
+      ]
+    },
+    {
+      "name": "Customer real journey proof expiry new signature unknown retry acceptance exactly once",
+      "result": "passed",
+      "evidence": {
+        "realCustomerPath": "/quote/start",
+        "expiredProofRejected": true,
+        "newSignature": true,
+        "acceptanceCommits": 1,
+        "receipts": 1,
+        "receiptOutbox": 1,
+        "signedGstComparison": {
+          "originalSubtotal": "$2,200.00",
+          "originalGst": "$220.00",
+          "originalTotal": "$2,420.00",
+          "revisedGst": "No GST",
+          "differenceIncludesRemovingOriginalGst": true
+        }
+      },
+      "expectedHttp": [
+        {
+          "path": "/api/quote/requests/company-revision/accept",
+          "status": 409
+        },
+        {
+          "path": "/api/quote/requests/company-revision/accept",
+          "status": 503
+        }
+      ]
+    },
+    {
+      "name": "Withdraw pending second version sends no mail and keeps accepted first version",
+      "result": "passed",
+      "evidence": {
+        "withdrawnVersion": 2,
+        "acceptedVersionUnchanged": 1,
+        "withdrawalEmails": 0,
+        "noticeStatus": "cancelled",
+        "noticeReason": "revision_withdrawn",
+        "providerAccepted": 0,
+        "customerStatus": "withdrawn"
+      },
+      "expectedHttp": []
+    },
+    {
+      "name": "Customer401 removes private view acknowledgment and unsaved signature",
+      "result": "passed",
+      "evidence": {
+        "status": 401,
+        "privateContactRemoved": true,
+        "signatureRemoved": true,
+        "acknowledgmentRemoved": true,
+        "acceptances": 0
+      },
+      "expectedHttp": [
+        {
+          "path": "/api/quote/requests/company-revision/accept",
+          "status": 401
+        },
+        {
+          "path": "/api/quote/requests/customer",
+          "status": 401
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "screenshots": [
+    {
+      "name": "admin-company-1440",
+      "path": "/Users/jimee/orca/workspaces/L&K Group/butterfish/docs/verification/2026-10-21-ems-r3b/admin-company-1440.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "url": "http://127.0.0.1:3021/admin/quotes/4e207c4b-b644-4171-b614-c2d9a02c52b8"
+    },
+    {
+      "name": "confirmation-blocked",
+      "path": "/Users/jimee/orca/workspaces/L&K Group/butterfish/docs/verification/2026-10-21-ems-r3b/confirmation-blocked.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "url": "http://127.0.0.1:3021/admin/quotes/d23fa552-ffce-4e5e-93e9-d8c1d12c5e87"
+    },
+    {
+      "name": "confirmation-server409",
+      "path": "/Users/jimee/orca/workspaces/L&K Group/butterfish/docs/verification/2026-10-21-ems-r3b/confirmation-server409.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "url": "http://127.0.0.1:3021/admin/schedule/d23fa552-ffce-4e5e-93e9-d8c1d12c5e87"
+    },
+    {
+      "name": "customer-accepted-320",
+      "path": "/Users/jimee/orca/workspaces/L&K Group/butterfish/docs/verification/2026-10-21-ems-r3b/customer-accepted-320.png",
+      "viewport": {
+        "width": 320,
+        "height": 1000
+      },
+      "url": "http://127.0.0.1:3021/quote/start?mode=live"
+    },
+    {
+      "name": "customer-withdrawn-1440",
+      "path": "/Users/jimee/orca/workspaces/L&K Group/butterfish/docs/verification/2026-10-21-ems-r3b/customer-withdrawn-1440.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "url": "http://127.0.0.1:3021/quote/start?mode=live"
+    },
+    {
+      "name": "customer-access-lost-1440",
+      "path": "/Users/jimee/orca/workspaces/L&K Group/butterfish/docs/verification/2026-10-21-ems-r3b/customer-access-lost-1440.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "url": "http://127.0.0.1:3021/quote/start?mode=live"
+    }
+  ],
+  "skippedScenarios": []
+}

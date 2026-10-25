@@ -1,6 +1,7 @@
 import type {LiveCompanyBookingState} from './domain/live-contracts.ts'
 import {reconcileLiveCompanyEvents} from './live-calendar.ts'
 import {processCompanyBookingOutbox} from './live-delivery.ts'
+import {processCompanyRevisionOutbox} from '../quotes/company-revision-delivery.ts'
 import {processLiveBookingDelivery} from '../quotes/booking-delivery.ts'
 export interface CompanyBookingReconcileResult {checked:number;reviewRequired:number;unavailable:number;storageErrors:number}
 export async function reconcileLiveCompanyBookingBatch(injected?:{
@@ -24,7 +25,10 @@ export async function reconcileLiveCompanyBookingBatch(injected?:{
 /** Daily backup has a bounded number of leases; immediate UI actions also run their own durable jobs. */
 export async function processLiveBookingMaintenance(){
  const started=Date.now(),company=await processCompanyBookingOutbox()
+ const {processSimpleBookingCancellation}=await import('./simple-cancellation.ts')
+ const cancellation=Date.now()-started<65000?await processSimpleBookingCancellation():null
+ const revision=Date.now()-started<65000?await processCompanyRevisionOutbox():null
  const request=Date.now()-started<65000?await processLiveBookingDelivery():null
  const reconciliation=Date.now()-started<120000?await reconcileLiveCompanyBookingBatch():null
- return {company,request,reconciliation,storageErrors:company.storageErrors+(request?.storageErrors??0)+(reconciliation?.storageErrors??0)}
+ return {company,request,revision,reconciliation,cancellation,storageErrors:(revision?.storageErrors??0)+company.storageErrors+(cancellation?.storageErrors??0)+(request?.storageErrors??0)+(reconciliation?.storageErrors??0)}
 }

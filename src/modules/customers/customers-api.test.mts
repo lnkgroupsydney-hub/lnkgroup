@@ -5,6 +5,7 @@ import { createCustomerApi } from './infrastructure/api.ts'
 import { CustomerError, validateCreateCustomer, validateCustomerLink, customerSearch } from './domain/validation.ts'
 import { customerCommand } from './application/customers.ts'
 import { AdminAccessError } from '../admin-access/index.ts'
+import { parseQuoteDraft } from '../enquiries/domain.ts'
 const actor = { companyId: 'lk-group', userId: randomUUID(), sessionId: randomUUID() }
 const base = 'http://127.0.0.1:3002'
 function fixture() {
@@ -31,7 +32,7 @@ test('unauthenticated, insufficient permission and verification denial never que
  }
 })
 test('cross-origin, absent Origin, wrong media type and oversized streaming bodies fail before storage',async()=>{
- for(const req of [post(create(),{origin:'https://foreign.invalid'}),post(create(),{origin:''}),post(create(),{'sec-fetch-site':'cross-site'}),post(create(),{'content-type':'application/jsonp'}),post(create(),{'content-length':'4097'}),post({name:'x'.repeat(5000)})]) {
+ for(const req of [post(create(),{origin:'https://foreign.invalid'}),post(create(),{origin:''}),post(create(),{'sec-fetch-site':'cross-site'}),post(create(),{'content-type':'application/jsonp'}),post(create(),{'content-length':'16385'}),post({name:'x'.repeat(17000)})]) {
   const f=fixture(),r=await f.api.create(req);assert.ok([403,413,415].includes(r.status));assert.equal(f.calls.length,0)
  }
 })
@@ -64,4 +65,78 @@ test('validation preserves optional blank fields as missing and caps search with
  assert.deepEqual(validateCreateCustomer({name:' Synthetic ',email:'',phone:' ',address:null,idempotencyKey:' key '}),{name:'Synthetic',email:null,phone:null,address:null,idempotencyKey:'key'})
  assert.throws(()=>customerSearch(new URLSearchParams('page=0')),CustomerError)
  assert.throws(()=>customerSearch(new URLSearchParams(`q=${'x'.repeat(121)}`)),CustomerError)
+})
+
+test('R2 candidates use read grant, resolve uses write grant and return explicit review without customer creation receipt',async()=>{
+ const f=fixture();await f.api.candidates(post({name:'Name',email:'a@example.invalid'}))
+ const requestId=randomUUID();const result=await f.api.resolve(post({...create(),source:{type:'quote_request',id:requestId,expectedCrmRevision:0,expectedSourceRevision:1}}))
+ assert.equal(result.status,200);assert.deepEqual(f.permissions,['operations.read','operations.write'])
+ assert.equal(f.calls[1].args.source && (f.calls[1].args.source as {id:string}).id,requestId)
+ const api=createCustomerApi({authorize:async()=>actor,baseUrl:()=>base,store:{command:async<T>()=>({outcome:'needs_review',candidates:[{customer:{id:randomUUID()},matchedBy:['email']}]}) as T}})
+ const review=await api.create(post(create()));assert.equal(review.status,409);const body=await review.json();assert.equal(body.code,'needs_review');assert.equal(body.candidates.length,1)
+})
+test('stored quote contacts remain searchable and explicitly reusable without applying new contact format rules',async()=>{
+ const contact=parseQuoteDraft({contact:{name:'12345',email:'a..b@example.invalid',phone:'call me later',siteAddress:'12345',suburb:'Sydney',postcode:'2000',details:'',consent:true},service:null}).contact
+ for(const changed of [{},{name:'<b>Legacy name</b>',address:'<b>Legacy address</b>'}]) {
+  const f=fixture(),details={name:contact.name,email:contact.email,phone:contact.phone,address:contact.siteAddress,...changed},decision={kind:'existing',customerId:randomUUID(),expectedRevision:3,reason:'Reviewed existing client'},source={type:'quote_request',id:randomUUID(),expectedCrmRevision:0,expectedSourceRevision:2}
+  assert.equal((await f.api.candidates(post(details))).status,200)
+  assert.equal((await f.api.resolve(post({...details,decision,source,idempotencyKey:'legacy-reuse'}))).status,200)
+  assert.deepEqual(f.calls.map(call=>call.command),['candidates','resolve'])
+  assert.deepEqual(f.permissions,['operations.read','operations.write'])
+  for(const field of ['name','email','phone'] as const) assert.equal(f.calls[0].args[field],details[field])
+  for(const [field,value] of Object.entries(details)) assert.equal(f.calls[1].args[field],value)
+  assert.deepEqual(f.calls[1].args.decision,decision);assert.deepEqual(f.calls[1].args.source,source)
+ }
+})
+test('candidate lookup and existing reuse retain bounded text, source, revision and idempotency guards',async()=>{
+ const decision={kind:'existing',customerId:randomUUID(),expectedRevision:1,reason:'Reviewed existing client'},valid={...create(),decision}
+ for(const invalid of [{name:''},{name:123},{name:'x'.repeat(121)},{email:[]},{email:'x'.repeat(255)},{email:'invalid'},{phone:123},{phone:'x'.repeat(81)},{address:{}},{address:'x'.repeat(501)},...['name','email','phone','address'].flatMap(field=>['bad\u0000text','bad\ntext','bad\ud800','bad\udc00'].map(value=>({[field]:value})))]) {
+  const f=fixture()
+  assert.equal((await f.api.candidates(post({...valid,...invalid}))).status,400)
+  assert.equal((await f.api.resolve(post({...valid,...invalid}))).status,400)
+  assert.equal(f.calls.length,0)
+ }
+ for(const invalid of [{idempotencyKey:''},{idempotencyKey:'bad\u0000key'},{decision:{...decision,customerId:'invalid'}},{decision:{...decision,expectedRevision:0}},{decision:{...decision,reason:''}},{source:{type:'quote_request',id:randomUUID(),expectedCrmRevision:0,expectedSourceRevision:0}},{property:{label:'<b>New site</b>',address:{line1:'10 Test',suburb:'Sydney',state:'NSW',postcode:'2000'}}}]) {
+  const f=fixture();assert.equal((await f.api.resolve(post({...valid,...invalid}))).status,400);assert.equal(f.calls.length,0)
+ }
+})
+test('legacy-compatible lookup cannot bypass strict new customer creation or updates',async()=>{
+ const existing={kind:'existing',customerId:randomUUID(),expectedRevision:1,reason:'Reviewed existing client'},different={kind:'different_person',reason:'Distinct person reviewed',reviewedCandidates:[]}
+ for(const invalid of [{phone:'call me later'},{email:'a..b@example.invalid'},{name:'12345'},{name:'<b>Legacy</b>'},{address:'12345'},{address:'<b>Legacy address</b>'}]) {
+  const f=fixture(),value={...create(),...invalid}
+  assert.equal((await f.api.candidates(post(value))).status,200)
+  for(const decision of [undefined,{kind:'auto'},different]) assert.equal((await f.api.resolve(post({...value,decision}))).status,400)
+  assert.equal((await f.api.create(post({...value,decision:existing}))).status,400)
+  assert.equal((await f.api.update(post({...value,decision:existing,expectedRevision:1,reason:'Reviewed edit'}),existing.customerId)).status,400)
+  assert.equal(f.calls.length,1)
+ }
+})
+test('R2 property and customer mutation paths bind IDs, metadata and staff actor; invalid source CAS is rejected',async()=>{
+ const f=fixture(),id=randomUUID(),propertyId=randomUUID(),metadata={expectedRevision:2,reason:'Reviewed edit',idempotencyKey:randomUUID()}
+ assert.equal((await f.api.archive(post(metadata),id)).status,200)
+ assert.equal((await f.api.restore(post({...metadata,decision:{kind:'different_person',reason:'Distinct identity reviewed',reviewedCandidates:[]}}),id)).status,200)
+ const property={label:'Site',address:{line1:'10 Test',unit:'1',suburb:'Sydney',state:'NSW',postcode:'2000'},...metadata}
+ assert.equal((await f.api.property(post(property),id,propertyId,'property_update')).status,200)
+ assert.equal(f.calls[2].args.propertyId,propertyId);assert.equal(f.calls[2].args.actorUserId,actor.userId)
+ for(const source of [{type:'quote_request',id,expectedCrmRevision:0},{type:'quote_request',id,expectedCrmRevision:-1,expectedSourceRevision:1},{type:'quote_request',id,expectedCrmRevision:0,expectedSourceRevision:0}]) assert.equal((await f.api.resolve(post({...create(),source}))).status,400)
+ assert.equal((await f.api.property(post({...property,address:'unstructured'}),id,propertyId,'property_update')).status,400)
+})
+test('R2 bounded resolve body accepts meaningful combined inputs, exact byte boundary and rejects malformed Unicode',async()=>{
+ const f=fixture(),payload={...create(),property:{label:'Site',address:{line1:'10 Test',unit:'1',suburb:'Sydney',state:'NSW',postcode:'2000'},notes:'n'.repeat(2000)},decision:{kind:'different_person',reason:'Shared contact reviewed',reviewedCandidates:Array.from({length:100},()=>({id:randomUUID(),revision:1}))}}
+ assert.equal((await f.api.resolve(post(payload))).status,200)
+ const raw=JSON.stringify(create()),make=(bytes:number)=>new Request(base+'/api/admin/customers',{method:'POST',headers:{origin:base,'content-type':'application/json'},body:raw+' '.repeat(bytes-Buffer.byteLength(raw))})
+ assert.equal((await f.api.create(make(16384))).status,201);assert.equal((await f.api.create(make(16385))).status,413)
+ assert.equal((await f.api.create(post({...create(),name:'bad\ud800'}))).status,400)
+})
+
+test('resolve carries only an explicit positive selected-property revision and keeps legacy receipt requests unchanged',async()=>{
+ const input={...create(),propertyId:randomUUID()},f=fixture()
+ assert.equal((await f.api.resolve(post({...input,expectedPropertyRevision:3}))).status,200)
+ assert.equal(f.calls[0].args.expectedPropertyRevision,3)
+ assert.equal((await f.api.resolve(post(input))).status,200)
+ assert.equal('expectedPropertyRevision' in f.calls[1].args,false,'do not alter legacy receipt fingerprints by adding a default')
+ for(const value of [null,0,-1,1.5,'1',Number.MAX_SAFE_INTEGER+1]){
+  const invalid=fixture();assert.equal((await invalid.api.resolve(post({...input,expectedPropertyRevision:value}))).status,400);assert.equal(invalid.calls.length,0)
+ }
+ const invalid=fixture();assert.equal((await invalid.api.resolve(post({...create(),expectedPropertyRevision:1}))).status,400);assert.equal(invalid.calls.length,0)
 })

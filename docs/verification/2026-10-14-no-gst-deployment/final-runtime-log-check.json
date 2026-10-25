@@ -1,0 +1,7 @@
+{
+  "deploymentId": "dpl_HALJE1DmbmvjyiKt82Zf88au9Evj",
+  "checkedAt": "2026-10-15T08:01:43.366611+00:00",
+  "filter": "production; no-branch; level error; since 10m; limit100",
+  "exitCode": 0,
+  "returnedErrorLogEntries": 0
+}

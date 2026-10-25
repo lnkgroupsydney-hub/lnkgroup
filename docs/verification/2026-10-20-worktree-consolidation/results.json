@@ -1,0 +1,117 @@
+{
+  "date": "2026-10-20",
+  "sourceMerge": "4c07d6c26313e1ad5413e56e58451bc2bbf90c4f",
+  "initialWorktrees": [
+    {
+      "path": "/Users/jimee/Desktop/L&K Group",
+      "before": "756eb4daca685a9137149b7c15c21dba83f4373d",
+      "after": "c39768835105315dbffbb2fefe68c4cfc4f22319",
+      "branch": "codex/lk-group-home-ui-ux-20261013",
+      "remaining": ""
+    },
+    {
+      "path": "/Users/jimee/.codex/worktrees/ems-ux-crud-plan-20261013/L&K Group",
+      "before": "cea71c1bc108e5a85cf25162ad3b48c887da0a8d",
+      "after": "cea71c1bc108e5a85cf25162ad3b48c887da0a8d",
+      "branch": "codex/ems-ux-crud-plan-20261013",
+      "remaining": ""
+    },
+    {
+      "path": "/Users/jimee/.codex/worktrees/gst-production-release/L&K Group",
+      "before": "1e9cbf9daad23f4d0f2381c2d9a4fe1073b77887",
+      "after": "3d7ef836e637e22045ad04f758c7e926e8c120c1",
+      "branch": "codex/gst-production-20261014",
+      "remaining": "?? node_modules"
+    },
+    {
+      "path": "/Users/jimee/.codex/worktrees/kcp-main-integration-20261013/L&K Group",
+      "before": "cc5a29ffc9bb2f0ba834427be7ae0ec723e62c79",
+      "after": "72fad0f6fcc80938ca909982c3b301b56712f963",
+      "branch": "archive/kcp-integration-cleanup-20261020",
+      "remaining": ""
+    },
+    {
+      "path": "/Users/jimee/.codex/worktrees/public-search-seo-aeo/L&K Group",
+      "before": "5c4270206319b0a12b7cf9c54f269f9c6f463efc",
+      "after": "4979cc2c205fa1219a09b2615f747f5a6526a1e1",
+      "branch": "codex/public-search-seo-aeo-20261016",
+      "remaining": "?? node_modules"
+    },
+    {
+      "path": "/Users/jimee/.codex/worktrees/quote-entry-release-20261013/L&K Group",
+      "before": "d73d7e7bb97b013f344728eecc7d6f6ed711487e",
+      "after": "9c4116ffcd6af2df7f770e0f13d67e40e5421fc3",
+      "branch": "main",
+      "remaining": ""
+    },
+    {
+      "path": "/Users/jimee/.codex/worktrees/quote-live-e2e-20261014/L&K Group",
+      "before": "d73d7e7bb97b013f344728eecc7d6f6ed711487e",
+      "after": "9c4116ffcd6af2df7f770e0f13d67e40e5421fc3",
+      "branch": "codex/quote-live-e2e-20261014",
+      "remaining": ""
+    },
+    {
+      "path": "/Users/jimee/orca/workspaces/L&K Group/tropicbird",
+      "before": "5c4270206319b0a12b7cf9c54f269f9c6f463efc",
+      "after": "5c4270206319b0a12b7cf9c54f269f9c6f463efc",
+      "branch": "consolidate-worktrees-into-main",
+      "remaining": ""
+    }
+  ],
+  "removed": [
+    {
+      "path": "/Users/jimee/.codex/worktrees/ems-ux-crud-plan-20261013/L&K Group",
+      "commit": "cea71c1bc108e5a85cf25162ad3b48c887da0a8d"
+    },
+    {
+      "path": "/Users/jimee/.codex/worktrees/gst-production-release/L&K Group",
+      "commit": "3d7ef836e637e22045ad04f758c7e926e8c120c1"
+    },
+    {
+      "path": "/Users/jimee/.codex/worktrees/kcp-main-integration-20261013/L&K Group",
+      "commit": "72fad0f6fcc80938ca909982c3b301b56712f963"
+    },
+    {
+      "path": "/Users/jimee/.codex/worktrees/public-search-seo-aeo/L&K Group",
+      "commit": "4979cc2c205fa1219a09b2615f747f5a6526a1e1"
+    },
+    {
+      "path": "/Users/jimee/.codex/worktrees/quote-entry-release-20261013/L&K Group",
+      "commit": "9c4116ffcd6af2df7f770e0f13d67e40e5421fc3"
+    },
+    {
+      "path": "/Users/jimee/.codex/worktrees/quote-live-e2e-20261014/L&K Group",
+      "commit": "9c4116ffcd6af2df7f770e0f13d67e40e5421fc3"
+    }
+  ],
+  "remaining": [
+    "/Users/jimee/Desktop/L&K Group",
+    "/Users/jimee/orca/workspaces/L&K Group/tropicbird"
+  ],
+  "privateBackup": {
+    "path": "/Users/jimee/Desktop/L&K Group/.local/worktree-archive-20261020",
+    "verifiedFiles": 772
+  },
+  "verification": {
+    "operations": {
+      "passed": 808,
+      "failed": 0,
+      "skipped": 0
+    },
+    "searchAndTimeline": {
+      "passed": 13,
+      "failed": 0
+    },
+    "lint": "passed",
+    "typecheck": "passed",
+    "build": "passed",
+    "adminBrowserR1": 13,
+    "adminBrowserR2": 16,
+    "publicPageViewportChecks": 6,
+    "reviewer": "approved after compatibility fix"
+  },
+  "push": false,
+  "deployment": false,
+  "companyDatabaseChanged": false
+}

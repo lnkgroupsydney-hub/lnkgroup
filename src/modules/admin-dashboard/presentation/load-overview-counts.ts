@@ -1,6 +1,7 @@
 import type { LiveQuoteRequestPage } from '../../quotes/domain/contracts.ts';
 import { isRecord, liveRequest, LiveRequestError, parseLiveRequest } from '../../quotes/presentation/request-client.ts';
-import { companyBookingRequest, currentAcceptance, LiveCompanyRequestError, parseCompanyState, usesSignedRequestBooking } from '../../bookings/presentation/live-booking-client.ts';
+import { companyBookingRequest, LiveCompanyRequestError, parseCompanyState } from '../../bookings/presentation/live-booking-client.ts';
+import { needsCompanyAction } from '../../bookings/presentation/booking-status-tone.ts';
 import { buildOverviewCounts, countBookings, countQuotesAwaitingReview } from '../application/overview-counts.ts';
 import type { OverviewCountsState } from '../application/overview-counts-contract.ts';
 
@@ -42,7 +43,7 @@ export async function loadOverviewCounts(signal: AbortSignal, fetchers = { quote
         if (!state) throw new Error(retryMessage);
         return state;
       });
-      return countBookings(states, state => usesSignedRequestBooking(state) || currentAcceptance(state) || state.proposal === null || state.proposal.status === 'draft');
+      return countBookings(states, needsCompanyAction);
     })(),
   ]);
   signal.throwIfAborted();
