@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { connection } from "next/server";
 import { StaffAdminBoundary } from "@/modules/admin-access/client";
 import { AdminWorkspace } from "@/modules/admin-dashboard/client";
-import { staffWorkspaceEnabled } from "@/modules/admin-dashboard/server";
+import { outfit, staffWorkspaceEnabled } from "@/modules/admin-dashboard/server";
 
 import "@/shared/styles/admin-tokens.css";
 import "@/shared/styles/admin-layout.css";
@@ -14,5 +14,6 @@ export const metadata: Metadata = { title: "L&K Group EMS — Private workspace"
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   await connection();
   if (!staffWorkspaceEnabled()) return <main id="main-content">{children}</main>;
-  return <StaffAdminBoundary authMain><AdminWorkspace>{children}</AdminWorkspace></StaffAdminBoundary>;
+  // Outfit is defined only inside the administrator tree; the public site keeps Manrope.
+  return <div className={outfit.variable}><StaffAdminBoundary authMain><AdminWorkspace>{children}</AdminWorkspace></StaffAdminBoundary></div>;
 }

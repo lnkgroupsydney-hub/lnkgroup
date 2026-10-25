@@ -10,7 +10,9 @@ export function AdminEmptyState({ title, description, children }: { title: strin
   return <div className="ems-empty"><h3>{title}</h3><p>{description}</p>{children && <div className="ems-actions">{children}</div>}</div>;
 }
 
-export function AdminStatusBadge({ children, tone = "neutral" }: { children: ReactNode; tone?: "neutral" | "success" | "warning" | "danger" }) {
+export type StatusTone = "neutral" | "success" | "warning" | "danger" | "info";
+
+export function AdminStatusBadge({ children, tone = "neutral" }: { children: ReactNode; tone?: StatusTone }) {
   return <span className={`ems-status ems-status--${tone}`}>{children}</span>;
 }
 

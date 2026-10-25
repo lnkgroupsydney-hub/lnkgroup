@@ -9,3 +9,4 @@ export function requireStaffWorkspace() {
 }
 
 export { isAdminRecordId } from "./presentation/admin-navigation";
+export { outfit } from "./presentation/admin-fonts";
