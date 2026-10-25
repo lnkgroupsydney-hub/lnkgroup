@@ -1,19 +1,23 @@
-import { BOOKING_SIMPLE_ACK_VERSION, isBookingAcknowledgment } from '../../quotes/domain/booking-flow.ts';
+import { COMPANY_REVISION_ACK, calculateCompanyRevisionPricing, type CompanyRevisionPayload } from '../../quotes/domain/company-revision.ts';
+import { BOOKING_SIMPLE_ACK_VERSION, isBookingAcknowledgment, parseBookingSignature } from '../../quotes/domain/booking-flow.ts';
 import { COMPANY_BOOKING_SITE_DAMAGE_NOTE, COMPANY_BOOKING_ACK_TEXT, COMPANY_BOOKING_ACK_VERSION, type LiveCompanyBookingState, type LiveCompanyCalendarCheck, type LiveCompanyProposal, type LiveCompanyReview } from '../domain/live-contracts.ts';
 
 export class LiveCompanyRequestError extends Error {
   readonly status: number;
-  constructor(status: number, message: string) { super(message); this.status=status; }
+  readonly code?: string;
+  constructor(status: number, message: string, code?: string) { super(message); this.status=status; this.code=code; }
 }
 export function record(value: unknown): value is Record<string, unknown> { return value !== null && typeof value === 'object' && !Array.isArray(value); }
 function validDate(value: unknown) { return typeof value === 'string' && Number.isFinite(Date.parse(value)); }
 function money(value: unknown) { return Number.isSafeInteger(value) && Number(value) >= 0; }
 export function parseCompanyProposal(value: unknown): LiveCompanyProposal {
   if (!record(value) || typeof value.id !== 'string' || !Number.isSafeInteger(value.version) || Number(value.version) < 1 || !Number.isSafeInteger(value.revision) || !['draft','published'].includes(String(value.status)) || typeof value.hash !== 'string' || !value.hash || value.currency !== 'AUD' || !money(value.amountExGst) || !money(value.gst) || !money(value.total) || value.total !== Number(value.amountExGst) + Number(value.gst) || typeof value.scope !== 'string' || typeof value.adjustmentReason !== 'string' || !record(value.calendarTarget) || typeof value.calendarTarget.calendarId !== 'string' || !Array.isArray(value.segments) || !value.segments.length || value.segments.some(s => !record(s) || !['all_day','timed'].includes(String(s.kind)) || !validDate(s.startAt) || !validDate(s.endAt) || Date.parse(String(s.startAt)) >= Date.parse(String(s.endAt)) || typeof s.startDate !== 'string' || typeof s.endDate !== 'string')) throw new Error('The company proposal could not be verified. Refresh its saved status.');
-  if (value.confirmationBasis != null && !['customer_proposal','signed_request'].includes(String(value.confirmationBasis)) || value.companyNote != null && typeof value.companyNote !== 'string') throw new Error('The booking confirmation basis could not be verified.');
-  if (value.confirmationBasis === 'signed_request' && (value.segments.length !== 2 || value.segments.some((segment, index) => !record(segment) || segment.kind !== 'timed' || segment.purpose !== (index === 0 ? 'take_off' : 'install')))) throw new Error('The take-off and installation visits could not be verified.');
+  if (value.confirmationBasis != null && !['customer_proposal','signed_request','accepted_revision'].includes(String(value.confirmationBasis)) || value.companyNote != null && typeof value.companyNote !== 'string') throw new Error('The booking confirmation basis could not be verified.');
+  if (['signed_request','accepted_revision'].includes(String(value.confirmationBasis)) && (value.segments.length !== 2 || value.segments.some((segment, index) => !record(segment) || segment.kind !== 'timed' || segment.purpose !== (index === 0 ? 'take_off' : 'install')))) throw new Error('The take-off and installation visits could not be verified.');
+  if (value.confirmationBasis === 'accepted_revision') { revisionEvidence(value); const payload = {contact:value.contact,quantities:value.quantities,extraItems:value.extraItems,customerNote:value.customerNote} as CompanyRevisionPayload; const pricing=calculateCompanyRevisionPricing(payload); if(value.gst!==0||pricing.total!==value.total||!record(value.pricing)||value.pricing.total!==pricing.total||value.pricing.tax!==0||!record(value.companyRevisionAcknowledgment)||value.companyRevisionAcknowledgment.version!==COMPANY_REVISION_ACK.version||value.companyRevisionAcknowledgment.text!==COMPANY_REVISION_ACK.text)throw new Error('The accepted revision amount could not be verified.');parseBookingSignature(value.companyRevisionSignature); }
   return { ...value, confirmationBasis: value.confirmationBasis ?? undefined, companyNote: value.companyNote ?? undefined } as unknown as LiveCompanyProposal;
 }
+function revisionEvidence(value: Record<string,unknown>) { for(const k of ['companyRevisionId','companyRevisionAcceptanceId'])if(typeof value[k]!=='string'||!/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i.test(String(value[k])))throw new Error('The accepted revision identity is invalid.');for(const k of ['companyRevisionSnapshotHash','companyRevisionSignedContentHash'])if(typeof value[k]!=='string'||!/^[a-f0-9]{64}$/.test(String(value[k])))throw new Error('The accepted revision evidence is invalid.'); }
 export function parseCompanyState(body: Record<string, unknown>, requestId: string): LiveCompanyBookingState | null {
   const value = body.state;
   if (value === null) return null;
@@ -24,16 +28,17 @@ export function parseCompanyState(body: Record<string, unknown>, requestId: stri
   }
   const proposal = value.proposal === null ? null : parseCompanyProposal(value.proposal);
   const proposals = value.proposals.map(parseCompanyProposal);
-  if (record(value.submission.snapshot) && value.submission.snapshot.version === BOOKING_SIMPLE_ACK_VERSION && proposals.some(item => item.confirmationBasis !== 'signed_request')) throw new Error('The signed booking request was mixed with an earlier proposal workflow.');
+  if (record(value.submission.snapshot) && value.submission.snapshot.version === BOOKING_SIMPLE_ACK_VERSION && proposals.some(item => !['signed_request','accepted_revision'].includes(String(item.confirmationBasis)))) throw new Error('The signed booking request was mixed with an earlier proposal workflow.');
   if (proposal && !proposals.some(p => p.id === proposal.id && p.hash === proposal.hash)) throw new Error('The proposal history does not match the current version.');
   if (value.acceptance !== null && (!record(value.acceptance) || typeof value.acceptance.proposalId !== 'string' || typeof value.acceptance.proposalHash !== 'string' || !validDate(value.acceptance.acceptedAt) || !record(value.acceptance.signature) || typeof value.acceptance.signature.name !== 'string' || value.acceptance.acknowledgmentVersion !== COMPANY_BOOKING_ACK_VERSION)) throw new Error('The company proposal acknowledgment could not be verified.');
   if (value.booking !== null && (!record(value.booking) || !['confirming','confirmed','review_required','cancel_pending','cancelled'].includes(String(value.booking.status)) || typeof value.booking.proposalId !== 'string' || typeof value.booking.proposalHash !== 'string' || !Array.isArray(value.booking.events))) throw new Error('The confirmation status could not be verified.');
-  if (record(value.booking) && value.booking.confirmationBasis != null && !['signed_request','customer_proposal'].includes(String(value.booking.confirmationBasis))) throw new Error('The saved booking confirmation basis is invalid.');
+  if (record(value.booking) && value.booking.confirmationBasis != null && !['signed_request','customer_proposal','accepted_revision'].includes(String(value.booking.confirmationBasis))) throw new Error('The saved booking confirmation basis is invalid.');
   for(const linked of [value.acceptance,value.booking]) if(record(linked)&&!proposals.some(p=>p.id===linked.proposalId&&p.hash===linked.proposalHash)) throw new Error('A saved confirmation points to another company proposal. Refresh its current status.');
   if (proposal?.confirmationBasis === 'signed_request') {
     const submission = value.submission;
     if (!record(submission.snapshot) || submission.snapshot.version !== BOOKING_SIMPLE_ACK_VERSION || proposal.total !== (record(submission.snapshot.pricing) ? submission.snapshot.pricing.total : null) || proposal.segments[0].startLocal !== `${submission.preferredDate}T${submission.preferredTime}` || value.acceptance !== null || record(value.booking) && (value.booking.confirmationBasis !== 'signed_request' || value.booking.signedSubmissionId !== submission.id)) throw new Error('The confirmation did not match the original signed estimate and take-off visit.');
   }
+  if(proposal?.confirmationBasis==='accepted_revision'){ const submission=value.submission;if(!record(submission.snapshot)||submission.snapshot.version!==BOOKING_SIMPLE_ACK_VERSION||proposal.segments[0].startLocal!==`${submission.preferredDate}T${submission.preferredTime}`||value.acceptance!==null)throw new Error('The accepted revision did not match the signed take-off request.');if(record(value.booking)){const booking=value.booking;revisionEvidence(booking);if(booking.confirmationBasis!=='accepted_revision'||booking.signedSubmissionId!==submission.id||['companyRevisionId','companyRevisionAcceptanceId','companyRevisionSnapshotHash','companyRevisionSignedContentHash'].some(k=>booking[k]!==proposal[k as keyof LiveCompanyProposal]))throw new Error('The confirmed booking did not match the accepted company revision.');}}
   return { ...value, proposal, proposals } as unknown as LiveCompanyBookingState;
 }
 export function parseCompanyReview(body: Record<string, unknown>, proposal: LiveCompanyProposal): LiveCompanyReview {
@@ -51,7 +56,7 @@ export function parseCompanyCheck(body: Record<string, unknown>): LiveCompanyCal
 export async function companyBookingRequest(path: string, requestId: string, init: RequestInit = {}) {
   const response = await fetch(path, { ...init, credentials: 'same-origin', cache: 'no-store', headers: { ...init.headers, 'x-lk-quote-request-id': requestId }, signal: init.signal ?? AbortSignal.timeout(35_000) });
   const body: unknown = await response.json().catch(() => null);
-  if (!response.ok) throw new LiveCompanyRequestError(response.status, record(body) && typeof body.error === 'string' ? body.error : 'This booking request could not be completed. Check its saved status and retry.');
+  if (!response.ok) throw new LiveCompanyRequestError(response.status, record(body) && typeof body.error === 'string' ? body.error : 'This booking request could not be completed. Check its saved status and retry.', record(body) && typeof body.code === 'string' ? body.code : undefined);
   if (!record(body)) throw new Error('The company booking response could not be read. Check its saved status.');
   return body;
 }
@@ -76,7 +81,7 @@ export function companyProcessingRetryable(state: LiveCompanyBookingState) {
   const retryable=(status:string)=>['pending','sending','retrying','outcome_unknown'].includes(status);
   if(state.booking&&['review_required','cancel_pending','cancelled'].includes(state.booking.status))return false;
   if(state.booking)return state.booking.status==='confirming'||retryable(state.booking.emailStatus);
-  return Boolean(state.proposal?.confirmationBasis!=='signed_request'&&state.proposal?.status==='published'&&retryable(state.proposal.emailStatus)||currentAcceptance(state)&&state.acceptance&&retryable(state.acceptance.emailStatus));
+  return Boolean(!['signed_request','accepted_revision'].includes(String(state.proposal?.confirmationBasis))&&state.proposal?.status==='published'&&retryable(state.proposal.emailStatus)||currentAcceptance(state)&&state.acceptance&&retryable(state.acceptance.emailStatus));
 }
 export function newerCompanyState(previous: LiveCompanyBookingState | null, next: LiveCompanyBookingState | null) { return previous && next && previous.requestId === next.requestId && previous.revision > next.revision ? previous : next; }
 /** Clean saved inputs follow a newer server revision, including our own publish.

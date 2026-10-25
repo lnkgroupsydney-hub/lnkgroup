@@ -1,0 +1,291 @@
+{
+  "synthetic": true,
+  "base": "http://127.0.0.1:3063",
+  "planned": 6,
+  "passed": 2,
+  "failed": 4,
+  "skipped": 0,
+  "results": [
+    {
+      "name": "D1 source issues unchanged legacy save changed invalid rejection and server fields",
+      "result": "passed",
+      "evidence": {
+        "sourceIssues": true,
+        "unchangedLegacySaved": true,
+        "changedInvalidRejected": true,
+        "serverFieldsDisplayed": true,
+        "widths": [
+          320,
+          768,
+          1440
+        ]
+      },
+      "expectedHttp": [
+        {
+          "path": "/api/admin/quote-requests/be24a16f-0005-4ce7-8184-398bd727f0ff/staff-draft",
+          "status": 422
+        }
+      ]
+    },
+    {
+      "name": "Booking draft warning nonblocking published gate and schedule server409",
+      "result": "passed",
+      "evidence": {
+        "draftWarningNonblocking": true,
+        "publishedConfirmationDisabled": true,
+        "tabNavigation": true,
+        "serverCode": "revision_awaiting_customer",
+        "bookingsCreated": 0
+      },
+      "expectedHttp": [
+        {
+          "path": "/api/admin/live-bookings/eabb6340-e5d0-4cac-9425-a26dc9bf245c/confirm-request",
+          "status": 409
+        }
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "name": "Company save conflict unknown identical retry strict publication and modal focus",
+      "message": "Tab escaped the dialog focus trap\n\nfalse !== true\n",
+      "stack": "AssertionError [ERR_ASSERTION]: Tab escaped the dialog focus trap\n\nfalse !== true\n\n    at modalFocus (file:///private/tmp/claude-501/-Users-jimee-orca-workspaces-L-K-Group-featherduster/687d9dbc-0c8f-4a4c-aac2-1fe5e91655c7/scratchpad/orchestration/ems-r3b/p3/app/scripts/verify-ems-r3b-ui.mjs:136:12)\n    at async scenario.path (file:///private/tmp/claude-501/-Users-jimee-orca-workspaces-L-K-Group-featherduster/687d9dbc-0c8f-4a4c-aac2-1fe5e91655c7/scratchpad/orchestration/ems-r3b/p3/app/scripts/verify-ems-r3b-ui.mjs:265:5)\n    at async scenario (file:///private/tmp/claude-501/-Users-jimee-orca-workspaces-L-K-Group-featherduster/687d9dbc-0c8f-4a4c-aac2-1fe5e91655c7/scratchpad/orchestration/ems-r3b/p3/app/scripts/verify-ems-r3b-ui.mjs:166:21)\n    at async main (file:///private/tmp/claude-501/-Users-jimee-orca-workspaces-L-K-Group-featherduster/687d9dbc-0c8f-4a4c-aac2-1fe5e91655c7/scratchpad/orchestration/ems-r3b/p3/app/scripts/verify-ems-r3b-ui.mjs:227:3)\n    at async file:///private/tmp/claude-501/-Users-jimee-orca-workspaces-L-K-Group-featherduster/687d9dbc-0c8f-4a4c-aac2-1fe5e91655c7/scratchpad/orchestration/ems-r3b/p3/app/scripts/verify-ems-r3b-ui.mjs:421:7",
+      "url": "http://127.0.0.1:3063/admin/quotes/e1272afd-0183-42b9-8538-fe0644b2a6b0",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "screenshot": "/private/tmp/claude-501/-Users-jimee-orca-workspaces-L-K-Group-featherduster/687d9dbc-0c8f-4a4c-aac2-1fe5e91655c7/scratchpad/orchestration/ems-r3b/p3/gates/r3b/failure-1.png",
+      "evidence": {
+        "external": [],
+        "http": [],
+        "page": [],
+        "console": [
+          {
+            "text": "Failed to load resource: the server responded with a status of 409 (Conflict)",
+            "url": "http://127.0.0.1:3063/api/admin/quote-requests/e1272afd-0183-42b9-8538-fe0644b2a6b0/company-revisions"
+          },
+          {
+            "text": "Failed to load resource: the server responded with a status of 503 (Service Unavailable)",
+            "url": "http://127.0.0.1:3063/api/admin/quote-requests/e1272afd-0183-42b9-8538-fe0644b2a6b0/company-revisions"
+          }
+        ],
+        "expected": [
+          {
+            "path": "/api/admin/quote-requests/e1272afd-0183-42b9-8538-fe0644b2a6b0/company-revisions",
+            "status": 409
+          },
+          {
+            "path": "/api/admin/quote-requests/e1272afd-0183-42b9-8538-fe0644b2a6b0/company-revisions",
+            "status": 503
+          }
+        ]
+      }
+    },
+    {
+      "name": "Customer real journey proof expiry new signature unknown retry acceptance exactly once",
+      "message": "Unexpected browser, external request or HTTP failure.\n+ actual - expected\n\n  {\n+   console: [\n+     {\n+       text: 'Failed to load resource: the server responded with a status of 404 (Not Found)',\n+       url: 'http://127.0.0.1:3063/_next/image?url=%2Fimages%2Flk-group-logo-circle-transparent.png&w=48&q=75'\n+     }\n+   ],\n-   console: [],\n    external: [],\n+   http: [\n+     {\n+       path: '/_next/image',\n+       status: 404\n+     }\n+   ],\n-   http: [],\n    page: []\n  }\n",
+      "stack": "AssertionError [ERR_ASSERTION]: Unexpected browser, external request or HTTP failure.\n+ actual - expected\n\n  {\n+   console: [\n+     {\n+       text: 'Failed to load resource: the server responded with a status of 404 (Not Found)',\n+       url: 'http://127.0.0.1:3063/_next/image?url=%2Fimages%2Flk-group-logo-circle-transparent.png&w=48&q=75'\n+     }\n+   ],\n-   console: [],\n    external: [],\n+   http: [\n+     {\n+       path: '/_next/image',\n+       status: 404\n+     }\n+   ],\n-   http: [],\n    page: []\n  }\n\n    at scenario (file:///private/tmp/claude-501/-Users-jimee-orca-workspaces-L-K-Group-featherduster/687d9dbc-0c8f-4a4c-aac2-1fe5e91655c7/scratchpad/orchestration/ems-r3b/p3/app/scripts/verify-ems-r3b-ui.mjs:176:12)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async main (file:///private/tmp/claude-501/-Users-jimee-orca-workspaces-L-K-Group-featherduster/687d9dbc-0c8f-4a4c-aac2-1fe5e91655c7/scratchpad/orchestration/ems-r3b/p3/app/scripts/verify-ems-r3b-ui.mjs:324:3)\n    at async file:///private/tmp/claude-501/-Users-jimee-orca-workspaces-L-K-Group-featherduster/687d9dbc-0c8f-4a4c-aac2-1fe5e91655c7/scratchpad/orchestration/ems-r3b/p3/app/scripts/verify-ems-r3b-ui.mjs:421:7",
+      "url": "http://127.0.0.1:3063/quote/start?mode=live",
+      "viewport": {
+        "width": 320,
+        "height": 1000
+      },
+      "screenshot": "/private/tmp/claude-501/-Users-jimee-orca-workspaces-L-K-Group-featherduster/687d9dbc-0c8f-4a4c-aac2-1fe5e91655c7/scratchpad/orchestration/ems-r3b/p3/gates/r3b/failure-2.png",
+      "evidence": {
+        "external": [],
+        "http": [
+          {
+            "path": "/_next/image",
+            "status": 404
+          }
+        ],
+        "page": [],
+        "console": [
+          {
+            "text": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+            "url": "http://127.0.0.1:3063/_next/image?url=%2Fimages%2Flk-group-logo-circle-transparent.png&w=48&q=75"
+          },
+          {
+            "text": "Failed to load resource: the server responded with a status of 409 (Conflict)",
+            "url": "http://127.0.0.1:3063/api/quote/requests/company-revision/accept"
+          },
+          {
+            "text": "Failed to load resource: the server responded with a status of 503 (Service Unavailable)",
+            "url": "http://127.0.0.1:3063/api/quote/requests/company-revision/accept"
+          }
+        ],
+        "expected": [
+          {
+            "path": "/api/quote/requests/company-revision/accept",
+            "status": 409
+          },
+          {
+            "path": "/api/quote/requests/company-revision/accept",
+            "status": 503
+          }
+        ]
+      }
+    },
+    {
+      "name": "Withdraw pending second version sends no mail and keeps accepted first version",
+      "message": "Unexpected browser, external request or HTTP failure.\n+ actual - expected\n\n  {\n+   console: [\n+     {\n+       text: 'Failed to load resource: the server responded with a status of 404 (Not Found)',\n+       url: 'http://127.0.0.1:3063/_next/image?url=%2Fimages%2Flk-group-logo-circle-transparent.png&w=48&q=75'\n+     },\n+     {\n+       text: 'Failed to load resource: the server responded with a status of 404 (Not Found)',\n+       url: 'http://127.0.0.1:3063/_next/image?url=%2Fimages%2Flk-group-logo-circle-transparent.png&w=48&q=75'\n+     }\n+   ],\n-   console: [],\n    external: [],\n+   http: [\n+     {\n+       path: '/_next/image',\n+       status: 404\n+     },\n+     {\n+       path: '/_next/image',\n+       status: 404\n+     }\n+   ],\n-   http: [],\n    page: []\n  }\n",
+      "stack": "AssertionError [ERR_ASSERTION]: Unexpected browser, external request or HTTP failure.\n+ actual - expected\n\n  {\n+   console: [\n+     {\n+       text: 'Failed to load resource: the server responded with a status of 404 (Not Found)',\n+       url: 'http://127.0.0.1:3063/_next/image?url=%2Fimages%2Flk-group-logo-circle-transparent.png&w=48&q=75'\n+     },\n+     {\n+       text: 'Failed to load resource: the server responded with a status of 404 (Not Found)',\n+       url: 'http://127.0.0.1:3063/_next/image?url=%2Fimages%2Flk-group-logo-circle-transparent.png&w=48&q=75'\n+     }\n+   ],\n-   console: [],\n    external: [],\n+   http: [\n+     {\n+       path: '/_next/image',\n+       status: 404\n+     },\n+     {\n+       path: '/_next/image',\n+       status: 404\n+     }\n+   ],\n-   http: [],\n    page: []\n  }\n\n    at scenario (file:///private/tmp/claude-501/-Users-jimee-orca-workspaces-L-K-Group-featherduster/687d9dbc-0c8f-4a4c-aac2-1fe5e91655c7/scratchpad/orchestration/ems-r3b/p3/app/scripts/verify-ems-r3b-ui.mjs:176:12)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async main (file:///private/tmp/claude-501/-Users-jimee-orca-workspaces-L-K-Group-featherduster/687d9dbc-0c8f-4a4c-aac2-1fe5e91655c7/scratchpad/orchestration/ems-r3b/p3/app/scripts/verify-ems-r3b-ui.mjs:362:3)\n    at async file:///private/tmp/claude-501/-Users-jimee-orca-workspaces-L-K-Group-featherduster/687d9dbc-0c8f-4a4c-aac2-1fe5e91655c7/scratchpad/orchestration/ems-r3b/p3/app/scripts/verify-ems-r3b-ui.mjs:421:7",
+      "url": "http://127.0.0.1:3063/quote/start?mode=live",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "screenshot": "/private/tmp/claude-501/-Users-jimee-orca-workspaces-L-K-Group-featherduster/687d9dbc-0c8f-4a4c-aac2-1fe5e91655c7/scratchpad/orchestration/ems-r3b/p3/gates/r3b/failure-3.png",
+      "evidence": {
+        "external": [],
+        "http": [
+          {
+            "path": "/_next/image",
+            "status": 404
+          },
+          {
+            "path": "/_next/image",
+            "status": 404
+          }
+        ],
+        "page": [],
+        "console": [
+          {
+            "text": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+            "url": "http://127.0.0.1:3063/_next/image?url=%2Fimages%2Flk-group-logo-circle-transparent.png&w=48&q=75"
+          },
+          {
+            "text": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+            "url": "http://127.0.0.1:3063/_next/image?url=%2Fimages%2Flk-group-logo-circle-transparent.png&w=48&q=75"
+          }
+        ],
+        "expected": []
+      }
+    },
+    {
+      "name": "Customer401 removes private view acknowledgment and unsaved signature",
+      "message": "response.json: Protocol error (Network.getResponseBody): No data found for resource with given identifier\nResponse body is not available for a response that was navigated away from. Read response.body() before triggering any navigation.",
+      "stack": "response.json: Protocol error (Network.getResponseBody): No data found for resource with given identifier\nResponse body is not available for a response that was navigated away from. Read response.body() before triggering any navigation.\n    at exchange (/private/tmp/claude-501/-Users-jimee-orca-workspaces-L-K-Group-featherduster/687d9dbc-0c8f-4a4c-aac2-1fe5e91655c7/scratchpad/orchestration/ems-r3b/p3/app/scripts/verify-ems-r3b-ui.mjs:63:16)\n    at async scenario.path (/private/tmp/claude-501/-Users-jimee-orca-workspaces-L-K-Group-featherduster/687d9dbc-0c8f-4a4c-aac2-1fe5e91655c7/scratchpad/orchestration/ems-r3b/p3/app/scripts/verify-ems-r3b-ui.mjs:405:5)\n    at async scenario (/private/tmp/claude-501/-Users-jimee-orca-workspaces-L-K-Group-featherduster/687d9dbc-0c8f-4a4c-aac2-1fe5e91655c7/scratchpad/orchestration/ems-r3b/p3/app/scripts/verify-ems-r3b-ui.mjs:166:21)\n    at async main (/private/tmp/claude-501/-Users-jimee-orca-workspaces-L-K-Group-featherduster/687d9dbc-0c8f-4a4c-aac2-1fe5e91655c7/scratchpad/orchestration/ems-r3b/p3/app/scripts/verify-ems-r3b-ui.mjs:396:3)\n    at async file:///private/tmp/claude-501/-Users-jimee-orca-workspaces-L-K-Group-featherduster/687d9dbc-0c8f-4a4c-aac2-1fe5e91655c7/scratchpad/orchestration/ems-r3b/p3/app/scripts/verify-ems-r3b-ui.mjs:421:7",
+      "url": "http://127.0.0.1:3063/quote/start?mode=live",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "screenshot": "/private/tmp/claude-501/-Users-jimee-orca-workspaces-L-K-Group-featherduster/687d9dbc-0c8f-4a4c-aac2-1fe5e91655c7/scratchpad/orchestration/ems-r3b/p3/gates/r3b/failure-4.png",
+      "evidence": {
+        "external": [],
+        "http": [
+          {
+            "path": "/_next/image",
+            "status": 404
+          }
+        ],
+        "page": [],
+        "console": [
+          {
+            "text": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+            "url": "http://127.0.0.1:3063/_next/image?url=%2Fimages%2Flk-group-logo-circle-transparent.png&w=48&q=75"
+          },
+          {
+            "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+            "url": "http://127.0.0.1:3063/api/quote/requests/company-revision/accept"
+          },
+          {
+            "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+            "url": "http://127.0.0.1:3063/api/quote/requests/customer"
+          },
+          {
+            "text": "The resource http://127.0.0.1:3063/_next/static/media/4c9affa5bc8f420e-s.p.woff2 was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.",
+            "url": "http://127.0.0.1:3063/quote/start?mode=live"
+          }
+        ],
+        "expected": [
+          {
+            "path": "/api/quote/requests/company-revision/accept",
+            "status": 401
+          },
+          {
+            "path": "/api/quote/requests/customer",
+            "status": 401
+          }
+        ]
+      }
+    }
+  ],
+  "screenshots": [
+    {
+      "name": "failure-1",
+      "path": "/private/tmp/claude-501/-Users-jimee-orca-workspaces-L-K-Group-featherduster/687d9dbc-0c8f-4a4c-aac2-1fe5e91655c7/scratchpad/orchestration/ems-r3b/p3/gates/r3b/failure-1.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "url": "http://127.0.0.1:3063/admin/quotes/e1272afd-0183-42b9-8538-fe0644b2a6b0"
+    },
+    {
+      "name": "confirmation-blocked",
+      "path": "/private/tmp/claude-501/-Users-jimee-orca-workspaces-L-K-Group-featherduster/687d9dbc-0c8f-4a4c-aac2-1fe5e91655c7/scratchpad/orchestration/ems-r3b/p3/gates/r3b/confirmation-blocked.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "url": "http://127.0.0.1:3063/admin/quotes/eabb6340-e5d0-4cac-9425-a26dc9bf245c"
+    },
+    {
+      "name": "confirmation-server409",
+      "path": "/private/tmp/claude-501/-Users-jimee-orca-workspaces-L-K-Group-featherduster/687d9dbc-0c8f-4a4c-aac2-1fe5e91655c7/scratchpad/orchestration/ems-r3b/p3/gates/r3b/confirmation-server409.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "url": "http://127.0.0.1:3063/admin/schedule/eabb6340-e5d0-4cac-9425-a26dc9bf245c"
+    },
+    {
+      "name": "customer-accepted-320",
+      "path": "/private/tmp/claude-501/-Users-jimee-orca-workspaces-L-K-Group-featherduster/687d9dbc-0c8f-4a4c-aac2-1fe5e91655c7/scratchpad/orchestration/ems-r3b/p3/gates/r3b/customer-accepted-320.png",
+      "viewport": {
+        "width": 320,
+        "height": 1000
+      },
+      "url": "http://127.0.0.1:3063/quote/start?mode=live"
+    },
+    {
+      "name": "failure-2",
+      "path": "/private/tmp/claude-501/-Users-jimee-orca-workspaces-L-K-Group-featherduster/687d9dbc-0c8f-4a4c-aac2-1fe5e91655c7/scratchpad/orchestration/ems-r3b/p3/gates/r3b/failure-2.png",
+      "viewport": {
+        "width": 320,
+        "height": 1000
+      },
+      "url": "http://127.0.0.1:3063/quote/start?mode=live"
+    },
+    {
+      "name": "customer-withdrawn-1440",
+      "path": "/private/tmp/claude-501/-Users-jimee-orca-workspaces-L-K-Group-featherduster/687d9dbc-0c8f-4a4c-aac2-1fe5e91655c7/scratchpad/orchestration/ems-r3b/p3/gates/r3b/customer-withdrawn-1440.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "url": "http://127.0.0.1:3063/quote/start?mode=live"
+    },
+    {
+      "name": "failure-3",
+      "path": "/private/tmp/claude-501/-Users-jimee-orca-workspaces-L-K-Group-featherduster/687d9dbc-0c8f-4a4c-aac2-1fe5e91655c7/scratchpad/orchestration/ems-r3b/p3/gates/r3b/failure-3.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "url": "http://127.0.0.1:3063/quote/start?mode=live"
+    },
+    {
+      "name": "failure-4",
+      "path": "/private/tmp/claude-501/-Users-jimee-orca-workspaces-L-K-Group-featherduster/687d9dbc-0c8f-4a4c-aac2-1fe5e91655c7/scratchpad/orchestration/ems-r3b/p3/gates/r3b/failure-4.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "url": "http://127.0.0.1:3063/quote/start?mode=live"
+    }
+  ],
+  "skippedScenarios": []
+}

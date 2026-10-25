@@ -1,7 +1,10 @@
 // Synthetic loopback UI fixture. Only explicit admin/quote pages and UI static assets
 // are proxied. ALL APIs stay local; Cookie/Authorization/Set-Cookie never forward.
 import http from 'node:http'
+import { pathToFileURL } from 'node:url'
+import { resolve } from 'node:path'
 import { createHash, randomUUID } from 'node:crypto'
+import { parseCustomerAccess } from '../src/modules/quotes/presentation/customer-access-client.ts'
 import { parseLiveRequest } from '../src/modules/quotes/presentation/request-client.ts'
 import { parsePhotoWorkspace } from '../src/modules/quotes/presentation/photo-workspace-client.ts'
 import { parseBookingState } from '../src/modules/quotes/presentation/booking-flow-client.ts'
@@ -14,7 +17,11 @@ import { parseEnquiryList, parseEnquiryDetail, parseEnquiryAssignees, parseWorkR
 import { parseStaffQuoteDraft, parseStaffQuoteList } from '../src/modules/quotes/presentation/staff-quote-client.ts'
 import { parseSimpleBookingManagement, parseSimpleBookingList, parseCancellation } from '../src/modules/bookings/presentation/simple-booking-client.ts'
 import { WorkError, workExact, workId, workMutation, workSearch, workText } from '../src/modules/enquiries/management.ts'
+import { COMPANY_REVISION_ACK, companyRevisionSaveInput, companyRevisionMutationInput, companyRevisionAcceptInput, calculateCompanyRevisionPricing, compareCompanyRevision } from '../src/modules/quotes/domain/company-revision.ts'
+import { parseCompanyRevisionState } from '../src/modules/quotes/presentation/company-revision-client.ts'
+import { staffQuoteSourceIssues } from '../src/modules/quotes/domain/staff-draft.ts'
 import { validateStaffQuotePayload } from '../src/modules/quotes/staff-drafts.ts'
+import { validateSimpleCompanyRequest } from '../src/modules/bookings/domain/live-validation.ts'
 import { simpleDraftInput } from '../src/modules/bookings/simple-management.ts'
 import { sydneyLocalToInstant } from '../src/modules/operations/domain/validation.ts'
 
@@ -31,16 +38,17 @@ function permittedPage(path) {
   return detail[1] === 'customers' ? customers.some(customer => customer.id === detail[2]) : liveRequests.some(request => request.id === detail[2]) || detail[1] === 'enquiries' && r3aEnquiries.has(detail[2])
 }
 const publicAssets = new Set(['/favicon.ico', '/images/lk-group-logo-circle-transparent.png'])
-function optimizedPublicLogo(url) {
+export function optimizedPublicLogo(url) {
   const query = url.searchParams
   return url.pathname === '/_next/image' && query.size === 3 &&
     query.getAll('url').length === 1 && query.get('url') === '/images/lk-group-logo-circle-transparent.png' &&
-    query.getAll('w').length === 1 && ['96', '128', '256'].includes(query.get('w')) &&
+    query.getAll('w').length === 1 && ['48', '96', '128', '256'].includes(query.get('w')) &&
     query.getAll('q').length === 1 && query.get('q') === '75'
 }
 const authStages = new Set(['signed_out', 'password_change', 'email_verify', 'mfa_enroll', 'mfa_verify', 'ready'])
 const navigationHeaders = ['accept', 'rsc', 'next-router-state-tree', 'next-router-prefetch', 'next-router-segment-prefetch', 'next-url', 'purpose']
 let properties, crmRelations, commandAttempts, customers, records, links, audits, attempts, flags, signedOut, otherSessionCount, authStage, staffRole, emailVerification, requests, enquiries, bookingDetails, consentAttempts, quoteWorkspaces, newQuoteAttempts, liveRequests, liveAnalysis, liveBookings, liveAudits
+let r3bRevisions, r3bReceipts, r3bProofs, r3bAttempts, r3bOutbox, r3bAuditRows
 let r3aEnquiries, r3aAssignees, r3aStaffDrafts, r3aSimpleDrafts, r3aCancellations, r3aBookingStates, r3aReceipts, r3aAttempts, r3aAudits
 const sleep = ms => new Promise(resolve => setTimeout(resolve, Math.max(0, Math.min(30000, Number(ms) || 0))))
 function session() { return { authenticated: !signedOut && authStage !== 'signed_out', stage: signedOut ? 'signed_out' : authStage, email: 'synthetic-admin@example.invalid', emailVerification, factors: [{ id: 'synthetic-factor', friendlyName: 'Synthetic authenticator' }] } }
@@ -96,7 +104,8 @@ function reset() {
   enquiries = [{ id: records[1].sourceId, reference: records[1].reference, source: 'gmail', serviceId: 'cabinet-painting', projectIntent: 'refresh', targetSurfaces: ['doors'], suburb: 'Synthetic suburb', postcode: '0000', doorCount: 4, drawerCount: 2, notes: 'Synthetic enquiry only', name: records[1].name, email: records[1].email, phone: records[1].phone, siteAddress: records[1].address, preferredDate: null, acknowledgement: true, senderReviewRequired: true, attachmentCount: 0, status: 'submitted', revision: 1, createdAt: new Date().toISOString(), startAt: null, endAt: null, scheduleNotes: null, calendarStatus: 'pending', calendarError: null, gmail: { threadId: 'synthetic-thread', messages: [{ messageId: 'synthetic-message', receivedAt: new Date().toISOString(), senderName: records[1].name, senderEmail: records[1].email, subject: 'Synthetic cabinet enquiry', bodyText: 'Synthetic imported message. No company Gmail was accessed.', bodyStatus: 'available', attachmentCount: 0 }], historyTruncated: false } }]
   seedLiveRecords()
   seedR3aRecords()
-  flags = { connected: false, failures: {}, apiDelays: {}, responseDelays: {}, customerAccessStatus: 0, loginNextStage: 'email_verify', customersUnavailable: false, failNextCreate: false, loseNextCreateResponse: false, failNextList: false, failNextDetail: false, conflictNextLink: false, failNextLink: false, loseNextLinkResponse: false, sessionCleanupFail: false, delays: {}, detailDelayMs: 0, liveAnalysisProcessing: false, conflictNextMutation: false, loseNextMutationResponse: false, loseNextCrmResponse: false, r3aConflictNext: false, r3aLoseNextResponse: false, r3aCancellationMode: 'pending', r3aActorUserId: actor, r3aActorSessionId: '00000000-0000-4000-8000-000000000002' }
+  r3bRevisions = new Map(); r3bReceipts = new Map(); r3bProofs = new Map(); r3bAttempts = []; r3bOutbox = []; r3bAuditRows = new Map()
+  flags = { connected: false, failures: {}, apiDelays: {}, responseDelays: {}, customerAccessStatus: 0, loginNextStage: 'email_verify', customersUnavailable: false, failNextCreate: false, loseNextCreateResponse: false, failNextList: false, failNextDetail: false, conflictNextLink: false, failNextLink: false, loseNextLinkResponse: false, sessionCleanupFail: false, delays: {}, detailDelayMs: 0, liveAnalysisProcessing: false, conflictNextMutation: false, loseNextMutationResponse: false, loseNextCrmResponse: false, r3aConflictNext: false, r3aLoseNextResponse: false, r3aCancellationMode: 'pending', r3aActorUserId: actor, r3aActorSessionId: '00000000-0000-4000-8000-000000000002', r3bConflictNext: false, r3bLoseNextResponse: false, r3bFailNext: false, r3bCustomerSignedIn: true, r3bCustomerRequestId: liveRequests[1].id, r3bProofExpired: false, r3bLegacyInvalidPhone: false }
 }
 function seedLiveRecords() {
   const now = new Date().toISOString(), calendarTarget = { accountSub: 'synthetic-account', calendarId: 'synthetic-calendar' }
@@ -116,7 +125,7 @@ function seedLiveRecords() {
     liveAudits.set(id, [{ id: randomUUID(), action: 'request_review', actorType: 'guest', revision: 2, createdAt: now }])
     const acknowledgement = bookingAcknowledgment(submitted ? 'live-booking-request-ack-v2' : 'live-booking-request-ack-v1')
     const preferredDate = `2026-11-${String(3 + index * 2).padStart(2,'0')}`, preferredTime = submitted ? '10:30' : null
-    const snapshot = { mode: 'live', kind: 'nonbinding_booking_request', version: acknowledgement.version, requestId: id, reference: request.reference, inputRevision: 2, analysisId: job.id, payload: request.payload, verifiedEmail: request.payload.contact.email, analysis, pricing, photos: [{ id: photoId, role: 'overview', contentHash: 'a'.repeat(64), width: 1, height: 1, storedBytes: 68 }], acknowledgment: acknowledgement, calendarTarget, preferredDate, ...(submitted ? { preferredTime } : {}) }
+    const snapshot = { mode: 'live', kind: 'nonbinding_booking_request', version: acknowledgement.version, requestId: id, reference: request.reference, inputRevision: 2, analysisId: job.id, payload: structuredClone(request.payload), verifiedEmail: request.payload.contact.email, analysis, pricing, photos: [{ id: photoId, role: 'overview', contentHash: 'a'.repeat(64), width: 1, height: 1, storedBytes: 68 }], acknowledgment: acknowledgement, calendarTarget, preferredDate, ...(submitted ? { preferredTime } : {}) }
     const submission = { id: randomUUID(), reference: `REQUEST-SYNTHETIC-${index + 1}`, requestId: id, approvalId: randomUUID(), submittedAt: now, preferredDate, preferredTime, snapshot, snapshotHash: 'a'.repeat(64), signedContentHash: 'b'.repeat(64), signature: { name: request.payload.contact.name, method: 'typed', strokes: [], acknowledged: true }, emailStatus: 'provider_accepted', calendarStatus: submitted ? 'not_required' : 'pending', error: null, receiptReady: true, providerMessageId: 'synthetic-message', calendarEventId: null }
     const state = { requestId: id, revision: 0, canWrite: true, submission, proposal: null, proposals: [], acceptance: null, booking: null, acknowledgment: { version: COMPANY_BOOKING_ACK_VERSION, text: COMPANY_BOOKING_ACK_TEXT } }
     if (index === 2) {
@@ -264,7 +273,7 @@ async function handleR3a(req, res, url) {
       if (quote[2] && req.method === 'GET') { r3aReceipt(req, res, 'staff_quote_draft', id, quote[2]); return true }
       if (req.method === 'GET') { json(res, detail); return true }
       if (req.method !== 'PUT' || quote[2]) throw new WorkError(422, 'validation', 'Unsupported synthetic staff draft action.')
-      const raw = req.fixtureR3aInput ?? await body(req); workExact(raw, ['expectedRevision','idempotencyKey','reason','payload']); const value = { ...workMutation(raw), payload: validateStaffQuotePayload(raw.payload) }
+      const raw = req.fixtureR3aInput ?? await body(req); workExact(raw, ['expectedRevision','idempotencyKey','reason','payload']); const value = { ...workMutation(raw), payload: validateStaffQuotePayload(raw.payload, detail.source.payload) }
       r3aMutation(req, res, 'staff_quote_draft', id, 'quote_save', value, () => {
         const prior = r3aStaffDrafts.get(id), now = new Date().toISOString(), staff = r3aActor(), revision = (prior?.revision ?? 0) + 1
         const draft = { requestId: id, revision, status: 'draft', sourceRevisionAtCreation: prior?.sourceRevisionAtCreation ?? detail.source.revision, payload: value.payload, createdBy: prior?.createdBy ?? staff.userId, updatedBy: staff.userId, createdAt: prior?.createdAt ?? now, updatedAt: now }
@@ -293,7 +302,7 @@ async function handleR3a(req, res, url) {
       if (sub === 'cancel' && req.method === 'POST') {
         workExact(raw, ['expectedRevision','idempotencyKey','reason']); const value = workMutation(raw)
         r3aMutation(req, res, 'simple_booking', id, 'booking_cancel', value, () => {
-          if (state.cancellation || state.booking?.status !== 'confirmed' || state.booking.confirmationBasis !== 'signed_request' || state.booking.emailStatus !== 'provider_accepted' || state.booking.events.length !== 2 || state.booking.events.some(event => !event.etag || !event.verifiedAt)) throw new WorkError(409, 'booking_busy', 'Synthetic booking is not fully ready for cancellation.')
+          if (state.cancellation || state.booking?.status !== 'confirmed' || !['signed_request','accepted_revision'].includes(state.booking.confirmationBasis) || state.booking.emailStatus !== 'provider_accepted' || state.booking.events.length !== 2 || state.booking.events.some(event => !event.etag || !event.verifiedAt)) throw new WorkError(409, 'booking_busy', 'Synthetic booking is not fully ready for cancellation.')
           const cancellation = parseCancellation({ id: randomUUID(), requestId: id, bookingId: state.booking.id, status: 'pending', requestedAt: new Date().toISOString(), requestedBy: r3aActor().userId, cancelledAt: null, errorCode: null, occupancyHeld: true, totalEvents: 2, verifiedDeletedEvents: 0 }), next = structuredClone(state)
           next.revision++; Object.assign(next.booking, { status: 'cancel_pending', occupancyHeld: true, error: 'Synthetic cancellation pending; both visits remain held.' }); next.cancellation = cancellation
           parseSimpleBookingManagement({ state: next, draft: next.simpleDraft, cancellation, canWrite: true }); r3aCancellations.set(id, cancellation); r3aBookingStates.set(id, next); r3aAudit('simple_booking', id, 'booking_cancel', value, state.revision, next.revision, { cancellationId: cancellation.id }); return { revision: next.revision, childId: cancellation.id }
@@ -303,9 +312,118 @@ async function handleR3a(req, res, url) {
     r3aFail(res, 404, 'not_found', 'Synthetic R3a route not found.'); return true
   } catch (error) {
     if (req.fixtureR3aAttempt) req.fixtureR3aAttempt.outcome = 'not_applied'
-    if (error instanceof WorkError) { r3aFail(res, error.status, error.code, error.message); return true }
+    if (error instanceof WorkError) { r3aFail(res, error.status, error.code, error.message, error.fields ? { fields: error.fields } : {}); return true }
     throw error
   }
+}
+
+
+function r3bAuditSummary(revision) {
+  if (!revision) return null
+  return { revisionId: revision.id, versionNo: revision.versionNo, revision: revision.revision, status: revision.status, quantities: structuredClone(revision.payload.quantities), totalCents: revision.totalCents, pricingVersion: revision.pricing.pricingVersion, baseSubmissionId: revision.baseSubmissionId, baseSnapshotHash: revision.baseSnapshotHash, baseSignedContentHash: revision.baseSignedContentHash, basedOnRevisionId: revision.basedOnRevisionId, snapshotHash: revision.snapshotHash, payloadHash: createHash('sha256').update(canonical(revision.payload)).digest('hex'), acceptanceId: revision.acceptance?.id || null, signedContentHash: revision.acceptance?.signedContentHash || null }
+}
+function r3bState(id, customer = false) {
+  const source = liveRequests.find(row => row.id === id), booking = r3aBookingState(id)
+  if (!source || !booking) throw new WorkError(404, 'not_found', 'Synthetic signed request not found.')
+  const all = r3bRevisions.get(id) || [], visible = customer ? all.filter(row => row.status !== 'draft') : all
+  const effective = [...all].reverse().find(row => row.status === 'accepted') || null, current = visible.at(-1) || null
+  const contact = Object.fromEntries(Object.entries(source.payload.contact).filter(([key]) => key !== 'consent'))
+  const original = booking.submission.snapshot, originalComparison = compareCompanyRevision(original, { contact, quantities: { doorCount: 1, drawerCount: 0, moderateRepair: false }, extraItems: [], customerNote: '' })
+  const eligible = original.version === 'live-booking-request-ack-v2' && !booking.booking && !booking.cancellation
+  const state = { requestId: id, revision: Math.max(0, ...all.map(row => row.revision)), current: structuredClone(current), effectiveAccepted: structuredClone(effective), acknowledgment: COMPANY_REVISION_ACK, ...(customer ? {} : { eligible, eligibilityCode: eligible ? null : booking.booking ? 'booking_confirmed' : 'revision_not_eligible', initialPayload: structuredClone(effective?.payload || { contact, quantities: originalComparison.original.quantities, extraItems: [], customerNote: '' }), sourceIssues: staffQuoteSourceIssues(source.payload), revisions: structuredClone(all), audit: structuredClone(r3bAuditRows.get(id) || []), canWrite: eligible }) }
+  return parseCompanyRevisionState(state)
+}
+async function handleR3b(req, res, url) {
+  const confirmation = url.pathname.match(/^\/api\/admin\/live-bookings\/([^/]+)\/confirm-request$/)
+  if (confirmation) {
+    try {
+      r3aActor(); const id = workId(confirmation[1]), state = r3aBookingState(id)
+      if (!state) throw new WorkError(404, 'not_found', 'Synthetic signed booking not found.')
+      if (req.method !== 'POST') throw new WorkError(422, 'validation', 'Use POST for confirmation.')
+      const raw = await body(req, 32768), fingerprint = canonical(raw), receiptKey = `r3b-confirm:${id}:${raw.idempotencyKey}`, replay = attempts.get(receiptKey)
+      if (replay) { if (replay.signature !== fingerprint) throw new WorkError(409, 'idempotency_conflict', 'Synthetic confirmation key changed.'); json(res, replay.result, 202); return true }
+      const value = validateSimpleCompanyRequest(raw, state.submission, sydneyLocalToInstant), revisions = r3bState(id)
+      if (revisions.current?.status === 'published') throw new WorkError(409, 'revision_awaiting_customer', 'The published revision requires customer acceptance before booking confirmation.')
+      if (state.booking || state.cancellation || value.expectedRevision !== state.revision) throw new WorkError(409, 'revision_conflict', 'Synthetic booking changed.')
+      const accepted = revisions.effectiveAccepted, now = new Date().toISOString(), original = state.submission, pricing = accepted?.pricing || original.snapshot.pricing
+      const period = (purpose, startLocal, endLocal) => ({ purpose, kind: 'timed', startLocal, endLocal, startAt: sydneyLocalToInstant(startLocal), endAt: sydneyLocalToInstant(endLocal), startDate: startLocal.slice(0, 10), endDate: endLocal.slice(0, 10) })
+      const evidence = accepted ? { companyRevisionId: accepted.id, companyRevisionSnapshotHash: accepted.snapshotHash, companyRevisionAcceptanceId: accepted.acceptance.id, companyRevisionSignedContentHash: accepted.acceptance.signedContentHash } : {}
+      const proposal = { id: randomUUID(), version: state.proposals.length + 1, revision: state.revision + 1, status: 'published', hash: createHash('sha256').update(fingerprint).digest('hex'), amountExGst: pricing.subtotal, gst: pricing.tax, total: pricing.total, currency: 'AUD', confirmationBasis: accepted ? 'accepted_revision' : 'signed_request', companyNote: value.companyNote, scope: accepted?.payload.customerNote || 'Synthetic cabinet painting', adjustmentReason: accepted ? 'Explicitly accepted company revision.' : '', calendarTarget: original.snapshot.calendarTarget, createdAt: now, publishedAt: now, emailStatus: 'provider_accepted', receiptReady: true, segments: [period('take_off', `${original.preferredDate}T${original.preferredTime}`, value.takeOffEndLocal), period('install', value.installStartLocal, value.installEndLocal)], ...(accepted ? { ...accepted.payload, pricing: accepted.pricing, ...evidence, companyRevisionSignature: accepted.acceptance.signature, companyRevisionAcknowledgment: COMPANY_REVISION_ACK } : {}) }
+      const booking = { id: randomUUID(), proposalId: proposal.id, proposalHash: proposal.hash, version: 1, status: 'confirmed', confirmationBasis: proposal.confirmationBasis, signedSubmissionId: original.id, emailStatus: 'provider_accepted', receiptReady: true, error: null, confirmedAt: now, events: proposal.segments.map((_, segmentIndex) => ({ segmentIndex, eventId: `synthetic-revision-${segmentIndex}`, payloadHash: 'd'.repeat(64), etag: 'synthetic-etag', verifiedAt: now })), ...evidence }
+      const next = { ...state, revision: state.revision + 1, proposal, proposals: [...state.proposals, proposal], acceptance: null, booking }; parseCompanyState({ state: next }, id); r3aBookingStates.set(id, next); liveBookings.set(id, next)
+      const result = { state: next }; attempts.set(receiptKey, { signature: fingerprint, result: structuredClone(result) }); json(res, result, 202); return true
+    } catch (error) { if (error instanceof WorkError) { json(res, { error: error.message, code: error.code, outcome: error.outcome }, error.status); return true } throw error }
+  }
+  const admin = url.pathname.match(/^\/api\/admin\/quote-requests\/([^/]+)\/company-revisions(?:\/(history|publish|withdraw|commands\/([^/]+)))?$/)
+  const customer = url.pathname.match(/^\/api\/quote\/requests\/company-revision(?:\/(review|accept|commands\/([^/]+)))?$/)
+  if (!admin && !customer) return false
+  try {
+    const actorScope = admin ? r3aActor() : null
+    if (customer && (!flags.r3bCustomerSignedIn || [401, 403].includes(flags.customerAccessStatus))) throw new WorkError(flags.customerAccessStatus === 403 ? 403 : 401, 'unauthorized', 'Synthetic customer email OTP is required.')
+    const id = workId(admin ? admin[1] : String(req.headers['x-lk-quote-request-id'] || flags.r3bCustomerRequestId))
+    if (customer && (id !== flags.r3bCustomerRequestId || id !== liveRequests[1].id)) throw new WorkError(403, 'forbidden', 'Synthetic customer has no access to this saved request.')
+    const action = admin ? admin[2] : customer[1], key = admin ? admin[3] : customer[2], state = r3bState(id, !!customer), source = liveRequests.find(row => row.id === id), scope = admin ? `${actorScope.userId}:${actorScope.sessionId}` : `customer:${id}`
+    if (req.method === 'GET') {
+      if (key) { const saved = r3bReceipts.get(`${id}:${workId(key)}`); if (!saved || saved.scope !== scope) throw new WorkError(404, 'not_found', 'Synthetic revision command not found.'); json(res, structuredClone(saved.result)); return true }
+      if (action && action !== 'history') throw new WorkError(422, 'validation', 'Unsupported fixture read.')
+      json(res, state); return true
+    }
+    if (!['POST', 'PUT'].includes(req.method)) throw new WorkError(422, 'validation', 'Unsupported fixture command.')
+    const raw = await body(req, customer && action === 'accept' ? 180000 : 32768)
+    if (customer && action === 'review') {
+      workExact(raw, ['revisionId', 'snapshotHash']); const revision = state.current
+      if (!revision || revision.status !== 'published' || revision.id !== raw.revisionId || revision.snapshotHash !== raw.snapshotHash) throw new WorkError(409, 'revision_snapshot_changed', 'Review the latest synthetic revised quote.')
+      const reviewProof = randomUUID(), expiresAt = new Date(Date.now() + (flags.r3bProofExpired ? -1000 : 900000)).toISOString()
+      r3bProofs.set(reviewProof, { requestId: id, revisionId: revision.id, snapshotHash: revision.snapshotHash, expiresAt })
+      json(res, { review: { state, revision, snapshot: revision.snapshot, snapshotHash: revision.snapshotHash, reviewProof, expiresAt } }); return true
+    }
+    const value = admin ? !action ? companyRevisionSaveInput(raw, source.payload) : companyRevisionMutationInput(raw) : companyRevisionAcceptInput(raw)
+    const fingerprint = canonical({ action: action || 'save', value }), receiptKey = `${id}:${value.idempotencyKey}`, saved = r3bReceipts.get(receiptKey)
+    const attempt = { requestId: id, action: action || 'save', input: structuredClone(value), scope, at: new Date().toISOString(), outcome: 'received', replay: false }; r3bAttempts.push(attempt)
+    if (saved) { if (saved.scope !== scope || saved.fingerprint !== fingerprint) throw new WorkError(409, 'idempotency_conflict', 'The synthetic key belongs to different input.'); Object.assign(attempt, { outcome: 'committed', replay: true }); json(res, structuredClone(saved.result)); return true }
+    if (admin && !state.eligible || customer && r3aBookingState(id).booking) throw new WorkError(409, 'booking_confirmed', 'A confirmed booking cannot acquire a company revision.')
+    if (flags.r3bFailNext) { flags.r3bFailNext = false; attempt.outcome = 'not_applied'; throw new WorkError(503, 'unavailable', 'Synthetic revision failure before commit.') }
+    if (flags.r3bConflictNext) { flags.r3bConflictNext = false; if (state.current) r3bRevisions.get(id).at(-1).revision++; attempt.outcome = 'not_applied'; throw new WorkError(409, 'revision_conflict', 'Synthetic concurrent revision changed.', 'not_applied', state.revision + 1) }
+    if (value.expectedRevision !== state.revision) throw new WorkError(409, 'revision_conflict', 'Reload the latest synthetic company revision.', 'not_applied', state.revision)
+    const all = structuredClone(r3bRevisions.get(id) || []), now = new Date().toISOString(), original = r3aBookingState(id).submission
+    let current = all.at(-1)
+    const priorSummary = r3bAuditSummary(admin && !action && current?.status !== 'draft' ? null : current)
+    if (admin && !action) {
+      if (req.method !== 'PUT' || current?.status === 'published') throw new WorkError(409, 'revision_awaiting_customer', 'Withdraw the published revision before editing.')
+      if (current?.status !== 'draft') { current = { id: randomUUID(), requestId: id, versionNo: (current?.versionNo || 0) + 1, revision: state.revision, status: 'draft', baseSubmissionId: original.id, baseSnapshotHash: original.snapshotHash, baseSignedContentHash: original.signedContentHash, basedOnRevisionId: state.effectiveAccepted?.id || null, snapshot: null, snapshotHash: null, publishedAt: null, acceptedAt: null, withdrawnAt: null, acceptance: null, emailStatus: null, receiptReady: false }; all.push(current) }
+      current.payload = value.payload; current.pricing = calculateCompanyRevisionPricing(value.payload); current.totalCents = current.pricing.total; current.comparison = compareCompanyRevision(original.snapshot, value.payload)
+    } else {
+      if (!current || current.id !== value.revisionId) throw new WorkError(409, 'revision_snapshot_changed', 'The current synthetic revised quote changed.')
+      if (admin && action === 'publish') {
+        if (current.status !== 'draft') throw new WorkError(409, 'state_conflict', 'Only a draft can be published.')
+        companyRevisionSaveInput({ expectedRevision: value.expectedRevision, idempotencyKey: value.idempotencyKey, reason: value.reason, payload: current.payload })
+        current.snapshot = { schemaVersion: 'company-quote-revision-v1', companyId: 'lk-group', requestId: id, revisionId: current.id, versionNo: current.versionNo, baseSubmissionId: current.baseSubmissionId, baseSnapshotHash: current.baseSnapshotHash, baseSignedContentHash: current.baseSignedContentHash, basedOnRevisionId: current.basedOnRevisionId, contact: current.payload.contact, quantities: current.payload.quantities, extraItems: current.payload.extraItems, customerNote: current.payload.customerNote, pricing: current.pricing, comparison: current.comparison, acknowledgment: COMPANY_REVISION_ACK, termsVersion: null }; current.snapshotHash = createHash('sha256').update(canonical(current.snapshot)).digest('hex'); current.status = 'published'; current.publishedAt = now; current.emailStatus = 'pending'; current.receiptReady = true
+        r3bOutbox.push({ revisionId: current.id, kind: 'revision_notice', recipientEmail: original.snapshot.verifiedEmail, count: 1, synthetic: true, emailStatus: 'pending', emailFirstAttemptAt: null, errorCode: null, providerMessageId: null })
+      } else if (admin && action === 'withdraw') {
+        if (current.status !== 'published') throw new WorkError(409, 'state_conflict', 'Only a published pending revision can be withdrawn.'); current.status = 'withdrawn'; current.withdrawnAt = now
+        // Match the DB: cancel only notices which have never registered a send attempt.
+        for (const notice of r3bOutbox) if (notice.revisionId === current.id && notice.kind === 'revision_notice' && notice.emailFirstAttemptAt === null && notice.emailStatus !== 'provider_accepted') {
+          notice.emailStatus = 'cancelled'; notice.errorCode = 'revision_withdrawn'
+        }
+        current.emailStatus = r3bOutbox.find(row => row.revisionId === current.id && row.kind === 'revision_notice')?.emailStatus || null
+      } else if (customer && action === 'accept') {
+        const proof = r3bProofs.get(value.reviewProof)
+        if (!proof || proof.requestId !== id || proof.revisionId !== current.id || proof.snapshotHash !== current.snapshotHash || Date.parse(proof.expiresAt) <= Date.now()) throw new WorkError(409, 'review_proof_expired', 'Review the current synthetic quote again.')
+        if (current.status !== 'published') throw new WorkError(409, 'revision_snapshot_changed', 'This revision is no longer awaiting acceptance.')
+        const signedContentHash = createHash('sha256').update(canonical({ revisionSnapshot: current.snapshot, signature: value.signature, ack: COMPANY_REVISION_ACK })).digest('hex')
+        for (const prior of all) if (prior.status === 'accepted') prior.status = 'superseded'
+        current.status = 'accepted'; current.acceptedAt = now; current.acceptance = { id: randomUUID(), revisionId: current.id, snapshotHash: current.snapshotHash, signature: value.signature, acknowledgment: COMPANY_REVISION_ACK, signedContentHash, acceptedAt: now }; current.emailStatus = 'pending'; current.receiptReady = true
+        r3bOutbox.push({ revisionId: current.id, kind: 'revision_acceptance_receipt', recipientEmail: original.snapshot.verifiedEmail, count: 1, synthetic: true, emailStatus: 'pending', emailFirstAttemptAt: null, errorCode: null, providerMessageId: null })
+      } else throw new WorkError(422, 'validation', 'Unsupported synthetic revision action.')
+    }
+    current.revision = state.revision + 1; r3bRevisions.set(id, all); attempt.outcome = 'committed'
+    const audit = { id: randomUUID(), action: customer ? 'customer_accept' : `revision_${action || 'save'}`, actorUserId: actorScope?.userId || '00000000-0000-4000-8000-000000000004', actorSessionId: actorScope?.sessionId || '00000000-0000-4000-8000-000000000005', reason: customer ? 'Customer explicitly accepted revised booking-request quote.' : value.reason, priorRevision: state.revision, newRevision: current.revision, details: { prior: priorSummary, new: r3bAuditSummary(current) }, createdAt: now }
+    r3bAuditRows.set(id, [...(r3bAuditRows.get(id) || []), Object.freeze(structuredClone(audit))])
+    const receipt = { idempotencyKey: value.idempotencyKey, entityType: 'company_revision', entityId: id, action: customer ? 'customer_accept' : `revision_${action || 'save'}`, revision: current.revision, committedAt: now, childId: current.id }, result = { [customer ? 'state' : 'detail']: r3bState(id, !!customer), receipt: parseWorkReceipt(receipt) }
+    r3bReceipts.set(receiptKey, { scope, fingerprint, result: structuredClone(result) })
+    if (flags.r3bLoseNextResponse) { flags.r3bLoseNextResponse = false; json(res, { error: 'Synthetic committed response was lost. Retry the unchanged request.', code: 'outcome_unknown', outcome: 'unknown' }, 503); return true }
+    json(res, result); return true
+  } catch (error) { if (error instanceof WorkError) { json(res, { error: error.message, code: error.code, outcome: error.outcome, ...(error.fields ? { fields: error.fields } : {}), ...(error.currentRevision === undefined ? {} : { currentRevision: error.currentRevision }) }, error.status); return true } throw error }
 }
 
 reset()
@@ -323,6 +441,70 @@ async function body(req, max = 8192) {
 function page(rows, url, key) {
   const page = Math.max(1, Number(url.searchParams.get('page') ?? 1)), pageSize = Math.min(50, Math.max(1, Number(url.searchParams.get('pageSize') ?? 10)))
   return { [key]: rows.slice((page - 1) * pageSize, page * pageSize), page, pageSize, total: rows.length }
+}
+// These are the real /quote/start live-flow responses; API requests never reach upstream.
+async function handleLiveCustomer(req, res, url) {
+  const path = url.pathname
+  if (!path.startsWith('/api/quote/requests') || path.startsWith('/api/quote/requests/company-revision')) return false
+  try {
+    if (!flags.r3bCustomerSignedIn || [401, 403].includes(flags.customerAccessStatus)) throw new WorkError(flags.customerAccessStatus === 403 ? 403 : 401, 'unauthorized', 'Synthetic customer email OTP is required.')
+    // A selected request is not an authorization grant to another synthetic customer's request.
+    const allowedId = liveRequests[1].id, id = flags.r3bCustomerRequestId, headerId = req.headers['x-lk-quote-request-id']
+    if (id !== allowedId || headerId !== undefined && headerId !== id) throw new WorkError(403, 'forbidden', 'Synthetic customer has no access to this saved request.')
+    const source = liveRequests.find(row => row.id === id)
+    if (!source) throw new WorkError(404, 'not_found', 'Synthetic saved request not found.')
+    if (path === '/api/quote/requests/session' && req.method === 'POST') { workExact(await body(req), []); json(res, { ready: true }); return true }
+    if (path === '/api/quote/requests' && req.method === 'GET') { json(res, { request: parseLiveRequest(structuredClone(source)) }); return true }
+    const access = () => parseCustomerAccess({ customer: { email: source.payload.contact.email, expiresAt: new Date(Date.now() + 3600000).toISOString() }, requests: [{ id: source.id, reference: source.reference, status: source.status, savedAt: source.savedAt, revision: source.revision }], currentRequestId: id })
+    if (path === '/api/quote/requests/customer' && req.method === 'GET') { json(res, access()); return true }
+    if (path === '/api/quote/requests/customer/select' && req.method === 'POST') {
+      const value = await body(req); workExact(value, ['requestId']); workId(value.requestId)
+      if (value.requestId !== allowedId) throw new WorkError(403, 'forbidden', 'Synthetic customer has no access to this saved request.')
+      flags.r3bCustomerRequestId = value.requestId; json(res, access()); return true
+    }
+    if (path === '/api/quote/requests/analysis' && req.method === 'GET') {
+      const workspace = structuredClone(liveAnalysis.get(id)); workspace.request = structuredClone(source)
+      workspace.photos = workspace.photos.map(photo => ({ ...photo, contentUrl: `/api/quote/requests/photos/${photo.id}/content` }))
+      json(res, parsePhotoWorkspace(workspace, id)); return true
+    }
+    const state = r3aBookingState(id)
+    if (path === '/api/quote/requests/booking' && req.method === 'GET') {
+      json(res, { state: parseBookingState({ state: { requestId: id, verified: true, canEdit: false, approval: null, submission: state.submission, acknowledgment: state.submission.snapshot.acknowledgment } }, id) }); return true
+    }
+    if (path === '/api/quote/requests/company-booking' && req.method === 'GET') {
+      const customerState = structuredClone(state); delete customerState.simpleDraft; delete customerState.cancellation; delete customerState.canWrite
+      if (customerState.booking) customerState.booking.events = []
+      json(res, { state: parseCompanyState({ state: customerState }, id) }); return true
+    }
+    const photo = path.match(/^\/api\/quote\/requests\/photos\/([^/]+)\/content$/)
+    if (photo && req.method === 'GET') {
+      if (!liveAnalysis.get(id).photos.some(row => row.id === photo[1])) throw new WorkError(404, 'not_found', 'Synthetic private photo not found.')
+      binary(res, Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Wl6N70AAAAASUVORK5CYII=', 'base64'), 'image/png'); return true
+    }
+    if (req.method === 'GET' && (path === '/api/quote/requests/booking/documents/receipt' || /^\/api\/quote\/requests\/company-booking\/documents\/(proposal|acceptance|confirmation)$/.test(path))) {
+      const kind = path.split('/').at(-1)
+      if (kind === 'confirmation' && !state.booking?.receiptReady || kind === 'proposal' && !state.proposal?.receiptReady || kind === 'acceptance' && !state.acceptance?.receiptReady) throw new WorkError(404, 'not_found', 'Synthetic frozen document not found.')
+      binary(res, syntheticPdf(), 'application/pdf'); return true
+    }
+    throw new WorkError(503, 'unavailable', 'Synthetic live customer endpoint is unavailable. Nothing was forwarded.')
+  } catch (error) {
+    if (!(error instanceof WorkError)) throw error
+    json(res, { error: error.message, code: error.code, outcome: error.outcome }, error.status); return true
+  }
+}
+function applyR3bControls(value) {
+  for (const name of Object.keys(flags)) if (name in value) flags[name] = value[name]
+  if ('r3bLegacyInvalidPhone' in value) { const source = liveRequests.find(row => row.id === flags.r3bCustomerRequestId); if (source) source.payload.contact.phone = value.r3bLegacyInvalidPhone ? 'Legacy invalid phone' : '0400 000 000' }
+  // A synthetic failed first attempt, with no provider or network call. Used to verify
+  // that withdrawal preserves attempted-mail evidence rather than cancelling it.
+  if (value.r3bAttemptRevisionNotice) {
+    const notice = r3bOutbox.find(row => row.revisionId === value.r3bAttemptRevisionNotice && row.kind === 'revision_notice')
+    const revision = [...r3bRevisions.values()].flat().find(row => row.id === value.r3bAttemptRevisionNotice)
+    if (!notice || revision?.status !== 'published' || notice.emailStatus !== 'pending' || notice.emailFirstAttemptAt !== null) throw new Error('Synthetic notice must be published and unattempted.')
+    Object.assign(notice, { emailStatus: 'retrying', emailFirstAttemptAt: new Date().toISOString(), errorCode: 'email_outcome_unknown' })
+    revision.emailStatus = notice.emailStatus
+  }
+  if (value.r3bExpireProofs) for (const proof of r3bProofs.values()) proof.expiresAt = new Date(Date.now() - 1000).toISOString()
 }
 async function handleApi(req, res, url) {
   const path = url.pathname
@@ -344,6 +526,8 @@ async function handleApi(req, res, url) {
     if (req.fixtureR3aAttempt) req.fixtureR3aAttempt.outcome = failure.outcome === 'not_applied' ? 'not_applied' : 'unknown'
     return json(res, failure, status >= 400 && status <= 599 ? status : 503)
   }
+  if (await handleLiveCustomer(req, res, url)) return
+  if (await handleR3b(req, res, url)) return
   if (path.startsWith('/api/quote/')) {
     if ([401, 403].includes(flags.customerAccessStatus)) return json(res, { error: 'Synthetic customer access is unavailable.' }, flags.customerAccessStatus)
     const selector = url.searchParams.get('quote')
@@ -699,7 +883,7 @@ const server = http.createServer(async (req, res) => {
     const url = new URL(req.url, `http://127.0.0.1:${port}`)
     if (url.pathname === '/__fixture/control' && req.method === 'POST') {
       const value = await body(req); if (value.reset) reset()
-      for (const name of Object.keys(flags)) if (name in value) flags[name] = value[name]
+      applyR3bControls(value)
       if ('signedOut' in value) { signedOut = Boolean(value.signedOut); authStage = signedOut ? 'signed_out' : 'ready' }
       if (authStages.has(value.authStage)) { authStage = value.authStage; signedOut = authStage === 'signed_out' }
       if (['owner', 'admin'].includes(value.staffRole)) staffRole = value.staffRole
@@ -737,7 +921,7 @@ const server = http.createServer(async (req, res) => {
       if ('otherSessionCount' in value) otherSessionCount = Math.max(0, Math.min(50, Number(value.otherSessionCount)))
       return json(res, { synthetic: true, flags, signedOut, authStage, staffRole, otherSessionCount })
     }
-    if (url.pathname === '/__fixture/state') return json(res, { synthetic: true, flags, signedOut, authStage, staffRole, otherSessionCount, customers, properties, crmRelations: [...crmRelations], commandAttempts, records, enquiries, liveRequests, liveAnalysis: [...liveAnalysis.values()], liveBookings: [...liveBookings.values()], bookings: [...bookingDetails.values()], requests, consentAttempts, newQuoteAttempts, quoteWorkspaces: [...quoteWorkspaces], links: [...links], audits: [...audits], attemptCount: attempts.size, r3aEnquiries: [...r3aEnquiries.values()], r3aAssignees, r3aStaffDrafts: [...r3aStaffDrafts.values()], r3aSimpleDrafts: [...r3aSimpleDrafts.values()], r3aCancellations: [...r3aCancellations.values()], r3aBookingStates: [...liveBookings.keys()].map(r3aBookingState), r3aReceipts: [...r3aReceipts.values()], r3aAttempts, r3aAudits })
+    if (url.pathname === '/__fixture/state') return json(res, { synthetic: true, flags, signedOut, authStage, staffRole, otherSessionCount, customers, properties, crmRelations: [...crmRelations], commandAttempts, records, enquiries, liveRequests, liveAnalysis: [...liveAnalysis.values()], liveBookings: [...liveBookings.values()], bookings: [...bookingDetails.values()], requests, consentAttempts, newQuoteAttempts, quoteWorkspaces: [...quoteWorkspaces], links: [...links], audits: [...audits], attemptCount: attempts.size, r3aEnquiries: [...r3aEnquiries.values()], r3aAssignees, r3aStaffDrafts: [...r3aStaffDrafts.values()], r3aSimpleDrafts: [...r3aSimpleDrafts.values()], r3aCancellations: [...r3aCancellations.values()], r3aBookingStates: [...liveBookings.keys()].map(r3aBookingState), r3aReceipts: [...r3aReceipts.values()], r3aAttempts, r3aAudits, r3bRevisions: [...r3bRevisions], r3bReceipts: [...r3bReceipts], r3bAttempts, r3bOutbox })
     if (url.pathname.startsWith('/api/')) { res.fixtureApiPath = url.pathname; requests.push({ path: url.pathname, query: url.search, requestId: typeof req.headers['x-lk-quote-request-id'] === 'string' ? req.headers['x-lk-quote-request-id'] : null, method: req.method, at: Date.now() }); return await handleApi(req, res, url) }
     if (!['GET', 'HEAD'].includes(req.method) || !(permittedPage(url.pathname) || url.pathname.startsWith('/_next/static/') || publicAssets.has(url.pathname) || optimizedPublicLogo(url))) return json(res, { error: 'Synthetic fixture only proxies approved admin/quote pages and explicit UI static assets.' }, 404)
     const forwarded = {}
@@ -759,4 +943,20 @@ const server = http.createServer(async (req, res) => {
     res.end(Buffer.from(bytes))
   } catch { if (!res.headersSent) json(res, { error: 'Synthetic fixture request failed.' }, 500); else res.end() }
 })
-server.listen(port, '127.0.0.1', () => process.stdout.write(`Synthetic ESN UI fixture: http://127.0.0.1:${port}/admin\nControls: POST /__fixture/control · state: GET /__fixture/state\n`))
+if (process.argv[1] && pathToFileURL(resolve(process.argv[1])).href === import.meta.url) server.listen(port, '127.0.0.1', () => process.stdout.write(`Synthetic ESN UI fixture: http://127.0.0.1:${port}/admin\nControls: POST /__fixture/control · state: GET /__fixture/state\n`))
+
+// The test harness invokes the same route handler without opening a network listener.
+export function companyRevisionFixtureHarness() {
+  reset()
+  const requestId = flags.r3bCustomerRequestId
+  return { requestId, control: applyR3bControls, outbox: () => structuredClone(r3bOutbox),
+    state: () => structuredClone({ liveRequests, liveAnalysis: [...liveAnalysis], liveBookings: [...liveBookings], r3bAttempts, r3bReceipts: [...r3bReceipts], r3bRevisions: [...r3bRevisions] }),
+    async dispatch(method, path, value, customerRequestId = requestId) {
+      let status = 0, result
+      const req = { method, headers: { 'x-lk-quote-request-id': customerRequestId }, async *[Symbol.asyncIterator]() { if (value !== undefined) yield JSON.stringify(value) } }
+      const res = { destroyed: false, writeHead(code) { status = code }, end(body) { result = JSON.parse(body) } }
+      await handleApi(req, res, new URL(path, 'http://127.0.0.1'))
+      return { status, body: result }
+    }
+  }
+}

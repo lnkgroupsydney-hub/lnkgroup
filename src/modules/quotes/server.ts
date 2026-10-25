@@ -6,3 +6,5 @@ export { runQuoteAnalysis } from './infrastructure/analysis-runner.ts'
 export { customerQuoteGet, customerQuoteSendPost, customerQuoteVerifyPost, customerQuoteSelectPost, customerQuoteLogoutPost, customerQuoteHandoffPost } from './infrastructure/customer-auth-runtime.ts'
 export { liveBookingGet, liveBookingApprovePost, liveBookingDatePut, liveBookingReviewPost, liveBookingSubmitPost, liveBookingRetryPost, liveBookingReceiptGet, liveBookingAvailabilityGet, adminLiveBookingGet } from './infrastructure/booking-flow-api.ts'
 export { processLiveBookingDelivery, processLiveBookingDeliveryBatch } from './booking-delivery.ts'
+
+export { companyRevisionApi } from './infrastructure/company-revision-api.ts'

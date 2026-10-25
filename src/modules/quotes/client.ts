@@ -5,3 +5,5 @@ export { StaffPhotoWorkspace } from './presentation/staff-photo-workspace';
 
 export { staffQuoteActions, parseStaffQuoteDraft, parseStaffQuoteList } from './presentation/staff-quote-client';
 export type { StaffQuoteDraftDetail, StaffQuoteDraftPayload, StaffQuoteDraftListPage } from './domain/staff-draft';
+
+export { useCompanyRevisionGate } from './presentation/company-revision-panel';
