@@ -93,7 +93,7 @@
 /* List rows */
 .admin-workspace :is(.customers-cards > li, .customers-source, .live-company-booking, .booking-segment-editor, .live-company-booking fieldset, .live-company-ack) { border-radius: 12px; }
 .admin-workspace :is(.lq-admin-list, .live-company-list)>li { border: 1px solid var(--ems-line); border-radius: 12px; background: var(--ems-surface); padding: 14px 16px; }
-.admin-workspace :is(.lq-admin-list, .live-company-list)>li strong { font-size: var(--ems-text-card); font-weight: var(--ems-weight-semibold); } 
+.admin-workspace :is(.lq-admin-list, .live-company-list)>li strong { font-size: var(--ems-text-card); font-weight: var(--ems-weight-semibold); }
 .admin-workspace :is(.lq-admin-list, .live-company-list)>li span { font-size: var(--ems-text-meta); color: var(--ems-muted); font-variant-numeric: tabular-nums; }
 .admin-workspace .admin-main .operations-inbox button.selected { background: var(--ems-gold-tint); box-shadow: inset 3px 0 0 var(--ems-gold); }
 @media (hover: hover) and (pointer: fine) {
