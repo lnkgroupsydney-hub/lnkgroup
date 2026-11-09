@@ -19,7 +19,7 @@
 - SQL Editor의 RLS 알림은 `ON COMMIT DROP` 세션 임시 보존 테이블에 대한 정적 탐지였다. 공개 스키마 테이블의 RLS나 권한은 완화하지 않았다. Advisor 재검사 결과 DB 오류는 0건이며, Auth의 Leaked Password Protection Disabled 경고 1건은 이번 가격 DDL과 관계없는 설정이다. Auth 설정은 변경하지 않았다.
 - 기존 운영처럼 회사 SQL Editor로 적용했다. 정렬되지 않은 과거 CLI migration 이력을 repair하거나 기존 migration을 다시 실행하지 않았다.
 
-[운영 보존 보고서](2026-10-14-no-gst-deployment/db-rollout-report.json) · [적용 후 정책/권한](2026-10-14-no-gst-deployment/db-postflight.json) · [적용 화면](2026-10-14-no-gst-deployment/db-applied.png) · [실행 wrapper와 재현 검사](2026-10-14-no-gst-deployment/rollout/manifest.json)
+[운영 보존 보고서](2026-10-14-no-gst-deployment/db-rollout-report.json) · [적용 후 정책/권한](2026-10-14-no-gst-deployment/db-postflight.json) · 적용 화면 (스크린샷 삭제) · [실행 wrapper와 재현 검사](2026-10-14-no-gst-deployment/rollout/manifest.json)
 
 ## 배포와 소스
 
@@ -40,7 +40,7 @@ CLI 파일 업로드 방식은 Git 작성자 권한 검사에서 차단됐다. �
 - 초기에 검증 도구가 같은 이름의 Back to quote 버튼 2개를 선택하는 문제를 발견했다. 도구의 selector 범위를 header로 좁힌 뒤 전체 3개 화면을 통과했다. 제품 코드는 바꾸지 않았고 최초 실패 증거도 구분해 보관했다.
 - 승격 배포의 최근 15분 error 로그 조회가 정상 종료됐고 반환된 오류는 0건이었다. 지속 모니터링이나 미래 오류가 없다는 보장은 아니다.
 
-[운영 UI 결과](2026-10-14-no-gst-deployment/production/ui-results.json) · [운영 A$1,450·GST 표시](2026-10-14-no-gst-deployment/production/1280-starting-price-summary.png) · [운영 320px](2026-10-14-no-gst-deployment/production/320-new-empty-form.png) · [로컬 기존/신규 복구](2026-10-14-no-gst-deployment/local-ui/ui-results.json) · [기존 PDF/메일 검증](2026-10-14-no-gst-pricing.md)
+[운영 UI 결과](2026-10-14-no-gst-deployment/production/ui-results.json) · 운영 A$1,450·GST 표시 (스크린샷 삭제) · 운영 320px (스크린샷 삭제) · [로컬 기존/신규 복구](2026-10-14-no-gst-deployment/local-ui/ui-results.json) · [기존 PDF/메일 검증](2026-10-14-no-gst-pricing.md)
 
 ## 별도 실제 제공자 인수
 

@@ -40,7 +40,7 @@
 ## 운영 확인
 
 - www·apex의 `/quote/start`, `/`, `/services/cabinet-painting`, `/admin` 모두 200(apex는 www로 이동).
-- 운영 www 새 익명 세션, 1280·390·320px: 진입 화면 H1·진입 사진 로드·`From A$1,450 · No GST charged`, 새 견적 1단계 열기, 입력 16px, 가로 넘침 0, `My quotes` 메뉴 3항목·Esc 닫기, 관리자 로그인 화면. **console/page 오류·HTTP 실패 0건.** 서버 쓰기 요청은 빈 세션 전환(`customer/logout`, `session`)뿐이며 고객 견적 저장·OTP·AI·예약·메일·Calendar 호출은 하지 않았다. 화면: [진입 390](2026-10-25-production-rollout/prod-entry-390.png) · [1단계 1280](2026-10-25-production-rollout/prod-details-1280.png) · [관리자 1280](2026-10-25-production-rollout/prod-admin-1280.png)
+- 운영 www 새 익명 세션, 1280·390·320px: 진입 화면 H1·진입 사진 로드·`From A$1,450 · No GST charged`, 새 견적 1단계 열기, 입력 16px, 가로 넘침 0, `My quotes` 메뉴 3항목·Esc 닫기, 관리자 로그인 화면. **console/page 오류·HTTP 실패 0건.** 서버 쓰기 요청은 빈 세션 전환(`customer/logout`, `session`)뿐이며 고객 견적 저장·OTP·AI·예약·메일·Calendar 호출은 하지 않았다. 화면: 진입 390 (스크린샷 삭제) · 1단계 1280 (스크린샷 삭제) · 관리자 1280 (스크린샷 삭제)
 - 새 DB 기능 연결: 로그인 없는 `/api/quote/requests/company-revision`·`/booking`·`/api/admin/quote-requests`·`/enquiries`·`/customers`가 503이 아닌 401로 거절된다.
 - 승격 후 20분간 해당 배포의 error 로그·5xx 응답 0건(지속 모니터링 아님).
 

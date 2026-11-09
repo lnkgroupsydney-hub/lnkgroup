@@ -83,8 +83,8 @@ node scripts/verify-ems-shell-workflows.mjs --base http://127.0.0.1:3013 --playw
 
 브라우저 runner는 fixture marker가 없는 origin을 거부한다. 실제 앱 origin에 synthetic 변경을 보내지 않는다. 현재 머신의 번들 Playwright 경로를 인자로 사용했으며 저장소 의존성으로 설치하지 않았다.
 
-- [1440px Overview](assets/ems-admin-shell-desktop-20261007.png)
-- [390px Schedule 상세](assets/ems-admin-shell-mobile-20261007.png)
+- 1440px Overview (스크린샷 삭제)
+- 390px Schedule 상세 (스크린샷 삭제)
 
 화면은 모두 Synthetic/example.invalid 자료다. 테스트 로그는 실행 당시 `/tmp/lk-ems-d1-tests-final.log`, `/tmp/lk-ems-d1-check-final.log`, `/tmp/lk-ems-d1-browser.log`, `/tmp/lk-ems-d1-targeted.log`, `/tmp/lk-ems-d1-workflows.log`, `/tmp/lk-ems-d1-route-modes.log`, `/tmp/lk-ems-d1-local-http.log`에 저장했다. `/tmp` 파일은 영구 산출물이 아니며 위 문서와 재현 script를 보존한다.
 

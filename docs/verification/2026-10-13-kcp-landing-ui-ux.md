@@ -34,7 +34,7 @@
 - 9개 공정 링크, 중간 hash 직접 진입·새로고침, 시작→완성→역방향/빠른 왕복, 현재 단계와 progress 일치, 정적 전환 2회, 런타임 reduced-motion과 크기 경계 복원을 확인했다.
 - 실제 poster/canvas opacity 중간 프레임을 기록해 교차 전환을 확인했다. WebGL 초기 실패·소개 사전 로딩 실패와 `WEBGL_lose_context` 확장을 통한 컨텍스트 상실에서 본문·현재 단계·위치 보존을 확인했다.
 - 200% 글자 확대 시뮬레이션과 모션 감소 시작 화면에서 본문/FAQ/사진 읽기를 확인했다. 실제 브라우저 확대와 구분한다.
-- 최종 모바일 사진 초점/헤더 대비 보정 빌드에서 390px와 200% 글자 확대를 재실행해 통과했다. lazy 이미지의 완료/디코딩을 기다린 뒤 캡처했고 준비 사진이 정상 표시됐다. [최종 모바일](2026-10-13-kcp-landing/final-mobile/viewport-390x844.png) · [글자 확대](2026-10-13-kcp-landing/final-enlargement/reduced-motion-startup-and-text-200-percent-simulation.png).
+- 최종 모바일 사진 초점/헤더 대비 보정 빌드에서 390px와 200% 글자 확대를 재실행해 통과했다. lazy 이미지의 완료/디코딩을 기다린 뒤 캡처했고 준비 사진이 정상 표시됐다. 최종 모바일 (스크린샷 삭제) · 글자 확대 (스크린샷 삭제).
 - Codex 브라우저에서 최종 Hero/3D Prepare/모바일 화면, KCP→홈 서비스 지역 링크 실제 이동을 확인했다. 최종 3D 화면의 현재 단계는 `04 / 09`, canvas는 ready이며 확인 구간의 console error/warn은 0개다. QA analyst가 최종 화면과 인수 결과를 읽기 전용으로 검토했으며 추가 확정 결함은 없었다.
 
 초기 브라우저 실행의 두 실패는 same-document hash 이동의 HTTP 응답 `null` 처리와 복원 RAF 전 포커스 확인이라는 검증 코드 오류였다. 재실행 중 `requireFocus` scope 오류도 수정했다. 앱 조건을 낮추거나 검사를 삭제하지 않았으며 [초기 결과](2026-10-13-kcp-landing/initial-results.json)와 실패 캡처, 성공 재실행을 보존했다.
@@ -63,10 +63,10 @@
 
 ## 화면
 
-![캐비넷 첫 화면](2026-10-13-kcp-landing/desktop-hero.jpg)
+캐비넷 첫 화면 (스크린샷 삭제)
 
-![서비스 3영역](2026-10-13-kcp-landing/desktop-services.jpg)
+서비스 3영역 (스크린샷 삭제)
 
-![유지된 3D 준비 공정](2026-10-13-kcp-landing/desktop-3d-prepare.jpg)
+유지된 3D 준비 공정 (스크린샷 삭제)
 
-![홈으로 옮긴 서비스 지역](2026-10-13-kcp-landing/home-service-area.jpg)
+홈으로 옮긴 서비스 지역 (스크린샷 삭제)

@@ -52,5 +52,5 @@ Hero의 `Illustrative concept`와 이미지 구역의 한 줄 안내로 생성 �
 
 ## 화면
 
-- [모바일 첫 화면](2026-10-13-lk-home-revision/mobile-393-viewport.png)
+- 모바일 첫 화면 (스크린샷 삭제)
 - [전체 검사 결과](2026-10-13-lk-home-revision/results.json)

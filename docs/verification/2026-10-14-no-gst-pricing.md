@@ -47,7 +47,7 @@
 
 최종 시각 검토에서 EMS 문장 전체를 소문자로 바꾸며 `GST`도 작아지는 것을 발견해 문장용 표기를 따로 정의했다. 최종 build·lint·타입 검사 후 신규/과거 EMS 대상 2개 시나리오와 실제 스크린샷에서 `no GST charged`·`including GST`를 재확인했다. 결과 JSON은 원래 8개/44개와 해당 대상의 최신 결과를 합쳐 보존한다.
 
-[기계 판독 결과](2026-10-14-no-gst-pricing/ui-results.json) · [신규 데스크톱](2026-10-14-no-gst-pricing/new-3-2-1280-estimate.png) · [신규 320px](2026-10-14-no-gst-pricing/new-3-2-320-estimate.png) · [서명 390px](2026-10-14-no-gst-pricing/new-3-2-390-signature.png)
+[기계 판독 결과](2026-10-14-no-gst-pricing/ui-results.json) · 신규 데스크톱 (스크린샷 삭제) · 신규 320px (스크린샷 삭제) · 서명 390px (스크린샷 삭제)
 
 ## PDF·메일 검증
 

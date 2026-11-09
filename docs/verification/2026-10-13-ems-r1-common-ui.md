@@ -65,9 +65,9 @@
 
 주 에이전트와 QA implementer가 실제 저장 파일을 열어 확인했다. 모든 고객·주소·금액은 합성 검증 자료다.
 
-- [Clients 데스크톱](assets/ems-r1-clients-20261013.png)
-- [견적 상세와 예상금액](assets/ems-r1-quote-20261013.png)
-- [Schedule 모바일](assets/ems-r1-schedule-mobile-20261013.png)
+- Clients 데스크톱 (스크린샷 삭제)
+- 견적 상세와 예상금액 (스크린샷 삭제)
+- Schedule 모바일 (스크린샷 삭제)
 
 ## 로컬 HTTP와 검증 환경
 

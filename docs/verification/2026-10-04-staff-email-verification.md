@@ -57,7 +57,7 @@ PGlite 시험은 단일 연결 기반이며 실제 회사 DB의 여러 연결 �
 | 브라우저 오류·경고 | 업무 화면 확인 과정 0건 |
 | PDF 본문 | 링크 클릭 후 다운로드 이벤트는 시간 초과, 화면에서 확인한 동일 URL 직접 열기는 `net::ERR_BLOCKED_BY_CLIENT`. 도구에서 본문을 확인하지 못했으며 서버 권한 거절이나 정상 다운로드로 단정하지 않음 |
 
-DB 적용 증거: [SQL 성공 화면](assets/staff-email-sql-applied.jpg). 보안 결과: [Advisor 화면](assets/staff-email-security-advisor.jpg). 사용자 입력 인계: [이메일 코드 화면](assets/staff-email-code-handoff.jpg). 인증 후 실제 진입: [관리자 업무 화면](assets/staff-email-admin-ready.jpg).
+DB 적용 증거: SQL 성공 화면 (스크린샷 삭제). 보안 결과: Advisor 화면 (스크린샷 삭제). 사용자 입력 인계: 이메일 코드 화면 (스크린샷 삭제). 인증 후 실제 진입: 관리자 업무 화면 (스크린샷 삭제).
 
 사용자에게 같은 컴퓨터에서 회사 메일의 `L&K Group ESN sign-in code` 제목을 확인하고, 6자리 코드를 관리자 화면에 입력하여 `Verify and continue`를 누르도록 안내했다. 코드가 보이지 않으면 스팸함을 확인하고 만료 시 화면에서 재전송한다. 실제 영구 비밀번호와 인증 코드를 채팅으로 요구하지 않는다.
 

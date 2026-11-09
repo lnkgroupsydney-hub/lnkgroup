@@ -22,7 +22,7 @@ main의 이전 홈·Cabinet·원페이지 견적·필드 검증·방문일 단�
 - Vercel Preview/Production build와 커밋 status success를 실제 확인했다. GitHub Actions run API는 해당 커밋에 0건을 반환했다. 별도의 GitHub Actions 검사가 통과했다고 주장하지 않는다.
 - 실제 운영 응답을 사용하는 Playwright의 데스크톱1280×800·모바일390×844 검사 **107/107 통과**. [최종 결과](2026-10-13-quote-ui-release/production-results.json).
 - 두 시작 카드·기존 보기/복귀·키보드 진입·새 연락처/주소/설명/동의 초기 상태·입력 type/숫자 키보드·이메일/호주 전화/이름/우편번호 실제 validity·견적 미생성·홈/캐비넷200·가로 넘침·화면/리소스를 확인했다. pageErrors·console 경고/오류·차단 요청·실패 요청은 0이다.
-- 실제 화면 [데스크톱 진입](2026-10-13-quote-ui-release/desktop-entry.png)·[모바일 진입](2026-10-13-quote-ui-release/mobile-entry.png)·[데스크톱 새 폼](2026-10-13-quote-ui-release/desktop-new-empty.png)·[모바일 새 폼](2026-10-13-quote-ui-release/mobile-new-empty.png)을 시각 점검했다.
+- 실제 화면 데스크톱 진입 (스크린샷 삭제)·모바일 진입 (스크린샷 삭제)·데스크톱 새 폼 (스크린샷 삭제)·모바일 새 폼 (스크린샷 삭제)을 시각 점검했다.
 
 최초 운영 검사에서 검사기가 DOM `maxlength=4`를 가정해 우편번호 assertion 두 개를 실패했다. 제품은 정확한 네 자리 pattern과 `setCustomValidity`로 검증한다. 숫자 키보드/실제 패턴을 대조하고 `abc`·`20000`·`200` 거절, `2000` 허용을 실제 입력으로 검증하도록 검사기를 수정했다. 제품을 바꾸거나 실패 검사를 제거하지 않았다. [최초 결과](2026-10-13-quote-ui-release/initial-results.json)를 보존한다.
 

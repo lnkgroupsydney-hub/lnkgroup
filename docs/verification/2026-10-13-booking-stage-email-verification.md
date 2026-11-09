@@ -45,7 +45,7 @@
 
 최종 pageErrors(실행 예외)와 외부 요청은 0건이다. fixture가 제공하지 않는 홈 prefetch의 404와 font preload 경고는 관찰했으며 전체 console 무경고를 완료 기준으로 보고하지 않는다. 인증 전 빈 달력 wrapper의 `:visible` 검사와 정상 상태 읽기 중 즉시 enabled 검사를 화면 구조/완료 시점에 맞게 교정했다.
 
-최신 [데스크톱 인증 카드](2026-10-13-booking-email/quote-booking-email-desktop.png)와 [모바일 코드 입력](2026-10-13-booking-email/quote-booking-email-mobile.png)을 직접 확인했다. 단일 카드·제목/이메일 위계·코드 focus·내부 스크롤·고정 footer를 확인했으며 캡처는 합성 자료다.
+최신 데스크톱 인증 카드 (스크린샷 삭제)와 모바일 코드 입력 (스크린샷 삭제)을 직접 확인했다. 단일 카드·제목/이메일 위계·코드 focus·내부 스크롤·고정 footer를 확인했으며 캡처는 합성 자료다.
 
 ## 새 견적 제안과 제한
 

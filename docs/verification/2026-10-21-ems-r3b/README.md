@@ -6,9 +6,9 @@
 - 격리 check(빌드 포함)·준비 검사: 종료 0.
 - Chrome **R3b 6/6·R3a 11/11·R1 13/13·R2 20/20**, 실패·skip 0.
 - [R3b 결과](results.json) · [게이트 상태](status.json) · [조정자 handshake](handshake-fix1-final.json).
-- [관리자 회사본 1440](admin-company-1440.png): 원본 subtotal/GST/total, 회사본 No GST, 적용 중 금액.
-- [고객 수락 320](customer-accepted-320.png): 실제 /quote/start의 수락 상태. GST 비교 셀은 펼친 내용에서 별도 단언했으며 이 이미지는 상단 수락 요약을 담는다.
-- [예약 확정 차단](confirmation-blocked.png).
+- 관리자 회사본 1440 (스크린샷 삭제): 원본 subtotal/GST/total, 회사본 No GST, 적용 중 금액.
+- 고객 수락 320 (스크린샷 삭제): 실제 /quote/start의 수락 상태. GST 비교 셀은 펼친 내용에서 별도 단언했으며 이 이미지는 상단 수락 요약을 담는다.
+- 예약 확정 차단 (스크린샷 삭제).
 
 JSON·이미지는 `fix1-final/gates-rounda/`의 실제 바이트를 그대로 복사했다. 원본과 SHA-256이 같다. native modal dialog contract(lead 결정 B)와 기존 단언을 유지했고 미시도 notice의 cancelled/revision_withdrawn·발송 기록 0도 검사했다.
 

@@ -43,11 +43,11 @@
 
 현재 캡처:
 
-- [데스크톱 Hero](../design-reviews/2026-10-13-kcp-landing/current-desktop-hero.jpg)
-- [데스크톱 서비스](../design-reviews/2026-10-13-kcp-landing/current-desktop-services.jpg)
-- [데스크톱 공정 마지막 부분](../design-reviews/2026-10-13-kcp-landing/current-desktop-process.jpg)
-- [모바일 Hero](../design-reviews/2026-10-13-kcp-landing/current-mobile-hero.jpg)
-- [모바일 서비스](../design-reviews/2026-10-13-kcp-landing/current-mobile-services.jpg)
+- 데스크톱 Hero (스크린샷 삭제)
+- 데스크톱 서비스 (스크린샷 삭제)
+- 데스크톱 공정 마지막 부분 (스크린샷 삭제)
+- 모바일 Hero (스크린샷 삭제)
+- 모바일 서비스 (스크린샷 삭제)
 
 화면 관찰·코드 분석을 수행했다. 전체 모션의 프레임 분석·실제 휴대폰·접근성 적합성 시험·성능 측정은 구현 후 검증 항목이다.
 

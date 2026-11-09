@@ -53,7 +53,7 @@
 | --- | --- | --- | --- |
 | P1-1 | **진입 화면의 우선순위가 없다** — "새 견적"과 "저장된 견적 보기"가 같은 무게의 카드. 소요 단계·시간·준비물(사진 약 5장)·시작 가격 안내가 없다. 데스크톱은 큰 빈 카드에 콘텐츠가 왼쪽 75%만 차지 | 운영 캡처 `entry-1280`, `entry-390` | 신규 고객 대부분의 경로가 강조되지 않고, 시작 전 기대치를 줄 수 없다 |
 | P1-2 | **견적 중에도 `Start a new quote`가 상시 노출** — 탐색 버튼과 같은 무게로 헤더에 있어 작성 중 잘못 누를 위험. 모바일에서는 두 버튼이 세로로 쌓여 H1을 2~3줄로 밀어낸다 | `lq-workspace-header`, `mobile-new-empty.png` | 실수 클릭 시 확인 단계가 있지만 불안감을 주고 세로 공간 약 110px를 낭비 |
-| P1-3 | **진행 상태 구분이 약하다** — 완료(연녹색 체크)·현재(진한 원)·이동 불가(동일 모양, `opacity:1`)가 비슷해 보임. 320px 예상 금액 화면에서 "Add photos"가 진한 원으로 보여 현재 단계처럼 보인다 | `new-3-2-320-estimate.png`, `.lq-journey .lq-progress button:disabled{cursor:default}` | 어느 단계에 있는지, 어디로 돌아갈 수 있는지 판단하기 어렵다 |
+| P1-3 | **진행 상태 구분이 약하다** — 완료(연녹색 체크)·현재(진한 원)·이동 불가(동일 모양, `opacity:1`)가 비슷해 보임. 320px 예상 금액 화면에서 "Add photos"가 진한 원으로 보여 현재 단계처럼 보인다 | new-3-2-320-estimate.png (스크린샷 삭제), `.lq-journey .lq-progress button:disabled{cursor:default}` | 어느 단계에 있는지, 어디로 돌아갈 수 있는지 판단하기 어렵다 |
 | P1-4 | **모바일에서 가격이 사라진다** — 700px 이하에서 가격 요약 카드 숨김 | `.lq-project-summary{display:none!important}` | 모바일 고객은 4단계까지 "From A$1,450" 정보를 못 본다 |
 | P1-5 | **이전 알림이 남는다** — 접수 완료 화면에 `Email verified. Choose your preferred visit.`가 그대로 표시 | `new-3-2-1280-receipt.png`; `bookingStageChanged`가 `notice`를 지우지 않음 | 완료 화면에서 "날짜를 고르라"는 모순된 안내 |
 | P1-6 | **입력할 때마다 상태 알림** — 글자 하나마다 `Your changes are not saved yet.`가 `aria-live` 영역에 다시 설정 | `update()` → `setNotice(...)` | 시각적 소음, 스크린리더 반복 낭독 가능성(실사용 미확인) |
@@ -65,7 +65,7 @@
 
 | # | 문제 | 근거 |
 | --- | --- | --- |
-| P2-1 | 1280×800에서 사이드바 가격 카드가 하단에서 잘린다(사이드바 내부 스크롤만 가능) | `desktop-new-empty.png`, `new-3-2-1280-estimate.png` |
+| P2-1 | 1280×800에서 사이드바 가격 카드가 하단에서 잘린다(사이드바 내부 스크롤만 가능) | `desktop-new-empty.png`, new-3-2-1280-estimate.png (스크린샷 삭제) |
 | P2-2 | 단계 이동 시 H2에 프로그램 포커스를 주면 굵은 포커스 사각형이 그려진다 | `new-3-2-1280-receipt.png`, `.lq-card :focus-visible` |
 | P2-3 | 오류 상자와 상태 알림이 동시에 쌓이며 서로 다른 어조 | `quote-entry-photo-finalize-200.png` |
 | P2-4 | 서명 방법 라디오 카드 사이 간격 없음(테두리가 붙음) | `new-3-2-1280-signature.png` |

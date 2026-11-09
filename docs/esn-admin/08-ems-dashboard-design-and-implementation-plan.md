@@ -18,7 +18,7 @@
 
 [레이아웃 검토용 와이어프레임](design/dashboard-wireframe.html)은 **1차 적용 화면 / 확장 목표 화면**을 비교하는 로컬 문서다. 숫자는 모두 가상 예시이며 회사 실적이 아니다. 실제 저장·예약 확정·외부 연동은 수행하지 않는다. 와이어프레임 완성과 제품 구현 완료를 구분한다.
 
-이미지로도 볼 수 있다: [1차 적용 시안](design/dashboard-initial-desktop.png) · [확장 목표 시안](design/dashboard-target-desktop.png). 와이어프레임의 메뉴 전체 노출은 구조 검토용이며, 제품 모바일 메뉴 서랍·실제 검색·필터·드릴다운 동작은 아래 구현 계획의 후속이다.
+와이어프레임의 메뉴 전체 노출은 구조 검토용이며, 제품 모바일 메뉴 서랍·실제 검색·필터·드릴다운 동작은 아래 구현 계획의 후속이다.
 
 ## 2. 현재 화면에서 바꿀 점
 
@@ -31,7 +31,7 @@
 | 마케팅 페이지와 같은 전역 색상, 일부 화면별 크기·색 하드코딩 | 색 원본 유지 + 관리자용 크기·밀도 alias | 브랜드는 유지하면서 데이터 화면의 밀도를 맞춤 |
 | 구매·청구는 unavailable 상태 | 향후 메뉴와 연결 준비 상태를 일관되게 표시 | 미구현을 실제 무실적과 혼동하지 않음 |
 
-근거: [admin 진입점](../../src/app/admin/page.tsx), [직원 관리자 조립](../../src/modules/admin-access/presentation/staff-admin-console.tsx), [현재 고객 화면 증거](../verification/assets/esn-customers-live-20261006.png). 이번에는 새 인증 브라우저 세션을 열지 않았으며, 기존 실행 증거와 현재 코드를 기준으로 검토했다.
+근거: [admin 진입점](../../src/app/admin/page.tsx), [직원 관리자 조립](../../src/modules/admin-access/presentation/staff-admin-console.tsx), 현재 고객 화면 증거 (스크린샷 삭제). 이번에는 새 인증 브라우저 세션을 열지 않았으며, 기존 실행 증거와 현재 코드를 기준으로 검토했다.
 
 ## 3. 정보 구조와 메뉴
 

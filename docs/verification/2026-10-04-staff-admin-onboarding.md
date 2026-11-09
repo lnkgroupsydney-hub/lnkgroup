@@ -60,7 +60,7 @@
 
 Host 검사의 첫 Node `fetch` 실행에서는 지정 Host가 적용되지 않아 정상 origin의 200 응답을 받았다. 실제 헤더를 보내는 `curl -H 'Host: untrusted.invalid'`로 재현하여 403을 확인했다. 애플리케이션 인가 우회로 판단하지 않았고 검사를 삭제하지 않았다. Proxy는 API 검사 전에 Auth 갱신을 수행할 수 있으므로 “제공자 호출 전 차단” 시험은 직접 핸들러 범위의 증거로 한정한다.
 
-화면: [데스크톱](assets/staff-admin-login-desktop.jpg), [320px](assets/staff-admin-login-320.jpg). 인증 후 화면과 실제 MFA는 별도 인수가 남았다.
+화면: 데스크톱 (스크린샷 삭제), 320px (스크린샷 삭제). 인증 후 화면과 실제 MFA는 별도 인수가 남았다.
 
 최초 검토에서는 3011 검증 서버와 미실행 SQL 탭을 남겼다. 아래 후속 검증으로 원래 3002 앱에 전환한 뒤, 임시 3011 서버를 종료하고 임시 사본의 `.env.local`을 삭제했다. 운영 도메인을 추가하지 않았다.
 
@@ -70,7 +70,7 @@ Host 검사의 첫 Node `fetch` 실행에서는 지정 Host가 적용되지 않�
 
 신규 `public.lk_staff_session_active`는 service role 전용 진입점이고, 비공개 helper가 지정 사용자·세션의 존재와 만료만 검사한다. 고객 데이터 변경이나 브라우저 역할의 Auth 테이블 조회 권한 추가는 없다. 별도 `lk_private` schema와 함수 실행 권한을 만드는 작업이다.
 
-연결된 Supabase MCP는 회사 프로젝트 권한 오류를 반환했고 CLI는 해당 프로젝트에 연결되지 않았다. 처음에는 [적용 전 화면](assets/staff-session-sql-awaiting-approval.jpg)을 준비해 브라우저 도구의 보안 권한 추가 시점 승인을 요청했다. 이후 사용자가 직접 적용했다고 알렸고, 회사 SQL Editor의 `Success. No rows returned`와 아래 실제 API 결과를 확인했다. 에이전트는 같은 migration을 중복 실행하지 않았다. [사용자 적용 후 화면](assets/staff-session-sql-applied.jpg).
+연결된 Supabase MCP는 회사 프로젝트 권한 오류를 반환했고 CLI는 해당 프로젝트에 연결되지 않았다. 처음에는 적용 전 화면 (스크린샷 삭제)을 준비해 브라우저 도구의 보안 권한 추가 시점 승인을 요청했다. 이후 사용자가 직접 적용했다고 알렸고, 회사 SQL Editor의 `Success. No rows returned`와 아래 실제 API 결과를 확인했다. 에이전트는 같은 migration을 중복 실행하지 않았다. 사용자 적용 후 화면 (스크린샷 삭제).
 
 | 회사 DB 실제 검사 | 결과 |
 | --- | --- |
@@ -83,7 +83,7 @@ Host 검사의 첫 Node `fetch` 실행에서는 지정 Host가 적용되지 않�
 
 회사 SDK 검증에 사용한 별도 세션은 로그아웃했다. 고객 테이블·파일·예약·회사 연동을 이 검사로 변경하지 않았다.
 
-Security Advisor를 재실행한 결과 **오류 0, 경고 1**을 확인했다. 경고는 Auth의 `Leaked Password Protection Disabled`이며, 서버 전용 테이블에 대한 기존 정보 항목은 22개다. 새 세션 함수의 권한 노출 오류는 보고되지 않았다. 유출 비밀번호 검사 설정·사용 가능 조건은 운영 전 검토할 남은 항목이며 임의로 설정이나 요금제를 변경하지 않았다. [Advisor 화면](assets/staff-auth-security-advisor.jpg).
+Security Advisor를 재실행한 결과 **오류 0, 경고 1**을 확인했다. 경고는 Auth의 `Leaked Password Protection Disabled`이며, 서버 전용 테이블에 대한 기존 정보 항목은 22개다. 새 세션 함수의 권한 노출 오류는 보고되지 않았다. 유출 비밀번호 검사 설정·사용 가능 조건은 운영 전 검토할 남은 항목이며 임의로 설정이나 요금제를 변경하지 않았다. Advisor 화면 (스크린샷 삭제).
 
 기존 3002 서버가 이전 production build를 실행 중이어서 환경 파일 수정만으로 새 화면이 나타나지 않았다. 해당 로컬 앱을 정상 종료한 뒤 현재 소스로 `npm run build`를 완료하고 동일 주소에 재시작했다. 추가 빌드는 실제 실행 앱 갱신을 위한 것이며 통과한 전체 테스트는 반복하지 않았다. 빌드 로그: `/private/tmp/lk-staff-main-build.log`.
 
@@ -95,7 +95,7 @@ Security Advisor를 재실행한 결과 **오류 0, 경고 1**을 확인했다. 
 | 브라우저 콘솔 | 해당 로그인 흐름 오류·경고 없음 |
 | 사용자 인계 | 로그인된 앱 탭을 표시하고 영구 비밀번호·본인 인증 앱 설정을 요청 |
 
-[비밀번호 설정 인계 화면](assets/staff-admin-password-handoff.jpg). 비밀번호·인증 코드·QR 비밀값은 이 증거에 포함하지 않는다.
+비밀번호 설정 인계 화면 (스크린샷 삭제). 비밀번호·인증 코드·QR 비밀값은 이 증거에 포함하지 않는다.
 
 ## 실제 MFA 설정 중 발견한 QR 표시 오류
 

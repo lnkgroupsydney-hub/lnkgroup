@@ -32,11 +32,11 @@ KCP 안에서만 control/spacing/radius 토큰을 재사용하고 공용 Manrope
 
 ## 최종 화면
 
-![Hero 간격과 작은 흰 고지](2026-10-13-kcp-design-polish/desktop-hero.jpg)
+Hero 간격과 작은 흰 고지 (스크린샷 삭제)
 
-![목차와 둥근 서비스 카드](2026-10-13-kcp-design-polish/desktop-nav-services.jpg)
+목차와 둥근 서비스 카드 (스크린샷 삭제)
 
-![모바일 Hero](2026-10-13-kcp-design-polish/mobile-390-hero.jpg)
+모바일 Hero (스크린샷 삭제)
 
 ## 범위와 제한
 

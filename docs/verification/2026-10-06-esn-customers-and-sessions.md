@@ -54,7 +54,7 @@ DB 연결 검사는 직원 Auth 로그인·새 고객 기능·운영 인수 완�
 | 반응형·키보드 | 320px·390px 모두 document scrollWidth가 viewport와 일치. 긴 이름/이메일 줄바꿈, Enter 검색, 상세/목록 제목 포커스 이동 확인 |
 | 브라우저 오류 | 초기 fixture HTML 배너 삽입으로 React #418 발생. HTML을 변경하지 않고 합성 표시를 응답 헤더로 옮겨 해결. 새 탭의 초기 warn/error 0개. 주입한 409/503 네트워크 오류는 의도된 실패 시험 |
 
-증거: [390px 화면](assets/esn-customers-mobile-20261006.png), [320px 긴 이름](assets/esn-customers-long-mobile-20261006.png). 실제 휴대전화 검사는 수행하지 않았다.
+증거: 390px 화면 (스크린샷 삭제), 320px 긴 이름 (스크린샷 삭제). 실제 휴대전화 검사는 수행하지 않았다.
 
 ## 실제 회사 계정의 기존 자료 읽기
 
@@ -62,11 +62,11 @@ DB 연결 검사는 직원 Auth 로그인·새 고객 기능·운영 인수 완�
 
 ## 회사 DB 적용 및 남은 인수
 
-신규 `20261006102454_staff_session_security.sql`, `20261006102621_esn_customers.sql`을 하나의 트랜잭션으로 Supabase의 새 SQL 편집기에 준비했다. UI가 함수 안의 세션 삭제·역할 권한 회수 구문에 최종 실행 확인을 표시해 사용자에게 해당 실행을 확인 요청했다. 합성 UI 검증 후 다시 관찰했을 때 편집기가 **Success. No rows returned**로 전환됐고 실제 앱에서 새 함수가 응답했다. 에이전트가 확인 버튼을 누르거나 다른 도구로 우회 적용하지 않았다. 실행 주체를 추정하지 않고 성공 결과와 후속 검증을 기록한다. [실행 확인 화면](assets/esn-schema-confirmation-20261006.png), [적용 성공 화면](assets/esn-schema-applied-20261006.png).
+신규 `20261006102454_staff_session_security.sql`, `20261006102621_esn_customers.sql`을 하나의 트랜잭션으로 Supabase의 새 SQL 편집기에 준비했다. UI가 함수 안의 세션 삭제·역할 권한 회수 구문에 최종 실행 확인을 표시해 사용자에게 해당 실행을 확인 요청했다. 합성 UI 검증 후 다시 관찰했을 때 편집기가 **Success. No rows returned**로 전환됐고 실제 앱에서 새 함수가 응답했다. 에이전트가 확인 버튼을 누르거나 다른 도구로 우회 적용하지 않았다. 실행 주체를 추정하지 않고 성공 결과와 후속 검증을 기록한다. 실행 확인 화면 (스크린샷 삭제), 적용 성공 화면 (스크린샷 삭제).
 
 `npm run test:supabase:esn`을 추가해 실제 회사 DB에서 **14/14 통과**했다. service 역할의 새 3테이블 0행 조회·4함수의 비변경 probe, 유효한 공개 키의 같은 3테이블/4함수 접근 거절을 확인했다. 자격 증명·고객 행을 출력하지 않았으며 쓰기 명령이나 로그인은 실행하지 않는다. authenticated 역할의 직접 원격 probe는 이번 스크립트 범위가 아니며 해당 grant 계약은 로컬 SQL 검사에 포함한다.
 
-최종 앱 재시작·새로고침 후 사용자 인증을 유지했고, 실제 Customers에 고객 0건·미연결 원본 7건(서명 제출 4·일반 문의 3), Session security에 현재 세션·다른 세션 0건을 표시했다. 기존 Operations 문의 7건과 직원 경계도 유지됐고 실제 탭 warn/error는 0개였다. [회사 고객 화면](assets/esn-customers-live-20261006.png).
+최종 앱 재시작·새로고침 후 사용자 인증을 유지했고, 실제 Customers에 고객 0건·미연결 원본 7건(서명 제출 4·일반 문의 3), Session security에 현재 세션·다른 세션 0건을 표시했다. 기존 Operations 문의 7건과 직원 경계도 유지됐고 실제 탭 warn/error는 0개였다. 회사 고객 화면 (스크린샷 삭제).
 
 Supabase Advisors를 재실행했다. Security는 오류 0·기존 `Leaked Password Protection Disabled` 경고 1·RLS No Policy 정보 26건이다. 새 고객 3테이블도 공개 정책 없이 서버 전용 접근을 유지한다. Performance는 오류/경고 0·정보 11건이다. 새 고객 링크의 원본 FK 두 개에 인덱스 권고와 아직 사용 이력이 없는 감사 인덱스가 포함된다. 기존 예약/아웃박스 권고와 구분하며, 불필요하게 권한을 열거나 감사 인덱스를 제거하지 않았다. 유출 비밀번호 보호 설정·원본 FK 인덱스 검토를 후속으로 남긴다.
 

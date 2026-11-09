@@ -32,7 +32,7 @@
 
 초기 격리 테스트의 로컬 포트 EPERM은 허용된 환경에서 재실행했다. 이후 발견한 가격/검증/접근성 실패는 수정 후 관련 검사를 통과했다. 최종 실행 로그는 `/private/tmp/lk-consolidate-tests-final-20261020.log`, `lk-consolidate-check-final-20261020.log`, `lk-consolidate-build-final-20261020.log`, `lk-consolidate-browser-r1-20261020.log`, `lk-consolidate-browser-r2-final-20261020.log`에 있다.
 
-현재 브라우저 화면: [현장 데스크톱](2026-10-20-worktree-consolidation/ems-r2-properties-desktop.png) · [현장 모바일](2026-10-20-worktree-consolidation/ems-r2-property-mobile.png) · [견적 고객 연결](2026-10-20-worktree-consolidation/ems-r2-quote-crm.png). 합성 데이터 화면이며 실제 고객/회사 제공자 인수가 아니다.
+현재 브라우저 화면: 현장 데스크톱 (스크린샷 삭제) · 현장 모바일 (스크린샷 삭제) · 견적 고객 연결 (스크린샷 삭제). 합성 데이터 화면이며 실제 고객/회사 제공자 인수가 아니다.
 
 ## 삭제와 비공개 자료
 

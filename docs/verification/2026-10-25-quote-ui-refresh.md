@@ -103,9 +103,9 @@ QUOTE_UI_SHOT_DIR=docs/verification/2026-10-25-quote-ui-refresh GST_UI_UPSTREAM=
 
 | Gate | 계획된 시나리오 | gate 시도 | 실제 실행 / 통과 | 외부 요청/denied · 실제 provider 요청 | 종료 코드·오류 | 스크린샷 |
 | --- | --- | --- | --- | --- | --- | --- |
-| `node scripts/verify-quote-entry-ui.mjs` (3002 / 3019) | 16 | phase 2c 1회 | 16 / 16 | external 0, provider 0 (JSON) | 0; `pageErrors=[]`; synthetic flow의 HTTP console warnings: 409×2, 401×1, 503×1 | 3 generated; [desktop](2026-10-25-quote-ui-refresh/quote-entry-desktop.png), [mobile](2026-10-25-quote-ui-refresh/quote-entry-mobile.png), [prefilled](2026-10-25-quote-ui-refresh/quote-entry-prefilled.png) 복사 |
-| `node scripts/verify-quote-entry-photo-ui.mjs` (3002 / 3020) | 6 (3×2) | phase 2c 1회 | 6 / 6 | `externalRequests=[]`, provider 0 (JSON) | 0; `pageErrors=[]`; expected synthetic late-401 console messages ×3 (prepare/finalize/process) | 6 generated; [process 200](2026-10-25-quote-ui-refresh/quote-entry-photo-process-200.png) 1장 복사 |
-| `node scripts/verify-quote-journey-ui.mjs` (3002 / 3017) | 18 | phase 2c 1회 | 18 / 18 | numeric counter 미노출; 각 scenario의 local-only denied-list assertion 통과; provider/API use는 local synthetic only | 0; `consoleErrors=[]`; journey output에서 Google/production 호출 안 함 명시 | 9 generated; 허용목록의 7장 복사: [desktop](2026-10-25-quote-ui-refresh/quote-one-page-desktop.png), [mobile](2026-10-25-quote-ui-refresh/quote-one-page-mobile.png), [photos](2026-10-25-quote-ui-refresh/quote-one-page-photos.png), [estimate](2026-10-25-quote-ui-refresh/quote-one-page-estimate.png), [date](2026-10-25-quote-ui-refresh/quote-one-page-date.png), [sign](2026-10-25-quote-ui-refresh/quote-one-page-sign.png), [complete](2026-10-25-quote-ui-refresh/quote-one-page-complete.png) |
+| `node scripts/verify-quote-entry-ui.mjs` (3002 / 3019) | 16 | phase 2c 1회 | 16 / 16 | external 0, provider 0 (JSON) | 0; `pageErrors=[]`; synthetic flow의 HTTP console warnings: 409×2, 401×1, 503×1 | 3 generated; desktop (스크린샷 삭제), mobile (스크린샷 삭제), prefilled (스크린샷 삭제) 복사 |
+| `node scripts/verify-quote-entry-photo-ui.mjs` (3002 / 3020) | 6 (3×2) | phase 2c 1회 | 6 / 6 | `externalRequests=[]`, provider 0 (JSON) | 0; `pageErrors=[]`; expected synthetic late-401 console messages ×3 (prepare/finalize/process) | 6 generated; process 200 (스크린샷 삭제) 1장 복사 |
+| `node scripts/verify-quote-journey-ui.mjs` (3002 / 3017) | 18 | phase 2c 1회 | 18 / 18 | numeric counter 미노출; 각 scenario의 local-only denied-list assertion 통과; provider/API use는 local synthetic only | 0; `consoleErrors=[]`; journey output에서 Google/production 호출 안 함 명시 | 9 generated; 허용목록의 7장 복사: desktop (스크린샷 삭제), mobile (스크린샷 삭제), photos (스크린샷 삭제), estimate (스크린샷 삭제), date (스크린샷 삭제), sign (스크린샷 삭제), complete (스크린샷 삭제) |
 | `node scripts/verify-gst-pricing-ui.mjs` (3002 / 3021) | 8 | phase 2c 2회 (첫 run 실패, 두 번째 pass) | pass run 8 / 8 | numeric external/provider counter 미노출; local PGlite/synthetic fixture | first run 1 (`/admin/quotes` 404, `View request` 15초 timeout); second run 0 | 기존 GST 결과 `ui-results.json`: 8/8, errors `[]`, `targeted=false`; 기존 screenshot/layout assets 유지 |
 
 Entry/photo의 external/provider 숫자는 gate JSON이 직접 출력한다. Journey/GST gate의 결과물에는 numeric external-denied counter가 없어 그 수치를 0으로 간주하지 않았다. Journey는 scenario별 local-only guard assertion과 출력상 production/Google 미호출로만 기록한다. Photo의 세 401 메시지는 의도한 synthetic late-response failure scenarios에서 발생한 console messages이며 page errors는 0이다. Node가 각 runner 앞에 출력한 `MODULE_TYPELESS_PACKAGE_JSON` warning도 있었으며 test assertion 실패는 아니었다.
@@ -114,9 +114,9 @@ Quote 캡처 11장은 coordinator가 생성한 `/private/tmp`의 원본과 byte-
 
 | 영역 | 캡처 |
 | --- | --- |
-| Entry | [desktop](2026-10-25-quote-ui-refresh/quote-entry-desktop.png), [mobile](2026-10-25-quote-ui-refresh/quote-entry-mobile.png), [prefilled](2026-10-25-quote-ui-refresh/quote-entry-prefilled.png) |
-| Photo | [process 200](2026-10-25-quote-ui-refresh/quote-entry-photo-process-200.png) |
-| Quote journey | [desktop](2026-10-25-quote-ui-refresh/quote-one-page-desktop.png), [mobile](2026-10-25-quote-ui-refresh/quote-one-page-mobile.png), [photos](2026-10-25-quote-ui-refresh/quote-one-page-photos.png), [estimate](2026-10-25-quote-ui-refresh/quote-one-page-estimate.png), [date](2026-10-25-quote-ui-refresh/quote-one-page-date.png), [sign](2026-10-25-quote-ui-refresh/quote-one-page-sign.png), [complete](2026-10-25-quote-ui-refresh/quote-one-page-complete.png) |
+| Entry | desktop (스크린샷 삭제), mobile (스크린샷 삭제), prefilled (스크린샷 삭제) |
+| Photo | process 200 (스크린샷 삭제) |
+| Quote journey | desktop (스크린샷 삭제), mobile (스크린샷 삭제), photos (스크린샷 삭제), estimate (스크린샷 삭제), date (스크린샷 삭제), sign (스크린샷 삭제), complete (스크린샷 삭제) |
 | GST | [저장소 synthetic screenshot set 및 `ui-results.json`](2026-10-25-quote-ui-refresh/). phase 2c 당시 기록은 15:19:13이었다. 현재 연결 JSON의 metadata는 2026-10-25 15:48:33 Australia/Sydney, upstream `127.0.0.1:3043`으로 바뀌어 있다. 이 별도 산출물과 수정 라운드 2의 증거는 아래에서 구분한다. |
 
 ### 의도적으로 갱신한 UI assertion

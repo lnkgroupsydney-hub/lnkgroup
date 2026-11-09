@@ -46,7 +46,7 @@
 
 중간 검사의 checkbox 이름·만료 오류·목록 선택 시점·인증된 PUT 헤더 가정을 실제 계약에 맞게 수정했다. 실제 한 분 OTP 제한은 그대로 검사하며 로컬 fixture의 해당 cooldown만 과거로 이동해 재인증 대기를 모사한다. 실제 rate limiter와 hourly/global 제한은 유지한다. 합성 오류 주입은 예상 401/409/503 콘솔 메시지를 낸다. fixture의 홈 prefetch 404·font preload 경고도 관찰했으며 전체 console 무경고를 완료로 보고하지 않는다.
 
-[데스크톱 첫 화면](2026-10-13-quote-entry/quote-entry-desktop.png)·[모바일 첫 화면](2026-10-13-quote-entry/quote-entry-mobile.png)·[연락처만 채운 새 견적](2026-10-13-quote-entry/quote-entry-prefilled.png)을 직접 시각 점검했다. 두 진입 카드·키보드 선택·가로 넘침 없음·원페이지 단계/고정 footer를 확인했다. 캡처는 합성 자료다.
+데스크톱 첫 화면 (스크린샷 삭제)·모바일 첫 화면 (스크린샷 삭제)·연락처만 채운 새 견적 (스크린샷 삭제)을 직접 시각 점검했다. 두 진입 카드·키보드 선택·가로 넘침 없음·원페이지 단계/고정 footer를 확인했다. 캡처는 합성 자료다.
 
 ## 범위와 제한
 
