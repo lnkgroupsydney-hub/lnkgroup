@@ -230,7 +230,7 @@
         "duplicateIds": [],
         "missingFragments": [],
         "title": "L&K Group | Painting & Home Care in Ermington, Sydney",
-        "description": "L&K Group offers residential painting, kitchen cabinet painting, handyman services, paint touch-up kits and kimchi. Local to Ermington and nearby Sydney suburbs.",
+        "description": "L&K Group offers residential painting, kitchen cabinet painting, handyman services and paint touch-up kits. Local to Ermington and nearby Sydney suburbs.",
         "robots": "noindex, nofollow"
       },
       "homeRegionGroups": [
@@ -481,7 +481,7 @@
         },
         {
           "canvas": 0.999985,
-          "poster": 0.0000153355,
+          "poster": 1.53355e-05,
           "canvasReady": true,
           "posterReady": true
         },

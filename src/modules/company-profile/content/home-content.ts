@@ -5,7 +5,7 @@ type HomeOffering = Readonly<{
   id: string;
   name: string;
   description: string;
-  icon: "house" | "cabinet" | "tools" | "paint" | "kimchi";
+  icon: "house" | "cabinet" | "tools" | "paint";
   category: "service" | "product";
   image: ImageAsset;
   detail: string;
@@ -16,7 +16,7 @@ type HomeOffering = Readonly<{
 export const homeContent = {
   title: "L&K Group | Painting & Home Care in Ermington, Sydney",
   description:
-    "L&K Group offers residential painting, kitchen cabinet painting, handyman services, paint touch-up kits and kimchi. Local to Ermington and nearby Sydney suburbs.",
+    "L&K Group offers residential painting, kitchen cabinet painting, handyman services and paint touch-up kits. Local to Ermington and nearby Sydney suburbs.",
   navigation: [
     { label: "Services", href: "#services" },
     { label: "About", href: "#about" },
@@ -28,7 +28,7 @@ export const homeContent = {
     location: "Ermington, Sydney",
     heading: "Local services. Everyday care.",
     introduction:
-      "Painting, practical home repairs and everyday products, brought together by L&K Group.",
+      "Painting, practical home repairs and paint touch-up kits, brought together by L&K Group.",
     area: "Based in Ermington, serving nearby Sydney suburbs.",
     photo: siteAssets.homeGroupHero,
     caption: "Illustrative concept",
@@ -78,16 +78,6 @@ export const homeContent = {
       category: "product",
       availability: "Online ordering coming soon",
     },
-    {
-      id: "kimchi",
-      name: "Kimchi",
-      description: "Kimchi from L&K Group. Product details will be added here.",
-      image: siteAssets.homeKimchi,
-      detail: "Kimchi is part of our everyday product range. Product information and online ordering details are coming soon.",
-      icon: "kimchi",
-      category: "product",
-      availability: "Online ordering coming soon",
-    },
   ] as const satisfies readonly HomeOffering[],
   about: {
     heading: "Local care, with attention to detail.",
@@ -96,9 +86,9 @@ export const homeContent = {
     contact: "Based in Ermington. Speak with Lisa about what your home needs.",
   },
   work: {
-    heading: "Services for your home. Products for everyday life.",
+    heading: "Services for your home. Products to maintain it.",
     introduction:
-      "From a freshly painted room to a small repair or an everyday product, discover the different ways L&K Group can help.",
+      "From a freshly painted room to a small repair or a paint touch-up kit, discover the different ways L&K Group can help.",
     illustrationNote: "Images are illustrative concepts of our services and products.",
   },
   area: {

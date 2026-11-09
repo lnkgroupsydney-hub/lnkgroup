@@ -230,7 +230,7 @@
         "duplicateIds": [],
         "missingFragments": [],
         "title": "L&K Group | Painting & Home Care in Ermington, Sydney",
-        "description": "L&K Group offers residential painting, kitchen cabinet painting, handyman services, paint touch-up kits and kimchi. Local to Ermington and nearby Sydney suburbs.",
+        "description": "L&K Group offers residential painting, kitchen cabinet painting, handyman services and paint touch-up kits. Local to Ermington and nearby Sydney suburbs.",
         "robots": "noindex, nofollow"
       },
       "error": "AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n\n1 !== 3\n\n    at file:///Users/jimee/Desktop/L&K%20Group/scripts/verify-kcp-landing-ui.mjs:235:14\n    at async scenario (file:///Users/jimee/Desktop/L&K%20Group/scripts/verify-kcp-landing-ui.mjs:92:7)\n    at async verifyKcpLanding (file:///Users/jimee/Desktop/L&K%20Group/scripts/verify-kcp-landing-ui.mjs:222:5)\n    at async file:///Users/jimee/Desktop/L&K%20Group/scripts/verify-kcp-landing-ui.mjs:430:20"
@@ -433,7 +433,7 @@
         },
         {
           "canvas": 0.999985,
-          "poster": 0.0000152076,
+          "poster": 1.52076e-05,
           "canvasReady": true,
           "posterReady": true
         },

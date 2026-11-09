@@ -191,7 +191,7 @@
 ## 7. 근거와 문서 우선순위
 
 - 운영 v1의 최신 순서·권한·수동 견적·배포 의존성은 [37](37-live-quote-ems-booking-implementation.md), 기존 제출 경계는 [32](32-client-quote-signature-submission.md), 소개 페이지 연결은 [18](18-kcp-page-prototype.md), 실제 진행 체크는 [15](15-home-cabinet-admin-todo.md)가 기준이다. 이 문서의 AI/정찰제 단계는 후속 확장 목표로 보존한다.
-- 기존 [05 견적·예약](05-quote-ai-booking.md)의 불변 조건과 [08 보호 원칙](08-security-and-compliance.md)은 유지한다. 일반 A/B/C 일정 중 KCP AI·예약·결제는 이번 순서로 앞당긴다. 다른 서비스·쇼핑몰·식품의 범위를 확대하지 않는다.
+- 기존 [05 견적·예약](05-quote-ai-booking.md)의 불변 조건과 [08 보호 원칙](08-security-and-compliance.md)은 유지한다. 일반 A/B/C 일정 중 KCP AI·예약·결제는 이번 순서로 앞당긴다. 다른 서비스·쇼핑몰의 범위를 확대하지 않는다.
 - 회사 사실은 [회사 제공 자료](../reference-assets/company-brief.md)를 우선하며 결정 상태는 [14 결정표](14-decisions-and-sources.md)에 기록한다.
 - 2026-09-30 문서 확인: 노출 DB 스키마의 권한/RLS와 사진 접근 범위를 함께 설계한다. [Supabase RLS](https://supabase.com/docs/guides/database/postgres/row-level-security), [Storage 접근 제어](https://supabase.com/docs/guides/storage/security/access-control). 서버 비밀키 사용 경로에도 소유·역할 검사를 둔다.
 - [Supabase 변경 기록](https://supabase.com/changelog)은 HTML로 확인했다. Markdown 인덱스 조회는 도구의 형식 제한·네트워크 실패로 완료하지 못했다. 이것은 9월 30일 당시 기록이다. 10월 1일 회사 DB 연결·저장·권한 검증은 [30번](30-supabase-storage-integration.md)에 추가됐으며 새 migration/Coatly 이식 전에 현재 스키마·사용 버전·정책을 재확인한다.

@@ -3,7 +3,6 @@ import Link from "next/link";
 import {
   ArrowRight,
   ArrowUp,
-  CookingPot,
   House,
   Mail,
   MapPin,
@@ -25,7 +24,6 @@ const offeringIcons = {
   cabinet: PanelsTopLeft,
   tools: Wrench,
   paint: Paintbrush,
-  kimchi: CookingPot,
 };
 
 function HomeHeader() {
@@ -55,7 +53,7 @@ function HomeHero() {
 
   return (
     <section className={styles.hero} aria-labelledby="home-heading">
-      <Image src={hero.photo.src} alt="" fill sizes="100vw" preload className={styles.heroBackground} />
+      <Image src={hero.photo.src} alt="" fill sizes="(max-width: 1023px) 1672px, 100vw" preload className={styles.heroBackground} />
       <Container>
         <div className={styles.heroGrid}>
           <div className={styles.heroCopy}>
@@ -100,10 +98,10 @@ function HomeServices() {
       <Container>
         <div className={styles.sectionIntro}>
           <div>
-            <p className={styles.eyebrow}>For your home & everyday life</p>
+            <p className={styles.eyebrow}>For your home</p>
             <h2 id="services-heading">Our services & products</h2>
           </div>
-          <p>Care for your home, and a little more. Explore what L&K Group offers.</p>
+          <p>Practical care for the home you already have. Explore what L&K Group offers.</p>
         </div>
         <p className={styles.groupLabel}>Services</p>
         <div className={styles.serviceGrid}>
@@ -147,7 +145,7 @@ function ServiceImageCard({ offering }: { offering: HomeOffering }) {
   return (
     <article className={styles.imageOffering} aria-labelledby={`${offering.id}-detail-heading`}>
       <div className={styles.workPhoto}>
-        <Image src={offering.image.src} alt={offering.image.alt} width={offering.image.width} height={offering.image.height} sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw" />
+        <Image src={offering.image.src} alt={offering.image.alt} width={offering.image.width} height={offering.image.height} sizes={offering.category === "product" ? "(min-width: 640px) 50vw, 100vw" : "(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"} />
       </div>
       <div className={styles.imageOfferingCopy}>
         <p className={styles.imageOfferingCategory}>{offering.category === "service" ? "Service" : "Product"}{!offering.href && <span className={styles.status}>Coming soon</span>}</p>

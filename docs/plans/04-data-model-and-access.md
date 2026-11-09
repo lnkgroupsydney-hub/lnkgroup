@@ -18,7 +18,7 @@ P0 정적 대조·구체 계약은 [26번](26-kcp-p0-contracts-and-reuse.md)에 
 
 | 영역 | 테이블 후보 | 주요 필드와 제약 |
 | --- | --- | --- |
-| 사업 | legal_entities, business_units | 법인·ABN·GST 상태, services/kits/food, 유효기간 |
+| 사업 | legal_entities, business_units | 법인·ABN·GST 상태, services/kits, 유효기간 |
 | 고객 | customers, customer_auth_links, customer_organisations | 고객 ID, 인증 계정 연결, 회사 청구처; 이메일만으로 무조건 병합 금지 |
 | 주소 | customer_addresses, service_area_checks | 고객 입력 주소, 검증 결과, 정책 버전, 만료 시점 |
 | 동의 | consent_events | 대상 사업·채널·목적·문구 버전·시각·철회; append-only |
@@ -36,7 +36,6 @@ P0 정적 대조·구체 계약은 [26번](26-kcp-p0-contracts-and-reuse.md)에 
 | KCP 프로젝트 완료 | projects, project_completion_records (후보) | 전체 작업 묶음·revision·completed_at·행위자·중복키. 소유자 권한 사용자의 Complete로 완료 사건 기록, 청구 상태와 분리 |
 | 카탈로그 | products, product_variants, product_options | SKU 유일, 사업 단위, 배송 그룹, 세금 코드 |
 | 제조 | kit_bom, production_orders, artwork_approvals | BOM 버전·구성 수량, 제작 상태, 승인 버전 |
-| 식품 | food_batches, batch_quality_checks | 제조일·기한·로트·판매 가능 상태·알레르겐 버전 |
 | 재고 | inventory_locations, inventory_movements, inventory_reservations | 이동 원장, 예약 만료, SKU·배치·수량·원인 |
 | 주문 | carts, orders, order_lines, fulfilments, returns | 품목 스냅샷, 상태, 배송 그룹, 반환·폐기 구분 |
 | 결제 | payment_attempts, payments, payment_allocations, refunds | provider ID 유일, 통화·금액, 청구 배분, 환불 한도 |
@@ -46,7 +45,7 @@ P0 정적 대조·구체 계약은 [26번](26-kcp-p0-contracts-and-reuse.md)에 
 | 자동화 | webhook_events, outbox_events, job_attempts, message_deliveries | provider+event_id 유일, 문서/메일/Calendar 중복키·시도·결과 불명·오류. 제공자 수락과 실제 배달/반송 분리 |
 | 감사 | audit_events, reconciliation_runs | 행위자·사유·변경 요약·관련 ID; 삭제 제한 |
 
-모든 테이블을 한 번에 개발하지 않는다. A에서 고객·가격·견적·예약·청구·이벤트를 만들고, B에서 상품·재고, C에서 AI 평가·식품 배치·원가 보고를 추가한다. legal_entity는 단일 법인이어도 거래 시점 판매자를 명확히 하는 필드로 유지한다.
+모든 테이블을 한 번에 개발하지 않는다. A에서 고객·가격·견적·예약·청구·이벤트를 만들고, B에서 상품·재고, C에서 AI 평가·원가 보고를 추가한다. legal_entity는 단일 법인이어도 거래 시점 판매자를 명확히 하는 필드로 유지한다.
 
 ## 관계
 
@@ -62,7 +61,6 @@ erDiagram
   ORDER ||--|{ ORDER_LINE : contains
   PRODUCT_VARIANT ||--o{ ORDER_LINE : snapshots
   PRODUCT_VARIANT ||--o{ INVENTORY_MOVEMENT : tracks
-  FOOD_BATCH ||--o{ INVENTORY_MOVEMENT : traces
   INVOICE ||--|{ INVOICE_LINE : contains
   PAYMENT ||--o{ PAYMENT_ALLOCATION : allocated
   INVOICE ||--o{ PAYMENT_ALLOCATION : receives
@@ -94,7 +92,6 @@ erDiagram
 | 예약 | held → payment_pending → confirmed → completed | expired, cancelled, reschedule_requested |
 | 작업 | scheduled → in_progress → completion_review → completed | blocked, variation_pending, rework |
 | 주문 | pending_payment → paid → processing → fulfilled | payment_failed, cancelled, partially_refunded, refunded |
-| 식품 배치 | pending_release → available → depleted | quarantine, expired, recalled |
 | 인보이스 | draft → issued → partially_paid → paid | void(허용 조건), overdue, credit_issued |
 
 사용자 화면의 라벨과 내부 상태는 구분한다. 상태 변경 함수는 이전 상태·행위자·버전·선행 조건을 검사하고 불법 전이는 오류로 반환한다. paid 이전 주문을 출고할 수 없고 사진 AI 결과가 도착했다는 사실만으로 accepted로 전이할 수 없다. 위 예약 정상 경로는 예약금 필요 시의 예이며, 예약금 불필요 정책에서는 고객 수락·전체 기간 확보 후 confirmed로 전이할 수 있다. 정책 미정 상태에서 이를 임의 활성화하지 않는다. 고객 초안 저장·AI·범위 approve·서명 제출과 이메일/Calendar 결과는 [32번 상태 계약](32-client-quote-signature-submission.md)으로 분리한다. 일반 문의 submitted를 고객 계약 제출로 간주하지 않는다.
@@ -106,7 +103,6 @@ erDiagram
 | 비회원 | 공개 카탈로그 | 제한된 문의 제출·결제 세션 생성 API |
 | 고객 | 인증 연결된 본인 거래 | 본인 주소·동의·견적 수락·변경 요청 |
 | 현장 직원 | 배정 작업의 최소 고객정보 | 해당 작업의 상태·사진·자재 사용 |
-| 식품 담당 | 식품 주문·배치·배송 | 입고·검수·배치 할당·출고 |
 | 운영 관리자 | 허용 사업 단위 거래 | 견적 검토·일정·문의·재고 조정 |
 | 회계 | 청구·입금·크레딧 | 회계 연결·정산·승인된 환불 |
 | 대표 | 전체 사업 보고 | 가격표 승인·권한·정책 |

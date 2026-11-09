@@ -6,11 +6,10 @@
 
 | ID | 항목 | 현재 기준 | 상태·결정자·확정 시점 |
 | --- | --- | --- | --- |
-| D01 | 사업 구성 | 핸디맨·페인팅·캐비넷 페인팅·터치업 키트·김치 | 사용자 확정 2026-09-25 |
-| D02 | 작업 지역 | 회사 제공 기준은 Ermington 10km **+ Inner West Sydney**, 명시된 21개 suburb. 전부가 10km 내에 있다는 뜻은 아님. 실제 중심점·주소별 가능 여부 확인 필요; 식품 배송에 자동 적용하지 않음 | 2026-09-27 [회사 답변](../reference-assets/company-brief.md)이 이전 지도 후보/경계 추정보다 우선 |
+| D01 | 사업 구성 | 핸디맨·페인팅·캐비넷 페인팅·터치업 키트 | 사용자 확정 2026-09-25 |
+| D02 | 작업 지역 | 회사 제공 기준은 Ermington 10km **+ Inner West Sydney**, 명시된 21개 suburb. 전부가 10km 내에 있다는 뜻은 아님. 실제 중심점·주소별 가능 여부 확인 필요 | 2026-09-27 [회사 답변](../reference-assets/company-brief.md)이 이전 지도 후보/경계 추정보다 우선 |
 | D03 | ESN 의미 | ERP·CRM 주문·재고·견적·고객 중심 | 사용자 답변 확정 2026-09-25 |
 | D04 | 기술 | Next.js·Supabase Cloud·Vercel로 시작, Docker는 로컬 DB 실행·검증이 필요할 때 선택 사용 | 기본 기술 사용자 확정; Docker 선택 사용은 사용자 확정 2026-09-27 |
-| D05 | 김치 운영 | 제조 주체·장소·승인·배치·기한·배송 지역 | 미정 / 식품 책임자·C 구현 전 |
 | D06 | 판매 사업자·ABN·GST·계좌·자격·보험 | 회사 제공: LNKPAINTING, ABN 67607948542, Painting licence 354520C. 외부 조회·증빙 검증은 미수행. 홍보물에 보험 문구와 서로 다른 GST 가격 표기가 있으나 현행 적용·증빙·계좌는 미확인 | 2026-09-27 자료 접수; 서비스 청구 전 나머지 항목 확인 |
 | D07 | 초기 제작 순서 | 메인 → Cabinet Painting → 회사 관리 웹, 이후 나머지 사업 확장 | 사용자 지정 2026-09-27; 세부 범위는 실행 TODO 제안 |
 | D08 | 정찰제 | 포함 범위·단위·시간·원가·추가금 표 | 미정. KCP는 사용자 요청으로 가격 자료 수령 후 진행(D47) / 대표·운영·P5 착수 전 |
@@ -19,7 +18,6 @@
 | D11 | 키트 SKU | 시안 4종 후보, 30·50병 등 구성 미확정 | 미정 / 상품 담당·B 전 |
 | D12 | 결제·청구 | Stripe, 앱 인보이스 기본안, 회계 연동 원본 결정 | 제안 / 회계·A 결제 구현 전 |
 | D13 | 영어·한국어 | 영어 우선, C에서 핵심 한국어 | 제안 / 대표·콘텐츠 |
-| D14 | 혼합 장바구니 | 키트와 김치 별도 결제, 고객 계정 통합 | 제안 / 대표·B 설계 전 |
 | D15 | 도메인·브랜드 | 브랜드 L&K Group, 슬로건 All the Services You Need. 운영 도메인 미제공 | 브랜드는 회사 제공 2026-09-27; 도메인 소유·공개 승인 대기 |
 | D16 | 일정·예산 | 메인 3일·Cabinet 소개/문의 약 1주는 기존 목표. 2026-09-30 KCP 전체 흐름은 P0~P8로 진행하고 재사용·자료·승인 확인 후 단계별 산정. 전체 확장 18~24주·850~1,270h는 기존 추정 | 초기 목표 사용자 지정 2026-09-27; KCP 범위 갱신 2026-09-30, 새 납기·예산 미확정 |
 | D17 | 복구 목표 | RPO 1시간·RTO 4시간, 옵션·시험 필요 | 제안 / 대표·기술·A 출시 전 |
@@ -71,7 +69,7 @@ KCP 실행 체크리스트는 [전체 흐름 P0~P8 TODO](15-home-cabinet-admin-t
 
 상업 조건의 내부 분석은 [웹 유입 매출 5% 계약 검토](16-revenue-share-contract-review.md)에 기록한다. 사용자 설명상의 제안, 사용자 비용 방침, 분석자의 권고를 상대방과 합의된 계약으로 표시하지 않는다.
 
-계획 작성은 위 미정 사항을 제안과 조건으로 표시한 상태에서 완료한다. 결제·가격·식품 등 의존 기능의 실제 출시 전에는 해당 결정이 필요하다. 이후 결정 변경은 날짜·이유·영향 문서·추가 공수와 함께 기록한다.
+계획 작성은 위 미정 사항을 제안과 조건으로 표시한 상태에서 완료한다. 결제·가격 등 의존 기능의 실제 출시 전에는 해당 결정이 필요하다. 이후 결정 변경은 날짜·이유·영향 문서·추가 공수와 함께 기록한다.
 
 ## 공식 기술 자료
 
@@ -100,10 +98,6 @@ S01~S30은 2026년 9월 25일 조사 기준이며, 계약 검토에 추가한 S3
 | --- | --- | --- |
 | S15 | [NSW Painting work](https://www.nsw.gov.au/business-and-economy/licences-and-credentials/building-and-trade-licences-and-registrations/painting-work) | 페인팅 자격 검토 |
 | S16 | [NSW 주거공사 계약](https://www.nsw.gov.au/housing-and-construction/building-or-renovating-a-home/preparing/contracts) | 계약·예약금·작업 조건 |
-| S17 | [NSW 식품 사업 시작](https://www.foodauthority.nsw.gov.au/industry/starting-a-food-business) | 제조·판매 형태별 절차 |
-| S18 | [가정 기반 식품 사업](https://www.foodauthority.nsw.gov.au/retail/home-based-mixed-businesses) | council·Food Authority 및 식품 표시 |
-| S19 | [FSANZ 식품 표시](https://www.foodstandards.gov.au/business/labelling) | 라벨·설명·표시 검토 |
-| S20 | [FSANZ 알레르겐](https://www.foodstandards.gov.au/consumer/labelling/allergen-labelling) | 알레르겐 명시 |
 | S21 | [ATO GST 회계](https://www.ato.gov.au/businesses-and-organisations/gst-excise-and-indirect-taxes/gst/accounting-for-gst-in-your-business) | GST·회계 연결 검토 |
 | S22 | [ATO Tax invoices 자료](https://www.ato.gov.au/api/public/content/0-1e92db95-a75c-4f4e-a3d4-39f43b1a3b25) | 인보이스 필수 정보 |
 | S23 | [OAIC 소규모 사업](https://www.oaic.gov.au/privacy/privacy-guidance-for-organisations-and-government-agencies/organisations/small-business) | 개인정보법 적용 범위 검토 |
@@ -113,7 +107,6 @@ S01~S30은 2026년 9월 25일 조사 기준이며, 계약 검토에 추가한 S3
 | S27 | [Google Business Profile 지침](https://support.google.com/business/answer/3038177?hl=en) | 실제 사업과 서비스 지역의 프로필 |
 | S28 | [Google 검색 스팸 정책](https://developers.google.com/search/docs/essentials/spam-policies) | 지역명 복제 페이지·허위 콘텐츠 방지 |
 | S29 | [Jim's Handyman Sydney](https://jimshandyman.com.au/locations/new-south-wales/sydney-handyman/) | 서비스 랜딩 참고, 성과 추정 없음 |
-| S30 | [Kimchi Club 배송](https://kimchiclub.com.au/shipping-information/) | 제한된 식품 배송 안내 참고 |
 | S31 | [호주 정부 계약 작성 안내](https://business.gov.au/people/contractors/prepare-a-contract) | 업무·지급·비용·IP·변경·종료 조항, 2026-09-27 확인 |
 | S32 | [호주 정부 계약 협상 안내](https://business.gov.au/people/contractors/negotiate-a-contract) | 상업 조건의 명확화와 문서화, 2026-09-27 확인 |
 

@@ -8,7 +8,7 @@ import { resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 
 const defaultOutput = 'docs/verification/2026-10-13-lk-home-revision'
-const offerings = ['Residential Painting', 'Kitchen Cabinet Painting', 'Handyman Services', 'Paint Touch-up Kits', 'Kimchi']
+const offerings = ['Residential Painting', 'Kitchen Cabinet Painting', 'Handyman Services', 'Paint Touch-up Kits']
 const sectionIds = ['home', 'main-content', 'services', 'about', 'gallery', 'service-area', 'contact']
 const navItems = [['Services', '#services'], ['About', '#about'], ['What we offer', '#gallery'], ['Service area', '#service-area'], ['Contact', '#contact']]
 const cabinetPath = '/services/cabinet-painting'
@@ -168,7 +168,7 @@ export async function verifyLkHome({ upstream = 'http://127.0.0.1:3026', output 
 
   async function offeringContract(page, section) {
     const cards = page.locator(`${section} article`)
-    assert.equal(await cards.count(), 5, 'All five offerings have article semantics')
+    assert.equal(await cards.count(), offerings.length, 'All offerings have article semantics')
     assert.deepEqual(await cards.locator('h3').allTextContents(), offerings)
     const evidence = []
     for (const name of offerings) {
@@ -230,7 +230,7 @@ export async function verifyLkHome({ upstream = 'http://127.0.0.1:3026', output 
       assert.ok(descriptions.some(text => text.trim().length > 40), 'Each offering has a concise descriptive paragraph')
       images.push(await image.getAttribute('src'))
     }
-    assert.equal(new Set(images).size, 5, 'All five offerings use distinct images')
+    assert.equal(new Set(images).size, offerings.length, 'All offerings use distinct images')
     assert.match(await page.locator('#gallery').innerText(), /illustrat|concept|AI.generated/i, 'Service illustrations are clearly distinguished from actual project evidence')
     return { logos, hero: await background.boundingBox(), gallery, images }
   }

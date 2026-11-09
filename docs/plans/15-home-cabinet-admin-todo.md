@@ -77,11 +77,11 @@
 - [x] 전체 746/746·lint·타입·build, 공개 브라우저 11개·관리자 브라우저 3개 통과. 실제 운영/외부 제공자 인수와 구분.
 - [ ] 회사 Maps 키 준비 후 실제 주소 검색/선택 인수, 운영 배포. 기존 Draft 화면의 별도 브라우저 인수는 미실행.
 
-**2026-10-13 메인 UI·UX 구현·주석 반영 완료:** [48번 계획](48-lk-group-home-ui-ux-plan.md)과 후속 사용자 태그 일곱 항목을 구현했다. 그룹 배경·다섯 서비스/상품 생성 이미지·설명·지역 숫자 제거·검정 원 로고·그룹 표시·새 이메일/시간을 적용했다. 네 Coming soon 항목은 링크 없이 유지하며 Cabinet 상세/견적 경로는 유효하다. [최신 검증 기록](../verification/2026-10-13-lk-home-revision.md)을 따른다.
+**2026-10-13 메인 UI·UX 구현·주석 반영 완료:** [48번 계획](48-lk-group-home-ui-ux-plan.md)과 후속 사용자 태그 일곱 항목을 구현했다. 그룹 배경·네 서비스/상품 생성 이미지·설명·지역 숫자 제거·검정 원 로고·그룹 표시·새 이메일/시간을 적용했다. 네 Coming soon 항목은 링크 없이 유지하며 Cabinet 상세/견적 경로는 유효하다. [최신 검증 기록](../verification/2026-10-13-lk-home-revision.md)을 따른다.
 
 - [x] H-00: 새 브랜치·구현계획·링크 상태 확인·관련 문서 연결.
 - [x] 후속 태그: 로고 바깥 흰색만 제거·검정 원 유지, 공통 로고와 fixture 경로 갱신. 생성 배경/서비스 이미지와 회사 연락처·표시명 적용.
-- [x] H-01~04: 홈 전용 구조·다섯 항목·글자/간격·지역/생성 컨셉 이미지·회사 정보·연락·고유 metadata 구현. 업무 ServiceId·견적/예약 계약·noindex 유지.
+- [x] H-01~04: 홈 전용 구조·네 항목·글자/간격·지역/생성 컨셉 이미지·회사 정보·연락·고유 metadata 구현. 업무 ServiceId·견적/예약 계약·noindex 유지.
 - [x] H-05: 최종 lint·타입·빌드와 로컬 Chrome 브라우저 12/12 통과. 6개 화면 폭·메뉴/Escape/초점·서버 HTML/JS 없음·200% 글자 확대·가상 응답의 Cabinet→견적 진입, 생성 이미지 로딩·공통 로고·실제 화면 검토 완료.
 - [ ] 실물 휴대폰/Safari·실제 브라우저 200% 확대·정량 성능/검색 성과 인수. 글자 확대 시뮬레이션과 구분.
 - [ ] 운영 공개·색인·canonical/sitemap/구조화 데이터·검색 성과 측정은 별도 단계.
@@ -681,6 +681,6 @@ Coatly 재사용 방향은 유지한다. 26번에서 코드·migration·권한/�
 - [ ] KCP에서 검증한 예약·결제·알림을 다른 서비스에 확장할 범위 정하기.
 - [ ] 핸디맨·페인팅 상세 페이지 추가하기.
 - [ ] 터치업 키트 쇼핑몰·주문·재고 관리 추가하기.
-- [ ] KCP 외 서비스의 AI 견적 보조, 김치 판매, 한국어 페이지, 확장 ERP는 이후 단계에서 진행하기. KCP AI는 이번 P4 범위다.
+- [ ] KCP 외 서비스의 AI 견적 보조, 한국어 페이지, 확장 ERP는 이후 단계에서 진행하기. KCP AI는 이번 P4 범위다.
 
 검토 기준: [화면 계획](02-information-architecture.md), [기술·배포](03-architecture-and-deployment.md), [데이터·권한](04-data-model-and-access.md), [견적·예약](05-quote-ai-booking.md), [운영](07-automation-and-operations.md), [QA](09-test-and-qa.md), [기존 일정](10-roadmap-budget-risks.md), [전체 백로그](12-implementation-backlog.md). Coatly는 로컬 프로젝트의 `README.md`, `docs/features/INDEX.md`, `docs/LAUNCH-READINESS.md`와 화면 파일 목록을 참고했다.

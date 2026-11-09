@@ -17,9 +17,9 @@ export const siteAssets = {
   },
   homeGroupHero: {
     src: "/images/home/group-home-hero.webp",
-    alt: "Generated concept of a cared-for Sydney home with a living room, painted kitchen and everyday dining setting.",
+    alt: "Generated concept of a cared-for Sydney home with a living room and painted kitchen.",
     width: 1672,
-    height: 941,
+    height: 636,
     provenance: "generated-concept",
   },
   homeResidentialPainting: {
@@ -46,13 +46,6 @@ export const siteAssets = {
   homeTouchUpKits: {
     src: "/images/home/touch-up-kits.webp",
     alt: "Illustrative concept of paint touch-up supplies with a plain paint pot, brush and compact roller.",
-    width: 1536,
-    height: 1024,
-    provenance: "generated-concept",
-  },
-  homeKimchi: {
-    src: "/images/home/kimchi.webp",
-    alt: "Illustrative concept of cabbage kimchi served in a ceramic bowl on a wooden dining table.",
     width: 1536,
     height: 1024,
     provenance: "generated-concept",
