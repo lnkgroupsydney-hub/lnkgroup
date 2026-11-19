@@ -81,7 +81,7 @@ Ermington, Dundas, Telopea, Carlingford, North Rocks, Epping, Eastwood, Macquari
 
 | 자료 | 수령 상태·후속 작업 |
 | --- | --- |
-| 로고 원본 | `LK_Group_Logo.pdf` 수령, 1페이지 검정·금색 원형 로고. 원문 보존 후 웹 이미지로 렌더링 |
+| 로고 원본 | `LK_Group_Logo.pdf` 수령, 1페이지 검정·금색 원형 로고. 웹 이미지로 렌더링했다. PDF는 2026-11-19 사용자 결정으로 저장소에서 삭제했으며 git 기록(`32be17d` 이전 커밋)에서 복원할 수 있다 |
 | 명함·브로슈어 | 핸디맨 홍보/가격 안내 2장, 실내 도장 단가표 1장 수령 |
 | 메인 대표 이미지 | `L&K main page photo.png` 수령. 인물·차량·부스와 문구를 배치한 회사 제공 홍보 이미지 |
 | 서비스별 작업 사진 | Cabinet 준비·보수·분사 도장 사진 4장 수령 |
@@ -94,7 +94,7 @@ Ermington, Dundas, Telopea, Carlingford, North Rocks, Epping, Eastwood, Macquari
 
 | 첨부 파일 | 내용·용도 |
 | --- | --- |
-| [LK_Group_Logo.pdf](LK_Group_Logo.pdf) | 회사 로고. PDF 원문 보존, 헤더·favicon에 웹용 렌더 사용 |
+| `LK_Group_Logo.pdf` (2026-11-19 삭제) | 회사 로고. 헤더·favicon은 웹용 렌더 `public/images/lk-group-logo-circle-transparent.png` 사용 |
 | [L&K main page photo.png](../../public/images/lk-group-promotional-artwork.png) | 메인 회사 소개에 사용할 홍보 이미지. 합성/편집된 디자인 자료로 분류. 수령 파일명은 유지해 기록하며 현재 원본 바이트는 `public/images/lk-group-promotional-artwork.png`에 보존 |
 | [cabinet progress.jpg](cabinet%20progress.jpg) | 탈거한 문짝·철물 준비 사진, 참조 보관 |
 | [cabinet progress 2.jpg](../../public/images/cabinet-surface-preparation.jpg) | 문짝 표면 보수 과정. 메인 갤러리 사용. 현재 원본 바이트는 `public/images/cabinet-surface-preparation.jpg`에 보존 |

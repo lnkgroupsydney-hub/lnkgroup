@@ -98,5 +98,5 @@ P2 취소 표시는 `accepted_revision`에도 기존 자격 조건을 적용한�
 - 2026-10-20 저녁 원본 폴더에서 아래 4개 파일이 지워진 상태로 발견됐다. 원인은 확인하지 못했다.
   - `concept 1.png`, `concept 2.png`, `concept 3.png`
   - `docs/reference-assets/LK_Group_Logo.pdf`
-- 이번 커밋에는 이 삭제를 포함하지 않았다. 그래서 `main`과 새 워크트리에는 4개 파일이 그대로 있다.
-- 원본 폴더에서 되살리려면 `git checkout -- "concept 1.png" "concept 2.png" "concept 3.png" docs/reference-assets/LK_Group_Logo.pdf`를 실행한다.
+- 이번 커밋에는 이 삭제를 포함하지 않았다.
+- 2026-11-19 사용자 결정으로 삭제를 유지하기로 하고 `32be17d`에서 커밋했다. 되살리려면 `git checkout 32be17d^ -- "concept 1.png" "concept 2.png" "concept 3.png" docs/reference-assets/LK_Group_Logo.pdf`를 실행한다.

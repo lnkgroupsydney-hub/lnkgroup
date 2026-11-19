@@ -68,11 +68,11 @@ Manrope는 공식 Google Fonts의 Latin variable WOFF2 **24,576 B**를 로컬로
 
 ## 2026-09-27 회사 자산 반영
 
-원본은 중복 정리 후 각 자산의 대표 저장 위치에 보존한다. 로고 PDF와 웹에 사용하지 않는 참고 자료는 [reference-assets](reference-assets/)에, 그대로 복사한 홍보·작업 사진 3개는 아래 `public/images/` 파일에 원본 바이트를 보존한다. [회사 제공 자료](reference-assets/company-brief.md)에 수령 파일명·출처·현재 저장 위치와 미확정 설명을 기록했다. 메인은 아래 실제 회사 제공 자산을 사용하며 사용 중인 생성 이미지는 Cabinet 컨셉으로만 남는다. 웹용 로고는 PDF를 그대로 렌더링했으며 새로운 로고를 생성하거나 도형을 수정하지 않았다.
+원본은 중복 정리 후 각 자산의 대표 저장 위치에 보존한다. 웹에 사용하지 않는 참고 자료는 [reference-assets](reference-assets/)에(로고 PDF는 2026-11-19 삭제), 그대로 복사한 홍보·작업 사진 3개는 아래 `public/images/` 파일에 원본 바이트를 보존한다. [회사 제공 자료](reference-assets/company-brief.md)에 수령 파일명·출처·현재 저장 위치와 미확정 설명을 기록했다. 메인은 아래 실제 회사 제공 자산을 사용하며 사용 중인 생성 이미지는 Cabinet 컨셉으로만 남는다. 웹용 로고는 PDF를 그대로 렌더링했으며 새로운 로고를 생성하거나 도형을 수정하지 않았다.
 
 | 원본 | 웹 파일 | 크기·적용 |
 | --- | --- | --- |
-| `LK_Group_Logo.pdf` | `public/images/lk-group-logo.png` | 900×900 PNG, 공통 헤더·favicon |
+| `LK_Group_Logo.pdf` (2026-11-19 저장소에서 삭제, git 기록에서 복원 가능) | `public/images/lk-group-logo-circle-transparent.png` | 1254×1254 투명 PNG, 공통 헤더·favicon |
 | `L&K main page photo.png` | `public/images/lk-group-promotional-artwork.png` | 1254×1254, 기존 About 영역, 전체 비율 보존 |
 | `cabinet progress 2.jpg` | `public/images/cabinet-surface-preparation.jpg` | 1080×2340, 메인 갤러리 표면 보수 |
 | `cabinet working 1.jpg` | `public/images/cabinet-door-spray-painting.jpg` | 1080×2340, 메인 갤러리 분사 도장 |
